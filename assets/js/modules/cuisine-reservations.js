@@ -69,11 +69,11 @@ async function loadReservations() {
     const res = await apiPost('cuisine_get_reservations_collab', { date: dateVal, repas: repasVal });
     if (!res.success) { body.innerHTML = '<p class="text-danger">Erreur</p>'; return; }
 
-    // Stats
+    // Stats (admin palette)
     if (stats) {
-        stats.innerHTML = '<span class="badge bg-secondary" style="font-size:.85rem"><i class="bi bi-people"></i> ' + (res.total_couverts || 0) + ' couverts</span>'
-            + '<span class="badge bg-primary" style="font-size:.85rem"><i class="bi bi-egg-fried"></i> ' + (res.nb_menu || 0) + ' menu</span>'
-            + '<span class="badge bg-success" style="font-size:.85rem"><i class="bi bi-flower1"></i> ' + (res.nb_salade || 0) + ' salade</span>';
+        stats.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:.82rem;font-weight:600;background:#bcd2cb;color:#2d4a43"><i class="bi bi-people"></i> ' + (res.total_couverts || 0) + ' couverts</span>'
+            + '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:.82rem;font-weight:600;background:#B8C9D4;color:#3B4F6B"><i class="bi bi-egg-fried"></i> ' + (res.nb_menu || 0) + ' menu</span>'
+            + '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:8px;font-size:.82rem;font-weight:600;background:#D0C4D8;color:#5B4B6B"><i class="bi bi-flower1"></i> ' + (res.nb_salade || 0) + ' salade</span>';
     }
 
     if (!res.reservations?.length) {
@@ -82,23 +82,27 @@ async function loadReservations() {
     }
 
     const table = document.createElement('table');
-    table.className = 'table table-sm table-striped';
+    table.className = 'cuis-table table table-sm';
     table.id = 'crTable';
     table.innerHTML = '<thead><tr><th>Nom</th><th>Fonction</th><th>Choix</th><th>Pers.</th><th>Paiement</th><th>Remarques</th><th></th></tr></thead>';
 
     const tbody = document.createElement('tbody');
     res.reservations.forEach(r => {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + escapeHtml(r.prenom + ' ' + r.nom) + '</td>'
-            + '<td class="small">' + escapeHtml(r.fonction_nom || r.fonction_code || '-') + '</td>'
-            + '<td><span class="badge ' + (r.choix === 'menu' ? 'bg-primary' : 'bg-success') + '">' + escapeHtml(r.choix) + '</span></td>'
+        const choixStyle = r.choix === 'menu'
+            ? 'background:#B8C9D4;color:#3B4F6B' : 'background:#bcd2cb;color:#2d4a43';
+        const paiementLabels = { salaire: 'Salaire', caisse: 'Cash', carte: 'Carte' };
+        tr.innerHTML = '<td style="font-weight:500">' + escapeHtml(r.prenom + ' ' + r.nom) + '</td>'
+            + '<td>' + escapeHtml(r.fonction_nom || r.fonction_code || '-') + '</td>'
+            + '<td><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;' + choixStyle + '">' + escapeHtml(r.choix) + '</span></td>'
             + '<td>' + r.nb_personnes + '</td>'
-            + '<td class="small">' + escapeHtml(r.paiement || '-') + '</td>'
-            + '<td class="small">' + escapeHtml(r.remarques || '-') + '</td>'
+            + '<td><span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:#D4C4A8;color:#6B5B3E">' + escapeHtml(paiementLabels[r.paiement] || r.paiement || '-') + '</span></td>'
+            + '<td style="color:#6b7280;font-size:.82rem">' + escapeHtml(r.remarques || '-') + '</td>'
             + '<td></td>';
 
         const delBtn = document.createElement('button');
         delBtn.className = 'btn btn-sm btn-outline-danger';
+        delBtn.style.cssText = 'width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px';
         delBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
         delBtn.title = 'Annuler';
         delBtn.addEventListener('click', async () => {
@@ -110,8 +114,15 @@ async function loadReservations() {
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);
+    // Wrap in admin-style card
     body.innerHTML = '';
-    body.appendChild(table);
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid #E8E5E0;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)';
+    const tableWrap = document.createElement('div');
+    tableWrap.style.cssText = 'overflow-x:auto';
+    tableWrap.appendChild(table);
+    card.appendChild(tableWrap);
+    body.appendChild(card);
 }
 
 function openAddModal() {
