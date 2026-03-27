@@ -6,9 +6,27 @@ import { apiPost, toast, escapeHtml, debounce } from '../helpers.js';
 
 let currentSession = null;
 let residentHandler = null;
+let newModal = null;
 
 export async function init() {
-    document.getElementById('cvNewSession')?.addEventListener('click', createSession);
+    const newModalEl = document.getElementById('cvNewModal');
+    if (newModalEl) newModal = new bootstrap.Modal(newModalEl);
+
+    document.getElementById('cvNewSession')?.addEventListener('click', () => {
+        // Default to next month, first day
+        const next = new Date();
+        next.setMonth(next.getMonth() + 1, 1);
+        document.getElementById('cvNewDate').value = next.toISOString().slice(0, 10);
+        if (typeof zerdaSelect !== 'undefined') {
+            zerdaSelect.init('#cvNewRepas', [
+                { value: 'midi', label: 'Midi' },
+                { value: 'soir', label: 'Soir' },
+            ], { value: 'midi' });
+        }
+        newModal?.show();
+    });
+
+    document.getElementById('cvNewSaveBtn')?.addEventListener('click', createSession);
 
     // Listen for resident selection from topbar search
     residentHandler = async (e) => {
@@ -27,6 +45,7 @@ export function destroy() {
     if (residentHandler) window.removeEventListener('resident-selected', residentHandler);
     residentHandler = null;
     currentSession = null;
+    newModal = null;
 }
 
 async function loadSession(sessionId) {
@@ -234,9 +253,20 @@ function renderResidents(residents) {
 // ═══════════════════════════════════════
 
 async function createSession() {
-    const dateStr = prompt('Date de la session VIP (AAAA-MM-JJ) :');
-    if (!dateStr) return;
+    const dateStr = document.getElementById('cvNewDate')?.value;
+    if (!dateStr) { toast('Date requise', 'error'); return; }
+
+    const btn = document.getElementById('cvNewSaveBtn');
+    btn.disabled = true;
+
     const res = await apiPost('cuisine_create_vip_session', { date_session: dateStr });
-    if (res.success) { toast('Session VIP créée', 'success'); loadSession(res.id); }
-    else toast(res.message || 'Erreur', 'error');
+    btn.disabled = false;
+
+    if (res.success) {
+        toast('Repas VIP planifié', 'success');
+        newModal?.hide();
+        loadSession(res.id);
+    } else {
+        toast(res.message || 'Erreur', 'error');
+    }
 }
