@@ -257,6 +257,7 @@ $activeSection = match($page) {
     <div class="topbar-search ms-auto me-3" id="topbarSearch">
       <i class="bi bi-search search-icon"></i>
       <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="<?= h($topbarPlaceholder) ?>" autocomplete="off">
+      <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
       <div class="topbar-search-results" id="topbarSearchResults"></div>
     </div>
     <div class="topbar-right">

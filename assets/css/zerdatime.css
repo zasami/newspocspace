@@ -380,16 +380,20 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 /* Topbar search — centered */
 .fe-topbar-search {
   position: relative;
-  width: 320px;
+  width: 280px;
   flex-shrink: 0;
+  transition: width 0.3s ease;
+}
+.fe-topbar-search.expanded {
+  width: 450px;
 }
 .fe-topbar-search input {
   font-size: 0.84rem;
-  padding: 0.4rem 0.75rem 0.4rem 2rem;
+  padding: 0.4rem 2rem 0.4rem 2rem;
   border-radius: 20px;
   border: 1px solid var(--zt-border);
   background: var(--zt-bg);
-  transition: all var(--zt-transition);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   width: 100%;
   outline: none;
 }
@@ -398,6 +402,13 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
   border-color: var(--zt-teal);
   box-shadow: 0 0 0 3px rgba(25,25,24,0.1);
 }
+.fe-search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; padding: 2px 6px;
+  font-size: 0.78rem; color: var(--zt-text-muted); border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+.fe-search-clear:hover { color: var(--zt-text); background: rgba(0,0,0,0.05); }
 .fe-search-icon {
   position: absolute;
   left: 10px;
@@ -582,6 +593,7 @@ body.no-nav #app-content {
   .fe-topbar-hamburger { display: block; }
   .fe-topbar-left { flex: unset; }
   .fe-topbar-search { width: 160px; }
+  .fe-topbar-search.expanded { width: 260px; }
 }
 
 /* ── Cards ── */

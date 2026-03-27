@@ -264,9 +264,16 @@ let colleaguesCache = null;
 function setupSearch() {
     const input = document.getElementById('feSearchInput');
     const results = document.getElementById('feSearchResults');
+    const clearBtn = document.getElementById('feSearchClear');
+    const wrap = document.getElementById('feTopbarSearch');
     if (!input || !results) return;
 
+    function updateClear() {
+        if (clearBtn) clearBtn.style.display = input.value.length > 0 ? '' : 'none';
+    }
+
     input.addEventListener('input', () => {
+        updateClear();
         clearTimeout(searchTimer);
         const raw = input.value.trim();
         const isMention = raw.startsWith('@');
@@ -277,6 +284,7 @@ function setupSearch() {
     });
 
     input.addEventListener('focus', () => {
+        if (wrap) wrap.classList.add('expanded');
         const raw = input.value.trim();
         const isMention = raw.startsWith('@');
         const q = (isMention ? raw.slice(1) : raw).toLowerCase();
@@ -284,12 +292,25 @@ function setupSearch() {
         if (q.length >= minLen) runSearch(q, results);
     });
 
+    input.addEventListener('blur', () => {
+        setTimeout(() => { if (wrap) wrap.classList.remove('expanded'); }, 200);
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            results.classList.remove('show');
+            updateClear();
+            input.focus();
+        });
+    }
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.fe-topbar-search')) results.classList.remove('show');
     });
 
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { results.classList.remove('show'); input.blur(); }
+        if (e.key === 'Escape') { input.value = ''; results.classList.remove('show'); updateClear(); input.blur(); }
     });
 }
 

@@ -70,10 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchOverridePages = ['messages', 'sondages', 'documents', 'users', 'todos', 'notes', 'pv'];
     const isSearchOverride = searchOverridePages.includes(currentPage);
 
+    const searchClear = document.getElementById('adminSearchClear');
+    const searchWrap = document.getElementById('topbarSearch');
+
     if (searchInput && searchResults) {
-        // @mention: works on ALL pages (even search-override pages)
-        // Normal search: only on non-override pages
+        function updateClear() {
+            if (searchClear) searchClear.style.display = searchInput.value.length > 0 ? '' : 'none';
+        }
+
         searchInput.addEventListener('input', () => {
+            updateClear();
             clearTimeout(searchTimer);
             const raw = searchInput.value.trim();
             const isMention = raw.startsWith('@');
@@ -89,10 +95,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         searchInput.addEventListener('focus', () => {
+            if (searchWrap) searchWrap.classList.add('expanded');
             const raw = searchInput.value.trim();
             const isMention = raw.startsWith('@');
             const q = isMention ? raw.slice(1) : raw;
             if ((isMention && q.length >= 2) || (!isSearchOverride && q.length >= 3)) runUserSearch(q);
+        });
+
+        searchInput.addEventListener('blur', () => {
+            setTimeout(() => { if (searchWrap) searchWrap.classList.remove('expanded'); }, 200);
+        });
+
+        if (searchClear) {
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                searchResults.classList.remove('show');
+                updateClear();
+                searchInput.focus();
+            });
+        }
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { searchInput.value = ''; searchResults.classList.remove('show'); updateClear(); searchInput.blur(); }
         });
 
         document.addEventListener('click', (e) => {
