@@ -357,8 +357,31 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
           <input type="password" class="ws-input" id="wsResaPassword" placeholder="Ex: 12031935">
         </div>
         <div class="ws-form-error" id="wsResaError" style="display:none"></div>
+        <!-- DEMO: comptes test (à supprimer en prod) -->
+        <div style="margin-top:12px">
+          <button type="button" class="ws-demo-toggle" id="wsDemoToggle">
+            <i class="bi bi-info-circle"></i> Comptes de démonstration
+          </button>
+          <div id="wsDemoList" style="display:none;margin-top:8px">
+            <table class="ws-demo-table">
+              <thead><tr><th>Résident</th><th>Ch.</th><th>Email</th><th>Code</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>Marguerite Dupont</td><td>101</td><td class="ws-demo-email">jp.dupont@gmail.com</td><td><code>12031935</code></td>
+                  <td><button class="ws-demo-use" data-email="jp.dupont@gmail.com" data-pwd="12031935">Utiliser</button></td></tr>
+                <tr><td>Jeanne Favre</td><td>102</td><td class="ws-demo-email">michel.favre@bluewin.ch</td><td><code>22071938</code></td>
+                  <td><button class="ws-demo-use" data-email="michel.favre@bluewin.ch" data-pwd="22071938">Utiliser</button></td></tr>
+                <tr><td>André Rochat</td><td>103</td><td class="ws-demo-email">sophie.rochat@gmail.com</td><td><code>05111932</code></td>
+                  <td><button class="ws-demo-use" data-email="sophie.rochat@gmail.com" data-pwd="05111932">Utiliser</button></td></tr>
+                <tr><td>Hélène Muller</td><td>104</td><td class="ws-demo-email">thomas.muller@yahoo.fr</td><td><code>18011940</code></td>
+                  <td><button class="ws-demo-use" data-email="thomas.muller@yahoo.fr" data-pwd="18011940">Utiliser</button></td></tr>
+                <tr><td>Robert Blanc</td><td>105</td><td class="ws-demo-email">catherine.blanc@gmail.com</td><td><code>30091936</code></td>
+                  <td><button class="ws-demo-use" data-email="catherine.blanc@gmail.com" data-pwd="30091936">Utiliser</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <!-- Step 2: Reservation form (hidden initially) -->
+      <!-- Step 2: Reservation form -->
       <div id="wsResaForm" style="display:none">
         <div class="ws-resa-resident-card" id="wsResaResidentCard"></div>
         <input type="hidden" id="wsResaResidentId">
@@ -390,16 +413,12 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
         <div class="ws-form-error" id="wsResaFormError" style="display:none"></div>
       </div>
-      <!-- Step 3: Success -->
+      <!-- Step 3: Ticket facture -->
       <div id="wsResaSuccess" style="display:none">
-        <div style="text-align:center;padding:2rem 0">
-          <i class="bi bi-check-circle-fill" style="font-size:3rem;color:var(--ws-green)"></i>
-          <h4 style="margin-top:1rem;color:var(--ws-green-dark)">Réservation confirmée !</h4>
-          <p style="color:#666">Vous recevrez un récapitulatif par email.</p>
-        </div>
+        <div class="ws-ticket" id="wsResaTicket"></div>
       </div>
     </div>
-    <!-- Footer fixe avec boutons selon l'étape -->
+    <!-- Footer fixe -->
     <div class="ws-modal-footer" id="wsResaFooter">
       <button class="ws-btn ws-btn-outline" id="wsResaFooterCancel">Annuler</button>
       <button class="ws-btn ws-btn-primary" id="wsResaLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Se connecter</button>
@@ -468,15 +487,15 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     document.getElementById('wsCarouselRight')?.addEventListener('click', () => slideCarousel(1));
 
     function slideCarousel(dir) {
-        carouselPos = Math.max(0, Math.min(carouselPos + dir, 3)); // 7 days - 4 visible = 3 max
+        carouselPos = Math.max(0, Math.min(carouselPos + dir, 4)); // 7 days - 3 visible = 4 max
         updateCarouselPosition();
     }
 
     function updateCarouselPosition() {
         const track = document.getElementById('wsCarouselTrack');
         if (!track) return;
-        // Each card = 25% width, slide by 25% per step
-        track.style.transform = 'translateX(-' + (carouselPos * 25) + '%)';
+        // Each card = 33.33% width, slide by 33.33% per step
+        track.style.transform = 'translateX(-' + (carouselPos * (100/3)) + '%)';
     }
 
     // ── Load menus ──
@@ -493,43 +512,74 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         if (!track) return;
         const today = fmtDate(new Date());
 
+        const MEAL_PRICE = { midi: 'CHF 14.50', soir: 'CHF 11.00' };
+
         track.innerHTML = '';
         for (let i = 0; i < 7; i++) {
             const d = new Date(mon); d.setDate(d.getDate()+i);
             const dateStr = fmtDate(d);
             const isToday = dateStr === today;
+            const isPast = dateStr < today;
             const dayName = DAYS[d.getDay()];
             const midi = menusByKey[dateStr+'_midi'];
             const soir = menusByKey[dateStr+'_soir'];
+            const dayLabel = dayName + ' ' + d.getDate()+'/'+(d.getMonth()+1);
 
-            const card = document.createElement('div');
-            card.className = 'ws-menu-day' + (isToday ? ' ws-menu-day--today' : '');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'ws-menu-card' + (isToday ? ' is-today' : '');
 
-            let headerExtra = isToday ? '<span class="ws-today-badge">Aujourd\'hui</span>' : '';
-            card.innerHTML = '<div class="ws-menu-day-header">' + esc(dayName) + ' ' + d.getDate()+'/'+(d.getMonth()+1) + headerExtra + '</div>'
-                + '<div class="ws-menu-day-body">'
-                + buildMealHtml('Midi', midi)
-                + buildMealHtml('Soir', soir)
-                + '<div class="ws-menu-reserve-wrap">'
-                + '<button class="ws-btn ws-btn-reserve" data-date="'+dateStr+'" data-day="'+esc(dayName)+' '+d.getDate()+'/'+(d.getMonth()+1)+'">'
-                + '<i class="bi bi-calendar-plus"></i> Réserver'
-                + '</button></div></div>';
+            wrapper.innerHTML = '<div class="ws-card-inner">'
+                + '<div class="ws-card-header">' + esc(dayLabel) + (isToday ? ' <span class="ws-today-badge">Aujourd\'hui</span>' : '') + '</div>'
+                + '<div class="ws-card-body">'
+                + buildMealBlock('midi', midi, MEAL_PRICE)
+                + '<hr class="ws-meal-divider">'
+                + buildMealBlock('soir', soir, MEAL_PRICE)
+                + '</div>'
+                + '<div class="ws-card-footer">'
+                + '<button class="ws-btn ws-btn-reserve" data-date="'+dateStr+'" data-day="'+esc(dayLabel)+'"'+(isPast?' disabled':'')+'>'+
+                '<i class="bi bi-calendar-plus"></i> Réserver un repas</button>'
+                + '</div></div>';
 
-            track.appendChild(card);
+            track.appendChild(wrapper);
         }
 
-        // Reserve buttons
-        track.querySelectorAll('.ws-btn-reserve').forEach(btn => {
+        // Reserve buttons (only non-disabled)
+        track.querySelectorAll('.ws-btn-reserve:not([disabled])').forEach(btn => {
             btn.addEventListener('click', () => openReservation(btn.dataset.date, btn.dataset.day));
+        });
+
+        // Equal height via JS
+        requestAnimationFrame(() => {
+            const inners = track.querySelectorAll('.ws-card-inner');
+            let maxH = 0;
+            inners.forEach(el => { el.style.height = 'auto'; });
+            inners.forEach(el => { if (el.offsetHeight > maxH) maxH = el.offsetHeight; });
+            if (maxH) inners.forEach(el => { el.style.height = maxH + 'px'; });
         });
 
         updateCarouselPosition();
     }
 
-    function buildMealHtml(label, menu) {
-        if (!menu) return '<div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">'+label+'</span> <em>Menu à venir</em></div>';
-        const items = [menu.entree, menu.plat, menu.accompagnement, menu.dessert].filter(Boolean).map(esc).join(' · ');
-        return '<div class="ws-menu-meal"><span class="ws-menu-type">'+label+'</span> '+items+'</div>';
+    function buildMealBlock(repas, menu, prices) {
+        const label = repas === 'midi' ? 'Midi' : 'Soir';
+        const icon = repas === 'midi' ? 'bi-sun' : 'bi-moon-stars';
+        if (!menu) {
+            return '<div class="ws-meal-block"><div class="ws-meal-label '+repas+'"><i class="bi '+icon+'"></i> '+label+'</div>'
+                + '<div class="ws-meal-empty">Menu à venir</div></div>';
+        }
+        const items = [
+            { val: menu.entree, bold: false }, { val: menu.plat, bold: true },
+            { val: menu.accompagnement, bold: false }, { val: menu.salade, bold: false },
+            { val: menu.dessert, bold: false }
+        ].filter(i => i.val);
+        let html = '<div class="ws-meal-block"><div class="ws-meal-label '+repas+'"><i class="bi '+icon+'"></i> '+label+'</div><div class="ws-meal-items">';
+        items.forEach(i => {
+            html += '<div class="ws-meal-item"><span class="ws-meal-dot '+repas+'"></span>'+(i.bold?'<strong>'+esc(i.val)+'</strong>':esc(i.val))+'</div>';
+        });
+        html += '</div>';
+        if (menu.remarques) html += '<div class="ws-meal-remark"><i class="bi bi-info-circle"></i> '+esc(menu.remarques)+'</div>';
+        html += '<div class="ws-meal-price"><i class="bi bi-tag"></i> '+prices[repas]+'</div></div>';
+        return html;
     }
 
     // ── Reservation modal ──
@@ -577,6 +627,19 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     document.getElementById('wsResaCloseSuccess')?.addEventListener('click', closeReservation);
     document.getElementById('wsResaOverlay')?.addEventListener('click', e => {
         if (e.target.id === 'wsResaOverlay') closeReservation();
+    });
+
+    // Demo toggle + auto-fill
+    document.getElementById('wsDemoToggle')?.addEventListener('click', () => {
+        const list = document.getElementById('wsDemoList');
+        list.style.display = list.style.display === 'none' ? '' : 'none';
+    });
+    document.querySelectorAll('.ws-demo-use').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('wsResaEmail').value = btn.dataset.email;
+            document.getElementById('wsResaPassword').value = btn.dataset.pwd;
+            document.getElementById('wsDemoList').style.display = 'none';
+        });
     });
 
     // Login
@@ -654,6 +717,33 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
             errEl.style.display = '';
             return;
         }
+
+        // Build ticket
+        const repasVal = document.querySelector('input[name="wsResaRepas"]:checked')?.value || 'midi';
+        const nbVal = parseInt(document.getElementById('wsResaNb').value) || 1;
+        const remarquesVal = document.getElementById('wsResaRemarques').value;
+        const dateVal = document.getElementById('wsResaDate').value;
+        const residentName = authCache.resident.prenom + ' ' + authCache.resident.nom;
+        const corrName = (authCache.resident.correspondant_prenom||'') + ' ' + (authCache.resident.correspondant_nom||'');
+        const prixUnit = repasVal === 'midi' ? 14.50 : 11.00;
+        const total = (prixUnit * nbVal).toFixed(2);
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+        document.getElementById('wsResaTicket').innerHTML =
+            '<div class="ws-ticket-header"><i class="bi bi-check-circle-fill"></i><h4>Réservation confirmée</h4></div>'
+            + '<div class="ws-ticket-row"><span>Résident</span><strong>' + esc(residentName) + '</strong></div>'
+            + '<div class="ws-ticket-row"><span>Chambre</span><strong>' + esc(authCache.resident.chambre || '-') + '</strong></div>'
+            + '<div class="ws-ticket-row"><span>Date</span><strong>' + esc(dateVal) + '</strong></div>'
+            + '<div class="ws-ticket-row"><span>Repas</span><strong>' + (repasVal === 'midi' ? '<i class="bi bi-sun"></i> Midi' : '<i class="bi bi-moon-stars"></i> Soir') + '</strong></div>'
+            + '<div class="ws-ticket-row"><span>Personnes</span><strong>' + nbVal + '</strong></div>'
+            + (remarquesVal ? '<div class="ws-ticket-row"><span>Remarques</span><strong>' + esc(remarquesVal) + '</strong></div>' : '')
+            + '<div class="ws-ticket-row"><span>Prix unitaire</span><strong>CHF ' + prixUnit.toFixed(2) + '</strong></div>'
+            + '<div class="ws-ticket-total"><span>Total</span><span>CHF ' + total + '</span></div>'
+            + '<div class="ws-ticket-footer">'
+            + '<div>Réservé par ' + esc(corrName.trim()) + '</div>'
+            + '<div>' + esc(dateVal) + ' à ' + timeStr + '</div>'
+            + '<div style="margin-top:6px"><i class="bi bi-printer"></i> Conservez ce reçu</div></div>';
 
         document.getElementById('wsResaForm').style.display = 'none';
         document.getElementById('wsResaSuccess').style.display = '';
