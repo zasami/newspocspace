@@ -24,7 +24,7 @@ function admin_get_menus()
          FROM menus m
          LEFT JOIN users u ON u.id = m.created_by
          WHERE m.date_jour BETWEEN ? AND ?
-         ORDER BY m.date_jour ASC",
+         ORDER BY m.date_jour ASC, m.repas ASC",
         [$monday->format('Y-m-d'), $sunday->format('Y-m-d')]
     );
 
@@ -42,6 +42,7 @@ function admin_save_menu()
     global $params;
 
     $dateJour = Sanitize::date($params['date_jour'] ?? '');
+    $repas = in_array($params['repas'] ?? '', ['midi', 'soir']) ? $params['repas'] : 'midi';
     $entree = Sanitize::text($params['entree'] ?? '', 500);
     $plat = Sanitize::text($params['plat'] ?? '', 500);
     $salade = Sanitize::text($params['salade'] ?? '', 500);
@@ -52,7 +53,7 @@ function admin_save_menu()
     if (!$dateJour) bad_request('Date requise');
     if (!$plat) bad_request('Plat principal requis');
 
-    $existing = Db::fetch("SELECT id FROM menus WHERE date_jour = ?", [$dateJour]);
+    $existing = Db::fetch("SELECT id FROM menus WHERE date_jour = ? AND repas = ?", [$dateJour, $repas]);
 
     if ($existing) {
         Db::exec(
@@ -64,9 +65,9 @@ function admin_save_menu()
     } else {
         $menuId = Uuid::v4();
         Db::exec(
-            "INSERT INTO menus (id, date_jour, entree, plat, salade, accompagnement, dessert, remarques, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$menuId, $dateJour, $entree, $plat, $salade, $accompagnement, $dessert, $remarques, $user['id']]
+            "INSERT INTO menus (id, date_jour, repas, entree, plat, salade, accompagnement, dessert, remarques, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$menuId, $dateJour, $repas, $entree, $plat, $salade, $accompagnement, $dessert, $remarques, $user['id']]
         );
     }
 
