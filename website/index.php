@@ -306,7 +306,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   </div>
 </section>
 
-<!-- ═══ MENU DE LA SEMAINE ═══ -->
+<!-- ═══ MENU DE LA SEMAINE — Carousel ═══ -->
 <section class="ws-section" id="menu-semaine">
   <div class="container">
     <div class="ws-section-header">
@@ -318,43 +318,325 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       </p>
     </div>
     <div class="ws-menu-week">
-      <div class="row g-3">
-        <?php
-        for ($i = 0; $i < 7; $i++):
-            $d = (clone $wsMonday)->modify("+{$i} days");
-            $dateStr = $d->format('Y-m-d');
-            $midiMenu = $wsMenusByKey[$dateStr . '_midi'] ?? null;
-            $soirMenu = $wsMenusByKey[$dateStr . '_soir'] ?? null;
-        ?>
-        <div class="col-md-6 col-lg">
-          <div class="ws-menu-day">
-            <div class="ws-menu-day-header"><?= h($wsDays[$i]) ?></div>
-            <div class="ws-menu-day-body">
-              <?php if ($midiMenu): ?>
-                <div class="ws-menu-meal">
-                  <span class="ws-menu-type">Midi</span>
-                  <?= h(implode(' · ', array_filter([$midiMenu['entree'], $midiMenu['plat'], $midiMenu['accompagnement'], $midiMenu['dessert']]))) ?>
-                </div>
-              <?php else: ?>
-                <div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">Midi</span> <em>Menu à venir</em></div>
-              <?php endif; ?>
-              <?php if ($soirMenu): ?>
-                <div class="ws-menu-meal">
-                  <span class="ws-menu-type">Soir</span>
-                  <?= h(implode(' · ', array_filter([$soirMenu['entree'], $soirMenu['plat'], $soirMenu['accompagnement'], $soirMenu['dessert']]))) ?>
-                </div>
-              <?php else: ?>
-                <div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">Soir</span> <em>Menu à venir</em></div>
-              <?php endif; ?>
-            </div>
-          </div>
+      <!-- Week nav -->
+      <div class="ws-menu-nav">
+        <button class="ws-menu-nav-btn" id="wsMenuPrev"><i class="bi bi-chevron-left"></i></button>
+        <span class="ws-menu-nav-label" id="wsMenuWeekLabel"></span>
+        <button class="ws-menu-nav-btn" id="wsMenuNext"><i class="bi bi-chevron-right"></i></button>
+      </div>
+      <!-- Carousel container -->
+      <div class="ws-carousel-wrap">
+        <button class="ws-carousel-arrow ws-carousel-arrow-left" id="wsCarouselLeft"><i class="bi bi-chevron-left"></i></button>
+        <div class="ws-carousel-viewport" id="wsCarouselViewport">
+          <div class="ws-carousel-track" id="wsCarouselTrack"></div>
         </div>
-        <?php endfor; ?>
+        <button class="ws-carousel-arrow ws-carousel-arrow-right" id="wsCarouselRight"><i class="bi bi-chevron-right"></i></button>
       </div>
       <p class="ws-menu-note"><i class="bi bi-info-circle"></i> Menus susceptibles de modifications. Régimes spéciaux disponibles sur demande.</p>
     </div>
   </div>
 </section>
+
+<!-- Modal réservation famille -->
+<div class="ws-modal-overlay" id="wsResaOverlay" style="display:none">
+  <div class="ws-modal">
+    <div class="ws-modal-header">
+      <h3 id="wsResaTitle"><i class="bi bi-calendar-check"></i> Réserver un repas</h3>
+      <button class="ws-modal-close" id="wsResaClose">&times;</button>
+    </div>
+    <div class="ws-modal-body" id="wsResaBody">
+      <!-- Step 1: Login -->
+      <div id="wsResaLogin">
+        <p class="ws-modal-desc">Identifiez-vous pour réserver un repas pour votre proche.</p>
+        <div class="ws-form-group">
+          <label>Email du correspondant</label>
+          <input type="email" class="ws-input" id="wsResaEmail" placeholder="votre.email@exemple.com">
+        </div>
+        <div class="ws-form-group">
+          <label>Code d'accès <small style="color:#888">(date de naissance du résident : JJMMAAAA)</small></label>
+          <input type="password" class="ws-input" id="wsResaPassword" placeholder="Ex: 12031935">
+        </div>
+        <div class="ws-form-error" id="wsResaError" style="display:none"></div>
+        <button class="ws-btn ws-btn-primary" id="wsResaLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Se connecter</button>
+      </div>
+      <!-- Step 2: Reservation form (hidden initially) -->
+      <div id="wsResaForm" style="display:none">
+        <div class="ws-resa-resident-card" id="wsResaResidentCard"></div>
+        <input type="hidden" id="wsResaResidentId">
+        <input type="hidden" id="wsResaDate">
+        <div class="ws-form-group">
+          <label>Repas</label>
+          <div class="ws-radio-group">
+            <label class="ws-radio-option active"><input type="radio" name="wsResaRepas" value="midi" checked> <i class="bi bi-sun"></i> Midi</label>
+            <label class="ws-radio-option"><input type="radio" name="wsResaRepas" value="soir"> <i class="bi bi-moon"></i> Soir</label>
+          </div>
+        </div>
+        <div class="ws-form-group">
+          <label>Nombre de personnes</label>
+          <select class="ws-input" id="wsResaNb">
+            <option value="1">1 personne</option><option value="2">2 personnes</option><option value="3">3 personnes</option><option value="4">4 personnes</option><option value="5">5 personnes</option>
+          </select>
+        </div>
+        <div class="ws-form-group">
+          <label>Remarques <small style="color:#888">(allergies, régime...)</small></label>
+          <textarea class="ws-input" id="wsResaRemarques" rows="2" placeholder="Ex: sans gluten, allergie noix..."></textarea>
+        </div>
+        <div class="ws-form-error" id="wsResaFormError" style="display:none"></div>
+        <button class="ws-btn ws-btn-primary" id="wsResaSubmitBtn"><i class="bi bi-check-circle"></i> Confirmer la réservation</button>
+      </div>
+      <!-- Step 3: Success -->
+      <div id="wsResaSuccess" style="display:none">
+        <div style="text-align:center;padding:2rem 0">
+          <i class="bi bi-check-circle-fill" style="font-size:3rem;color:var(--ws-green)"></i>
+          <h4 style="margin-top:1rem;color:var(--ws-green-dark)">Réservation confirmée !</h4>
+          <p style="color:#666">Vous recevrez un récapitulatif par email.</p>
+          <button class="ws-btn ws-btn-outline" id="wsResaCloseSuccess">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+    const DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const API = '/zerdatime/website/api.php';
+    let currentWeekOffset = 0;
+    let carouselPos = 0;
+    let menusCache = [];
+    let authCache = null; // { email, password, resident }
+
+    function getMonday(offset) {
+        const d = new Date();
+        const day = d.getDay();
+        d.setDate(d.getDate() - day + (day === 0 ? -6 : 1) + offset * 7);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function fmtDate(d) {
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    function fmtDateFr(d) {
+        return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    }
+    function esc(s) { const t = document.createElement('span'); t.textContent = s; return t.innerHTML; }
+
+    async function apiCall(action, data) {
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, ...data })
+        });
+        return res.json();
+    }
+
+    // ── Week nav ──
+    function updateWeekLabel() {
+        const mon = getMonday(currentWeekOffset);
+        const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+        const label = document.getElementById('wsMenuWeekLabel');
+        if (label) {
+            const weekLabel = currentWeekOffset === 0 ? 'Cette semaine' :
+                currentWeekOffset === 1 ? 'Semaine prochaine' :
+                'Semaine du ' + fmtDateFr(mon);
+            label.textContent = weekLabel + ' — ' + fmtDateFr(mon) + ' au ' + fmtDateFr(sun);
+        }
+    }
+
+    document.getElementById('wsMenuPrev')?.addEventListener('click', () => {
+        if (currentWeekOffset > 0) { currentWeekOffset--; carouselPos = 0; loadWeek(); }
+    });
+    document.getElementById('wsMenuNext')?.addEventListener('click', () => {
+        if (currentWeekOffset < 3) { currentWeekOffset++; carouselPos = 0; loadWeek(); }
+    });
+
+    // ── Carousel arrows ──
+    document.getElementById('wsCarouselLeft')?.addEventListener('click', () => slideCarousel(-1));
+    document.getElementById('wsCarouselRight')?.addEventListener('click', () => slideCarousel(1));
+
+    function slideCarousel(dir) {
+        carouselPos = Math.max(0, Math.min(carouselPos + dir, 3)); // max 7-4=3
+        updateCarouselPosition();
+    }
+
+    function updateCarouselPosition() {
+        const track = document.getElementById('wsCarouselTrack');
+        if (!track) return;
+        const cardWidth = track.firstElementChild?.offsetWidth || 280;
+        const gap = 16;
+        track.style.transform = 'translateX(-' + (carouselPos * (cardWidth + gap)) + 'px)';
+    }
+
+    // ── Load menus ──
+    async function loadWeek() {
+        updateWeekLabel();
+        const mon = getMonday(currentWeekOffset);
+        const res = await apiCall('get_menus_semaine', { date: fmtDate(mon) });
+        menusCache = res.menus || [];
+
+        const menusByKey = {};
+        menusCache.forEach(m => { menusByKey[m.date_jour+'_'+(m.repas||'midi')] = m; });
+
+        const track = document.getElementById('wsCarouselTrack');
+        if (!track) return;
+        const today = fmtDate(new Date());
+
+        track.innerHTML = '';
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(mon); d.setDate(d.getDate()+i);
+            const dateStr = fmtDate(d);
+            const isToday = dateStr === today;
+            const dayName = DAYS[d.getDay()];
+            const midi = menusByKey[dateStr+'_midi'];
+            const soir = menusByKey[dateStr+'_soir'];
+
+            const card = document.createElement('div');
+            card.className = 'ws-menu-day' + (isToday ? ' ws-menu-day--today' : '');
+
+            let headerExtra = isToday ? '<span class="ws-today-badge">Aujourd\'hui</span>' : '';
+            card.innerHTML = '<div class="ws-menu-day-header">' + esc(dayName) + ' ' + d.getDate()+'/'+(d.getMonth()+1) + headerExtra + '</div>'
+                + '<div class="ws-menu-day-body">'
+                + buildMealHtml('Midi', midi)
+                + buildMealHtml('Soir', soir)
+                + '<div class="ws-menu-reserve-wrap">'
+                + '<button class="ws-btn ws-btn-reserve" data-date="'+dateStr+'" data-day="'+esc(dayName)+' '+d.getDate()+'/'+(d.getMonth()+1)+'">'
+                + '<i class="bi bi-calendar-plus"></i> Réserver'
+                + '</button></div></div>';
+
+            track.appendChild(card);
+        }
+
+        // Reserve buttons
+        track.querySelectorAll('.ws-btn-reserve').forEach(btn => {
+            btn.addEventListener('click', () => openReservation(btn.dataset.date, btn.dataset.day));
+        });
+
+        updateCarouselPosition();
+    }
+
+    function buildMealHtml(label, menu) {
+        if (!menu) return '<div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">'+label+'</span> <em>Menu à venir</em></div>';
+        const items = [menu.entree, menu.plat, menu.accompagnement, menu.dessert].filter(Boolean).map(esc).join(' · ');
+        return '<div class="ws-menu-meal"><span class="ws-menu-type">'+label+'</span> '+items+'</div>';
+    }
+
+    // ── Reservation modal ──
+    function openReservation(dateStr, dayLabel) {
+        document.getElementById('wsResaDate').value = dateStr;
+        document.getElementById('wsResaTitle').innerHTML = '<i class="bi bi-calendar-check"></i> Réserver — ' + esc(dayLabel);
+
+        // Reset
+        document.getElementById('wsResaLogin').style.display = '';
+        document.getElementById('wsResaForm').style.display = 'none';
+        document.getElementById('wsResaSuccess').style.display = 'none';
+        document.getElementById('wsResaError').style.display = 'none';
+        document.getElementById('wsResaFormError').style.display = 'none';
+
+        // If already authenticated, skip login
+        if (authCache) {
+            showResaForm(authCache.resident);
+        } else {
+            document.getElementById('wsResaEmail').value = '';
+            document.getElementById('wsResaPassword').value = '';
+        }
+
+        document.getElementById('wsResaOverlay').style.display = 'flex';
+    }
+
+    function closeReservation() {
+        document.getElementById('wsResaOverlay').style.display = 'none';
+    }
+
+    document.getElementById('wsResaClose')?.addEventListener('click', closeReservation);
+    document.getElementById('wsResaCloseSuccess')?.addEventListener('click', closeReservation);
+    document.getElementById('wsResaOverlay')?.addEventListener('click', e => {
+        if (e.target.id === 'wsResaOverlay') closeReservation();
+    });
+
+    // Login
+    document.getElementById('wsResaLoginBtn')?.addEventListener('click', async () => {
+        const email = document.getElementById('wsResaEmail').value.trim();
+        const password = document.getElementById('wsResaPassword').value.trim();
+        const errEl = document.getElementById('wsResaError');
+
+        if (!email || !password) { errEl.textContent = 'Veuillez remplir tous les champs'; errEl.style.display = ''; return; }
+        errEl.style.display = 'none';
+
+        const btn = document.getElementById('wsResaLoginBtn');
+        btn.disabled = true; btn.textContent = 'Vérification...';
+
+        const res = await apiCall('famille_login', { email, password });
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
+
+        if (!res.success) {
+            errEl.textContent = res.message || 'Erreur de connexion';
+            errEl.style.display = '';
+            return;
+        }
+
+        authCache = { email, password, resident: res.resident };
+        showResaForm(res.resident);
+    });
+
+    function showResaForm(resident) {
+        document.getElementById('wsResaLogin').style.display = 'none';
+        document.getElementById('wsResaForm').style.display = '';
+        document.getElementById('wsResaResidentId').value = resident.id;
+
+        const initials = ((resident.prenom?.[0]||'')+(resident.nom?.[0]||'')).toUpperCase();
+        document.getElementById('wsResaResidentCard').innerHTML =
+            '<div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--ws-green-bg);border-radius:12px;margin-bottom:1rem">'
+            + '<div style="width:48px;height:48px;border-radius:50%;background:var(--ws-green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem">'+esc(initials)+'</div>'
+            + '<div><div style="font-weight:700;font-size:1rem">'+esc(resident.prenom+' '+resident.nom)+'</div>'
+            + '<div style="font-size:0.85rem;color:#666">Chambre '+esc(resident.chambre||'')+' — Étage '+esc(resident.etage||'')+'</div>'
+            + '<div style="font-size:0.8rem;color:#888">Correspondant: '+esc((resident.correspondant_prenom||'')+' '+(resident.correspondant_nom||''))+'</div>'
+            + '</div></div>';
+    }
+
+    // Radio toggle
+    document.querySelectorAll('#wsResaForm .ws-radio-option').forEach(opt => {
+        opt.querySelector('input')?.addEventListener('change', () => {
+            document.querySelectorAll('#wsResaForm .ws-radio-option').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+        });
+    });
+
+    // Submit reservation
+    document.getElementById('wsResaSubmitBtn')?.addEventListener('click', async () => {
+        if (!authCache) return;
+        const errEl = document.getElementById('wsResaFormError');
+        const btn = document.getElementById('wsResaSubmitBtn');
+
+        btn.disabled = true; btn.textContent = 'Envoi...';
+        errEl.style.display = 'none';
+
+        const res = await apiCall('famille_reserver', {
+            email: authCache.email,
+            password: authCache.password,
+            resident_id: document.getElementById('wsResaResidentId').value,
+            date_jour: document.getElementById('wsResaDate').value,
+            repas: document.querySelector('input[name="wsResaRepas"]:checked')?.value || 'midi',
+            nb_personnes: document.getElementById('wsResaNb').value,
+            remarques: document.getElementById('wsResaRemarques').value,
+        });
+
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirmer la réservation';
+
+        if (!res.success) {
+            errEl.textContent = res.message || 'Erreur';
+            errEl.style.display = '';
+            return;
+        }
+
+        document.getElementById('wsResaForm').style.display = 'none';
+        document.getElementById('wsResaSuccess').style.display = '';
+    });
+
+    // Init
+    loadWeek();
+})();
+</script>
 
 <!-- ═══ PROGRAMME ANIMATION ═══ -->
 <section class="ws-section ws-section-alt" id="programme-animation">

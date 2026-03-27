@@ -36,21 +36,29 @@ function admin_create_resident()
 
     $nom = Sanitize::text($params['nom'] ?? '', 100);
     $prenom = Sanitize::text($params['prenom'] ?? '', 100);
+    $ddn = Sanitize::date($params['date_naissance'] ?? '');
     $chambre = Sanitize::text($params['chambre'] ?? '', 20);
     $etage = Sanitize::text($params['etage'] ?? '', 20);
+    $corrNom = Sanitize::text($params['correspondant_nom'] ?? '', 100);
+    $corrPrenom = Sanitize::text($params['correspondant_prenom'] ?? '', 100);
+    $corrEmail = Sanitize::email($params['correspondant_email'] ?? '');
+    $corrTel = Sanitize::phone($params['correspondant_telephone'] ?? '');
     $isVip = (int) ($params['is_vip'] ?? 0);
     $menuSpecial = Sanitize::text($params['menu_special'] ?? '', 2000);
 
     if (!$nom || !$prenom) bad_request('Nom et prénom requis');
 
+    // Auto-generate code_acces = nom_lowercase + chambre
+    $code = strtolower(preg_replace('/[^a-zA-Z]/', '', $nom)) . ($chambre ?: '');
+
     $id = Uuid::v4();
     Db::exec(
-        "INSERT INTO residents (id, nom, prenom, chambre, etage, is_vip, menu_special)
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [$id, $nom, $prenom, $chambre ?: null, $etage ?: null, $isVip, $menuSpecial ?: null]
+        "INSERT INTO residents (id, nom, prenom, date_naissance, chambre, etage, correspondant_nom, correspondant_prenom, correspondant_email, correspondant_telephone, code_acces, is_vip, menu_special)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [$id, $nom, $prenom, $ddn ?: null, $chambre ?: null, $etage ?: null, $corrNom ?: null, $corrPrenom ?: null, $corrEmail ?: null, $corrTel ?: null, $code, $isVip, $menuSpecial ?: null]
     );
 
-    respond(['success' => true, 'id' => $id, 'message' => 'Résident créé']);
+    respond(['success' => true, 'id' => $id, 'code_acces' => $code, 'message' => 'Résident créé']);
 }
 
 function admin_update_resident()
@@ -63,17 +71,28 @@ function admin_update_resident()
 
     $nom = Sanitize::text($params['nom'] ?? '', 100);
     $prenom = Sanitize::text($params['prenom'] ?? '', 100);
+    $ddn = Sanitize::date($params['date_naissance'] ?? '');
     $chambre = Sanitize::text($params['chambre'] ?? '', 20);
     $etage = Sanitize::text($params['etage'] ?? '', 20);
+    $corrNom = Sanitize::text($params['correspondant_nom'] ?? '', 100);
+    $corrPrenom = Sanitize::text($params['correspondant_prenom'] ?? '', 100);
+    $corrEmail = Sanitize::email($params['correspondant_email'] ?? '');
+    $corrTel = Sanitize::phone($params['correspondant_telephone'] ?? '');
     $isVip = (int) ($params['is_vip'] ?? 0);
     $menuSpecial = Sanitize::text($params['menu_special'] ?? '', 2000);
 
     if (!$nom || !$prenom) bad_request('Nom et prénom requis');
 
+    $code = strtolower(preg_replace('/[^a-zA-Z]/', '', $nom)) . ($chambre ?: '');
+
     Db::exec(
-        "UPDATE residents SET nom = ?, prenom = ?, chambre = ?, etage = ?, is_vip = ?, menu_special = ?, updated_at = NOW()
+        "UPDATE residents SET nom = ?, prenom = ?, date_naissance = ?, chambre = ?, etage = ?,
+         correspondant_nom = ?, correspondant_prenom = ?, correspondant_email = ?, correspondant_telephone = ?,
+         code_acces = ?, is_vip = ?, menu_special = ?, updated_at = NOW()
          WHERE id = ?",
-        [$nom, $prenom, $chambre ?: null, $etage ?: null, $isVip, $menuSpecial ?: null, $id]
+        [$nom, $prenom, $ddn ?: null, $chambre ?: null, $etage ?: null,
+         $corrNom ?: null, $corrPrenom ?: null, $corrEmail ?: null, $corrTel ?: null,
+         $code, $isVip, $menuSpecial ?: null, $id]
     );
 
     respond(['success' => true, 'message' => 'Résident mis à jour']);

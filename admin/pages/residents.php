@@ -21,13 +21,15 @@
             <th>Prénom</th>
             <th>Chambre</th>
             <th>Étage</th>
+            <th>Correspondant</th>
+            <th>Code accès</th>
             <th>VIP</th>
             <th>Actif</th>
             <th></th>
           </tr>
         </thead>
         <tbody id="resTableBody">
-          <tr><td colspan="7" class="text-center text-muted py-3">Chargement...</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-3">Chargement...</td></tr>
         </tbody>
       </table>
     </div>
@@ -36,35 +38,67 @@
 
 <!-- Modal création/édition -->
 <div class="modal fade" id="resModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:500px">
-    <div class="modal-content">
-      <div class="modal-header">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:560px">
+    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+      <div class="modal-header" style="flex-shrink:0">
         <h5 class="modal-title" id="resModalTitle">Nouveau résident</h5>
         <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="flex:1;overflow-y:auto">
         <form id="resForm">
           <input type="hidden" id="resEditId">
+          <h6 class="text-muted small mb-2"><i class="bi bi-person"></i> Résident</h6>
           <div class="row g-2 mb-2">
-            <div class="col-6">
+            <div class="col-4">
               <label class="form-label">Nom</label>
               <input type="text" class="form-control" id="resNom" required>
             </div>
-            <div class="col-6">
+            <div class="col-4">
               <label class="form-label">Prénom</label>
               <input type="text" class="form-control" id="resPrenom" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Date naissance</label>
+              <input type="date" class="form-control" id="resDdn">
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-4">
+              <label class="form-label">Chambre</label>
+              <input type="text" class="form-control" id="resChambre">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Étage</label>
+              <input type="text" class="form-control" id="resEtage">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Code accès</label>
+              <input type="text" class="form-control" id="resCode" placeholder="Auto" readonly>
+            </div>
+          </div>
+          <hr class="my-2">
+          <h6 class="text-muted small mb-2"><i class="bi bi-person-lines-fill"></i> Correspondant / Tuteur</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label">Nom</label>
+              <input type="text" class="form-control" id="resCorrNom">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Prénom</label>
+              <input type="text" class="form-control" id="resCorrPrenom">
             </div>
           </div>
           <div class="row g-2 mb-2">
             <div class="col-6">
-              <label class="form-label">Chambre</label>
-              <input type="text" class="form-control" id="resChambre">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="resCorrEmail" placeholder="email@exemple.com">
             </div>
             <div class="col-6">
-              <label class="form-label">Étage</label>
-              <input type="text" class="form-control" id="resEtage">
+              <label class="form-label">Téléphone</label>
+              <input type="tel" class="form-control" id="resCorrTel">
             </div>
           </div>
+          <hr class="my-2">
           <div class="form-check form-switch mb-2">
             <input type="checkbox" class="form-check-input" id="resVip">
             <label class="form-check-label" for="resVip">Table VIP</label>
@@ -104,17 +138,20 @@
 
         tbody.innerHTML = '';
         if (!res.residents?.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Aucun résident</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">Aucun résident</td></tr>';
             return;
         }
 
         res.residents.forEach(r => {
             const tr = document.createElement('tr');
             if (!r.is_active) tr.style.opacity = '0.5';
-            tr.innerHTML = `<td>${escapeHtml(r.nom)}</td>
+            const corrName = [r.correspondant_prenom, r.correspondant_nom].filter(Boolean).join(' ');
+            tr.innerHTML = `<td><strong>${escapeHtml(r.nom)}</strong></td>
                 <td>${escapeHtml(r.prenom)}</td>
                 <td>${escapeHtml(r.chambre || '-')}</td>
                 <td>${escapeHtml(r.etage || '-')}</td>
+                <td>${corrName ? escapeHtml(corrName) + (r.correspondant_email ? '<br><small class="text-muted">' + escapeHtml(r.correspondant_email) + '</small>' : '') : '-'}</td>
+                <td>${r.code_acces ? '<code class="small">' + escapeHtml(r.code_acces) + '</code>' : '-'}</td>
                 <td>${r.is_vip == 1 ? '<span class="badge bg-warning text-dark">VIP</span>' : '-'}</td>
                 <td>${r.is_active == 1 ? '<span class="badge bg-success">Actif</span>' : '<span class="badge bg-secondary">Inactif</span>'}</td>
                 <td></td>`;
@@ -144,8 +181,14 @@
         document.getElementById('resEditId').value = r?.id || '';
         document.getElementById('resNom').value = r?.nom || '';
         document.getElementById('resPrenom').value = r?.prenom || '';
+        document.getElementById('resDdn').value = r?.date_naissance || '';
         document.getElementById('resChambre').value = r?.chambre || '';
         document.getElementById('resEtage').value = r?.etage || '';
+        document.getElementById('resCode').value = r?.code_acces || '';
+        document.getElementById('resCorrNom').value = r?.correspondant_nom || '';
+        document.getElementById('resCorrPrenom').value = r?.correspondant_prenom || '';
+        document.getElementById('resCorrEmail').value = r?.correspondant_email || '';
+        document.getElementById('resCorrTel').value = r?.correspondant_telephone || '';
         document.getElementById('resVip').checked = r?.is_vip == 1;
         document.getElementById('resMenuSpecial').value = r?.menu_special || '';
         document.getElementById('resMenuSpecialWrap').style.display = r?.is_vip == 1 ? 'block' : 'none';
@@ -159,8 +202,13 @@
         const data = {
             nom: document.getElementById('resNom').value,
             prenom: document.getElementById('resPrenom').value,
+            date_naissance: document.getElementById('resDdn').value,
             chambre: document.getElementById('resChambre').value,
             etage: document.getElementById('resEtage').value,
+            correspondant_nom: document.getElementById('resCorrNom').value,
+            correspondant_prenom: document.getElementById('resCorrPrenom').value,
+            correspondant_email: document.getElementById('resCorrEmail').value,
+            correspondant_telephone: document.getElementById('resCorrTel').value,
             is_vip: document.getElementById('resVip').checked ? 1 : 0,
             menu_special: document.getElementById('resMenuSpecial').value,
         };
