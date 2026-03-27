@@ -2,18 +2,32 @@
   <h1><i class="bi bi-receipt"></i> Commandes collaborateurs</h1>
 </div>
 
-<div class="d-flex align-items-center gap-2 mb-3">
-  <input type="date" class="form-control form-control-sm" id="crDate" style="max-width:180px">
-  <select class="form-select form-select-sm" id="crRepas" style="max-width:120px">
-    <option value="midi">Midi</option>
-    <option value="soir">Soir</option>
-  </select>
-  <button class="btn btn-sm btn-primary" id="crAddBtn"><i class="bi bi-plus-lg"></i> Ajouter commande</button>
-  <button class="btn btn-sm btn-outline-secondary ms-auto" id="crPrintBtn"><i class="bi bi-printer"></i> Imprimer</button>
+<!-- Stats + Ajouter sur la même ligne -->
+<div class="cr-stats-row">
+  <div class="cr-stat-card" id="crStatCouverts">
+    <div class="cr-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-people-fill"></i></div>
+    <div><div class="cr-stat-value">—</div><div class="cr-stat-label">Couverts</div></div>
+  </div>
+  <div class="cr-stat-card" id="crStatMenu">
+    <div class="cr-stat-icon" style="background:#B8C9D4;color:#3B4F6B"><i class="bi bi-egg-fried"></i></div>
+    <div><div class="cr-stat-value">—</div><div class="cr-stat-label">Menu</div></div>
+  </div>
+  <div class="cr-stat-card" id="crStatSalade">
+    <div class="cr-stat-icon" style="background:#D0C4D8;color:#5B4B6B"><i class="bi bi-flower1"></i></div>
+    <div><div class="cr-stat-value">—</div><div class="cr-stat-label">Salade</div></div>
+  </div>
+  <div class="cr-stat-add" id="crAddBtn">
+    <i class="bi bi-plus-lg"></i>
+    <span>Ajouter commande</span>
+  </div>
 </div>
 
-<!-- Stats badges -->
-<div class="d-flex gap-2 mb-3 flex-wrap" id="crStats"></div>
+<!-- Filtres -->
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <input type="date" class="form-control" id="crDate" style="max-width:180px;border-radius:8px;border:1.5px solid #E0DCD4;height:38px;font-size:.88rem">
+  <div class="zs-select" id="crRepasSelect" data-placeholder="Repas" style="width:130px"></div>
+  <button class="btn btn-sm btn-outline-secondary ms-auto" id="crPrintBtn" style="border-radius:8px;height:38px;padding:0 16px"><i class="bi bi-printer"></i> Imprimer</button>
+</div>
 
 <!-- Liste commandes -->
 <div id="crBody">
@@ -97,3 +111,32 @@
     </div>
   </div>
 </div>
+
+<style>
+.cr-stats-row {
+  display: flex; align-items: stretch; gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.cr-stat-card {
+  display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 150px;
+  padding: 1rem 1.25rem;
+  background: #fff; border: 1px solid #E8E5E0; border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s;
+}
+.cr-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.cr-stat-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+.cr-stat-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; color: #1A1A18; }
+.cr-stat-label { font-size: .75rem; color: #6b7280; margin-top: 2px; }
+.cr-stat-add {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 180px; padding: 1rem 1.25rem;
+  background: #191918; color: #fff; border-radius: 16px;
+  font-weight: 600; font-size: .9rem; cursor: pointer;
+  transition: opacity 0.25s ease;
+}
+.cr-stat-add:hover { opacity: 0.8; }
+.cr-stat-add i { font-size: 1.2rem; }
+</style>
