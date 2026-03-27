@@ -1004,14 +1004,17 @@ a:hover { color: var(--ws-green-hover); }
 .ws-menu-nav-label { font-weight: 600; font-size: .95rem; color: var(--ws-text); min-width: 300px; text-align: center; }
 
 /* ── Carousel ── */
-.ws-carousel-wrap { position: relative; overflow: hidden; }
-.ws-carousel-viewport { overflow: hidden; }
+.ws-carousel-wrap { position: relative; padding: 0 28px; }
+.ws-carousel-viewport { overflow: hidden; padding: 8px 0; }
 .ws-carousel-track {
-  display: flex; gap: 16px; transition: transform 0.4s ease;
+  display: flex; transition: transform 0.4s ease; align-items: stretch;
 }
 .ws-carousel-track .ws-menu-day {
-  min-width: calc(25% - 12px); flex-shrink: 0;
+  width: 25%; min-width: 25%; flex-shrink: 0; padding: 0 8px; box-sizing: border-box;
+  display: flex; flex-direction: column;
 }
+.ws-carousel-track .ws-menu-day-body { flex: 1; display: flex; flex-direction: column; }
+.ws-carousel-track .ws-menu-reserve-wrap { margin-top: auto; }
 .ws-carousel-arrow {
   position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
   width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ws-border);
@@ -1020,8 +1023,8 @@ a:hover { color: var(--ws-green-hover); }
   transition: all 0.2s;
 }
 .ws-carousel-arrow:hover { border-color: var(--ws-green); color: var(--ws-green); }
-.ws-carousel-arrow-left { left: -8px; }
-.ws-carousel-arrow-right { right: -8px; }
+.ws-carousel-arrow-left { left: 0; }
+.ws-carousel-arrow-right { right: 0; }
 
 /* ── Day card enhancements ── */
 .ws-menu-day--today { border: 2px solid var(--ws-green); }
@@ -1082,18 +1085,33 @@ a:hover { color: var(--ws-green-hover); }
 .ws-radio-group { display: flex; gap: .5rem; }
 .ws-radio-option {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: .4rem;
-  padding: 10px; border: 2px solid var(--ws-border); border-radius: 10px;
+  padding: 12px 10px; border: 2px solid var(--ws-border); border-radius: 10px;
   cursor: pointer; font-weight: 600; font-size: .88rem; transition: all 0.15s;
+  position: relative;
 }
 .ws-radio-option input { display: none; }
 .ws-radio-option.active { border-color: var(--ws-green); background: var(--ws-green-bg); color: var(--ws-green-dark); }
+.ws-radio-check {
+  position: absolute; top: 6px; right: 6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ws-green); color: #fff;
+  display: none; align-items: center; justify-content: center;
+  font-size: .7rem;
+}
+.ws-radio-option.active .ws-radio-check { display: flex; }
+
+/* ── Modal footer ── */
+.ws-modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: .5rem;
+  padding: 1rem 1.5rem; border-top: 1px solid var(--ws-border); flex-shrink: 0;
+}
 
 /* ── Responsive carousel ── */
 @media (max-width: 992px) {
-  .ws-carousel-track .ws-menu-day { min-width: calc(50% - 8px); }
+  .ws-carousel-track .ws-menu-day { width: 50%; min-width: 50%; }
 }
 @media (max-width: 576px) {
-  .ws-carousel-track .ws-menu-day { min-width: 100%; }
+  .ws-carousel-track .ws-menu-day { width: 100%; min-width: 100%; }
   .ws-carousel-arrow { display: none; }
   .ws-carousel-viewport { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
   .ws-carousel-track { transition: none; }

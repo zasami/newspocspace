@@ -357,7 +357,6 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
           <input type="password" class="ws-input" id="wsResaPassword" placeholder="Ex: 12031935">
         </div>
         <div class="ws-form-error" id="wsResaError" style="display:none"></div>
-        <button class="ws-btn ws-btn-primary" id="wsResaLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Se connecter</button>
       </div>
       <!-- Step 2: Reservation form (hidden initially) -->
       <div id="wsResaForm" style="display:none">
@@ -367,8 +366,16 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         <div class="ws-form-group">
           <label>Repas</label>
           <div class="ws-radio-group">
-            <label class="ws-radio-option active"><input type="radio" name="wsResaRepas" value="midi" checked> <i class="bi bi-sun"></i> Midi</label>
-            <label class="ws-radio-option"><input type="radio" name="wsResaRepas" value="soir"> <i class="bi bi-moon"></i> Soir</label>
+            <label class="ws-radio-option active">
+              <input type="radio" name="wsResaRepas" value="midi" checked>
+              <i class="bi bi-sun"></i> Midi
+              <span class="ws-radio-check"><i class="bi bi-check-lg"></i></span>
+            </label>
+            <label class="ws-radio-option">
+              <input type="radio" name="wsResaRepas" value="soir">
+              <i class="bi bi-moon-stars"></i> Soir
+              <span class="ws-radio-check"><i class="bi bi-check-lg"></i></span>
+            </label>
           </div>
         </div>
         <div class="ws-form-group">
@@ -382,7 +389,6 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
           <textarea class="ws-input" id="wsResaRemarques" rows="2" placeholder="Ex: sans gluten, allergie noix..."></textarea>
         </div>
         <div class="ws-form-error" id="wsResaFormError" style="display:none"></div>
-        <button class="ws-btn ws-btn-primary" id="wsResaSubmitBtn"><i class="bi bi-check-circle"></i> Confirmer la réservation</button>
       </div>
       <!-- Step 3: Success -->
       <div id="wsResaSuccess" style="display:none">
@@ -390,9 +396,15 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
           <i class="bi bi-check-circle-fill" style="font-size:3rem;color:var(--ws-green)"></i>
           <h4 style="margin-top:1rem;color:var(--ws-green-dark)">Réservation confirmée !</h4>
           <p style="color:#666">Vous recevrez un récapitulatif par email.</p>
-          <button class="ws-btn ws-btn-outline" id="wsResaCloseSuccess">Fermer</button>
         </div>
       </div>
+    </div>
+    <!-- Footer fixe avec boutons selon l'étape -->
+    <div class="ws-modal-footer" id="wsResaFooter">
+      <button class="ws-btn ws-btn-outline" id="wsResaFooterCancel">Annuler</button>
+      <button class="ws-btn ws-btn-primary" id="wsResaLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Se connecter</button>
+      <button class="ws-btn ws-btn-primary" id="wsResaSubmitBtn" style="display:none"><i class="bi bi-check-circle"></i> Confirmer la réservation</button>
+      <button class="ws-btn ws-btn-outline" id="wsResaCloseSuccess" style="display:none">Fermer</button>
     </div>
   </div>
 </div>
@@ -456,16 +468,15 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     document.getElementById('wsCarouselRight')?.addEventListener('click', () => slideCarousel(1));
 
     function slideCarousel(dir) {
-        carouselPos = Math.max(0, Math.min(carouselPos + dir, 3)); // max 7-4=3
+        carouselPos = Math.max(0, Math.min(carouselPos + dir, 3)); // 7 days - 4 visible = 3 max
         updateCarouselPosition();
     }
 
     function updateCarouselPosition() {
         const track = document.getElementById('wsCarouselTrack');
         if (!track) return;
-        const cardWidth = track.firstElementChild?.offsetWidth || 280;
-        const gap = 16;
-        track.style.transform = 'translateX(-' + (carouselPos * (cardWidth + gap)) + 'px)';
+        // Each card = 25% width, slide by 25% per step
+        track.style.transform = 'translateX(-' + (carouselPos * 25) + '%)';
     }
 
     // ── Load menus ──
@@ -522,23 +533,36 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     }
 
     // ── Reservation modal ──
+    // ── Footer buttons visibility helper ──
+    function setModalStep(step) {
+        const loginBtn = document.getElementById('wsResaLoginBtn');
+        const submitBtn = document.getElementById('wsResaSubmitBtn');
+        const cancelBtn = document.getElementById('wsResaFooterCancel');
+        const closeBtn = document.getElementById('wsResaCloseSuccess');
+
+        loginBtn.style.display = step === 'login' ? '' : 'none';
+        submitBtn.style.display = step === 'form' ? '' : 'none';
+        cancelBtn.style.display = step === 'success' ? 'none' : '';
+        closeBtn.style.display = step === 'success' ? '' : 'none';
+    }
+
     function openReservation(dateStr, dayLabel) {
         document.getElementById('wsResaDate').value = dateStr;
         document.getElementById('wsResaTitle').innerHTML = '<i class="bi bi-calendar-check"></i> Réserver — ' + esc(dayLabel);
 
-        // Reset
         document.getElementById('wsResaLogin').style.display = '';
         document.getElementById('wsResaForm').style.display = 'none';
         document.getElementById('wsResaSuccess').style.display = 'none';
         document.getElementById('wsResaError').style.display = 'none';
         document.getElementById('wsResaFormError').style.display = 'none';
 
-        // If already authenticated, skip login
         if (authCache) {
             showResaForm(authCache.resident);
+            setModalStep('form');
         } else {
             document.getElementById('wsResaEmail').value = '';
             document.getElementById('wsResaPassword').value = '';
+            setModalStep('login');
         }
 
         document.getElementById('wsResaOverlay').style.display = 'flex';
@@ -549,6 +573,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     }
 
     document.getElementById('wsResaClose')?.addEventListener('click', closeReservation);
+    document.getElementById('wsResaFooterCancel')?.addEventListener('click', closeReservation);
     document.getElementById('wsResaCloseSuccess')?.addEventListener('click', closeReservation);
     document.getElementById('wsResaOverlay')?.addEventListener('click', e => {
         if (e.target.id === 'wsResaOverlay') closeReservation();
@@ -577,6 +602,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 
         authCache = { email, password, resident: res.resident };
         showResaForm(res.resident);
+        setModalStep('form');
     });
 
     function showResaForm(resident) {
@@ -631,6 +657,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 
         document.getElementById('wsResaForm').style.display = 'none';
         document.getElementById('wsResaSuccess').style.display = '';
+        setModalStep('success');
     });
 
     // Init
