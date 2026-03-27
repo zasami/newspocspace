@@ -417,6 +417,12 @@ a:hover { color: var(--ws-green-hover); }
   background: var(--ws-surface);
   color: var(--ws-text);
   border: 1px solid var(--ws-border);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.ws-btn-outline:hover {
+  background: rgba(46,125,50,0.08);
+  border-color: rgba(46,125,50,0.3);
+  opacity: 1;
 }
 
 /* Hero stats */
@@ -1175,7 +1181,7 @@ a:hover { color: var(--ws-green-hover); }
   border: none; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center;
 }
 .ws-btn-primary { background: var(--ws-green); color: #fff; }
-.ws-btn-outline { background: none; border: 1.5px solid var(--ws-border); color: var(--ws-text); }
+/* ws-btn-outline already defined globally */
 .ws-radio-group { display: flex; gap: .5rem; }
 .ws-radio-option {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: .4rem;
