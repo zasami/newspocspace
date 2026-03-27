@@ -242,7 +242,7 @@ window.__ZT__ = {
   tempPasswordExpires: <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>,
   appUrl: '<?= APP_URL ?>',
   deniedPerms: <?= json_encode($deniedPerms, JSON_HEX_TAG) ?>,
-  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
+  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine', 'cuisine-home' => 'Tableau de bord cuisine'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
 };
 </script>
 <script nonce="<?= $cspNonce ?>" src="assets/js/vendor/bootstrap.bundle.min.js"></script>

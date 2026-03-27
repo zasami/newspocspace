@@ -25,6 +25,7 @@ const moduleMap = {
     'covoiturage': () => import('./modules/covoiturage.js'),
     'repartition': () => import('./modules/repartition.js'),
     'cuisine':    () => import('./modules/cuisine.js'),
+    'cuisine-home':         () => import('./modules/cuisine-home.js'),
     'cuisine-menus':        () => import('./modules/cuisine-menus.js'),
     'cuisine-reservations': () => import('./modules/cuisine-reservations.js'),
     'cuisine-famille':      () => import('./modules/cuisine-famille.js'),
@@ -111,9 +112,9 @@ function parseRoute() {
     const parts = path.split('/').filter(Boolean);
     let pageId = parts[0] || 'home';
 
-    // External employees: redirect home → cuisine-menus
+    // External employees: redirect home → cuisine-home (dashboard cuisine)
     if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
-        pageId = 'cuisine-menus';
+        pageId = 'cuisine-home';
     }
     const params = {};
     if (parts.length > 1) params.slug = parts[1];
