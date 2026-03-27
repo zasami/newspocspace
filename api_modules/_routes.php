@@ -67,4 +67,11 @@ return [
     'repartition' => [
         'get_repartition',
     ],
+    'cuisine' => [
+        'cuisine_get_menus_semaine', 'cuisine_save_menu', 'cuisine_delete_menu',
+        'cuisine_get_reservations_collab',
+        'cuisine_get_residents', 'cuisine_search_visiteurs', 'cuisine_save_visiteur',
+        'cuisine_get_reservations_famille', 'cuisine_save_reservation_famille', 'cuisine_delete_reservation_famille',
+        'cuisine_get_vip', 'cuisine_save_vip',
+    ],
 ];

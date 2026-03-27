@@ -2848,3 +2848,45 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .zt-sync-progress-fill { height: 100%; background: var(--zt-teal, #2a9d8f); border-radius: 2px; transition: width .3s ease; width: 0; }
 .zt-sync-bar.zt-sync-success { background: #16a34a; }
 .zt-sync-bar.zt-sync-warning { background: #d97706; }
+
+/* ═══════════════════════════════════════
+   CUISINE PAGE
+   ═══════════════════════════════════════ */
+.cuis-tabs .nav-link { font-size: 0.88rem; padding: 0.5rem 1rem; }
+.cuis-tabs .nav-link.active { font-weight: 600; }
+
+/* Menu saisie - day cards */
+.cuis-day-card { border: 1px solid var(--zt-border, #e0e0e0); border-radius: var(--zt-radius-sm, 8px); margin-bottom: 0.75rem; overflow: hidden; }
+.cuis-day-header { background: var(--zt-bg-subtle, #f8f9fa); padding: 0.5rem 0.75rem; font-weight: 600; font-size: 0.88rem; border-bottom: 1px solid var(--zt-border, #e0e0e0); }
+.cuis-menu-section { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--zt-border-light, #f0f0f0); }
+.cuis-menu-section:last-child { border-bottom: none; }
+.cuis-repas-label { font-size: 0.78rem; font-weight: 600; color: var(--zt-text-muted, #888); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+.cuis-menu-form { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.cuis-menu-input { flex: 1; min-width: 100px; font-size: 0.82rem; }
+.cuis-menu-btn-row { display: flex; gap: 0.25rem; margin-left: auto; }
+
+/* Collab summary */
+.cuis-collab-summary { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+/* Autocomplete */
+.cuis-autocomplete-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--zt-border, #e0e0e0); border-radius: var(--zt-radius-sm, 6px); background: var(--zt-bg, #fff); position: relative; z-index: 10; }
+.cuis-autocomplete-list:empty { display: none; }
+.cuis-autocomplete-item { padding: 0.45rem 0.75rem; cursor: pointer; font-size: 0.85rem; border-bottom: 1px solid var(--zt-border-light, #f0f0f0); }
+.cuis-autocomplete-item:hover { background: var(--zt-bg-subtle, #f0f7f5); }
+.cuis-autocomplete-item:last-child { border-bottom: none; }
+
+/* VIP cards */
+.cuis-vip-card { border: 1px solid var(--zt-border, #e0e0e0); border-radius: var(--zt-radius-sm, 8px); padding: 0.75rem; margin-bottom: 0.75rem; }
+.cuis-vip-header { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.cuis-vip-header .btn { margin-left: auto; }
+
+/* Table */
+.cuis-table { font-size: 0.85rem; }
+.cuis-table th { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* Print-friendly collab */
+@media print {
+    .fe-sidebar, .fe-topbar, .cuis-tabs, .page-header, .card-header .btn { display: none !important; }
+    .card { border: none !important; box-shadow: none !important; }
+    .cuis-table { font-size: 11px; }
+}

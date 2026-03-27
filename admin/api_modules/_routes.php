@@ -8,6 +8,7 @@ return [
         'admin_update_user', 'admin_toggle_user', 'admin_reset_user_password',
         'admin_upload_user_avatar', 'admin_delete_user_avatar', 'admin_flag_photo',
         'admin_delete_user_permanent',
+        'admin_get_user_permissions', 'admin_save_user_permissions',
     ],
     'planning' => [
         'admin_get_planning', 'admin_save_assignation', 'admin_delete_assignation',
@@ -106,6 +107,9 @@ return [
     ],
     'roadmap' => [
         'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
+    ],
+    'residents' => [
+        'admin_get_residents', 'admin_create_resident', 'admin_update_resident', 'admin_toggle_resident',
     ],
     'menus' => [
         'admin_get_menus', 'admin_save_menu', 'admin_delete_menu',

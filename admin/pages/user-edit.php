@@ -111,6 +111,14 @@ if (!$userId) {
       </div>
     </div>
 
+    <!-- Accès zerdaTime -->
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-shield-check"></i> Accès zerdaTime</h6></div>
+      <div class="card-body" id="permissionsPanel">
+        <p class="text-muted small">Chargement...</p>
+      </div>
+    </div>
+
     <!-- Danger zone -->
     <div class="card border-danger border-opacity-25">
       <div class="card-header bg-danger bg-opacity-10"><h6 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle"></i> Zone dangereuse</h6></div>
@@ -241,6 +249,9 @@ async function initUsereditPage() {
         }
     });
 
+    // ── Permissions ──
+    await loadPermissions(id);
+
     // ── Avatar ──
     const avatarPreview = document.getElementById('avatarPreview');
     const avatarInitials = document.getElementById('avatarInitials');
@@ -312,6 +323,97 @@ async function initUsereditPage() {
             showToast('Photo supprimée', 'success');
         }
     });
+}
+
+async function loadPermissions(userId) {
+    const panel = document.getElementById('permissionsPanel');
+    if (!panel) return;
+
+    const res = await adminApiPost('admin_get_user_permissions', { user_id: userId });
+    if (!res.success || !res.permissions) {
+        panel.innerHTML = '<p class="text-danger small">Erreur chargement permissions</p>';
+        return;
+    }
+
+    const perms = res.permissions;
+    const groups = {
+        'Pages': Object.entries(perms).filter(([k]) => k.startsWith('page_')),
+        'Cuisine': Object.entries(perms).filter(([k]) => k.startsWith('cuisine_')),
+    };
+
+    panel.innerHTML = '';
+
+    // Presets
+    const presetRow = document.createElement('div');
+    presetRow.className = 'mb-3 d-flex gap-1 flex-wrap';
+    const presets = [
+        { label: 'Standard (tout)', fn: () => setAll(true) },
+        { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_emails']) },
+        { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_emails']) },
+    ];
+    presets.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary btn-sm';
+        btn.textContent = p.label;
+        btn.addEventListener('click', p.fn);
+        presetRow.appendChild(btn);
+    });
+    panel.appendChild(presetRow);
+
+    // Groups
+    for (const [groupName, entries] of Object.entries(groups)) {
+        const h = document.createElement('div');
+        h.className = 'fw-semibold small mb-1 mt-2';
+        h.textContent = groupName;
+        panel.appendChild(h);
+
+        entries.forEach(([key, info]) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'form-check form-switch';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.className = 'form-check-input';
+            input.id = 'perm_' + key;
+            input.dataset.key = key;
+            input.checked = info.granted === 1;
+
+            const label = document.createElement('label');
+            label.className = 'form-check-label small';
+            label.htmlFor = input.id;
+            label.textContent = info.label;
+
+            wrap.appendChild(input);
+            wrap.appendChild(label);
+            panel.appendChild(wrap);
+        });
+    }
+
+    // Save button
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn btn-primary btn-sm mt-3';
+    saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Sauvegarder les accès';
+    saveBtn.addEventListener('click', async () => {
+        const data = {};
+        panel.querySelectorAll('input[data-key]').forEach(el => {
+            data[el.dataset.key] = el.checked ? 1 : 0;
+        });
+        const r = await adminApiPost('admin_save_user_permissions', { user_id: userId, permissions: data });
+        showToast(r.success ? 'Accès mis à jour' : (r.message || 'Erreur'), r.success ? 'success' : 'error');
+    });
+    panel.appendChild(saveBtn);
+
+    function setAll(val) {
+        panel.querySelectorAll('input[data-key]').forEach(el => { el.checked = val; });
+    }
+
+    function applyPreset(allowed) {
+        panel.querySelectorAll('input[data-key]').forEach(el => {
+            el.checked = allowed.includes(el.dataset.key);
+        });
+    }
 }
 
 window.initUsereditPage = initUsereditPage;

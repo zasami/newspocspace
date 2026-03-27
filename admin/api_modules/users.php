@@ -356,6 +356,34 @@ function admin_reset_user_password()
     ]);
 }
 
+function admin_get_user_permissions()
+{
+    global $params;
+    require_admin();
+
+    $userId = $params['user_id'] ?? '';
+    if (!$userId) bad_request('user_id requis');
+
+    respond(['success' => true, 'permissions' => Permission::getAll($userId)]);
+}
+
+function admin_save_user_permissions()
+{
+    global $params;
+    require_admin();
+
+    $userId = $params['user_id'] ?? '';
+    if (!$userId) bad_request('user_id requis');
+
+    $perms = $params['permissions'] ?? [];
+    if (!is_array($perms)) bad_request('permissions doit être un objet');
+
+    Permission::setForUser($userId, $perms);
+
+    // Update session if the target user is currently logged in (will take effect on next request)
+    respond(['success' => true, 'message' => 'Permissions mises à jour']);
+}
+
 // DEV ONLY — suppression définitive d'un utilisateur (à retirer après tests)
 function admin_delete_user_permanent()
 {

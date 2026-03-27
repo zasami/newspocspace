@@ -66,7 +66,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -121,6 +121,7 @@ $pageLabels = [
     'import-export' => 'Import / Export',
     'changements'   => 'Changements d\'horaire',
     'roadmap'       => 'Roadmap',
+    'residents'     => 'Résidents',
 ];
 
 // Sidebar with categories
@@ -152,6 +153,7 @@ $sidebarCategories = [
             'users'    => ['label' => 'Collaborateurs',      'icon' => 'people'],
             'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
             'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
+            'residents' => ['label' => 'Résidents',          'icon' => 'person-badge'],
         ],
     ],
     'outils' => [
