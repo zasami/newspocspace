@@ -146,3 +146,35 @@ function admin_get_reservations_jour()
 
     respond(['success' => true, 'reservations' => $reservations, 'date' => $dateJour]);
 }
+
+function admin_get_reservations_famille()
+{
+    require_responsable();
+    global $params;
+
+    $dateJour = Sanitize::date($params['date'] ?? date('Y-m-d'));
+    $repas = in_array($params['repas'] ?? '', ['midi', 'soir']) ? $params['repas'] : 'midi';
+
+    $reservations = Db::fetchAll(
+        "SELECT rf.*, r.nom AS resident_nom, r.prenom AS resident_prenom, r.chambre,
+                v.nom AS visiteur_nom_ref, v.prenom AS visiteur_prenom_ref, v.relation,
+                u.prenom AS created_prenom, u.nom AS created_nom
+         FROM reservations_famille rf
+         JOIN residents r ON r.id = rf.resident_id
+         LEFT JOIN visiteurs v ON v.id = rf.visiteur_id
+         LEFT JOIN users u ON u.id = rf.created_by
+         WHERE rf.date_jour = ? AND rf.repas = ? AND rf.statut = 'confirmee'
+         ORDER BY r.nom, r.prenom",
+        [$dateJour, $repas]
+    );
+
+    $total = array_sum(array_column($reservations, 'nb_personnes'));
+
+    respond([
+        'success' => true,
+        'reservations' => $reservations,
+        'total_personnes' => $total,
+        'date' => $dateJour,
+        'repas' => $repas,
+    ]);
+}

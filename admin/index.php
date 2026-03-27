@@ -66,7 +66,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'cuisine', 'reservations'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -83,6 +83,8 @@ $topbarPlaceholders = [
     'todos'     => 'Rechercher une tâche...',
     'notes'     => 'Rechercher une note...',
     'pv'        => 'Rechercher un procès-verbal...',
+    'cuisine'   => 'Rechercher un menu...',
+    'reservations' => 'Rechercher une réservation...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher un collaborateur...';
 
@@ -122,6 +124,8 @@ $pageLabels = [
     'changements'   => 'Changements d\'horaire',
     'roadmap'       => 'Roadmap',
     'residents'     => 'Résidents',
+    'cuisine'       => 'Cuisine — Menus',
+    'reservations'  => 'Réservations repas',
 ];
 
 // Sidebar with categories
@@ -154,6 +158,8 @@ $sidebarCategories = [
             'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
             'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
             'residents' => ['label' => 'Résidents',          'icon' => 'person-badge'],
+            'cuisine'      => ['label' => 'Menus',               'icon' => 'egg-fried'],
+            'reservations' => ['label' => 'Réservations repas',  'icon' => 'calendar-check'],
         ],
     ],
     'outils' => [

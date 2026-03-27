@@ -114,5 +114,6 @@ return [
     'menus' => [
         'admin_get_menus', 'admin_save_menu', 'admin_delete_menu',
         'admin_get_menu_reservations', 'admin_get_reservations_jour',
+        'admin_get_reservations_famille',
     ],
 ];
