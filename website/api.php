@@ -117,29 +117,24 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Une réservation existe déjà pour ce résident à cette date']);
         }
 
-        // Find or create a user for this correspondent
-        $corrEmail = $email;
-        $corrUser = Db::fetch("SELECT id FROM users WHERE email = ?", [$corrEmail]);
-        if (!$corrUser) {
-            $corrUserId = Uuid::v4();
-            $corrNom = $resident['correspondant_nom'] ?? '';
-            $corrPrenom = $resident['correspondant_prenom'] ?? '';
+        // Find or create correspondent
+        $corr = Db::fetch("SELECT id FROM correspondants WHERE email = ?", [$email]);
+        if (!$corr) {
+            $corrId = Uuid::v4();
             Db::exec(
-                "INSERT INTO users (id, email, password, nom, prenom, role, type_employe, is_active)
-                 VALUES (?, ?, ?, ?, ?, 'collaborateur', 'externe', 1)",
-                [$corrUserId, $corrEmail, password_hash('famille-' . bin2hex(random_bytes(8)), PASSWORD_DEFAULT),
-                 $corrNom, $corrPrenom]
+                "INSERT INTO correspondants (id, email, nom, prenom, resident_id) VALUES (?, ?, ?, ?, ?)",
+                [$corrId, $email, $resident['correspondant_nom'] ?? '', $resident['correspondant_prenom'] ?? '', $residentId]
             );
         } else {
-            $corrUserId = $corrUser['id'];
+            $corrId = $corr['id'];
         }
 
         $id = Uuid::v4();
         $visiteurNom = trim(($resident['correspondant_prenom'] ?? '') . ' ' . ($resident['correspondant_nom'] ?? ''));
         Db::exec(
-            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques, created_by)
+            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques, correspondant_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [$id, $dateJour, $repas, $residentId, $visiteurNom, $nbPersonnes, $remarques, $corrUserId]
+            [$id, $dateJour, $repas, $residentId, $visiteurNom, $nbPersonnes, $remarques, $corrId]
         );
 
         respond(['success' => true, 'message' => 'Réservation confirmée']);
