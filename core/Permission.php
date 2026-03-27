@@ -48,6 +48,10 @@ class Permission
         'documents'      => 'page_documents',
         'fiches-salaire' => 'page_fiches_salaire',
         'cuisine'        => 'page_cuisine',
+        'cuisine-menus'        => 'cuisine_saisie_menu',
+        'cuisine-reservations' => 'cuisine_reservations_collab',
+        'cuisine-famille'      => 'cuisine_reservations_famille',
+        'cuisine-vip'          => 'cuisine_table_vip',
     ];
 
     /**

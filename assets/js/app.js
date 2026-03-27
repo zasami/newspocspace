@@ -25,6 +25,10 @@ const moduleMap = {
     'covoiturage': () => import('./modules/covoiturage.js'),
     'repartition': () => import('./modules/repartition.js'),
     'cuisine':    () => import('./modules/cuisine.js'),
+    'cuisine-menus':        () => import('./modules/cuisine-menus.js'),
+    'cuisine-reservations': () => import('./modules/cuisine-reservations.js'),
+    'cuisine-famille':      () => import('./modules/cuisine-famille.js'),
+    'cuisine-vip':          () => import('./modules/cuisine-vip.js'),
 };
 
 let currentModule = null;
@@ -107,9 +111,9 @@ function parseRoute() {
     const parts = path.split('/').filter(Boolean);
     let pageId = parts[0] || 'home';
 
-    // External employees: redirect home → cuisine
+    // External employees: redirect home → cuisine-menus
     if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
-        pageId = 'cuisine';
+        pageId = 'cuisine-menus';
     }
     const params = {};
     if (parts.length > 1) params.slug = parts[1];

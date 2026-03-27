@@ -51,10 +51,13 @@ $sidebarNav = [
             'messages'    => ['label' => 'Messages',        'icon' => 'chat-dots'],
         ],
     ],
-    'services' => [
-        'label' => 'Services',
+    'cuisine' => [
+        'label' => 'Cuisine',
         'items' => [
-            'cuisine'   => ['label' => 'Cuisine',          'icon' => 'egg-fried'],
+            'cuisine-menus'    => ['label' => 'Menus',                'icon' => 'journal-text'],
+            'cuisine-reservations' => ['label' => 'Réservations collab', 'icon' => 'people'],
+            'cuisine-famille'  => ['label' => 'Réservations famille', 'icon' => 'house-heart'],
+            'cuisine-vip'      => ['label' => 'Table VIP',           'icon' => 'star'],
         ],
     ],
     'info' => [
