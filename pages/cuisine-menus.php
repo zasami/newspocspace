@@ -74,28 +74,25 @@
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1rem;
 }
+/* Card — same as admin .card */
 .cm-card {
-  position: relative;
   background: var(--zt-bg-card, #fff);
-  border: 1px solid var(--zt-border-light, #e5e7eb);
-  border-radius: 12px;
+  border: 1px solid #E8E5E0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
   overflow: hidden;
-  transition: all 0.2s ease;
-  padding-left: 4px;
+  transition: box-shadow 0.2s ease;
 }
-.cm-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: #B8C9D4; border-radius: 12px 0 0 12px;
-}
-.cm-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); border-color: #B8C9D4; }
-.cm-card.is-today::before { background: #2d4a43; }
+.cm-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 .cm-card.is-today { border-color: #bcd2cb; }
+/* Card header — same as admin .card-header */
 .cm-card-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 1rem 0.6rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #E8E5E0;
 }
-.cm-card-day { font-weight: 700; font-size: 0.92rem; color: #1a1a1a; }
-.cm-card-body { padding: 0 1rem 0.75rem; }
+.cm-card-day { font-weight: 700; font-size: 0.92rem; color: #1A1A18; }
+.cm-card-body { padding: 1rem 1.25rem; }
 
 /* Meal blocks */
 .cm-meal { margin-bottom: 0.75rem; }
@@ -108,15 +105,12 @@
 }
 .cm-meal-label.midi { background: #bcd2cb; color: #2d4a43; }
 .cm-meal-label.soir { background: #D0C4D8; color: #5B4B6B; }
-.cm-meal-items { font-size: 0.84rem; color: #555; line-height: 1.6; margin-top: 0.3rem; }
-.cm-meal-items strong { color: #1a1a1a; font-weight: 600; }
-.cm-meal-empty {
-  font-size: 0.82rem; color: #aaa; font-style: italic;
-  padding: 6px 0;
-}
+.cm-meal-items { font-size: 0.875rem; color: #555; line-height: 1.6; margin-top: 0.3rem; }
+.cm-meal-items strong { color: #1A1A18; font-weight: 600; }
+.cm-meal-empty { font-size: 0.82rem; color: #aaa; font-style: italic; padding: 6px 0; }
 .cm-meal-remark {
   font-size: 0.75rem; color: #888; font-style: italic; margin-top: 4px;
-  padding: 4px 8px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;
+  padding: 4px 8px; background: #f9fafb; border-radius: 6px; border: 1px solid #E8E5E0;
 }
 .cm-meal-stats {
   display: inline-flex; align-items: center; gap: 3px;
@@ -124,9 +118,9 @@
   background: #B8C9D4; color: #3B4F6B;
   padding: 2px 8px; border-radius: 10px; margin-left: 6px;
 }
-.cm-divider { border: none; border-top: 1px dashed #e5e7eb; margin: 0.6rem 0; }
+.cm-divider { border: none; border-top: 1px solid #E8E5E0; margin: 0.6rem 0; }
 
-/* Actions */
+/* Actions — same radius as admin buttons */
 .cm-card-actions { display: flex; gap: 0.3rem; margin-top: 0.5rem; }
 .cm-card-actions .btn {
   font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 8px;
@@ -136,16 +130,17 @@
 
 /* Empty card */
 .cm-card--empty {
-  border: 2px dashed #d0d0d0; background: transparent;
+  border: 2px dashed #D4D0CA;
+  background: transparent; box-shadow: none;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 180px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
-  border-radius: 12px; padding-left: 0;
+  min-height: 180px; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  border-radius: 16px;
 }
-.cm-card--empty::before { display: none; }
-.cm-card--empty:hover { border-color: #2d4a43; background: rgba(188,210,203,0.1); }
+.cm-card--empty:hover { border-color: #191918; background: rgba(25,25,24,0.04); }
 .cm-card--empty .cm-add-icon {
-  font-size: 2.2rem; color: #bbb; margin-bottom: 0.4rem; transition: color 0.2s;
+  font-size: 2.2rem; color: #D4D0CA; margin-bottom: 0.4rem; transition: color 0.2s;
 }
-.cm-card--empty:hover .cm-add-icon { color: #2d4a43; }
+.cm-card--empty:hover .cm-add-icon { color: #191918; }
 .cm-card--empty .cm-card-day { color: #888; }
 </style>
