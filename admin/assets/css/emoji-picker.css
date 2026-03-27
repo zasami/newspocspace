@@ -1,0 +1,372 @@
+/**
+ * Emoji Picker - Sélecteur d'emoji réutilisable
+ * Basé sur la maquette emoji.webp
+ */
+
+/* ============================================================================
+   CONTENEUR PRINCIPAL
+   ============================================================================ */
+
+.zkr-emoji-picker {
+  position: fixed;
+  z-index: 10000;
+  width: 368px;
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 380px;
+}
+
+/* Triangle pointant vers le bouton */
+.zkr-emoji-picker::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: calc(var(--caret-offset, 20px) - 7px);
+  width: 14px;
+  height: 14px;
+  background: var(--bs-body-bg, #fff);
+  border-right: 1px solid var(--bs-border-color, #dee2e6);
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+  transform: rotate(45deg);
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Triangle inversé quand le picker est en dessous du bouton */
+.zkr-emoji-picker-below::after {
+  bottom: auto;
+  top: -7px;
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid var(--bs-border-color, #dee2e6);
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+[data-theme="dark"] .zkr-emoji-picker {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .zkr-emoji-picker::after {
+  background: #1e293b;
+  border-right-color: #334155;
+  border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .zkr-emoji-picker-below::after {
+  border-left-color: #334155;
+  border-top-color: #334155;
+}
+
+[data-theme="zkriva"] .zkr-emoji-picker {
+  background: var(--bs-body-bg);
+  border-color: #e7e5e4;
+  box-shadow: 0 8px 24px rgba(210, 180, 145, 0.1);
+}
+
+[data-theme="zkriva"] .zkr-emoji-picker::after {
+  background: var(--bs-body-bg);
+  border-right-color: #e7e5e4;
+  border-bottom-color: #e7e5e4;
+}
+
+[data-theme="zkriva"] .zkr-emoji-picker-below::after {
+  border-left-color: #e7e5e4;
+  border-top-color: #e7e5e4;
+}
+
+/* ============================================================================
+   HEADER (Onglets + Recherche)
+   ============================================================================ */
+
+.zkr-emoji-header {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+  background: var(--bs-body-bg, #fff);
+  border-radius: 10px 10px 0 0;
+}
+
+[data-theme="dark"] .zkr-emoji-header {
+  border-bottom-color: #334155;
+  background: #1e293b;
+}
+
+[data-theme="zkriva"] .zkr-emoji-header {
+  border-bottom-color: #e7e5e4;
+}
+
+/* Onglets des catégories */
+.zkr-emoji-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.zkr-emoji-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.zkr-emoji-tabs::-webkit-scrollbar-thumb {
+  background: var(--bs-border-color, #dee2e6);
+  border-radius: 2px;
+}
+
+.zkr-emoji-tab {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.zkr-emoji-tab:hover {
+  background: rgba(0, 123, 255, 0.08);
+  opacity: 0.8;
+}
+
+.zkr-emoji-tab.active {
+  background: rgba(0, 123, 255, 0.12);
+  position: relative;
+  filter: grayscale(0);
+  opacity: 1;
+}
+
+.zkr-emoji-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: #007bff;
+  border-radius: 1px;
+}
+
+[data-theme="dark"] .zkr-emoji-tab:hover {
+  background: rgba(242, 209, 35, 0.08);
+}
+
+[data-theme="dark"] .zkr-emoji-tab.active {
+  background: rgba(242, 209, 35, 0.12);
+}
+
+[data-theme="dark"] .zkr-emoji-tab.active::after {
+  background: #f2d123;
+}
+
+[data-theme="zkriva"] .zkr-emoji-tab:hover {
+  background: rgba(210, 180, 145, 0.08);
+}
+
+[data-theme="zkriva"] .zkr-emoji-tab.active {
+  background: rgba(210, 180, 145, 0.12);
+}
+
+[data-theme="zkriva"] .zkr-emoji-tab.active::after {
+  background: #d2b491;
+}
+
+/* Barre de recherche */
+.zkr-emoji-search {
+  position: relative;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.zkr-emoji-search-input {
+  width: 100%;
+  padding-right: 2rem !important;
+  font-size: 0.8125rem !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.zkr-emoji-search-icon {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.875rem;
+  pointer-events: none;
+  opacity: 0.5;
+  color: var(--bs-secondary, #6c757d);
+}
+
+[data-theme="dark"] .zkr-emoji-search-icon {
+  color: #94a3b8;
+}
+
+[data-theme="zkriva"] .zkr-emoji-search-icon {
+  color: #78716c;
+}
+
+/* ============================================================================
+   BODY (Grille d'emojis)
+   ============================================================================ */
+
+.zkr-emoji-body {
+  padding: 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.zkr-emoji-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.zkr-emoji-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.zkr-emoji-body::-webkit-scrollbar-thumb {
+  background: var(--bs-border-color, #dee2e6);
+  border-radius: 4px;
+}
+
+.zkr-emoji-body::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-secondary, #6c757d);
+}
+
+/* Label de catégorie */
+.zkr-emoji-category-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--bs-secondary, #6c757d);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.4rem;
+  padding-left: 0.2rem;
+}
+
+[data-theme="dark"] .zkr-emoji-category-label {
+  color: #94a3b8;
+}
+
+[data-theme="zkriva"] .zkr-emoji-category-label {
+  color: #78716c;
+}
+
+/* Grille d'emojis */
+.zkr-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.2rem;
+}
+
+.zkr-emoji-btn {
+  aspect-ratio: 1;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.35rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.zkr-emoji-btn:hover {
+  background: rgba(242, 209, 35, 0.15);
+  transform: scale(1.15);
+}
+
+.zkr-emoji-btn:active {
+  transform: scale(0.95);
+}
+
+[data-theme="dark"] .zkr-emoji-btn:hover {
+  background: rgba(242, 209, 35, 0.1);
+}
+
+[data-theme="zkriva"] .zkr-emoji-btn:hover {
+  background: rgba(210, 180, 145, 0.1);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 576px) {
+  .zkr-emoji-picker {
+    width: calc(100vw - 2rem);
+    max-width: 352px;
+    left: 1rem !important;
+    right: 1rem;
+  }
+
+  .zkr-emoji-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes zkr-emoji-fadein {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.zkr-emoji-picker {
+  animation: zkr-emoji-fadein 0.15s ease-out;
+}
+
+/* ============================================================================
+   CLASSE POUR LE BOUTON DÉCLENCHEUR (optionnel)
+   ============================================================================ */
+
+.zkr-emoji-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.zkr-emoji-trigger:hover {
+  background: rgba(0, 123, 255, 0.08);
+}
+
+[data-theme="dark"] .zkr-emoji-trigger:hover {
+  background: rgba(242, 209, 35, 0.08);
+}
+
+[data-theme="zkriva"] .zkr-emoji-trigger:hover {
+  background: rgba(210, 180, 145, 0.08);
+}

@@ -1,0 +1,281 @@
+[
+    {
+        "id": "stat-filtres",
+        "title": "Statistiques : filtres temporels",
+        "desc": "Filtres par jour, semaine, mois, annee, periode personnalisee sur les stats existantes.",
+        "difficulty": "facile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 1
+    },
+    {
+        "id": "planning-absences",
+        "title": "Planning : afficher absences\/grossesse\/vacances",
+        "desc": "Marquer visuellement dans le planning les absences longues, conges maternite, vacances, accidents.",
+        "difficulty": "facile",
+        "category": "Planning",
+        "done": false,
+        "order": 2
+    },
+    {
+        "id": "export-stats",
+        "title": "Export PDF \/ Word \/ Excel des statistiques",
+        "desc": "Boutons d'export sur les pages de stats (tableaux + graphiques).",
+        "difficulty": "facile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 3
+    },
+    {
+        "id": "petites-annonces",
+        "title": "Rubrique petites annonces",
+        "desc": "Page simple pour publier\/consulter des annonces internes entre collegues.",
+        "difficulty": "facile",
+        "category": "Communication",
+        "done": false,
+        "order": 4
+    },
+    {
+        "id": "annonces",
+        "title": "Ajouter une annonce (alertes ameliorees)",
+        "desc": "Enrichir le systeme d'alertes existant pour servir d'annonces internes.",
+        "difficulty": "facile",
+        "category": "Communication",
+        "done": false,
+        "order": 5
+    },
+    {
+        "id": "creation-employes",
+        "title": "Creation d'employes + attribution compte",
+        "desc": "Formulaire admin pour creer un employe, generer identifiants, envoyer par email.",
+        "difficulty": "facile",
+        "category": "Admin",
+        "done": false,
+        "order": 6
+    },
+    {
+        "id": "pdf-menu",
+        "title": "Impression PDF\/Word du menu cuisine",
+        "desc": "Export du menu de la semaine en PDF et Word depuis la page restauration.",
+        "difficulty": "facile",
+        "category": "Restauration",
+        "done": false,
+        "order": 7
+    },
+    {
+        "id": "stats-interim",
+        "title": "Statistiques interim, absences, grossesses",
+        "desc": "Tableaux + graphiques comparatifs sur plusieurs annees, par periode. Export PDF\/Word\/Excel.",
+        "difficulty": "moyen",
+        "category": "Statistiques",
+        "done": false,
+        "order": 8
+    },
+    {
+        "id": "import-contacts",
+        "title": "Importation de contacts (Google, CSV)",
+        "desc": "Import de contacts pour chaque admin depuis Google Contacts, fichier CSV ou autre.",
+        "difficulty": "moyen",
+        "category": "Admin",
+        "done": false,
+        "order": 9
+    },
+    {
+        "id": "agenda-rdv",
+        "title": "Agenda \/ prise de RDV",
+        "desc": "Calendrier pour fixer des rendez-vous, gerer les disponibilites selon vacances et planning.",
+        "difficulty": "moyen",
+        "category": "Planning",
+        "done": false,
+        "order": 10
+    },
+    {
+        "id": "backup-restore",
+        "title": "Sauvegarde auto BDD + restauration",
+        "desc": "Cron de backup quotidien (BDD + fichiers), page admin pour lister\/restaurer les sauvegardes.",
+        "difficulty": "moyen",
+        "category": "Admin",
+        "done": false,
+        "order": 11
+    },
+    {
+        "id": "mise-a-jour",
+        "title": "Script de mise a jour a distance",
+        "desc": "Script pour deployer les MAJ du code sur le serveur (git pull ou upload ZIP + migration auto).",
+        "difficulty": "moyen",
+        "category": "Admin",
+        "done": false,
+        "order": 12
+    },
+    {
+        "id": "mur-actu",
+        "title": "Mur d'actualite \/ fil d'actu",
+        "desc": "Page actualites : posts, commentaires, likes. Confidentialite par role.",
+        "difficulty": "moyen",
+        "category": "Communication",
+        "done": false,
+        "order": 13
+    },
+    {
+        "id": "module-cuisine",
+        "title": "Module Restauration \/ Cuisine",
+        "desc": "Saisie des menus, base de plats recurrents, affichage automatique sur le site, export PDF\/Word.",
+        "difficulty": "moyen",
+        "category": "Restauration",
+        "done": false,
+        "order": 14
+    },
+    {
+        "id": "table-vip",
+        "title": "Table VIP (residents)",
+        "desc": "Selectionner une liste de residents, notifier les modules concernes par alerte\/notification.",
+        "difficulty": "moyen",
+        "category": "Restauration",
+        "done": false,
+        "order": 15
+    },
+    {
+        "id": "ajouter-mot-de-passe-oublier",
+        "title": "Ajouter mot de passe oublier\/ changer mot de passe",
+        "desc": "Envoyé un email externe ( gmail outlook ou autre ) avec un link pour ouvre la page introduire nouveau mot de passe.",
+        "difficulty": "moyen",
+        "category": "Securite",
+        "done": false,
+        "order": 16
+    },
+    {
+        "id": "garder-le-spech-original-de-pv",
+        "title": "Garder le spech original de pv",
+        "desc": "Après la structuration avec l'IA, sauvegarder les préinscription original",
+        "difficulty": "moyen",
+        "category": "Securite",
+        "done": false,
+        "order": 17
+    },
+    {
+        "id": "pour-le-changement-param-tre-admin",
+        "title": "Pour le changement paramétre Admin",
+        "desc": "Ajouter dans le paramétrage admin, si un user peu faire un changement avec un autre collègue avec horaire différent cas change un jour de 8h00 contre un jour de 10h00 par exemple.",
+        "difficulty": "moyen",
+        "category": "Planning",
+        "done": false,
+        "order": 18
+    },
+    {
+        "id": "module-animation",
+        "title": "Module Animation",
+        "desc": "Saisie des activites, animations repetitives, affichage auto sur le site, objectifs animation.",
+        "difficulty": "difficile",
+        "category": "Animation",
+        "done": false,
+        "order": 19
+    },
+    {
+        "id": "ia-animations",
+        "title": "IA : suggestions d'animations",
+        "desc": "IA qui suggere des idees selon budget, faisabilite, securite, competences disponibles.",
+        "difficulty": "difficile",
+        "category": "Animation",
+        "done": false,
+        "order": 20
+    },
+    {
+        "id": "formation",
+        "title": "Rubrique Formation (Marceline)",
+        "desc": "Catalogue de formations, suivi par employe, lien avec logiciels de formation EMS.",
+        "difficulty": "difficile",
+        "category": "Formation",
+        "done": false,
+        "order": 21
+    },
+    {
+        "id": "postulation",
+        "title": "Formulaire de postulation",
+        "desc": "Formulaire public de candidature + interface admin pour gerer les candidatures.",
+        "difficulty": "difficile",
+        "category": "Recrutement",
+        "done": false,
+        "order": 22
+    },
+    {
+        "id": "suivi-dossier",
+        "title": "Suivi de dossier candidat",
+        "desc": "Statuts (en cours\/entretien\/accepte\/refuse), rapport formateur, points a ameliorer, visibilite admin+formateur+candidat, tchat.",
+        "difficulty": "difficile",
+        "category": "Recrutement",
+        "done": false,
+        "order": 23
+    },
+    {
+        "id": "transcription-pv",
+        "title": "Ameliorer la transcription de PV",
+        "desc": "Qualite vocale, locuteurs multiples, correction contexte EMS, formatage intelligent. HAUTE PRIORITE.",
+        "difficulty": "difficile",
+        "category": "PV \/ IA",
+        "done": false,
+        "order": 24
+    },
+    {
+        "id": "chiffrement",
+        "title": "Confidentialite et chiffrement des donnees",
+        "desc": "Niveaux d'acces par role, chiffrement E2E donnees sensibles, audit securite global.",
+        "difficulty": "difficile",
+        "category": "Securite",
+        "done": false,
+        "order": 25
+    },
+    {
+        "id": "ajoute-sur-le-site-une-page-envoy-ma-condidature",
+        "title": "Ajoute sur le site une page envoyé ma condidature",
+        "desc": "la page avec un formulaire a remplir à la main par le condidat ( nom prenom exepercien etc ) ou il charge son cv et l'algorthme rempli le formulaire. ajoutes les pièces jointes.",
+        "difficulty": "difficile",
+        "category": "Formation",
+        "done": false,
+        "order": 26
+    },
+    {
+        "id": "ajoute-page-gal-rie-pour-la-famille",
+        "title": "Ajoute page galérie pour la famille",
+        "desc": "Une page gallérie pour la famille avec un mot de passe il peuvent accéder a l'album de leur membre. un mot de passe unique qu'il peuvent se partage.",
+        "difficulty": "difficile",
+        "category": "Site web",
+        "done": false,
+        "order": 27
+    },
+    {
+        "id": "module-pour-les-interims",
+        "title": "Module pour les interims",
+        "desc": "Sur le site ou sur le module planning, ajoute un page dédier au boite d'interim au interimaire pour introduire leur horriare, s'inscrire etc et valider les heure qui seront transmit directement par email ou autre moyen a leur boite d'intermi, il faut voit dabort le processus mis en palce par la terrassiere et les boites d'intreim a genève",
+        "difficulty": "difficile",
+        "category": "Site web",
+        "done": false,
+        "order": 28
+    },
+    {
+        "id": "espace-famille-r-sident",
+        "title": "Espace famille résident",
+        "desc": "Un bouton sur le site qui permet a une famille d'un résident de se conncté pour voir la galérie de photo des video  de cette personne, aussi un formulaire pour reserver une table ( nombre de personnes, le joure etc) une alert dans le systeme Admin cuisine qui s'affiche avec une petite table",
+        "difficulty": "difficile",
+        "category": "Site web",
+        "done": false,
+        "order": 29
+    },
+    {
+        "id": "organigrame-de-l-ems",
+        "title": "Organigrame de l'EMS",
+        "desc": "Une page admin pour gérer l'organigramme dynamiquement, ajoute les fonction la hérrarchie etc les lien et affiche cela dans le site web.",
+        "difficulty": "difficile",
+        "category": "Site web",
+        "done": false,
+        "order": 30
+    },
+    {
+        "id": "popup-email",
+        "title": "Popup Email",
+        "desc": "Quand un administrateur reçoit un e-mail ou qu’un collaborateur reçoit un e-mail, un popup discretn s’affiche en bas de l’écran (toast large) avec :\nle titre de l’e-mail et le nom de l’expéditeur, ainsi que les boutons :\n\n* Ouvrir\n* Rappeler dans 5 minutes\n* Rappeler dans 10 minutes\n* Rappeler dans 1 heure\n\nSi l’utilisateur clique sur Ouvrir, la boîte e-mail s’affiche directement.\nSinon, un timer de rappel est lancé automatiquement selon le temps choisi par l’utilisateur.",
+        "difficulty": "difficile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 31
+    }
+]

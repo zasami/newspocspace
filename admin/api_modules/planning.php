@@ -1,0 +1,1631 @@
+<?php
+require_once __DIR__ . '/../../core/Notification.php';
+
+function admin_get_planning()
+{
+    require_responsable();
+    global $params;
+    $mois = $params['mois'] ?? date('Y-m');
+
+    $planning = Db::fetch("SELECT * FROM plannings WHERE mois_annee = ?", [$mois]);
+
+    $assignations = [];
+    if ($planning) {
+        $assignations = Db::fetchAll(
+            "SELECT pa.*, u.nom, u.prenom, u.employee_id,
+                    ht.code AS horaire_code, ht.heure_debut, ht.heure_fin, ht.couleur,
+                    m.nom AS module_nom, m.code AS module_code,
+                    g.nom AS groupe_nom, g.code AS groupe_code,
+                    f.nom AS fonction_nom, f.code AS fonction_code
+             FROM planning_assignations pa
+             JOIN users u ON u.id = pa.user_id
+             LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+             LEFT JOIN modules m ON m.id = pa.module_id
+             LEFT JOIN groupes g ON g.id = pa.groupe_id
+             LEFT JOIN fonctions f ON f.id = u.fonction_id
+             WHERE pa.planning_id = ?
+             ORDER BY pa.date_jour, m.ordre, f.ordre, u.nom",
+            [$planning['id']]
+        );
+    }
+
+    respond([
+        'success' => true,
+        'planning' => $planning,
+        'assignations' => $assignations,
+    ]);
+}
+
+function admin_create_planning()
+{
+    global $params;
+    require_admin();
+
+    $mois = $params['mois'] ?? '';
+    if (!preg_match('/^\d{4}-\d{2}$/', $mois)) bad_request('Mois invalide');
+
+    $existing = Db::getOne("SELECT COUNT(*) FROM plannings WHERE mois_annee = ?", [$mois]);
+    if ($existing > 0) bad_request('Un planning existe déjà pour ce mois');
+
+    $id = Uuid::v4();
+    $userId = $_SESSION['zt_user']['id'];
+    Db::exec(
+        "INSERT INTO plannings (id, mois_annee, statut, genere_par, genere_at) VALUES (?, ?, 'brouillon', ?, NOW())",
+        [$id, $mois, $userId]
+    );
+
+    respond(['success' => true, 'message' => 'Planning créé', 'id' => $id]);
+}
+
+function admin_save_assignation()
+{
+    global $params;
+    require_responsable();
+
+    $planningId = $params['planning_id'] ?? '';
+    $userId = $params['user_id'] ?? '';
+    $dateJour = Sanitize::date($params['date_jour'] ?? '');
+    $horaireTypeId = $params['horaire_type_id'] ?? null;
+    $moduleId = $params['module_id'] ?? null;
+    $groupeId = $params['groupe_id'] ?? null;
+    $statut = $params['statut'] ?? 'present';
+    $notes = Sanitize::text($params['notes'] ?? '', 500);
+
+    if (!$planningId || !$userId || !$dateJour) {
+        bad_request('planning_id, user_id et date_jour requis');
+    }
+
+    // Upsert
+    $existing = Db::fetch(
+        "SELECT id FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+        [$planningId, $userId, $dateJour]
+    );
+
+    if ($existing) {
+        Db::exec(
+            "UPDATE planning_assignations
+             SET horaire_type_id = ?, module_id = ?, groupe_id = ?, statut = ?, notes = ?
+             WHERE id = ?",
+            [$horaireTypeId, $moduleId, $groupeId, $statut, $notes, $existing['id']]
+        );
+        $id = $existing['id'];
+    } else {
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, statut, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $planningId, $userId, $dateJour, $horaireTypeId, $moduleId, $groupeId, $statut, $notes]
+        );
+    }
+
+    respond(['success' => true, 'id' => $id]);
+}
+
+function admin_delete_assignation()
+{
+    global $params;
+    require_responsable();
+
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    Db::exec("DELETE FROM planning_assignations WHERE id = ?", [$id]);
+    respond(['success' => true]);
+}
+
+function admin_finalize_planning()
+{
+    global $params;
+    require_admin();
+
+    $id = $params['id'] ?? '';
+    $statut = $params['statut'] ?? 'final';
+
+    if (!in_array($statut, ['provisoire', 'final'])) bad_request('Statut invalide');
+
+    $planning = Db::fetch("SELECT * FROM plannings WHERE id = ?", [$id]);
+    if (!$planning) bad_request('Planning introuvable');
+
+    Db::exec(
+        "UPDATE plannings SET statut = ?, valide_par = ?, valide_at = NOW() WHERE id = ?",
+        [$statut, $_SESSION['zt_user']['id'], $id]
+    );
+
+    // Notify all active users when planning is published (provisoire or final)
+    $label = $statut === 'final' ? 'définitif' : 'provisoire';
+    $mois = $planning['mois_annee'] ?? '';
+    $activeUsers = Db::fetchAll("SELECT id FROM users WHERE is_active = 1");
+    foreach ($activeUsers as $u) {
+        Notification::create(
+            $u['id'],
+            'planning_publie',
+            'Planning publié',
+            "Le planning de $mois est maintenant $label.",
+            'planning'
+        );
+    }
+
+    respond(['success' => true, 'message' => 'Planning mis à jour']);
+}
+
+/**
+ * Get reference data for planning UI (users, horaires, modules)
+ */
+function admin_get_planning_refs()
+{
+    require_responsable();
+
+    $users = Db::fetchAll(
+        "SELECT u.id, u.nom, u.prenom, u.taux, u.role, u.type_contrat,
+                f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
+                GROUP_CONCAT(m.id ORDER BY um.is_principal DESC) AS module_ids,
+                GROUP_CONCAT(m.code ORDER BY um.is_principal DESC) AS module_codes
+         FROM users u
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         LEFT JOIN user_modules um ON um.user_id = u.id
+         LEFT JOIN modules m ON m.id = um.module_id
+         WHERE u.is_active = 1
+         GROUP BY u.id
+         ORDER BY f.ordre, u.nom, u.prenom"
+    );
+
+    $horaires = Db::fetchAll(
+        "SELECT id, code, nom, heure_debut, heure_fin, duree_effective, couleur
+         FROM horaires_types WHERE is_active = 1 ORDER BY code"
+    );
+
+    $modules = Db::fetchAll(
+        "SELECT id, code, nom, ordre FROM modules ORDER BY ordre"
+    );
+
+    $fonctions = Db::fetchAll(
+        "SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre"
+    );
+
+    respond([
+        'success' => true,
+        'users' => $users,
+        'horaires' => $horaires,
+        'modules' => $modules,
+        'fonctions' => $fonctions,
+    ]);
+}
+
+/**
+ * Get planning stats: hours per user, coverage gaps, conflicts
+ */
+function admin_get_planning_stats()
+{
+    global $params;
+    require_responsable();
+
+    $mois = $params['mois'] ?? date('Y-m');
+    $planning = Db::fetch("SELECT id FROM plannings WHERE mois_annee = ?", [$mois]);
+    if (!$planning) respond(['success' => true, 'stats' => null]);
+
+    $planningId = $planning['id'];
+
+    // Hours per user
+    $heuresParUser = Db::fetchAll(
+        "SELECT pa.user_id, u.nom, u.prenom, u.taux,
+                f.code AS fonction_code,
+                COUNT(*) AS nb_jours,
+                SUM(COALESCE(ht.duree_effective, 0)) AS total_heures,
+                SUM(CASE WHEN pa.statut = 'present' THEN 1 ELSE 0 END) AS jours_presents,
+                SUM(CASE WHEN pa.statut = 'absent' THEN 1 ELSE 0 END) AS jours_absents,
+                SUM(CASE WHEN pa.statut = 'repos' THEN 1 ELSE 0 END) AS jours_repos
+         FROM planning_assignations pa
+         JOIN users u ON u.id = pa.user_id
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE pa.planning_id = ?
+         GROUP BY pa.user_id
+         ORDER BY f.code, u.nom",
+        [$planningId]
+    );
+
+    // Target hours per user (based on taux)
+    $firstDay = $mois . '-01';
+    $daysInMonth = (int) date('t', strtotime($firstDay));
+    // Working days (Mon-Fri)
+    $workDays = 0;
+    for ($d = 1; $d <= $daysInMonth; $d++) {
+        $dow = (int) date('N', strtotime("$mois-" . str_pad($d, 2, '0', STR_PAD_LEFT)));
+        if ($dow <= 5) $workDays++;
+    }
+
+    foreach ($heuresParUser as &$row) {
+        $targetHours = round($workDays * 8.4 * ($row['taux'] / 100), 1);
+        $row['heures_cibles'] = $targetHours;
+        $row['ecart'] = round($row['total_heures'] - $targetHours, 1);
+    }
+    unset($row);
+
+    // Coverage per module per day
+    $couverture = Db::fetchAll(
+        "SELECT pa.date_jour, pa.module_id, m.code AS module_code,
+                f.id AS fonction_id, f.code AS fonction_code,
+                COUNT(*) AS nb_present
+         FROM planning_assignations pa
+         JOIN users u ON u.id = pa.user_id
+         LEFT JOIN modules m ON m.id = pa.module_id
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE pa.planning_id = ? AND pa.statut = 'present'
+         GROUP BY pa.date_jour, pa.module_id, f.id
+         ORDER BY pa.date_jour, m.ordre",
+        [$planningId]
+    );
+
+    // Besoins de couverture
+    $besoins = Db::fetchAll(
+        "SELECT bc.module_id, m.code AS module_code,
+                bc.jour_semaine, bc.fonction_id, f.code AS fonction_code,
+                bc.nb_requis
+         FROM besoins_couverture bc
+         JOIN modules m ON m.id = bc.module_id
+         JOIN fonctions f ON f.id = bc.fonction_id"
+    );
+
+    // Find gaps: compare actual vs needed
+    $gaps = [];
+    $besoinsIndex = [];
+    foreach ($besoins as $b) {
+        $key = $b['module_id'] . '_' . $b['jour_semaine'] . '_' . $b['fonction_id'];
+        $besoinsIndex[$key] = $b;
+    }
+
+    $couvertureIndex = [];
+    foreach ($couverture as $c) {
+        $key = $c['date_jour'] . '_' . ($c['module_id'] ?? '') . '_' . ($c['fonction_id'] ?? '');
+        $couvertureIndex[$key] = $c['nb_present'];
+    }
+
+    for ($d = 1; $d <= $daysInMonth; $d++) {
+        $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
+        $dow = (int) date('N', strtotime($date));
+
+        foreach ($besoins as $b) {
+            if ((int)$b['jour_semaine'] !== $dow) continue;
+            $actual = $couvertureIndex[$date . '_' . $b['module_id'] . '_' . $b['fonction_id']] ?? 0;
+            $needed = (int) $b['nb_requis'];
+            if ($actual < $needed) {
+                $gaps[] = [
+                    'date' => $date,
+                    'module_code' => $b['module_code'],
+                    'fonction_code' => $b['fonction_code'],
+                    'requis' => $needed,
+                    'present' => $actual,
+                    'manque' => $needed - $actual,
+                ];
+            }
+        }
+    }
+
+    // Summary totals
+    $totals = Db::fetch(
+        "SELECT COUNT(DISTINCT pa.user_id) AS nb_employes,
+                COUNT(*) AS nb_assignations,
+                SUM(COALESCE(ht.duree_effective, 0)) AS total_heures
+         FROM planning_assignations pa
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         WHERE pa.planning_id = ?",
+        [$planningId]
+    );
+
+    respond([
+        'success' => true,
+        'stats' => [
+            'totals' => $totals,
+            'heures_par_user' => $heuresParUser,
+            'gaps' => $gaps,
+            'nb_gaps' => count($gaps),
+            'jours_mois' => $daysInMonth,
+            'jours_ouvrables' => $workDays,
+        ],
+    ]);
+}
+
+/**
+ * Auto-generate planning based on besoins, taux, desirs, absences
+ */
+function admin_generate_planning()
+{
+    global $params;
+    require_admin();
+    $startTime = microtime(true);
+
+    $mois = $params['mois'] ?? '';
+    if (!preg_match('/^\d{4}-\d{2}$/', $mois)) bad_request('Mois invalide');
+
+    $planning = Db::fetch("SELECT * FROM plannings WHERE mois_annee = ?", [$mois]);
+    if (!$planning) bad_request('Créez d\'abord le planning pour ce mois');
+    // DEV MODE: autoriser générer sur un planning finalisé — TODO: réactiver après dev
+    // if ($planning['statut'] === 'final') bad_request('Ce planning est déjà finalisé');
+
+    $planningId = $planning['id'];
+    $moduleFilter = $params['module_id'] ?? null;
+    $mode = $params['mode'] ?? 'local'; // local | hybrid | ai
+    if (!in_array($mode, ['local', 'hybrid', 'ai'])) $mode = 'local';
+
+    // Load all config (IA + API keys)
+    $cfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config");
+    $cfg = [];
+    foreach ($cfgRows as $r) $cfg[$r['config_key']] = $r['config_value'];
+
+    // Validate IA mode has API key configured
+    if ($mode !== 'local') {
+        $aiProvider = $cfg['ai_provider'] ?? 'gemini';
+        $aiApiKey = ($aiProvider === 'gemini') ? ($cfg['gemini_api_key'] ?? '') : ($cfg['anthropic_api_key'] ?? '');
+        $aiModel = ($aiProvider === 'gemini') ? ($cfg['gemini_model'] ?? 'gemini-2.5-flash') : ($cfg['anthropic_model'] ?? 'claude-haiku-4-5-20251001');
+        if (empty($aiApiKey)) bad_request("Clé API non configurée pour $aiProvider. Allez dans Config IA > Clés API.");
+    }
+
+    $iaJoursOuvres      = (float) ($cfg['ia_jours_ouvres'] ?? 21.7);
+    $iaHeuresJour       = (float) ($cfg['ia_heures_jour'] ?? 8.4);
+    $iaConsecutifMax     = (int)   ($cfg['ia_consecutif_max'] ?? 5);
+    $iaConsecutifMaxBes  = (int)   ($cfg['ia_consecutif_max_besoins'] ?? 6);
+    $iaDirWeekendOff     = ($cfg['ia_direction_weekend_off'] ?? '1') === '1';
+    $iaBonusPrincipal    = (int)   ($cfg['ia_bonus_principal'] ?? 10);
+    $iaRandomMax         = (int)   ($cfg['ia_random_max'] ?? 3);
+    $iaWeekendSkipProb   = (int)   ($cfg['ia_weekend_skip_prob'] ?? 66);
+    $iaAdminShiftCode    = $cfg['ia_admin_shift_code'] ?? 'A6';
+    $iaConsecutifMaxAS   = (int)   ($cfg['ia_consecutif_max_as'] ?? 3); // AS: max 3 jours consécutifs
+
+    // Load reference data
+    $users = Db::fetchAll(
+        "SELECT u.id, u.nom, u.prenom, u.taux, u.role,
+                f.code AS fonction_code, f.id AS fonction_id,
+                um.module_id AS principal_module_id, um.is_principal
+         FROM users u
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+         WHERE u.is_active = 1
+         ORDER BY f.code, u.nom"
+    );
+
+    // All user-module assignments
+    $userModules = Db::fetchAll("SELECT user_id, module_id FROM user_modules");
+    $userModuleMap = [];
+    foreach ($userModules as $um) {
+        $userModuleMap[$um['user_id']][] = $um['module_id'];
+    }
+
+    $horaires = Db::fetchAll(
+        "SELECT id, code, heure_debut, heure_fin, duree_effective, couleur
+         FROM horaires_types WHERE is_active = 1 ORDER BY code"
+    );
+
+    $besoins = Db::fetchAll(
+        "SELECT module_id, jour_semaine, fonction_id, nb_requis
+         FROM besoins_couverture"
+    );
+
+    // Approved desirs for this month
+    $desirs = Db::fetchAll(
+        "SELECT user_id, date_souhaitee, type
+         FROM desirs
+         WHERE mois_cible = ? AND statut = 'valide'",
+        [$mois]
+    );
+    $desirMap = [];
+    foreach ($desirs as $d) {
+        $desirMap[$d['user_id']][$d['date_souhaitee']] = $d['type'];
+    }
+
+    // Approved absences overlapping this month
+    $firstDay = $mois . '-01';
+    $lastDay = date('Y-m-t', strtotime($firstDay));
+    $absences = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin
+         FROM absences
+         WHERE statut = 'valide' AND date_debut <= ? AND date_fin >= ?",
+        [$lastDay, $firstDay]
+    );
+    $absenceMap = [];
+    foreach ($absences as $a) {
+        $start = max(strtotime($firstDay), strtotime($a['date_debut']));
+        $end = min(strtotime($lastDay), strtotime($a['date_fin']));
+        for ($t = $start; $t <= $end; $t += 86400) {
+            $absenceMap[$a['user_id']][date('Y-m-d', $t)] = true;
+        }
+    }
+
+    // ── Index horaires by code for easy lookup ──
+    $horaireByCode = [];
+    $horaireById = [];
+    foreach ($horaires as $h) {
+        $horaireByCode[$h['code']] = $h;
+        $horaireById[$h['id']] = $h;
+    }
+
+    // ── Classify horaires into coverage categories ──
+    $fullDayShifts = [];   // 7h-20h30 type (D3, D4)
+    $morningShifts = [];   // 7h-15/16h (A1, A2, A3, D1)
+    $eveningShifts = [];   // 12/13/14h-20h30 (S3, S4)
+    $nightShifts = [];     // 20h15-7h15
+    $adminShift = null;
+
+    foreach ($horaires as $h) {
+        if ($h['code'] === 'PIQUET') continue;
+        if ($h['code'] === $iaAdminShiftCode) { $adminShift = $h; continue; }
+
+        $deb = (int) substr($h['heure_debut'], 0, 2);
+        $eff = (float) $h['duree_effective'];
+
+        if ($deb >= 20) { $nightShifts[] = $h; continue; }
+        if ($deb <= 8 && $eff >= 10) { $fullDayShifts[] = $h; continue; }
+        if ($deb >= 12) { $eveningShifts[] = $h; continue; }
+        $morningShifts[] = $h;
+    }
+    if (!$adminShift && !empty($morningShifts)) $adminShift = $morningShifts[0];
+
+    // ── AS-specific shifts: only D1, D3, D4, S3, S4 (max 12h) ──
+    $asMorningShifts = []; // D1 (7h-15h30), D4 (7h-19h) — start morning, end before 20h30
+    $asFullDayShifts = []; // D3 (7h-20h30, 12h) — covers entire range alone
+    $asEveningShifts = []; // S3 (13h-20h30), S4 (14h-20h30) — afternoon/evening
+    foreach ($horaires as $h) {
+        if (in_array($h['code'], ['D1', 'D4'])) $asMorningShifts[] = $h;
+        if ($h['code'] === 'D3') $asFullDayShifts[] = $h;
+        if (in_array($h['code'], ['S3', 'S4'])) $asEveningShifts[] = $h;
+    }
+
+    // ── Load étages per module (for AS: 2 AS per étage) ──
+    $etagesPerModule = [];
+    $etagesRows = Db::fetchAll("SELECT module_id, COUNT(*) as nb FROM etages GROUP BY module_id");
+    foreach ($etagesRows as $e) $etagesPerModule[$e['module_id']] = (int) $e['nb'];
+
+    // ── Load full étages + groupes per module (for slot→groupe_id mapping) ──
+    $allGroupesDB = Db::fetchAll("SELECT id, etage_id, code, nom, ordre FROM groupes ORDER BY etage_id, ordre");
+    $groupesByEtageDB = [];
+    foreach ($allGroupesDB as $g) $groupesByEtageDB[$g['etage_id']][] = $g;
+    $allEtagesDB = Db::fetchAll("SELECT id, module_id, code, nom, ordre FROM etages ORDER BY module_id, ordre");
+    $etagesByModuleDB = [];
+    foreach ($allEtagesDB as $e) {
+        $e['groupes'] = $groupesByEtageDB[$e['id']] ?? [];
+        $etagesByModuleDB[$e['module_id']][] = $e;
+    }
+    // AS slot map: module_id → [ slot_index → groupe_id (or null) ]
+    // 2 slots per étage: one per groupe if groupes exist, otherwise null
+    $moduleSlotsAS = [];
+    foreach ($etagesByModuleDB as $modId => $etages) {
+        $slots = [];
+        foreach ($etages as $etage) {
+            $grps = $etage['groupes'];
+            if (count($grps) >= 2) {
+                $slots[] = $grps[0]['id'];
+                $slots[] = $grps[1]['id'];
+            } elseif (count($grps) === 1) {
+                $slots[] = $grps[0]['id'];
+                $slots[] = null;
+            } else {
+                $slots[] = null;
+                $slots[] = null;
+            }
+        }
+        if (empty($slots)) {
+            $slots = [null, null];
+        }
+        $moduleSlotsAS[$modId] = $slots;
+    }
+    // Slot counter per module per date (tracks next slot index for AS in Pass 1.5 and Pass 2)
+    $moduleASSlotIdx = [];
+
+    // ── Fonction IDs by code ──
+    $fonctionByCode = [];
+    $fonctionRows = Db::fetchAll("SELECT id, code FROM fonctions");
+    foreach ($fonctionRows as $f) $fonctionByCode[$f['code']] = $f['id'];
+
+    // Build besoins index: [module_id][dow][fonction_id] = nb
+    $besoinsIdx = [];
+    foreach ($besoins as $b) {
+        $besoinsIdx[$b['module_id']][(int)$b['jour_semaine']][$b['fonction_id']] = (int) $b['nb_requis'];
+    }
+
+    // ── Override besoins with zerdaTime rules ──
+    // AS: 2 per étage per module, 7j/7
+    // INF: 1 per module, 7j/7
+    // ASSC: 1 per module, 7j/7
+    $fonctionAS   = $fonctionByCode['AS']   ?? null;
+    $fonctionINF  = $fonctionByCode['INF']  ?? null;
+    $fonctionASSC = $fonctionByCode['ASSC'] ?? null;
+
+    $dayModules = Db::fetchAll("SELECT id, code FROM modules WHERE code NOT IN ('NUIT','POOL') ORDER BY ordre");
+    foreach ($dayModules as $mod) {
+        $nbEtages = $etagesPerModule[$mod['id']] ?? 1;
+        for ($dow = 1; $dow <= 7; $dow++) {
+            // AS: 2 per étage (minimum), 7j/7
+            if ($fonctionAS)   $besoinsIdx[$mod['id']][$dow][$fonctionAS]   = 2 * $nbEtages;
+            // INF: 1 per module, 7j/7
+            if ($fonctionINF)  $besoinsIdx[$mod['id']][$dow][$fonctionINF]  = 1;
+            // ASSC: 1 per module, 7j/7
+            if ($fonctionASSC) $besoinsIdx[$mod['id']][$dow][$fonctionASSC] = 1;
+        }
+    }
+
+    // Module for night staff
+    $nightModuleId = Db::getOne("SELECT id FROM modules WHERE code = 'NUIT'");
+    $poolModuleId = Db::getOne("SELECT id FROM modules WHERE code = 'POOL'");
+
+    // All modules (for auto-assignment)
+    $allModules = Db::fetchAll("SELECT id FROM modules WHERE code NOT IN ('NUIT','POOL') ORDER BY ordre");
+    $allModuleIds = array_column($allModules, 'id');
+
+    // ── Auto-assign users without module ──
+    if (!empty($allModuleIds)) {
+        $idx = 0;
+        foreach ($users as &$u) {
+            if (empty($userModuleMap[$u['id']])) {
+                $assignedMod = $allModuleIds[$idx % count($allModuleIds)];
+                $userModuleMap[$u['id']][] = $assignedMod;
+                $u['principal_module_id'] = $assignedMod;
+                $idx++;
+            } elseif (!$u['principal_module_id']) {
+                $u['principal_module_id'] = $userModuleMap[$u['id']][0];
+            }
+        }
+        unset($u);
+    }
+
+    // ── Load structured rules for local enforcement ──
+    $structuredRules = Db::fetchAll(
+        "SELECT id, rule_type, rule_params, target_mode, target_fonction_code, importance
+         FROM ia_human_rules
+         WHERE actif = 1 AND rule_type IS NOT NULL"
+    );
+    $ruleUserRows = Db::fetchAll("SELECT rule_id, user_id FROM ia_rule_users");
+    $ruleUserMap = [];
+    foreach ($ruleUserRows as $ru) {
+        $ruleUserMap[$ru['rule_id']][$ru['user_id']] = true;
+    }
+    foreach ($structuredRules as &$sr) {
+        $sr['params'] = json_decode($sr['rule_params'], true) ?: [];
+    }
+    unset($sr);
+
+    // ── Delete existing assignations (regenerate) ──
+    if ($moduleFilter) {
+        Db::exec("DELETE FROM planning_assignations WHERE planning_id = ? AND module_id = ?", [$planningId, $moduleFilter]);
+    } else {
+        Db::exec("DELETE FROM planning_assignations WHERE planning_id = ?", [$planningId]);
+    }
+
+    $daysInMonth = (int) date('t', strtotime($firstDay));
+    $pdo = Db::connect();
+    $stmtInsert = $pdo->prepare(
+        "INSERT INTO planning_assignations
+            (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, statut, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+
+    // Helper: resolve groupe_id for an AS slot in a module
+    $getGroupeId = function ($fonctionCode, $modId, $slotIndex) use (&$moduleSlotsAS) {
+        if ($fonctionCode !== 'AS') return null;
+        if (empty($moduleSlotsAS[$modId])) return null;
+        $slots = $moduleSlotsAS[$modId];
+        return $slots[$slotIndex % count($slots)];
+    };
+
+    // Track hours assigned per user this month
+    $userHours = [];
+    $userDays = [];     // [userId][date] = true
+    $userShifts = [];   // [userId][date] = shift code (for rotation tracking)
+    $userWeekHours = []; // [userId][weekNum] = hours worked that week (for AS weekly cap)
+    $assigned = 0;
+    $conflicts = [];
+
+    // ── Helper: get ISO week number for a date ──
+    $getWeekNum = function ($date) {
+        return (int) date('W', strtotime($date));
+    };
+
+    // ── Helper: compute weekly target hours for a user ──
+    // Monthly target / nb weeks in month ≈ weekly target
+    $nbWeeksInMonth = $daysInMonth / 7;
+    $getWeeklyTarget = function ($user) use ($iaJoursOuvres, $iaHeuresJour, $nbWeeksInMonth) {
+        return round(($iaJoursOuvres * $iaHeuresJour * ($user['taux'] / 100)) / $nbWeeksInMonth, 1);
+    };
+
+    // ── Coverage shift patterns ──
+    // For 2 positions per day, we alternate patterns to ensure 7h-20h30 coverage:
+    // Pattern A: 1×D3 (7h-20h30) + 1×morning (A1/A2 7h-15/16h) → overlap morning, 1 covers evening
+    // Pattern B: 1×morning (A1/A2) + 1×evening (S3/C2 12/13h-20h30) → split, overlap midday
+    // Pattern C: 2×D3 (both full day) → max coverage but expensive in hours
+    // We rotate patterns to balance hours across employees
+
+    /**
+     * Pick a shift for coverage-aware EMS scheduling.
+     * $slotIndex: 0-based index of this person in the day's slots for this function
+     * $nbTotal: total people needed for this function today
+     * $dayIndex: day of month (for rotation)
+     * $fonctionCode: AS, INF, ASSC, etc.
+     */
+    $pickShift = function ($modId, $slotIndex, $nbTotal, $dayIndex, $userObj, $fonctionCode = null)
+        use ($nightModuleId, $fullDayShifts, $morningShifts, $eveningShifts, $nightShifts, $adminShift, $iaDirWeekendOff,
+             $asMorningShifts, $asFullDayShifts, $asEveningShifts)
+    {
+        // Night module → always night shift
+        if ($modId === $nightModuleId) {
+            return !empty($nightShifts) ? $nightShifts[array_rand($nightShifts)] : null;
+        }
+
+        // Direction/Responsable → admin shift
+        if (in_array($userObj['role'], ['direction', 'responsable']) && $adminShift) {
+            return $adminShift;
+        }
+
+        // ── AS: couverture 7h-20h30 par paire d'étage ──
+        // Slots are paired per étage: (0,1) = étage 1, (2,3) = étage 2, etc.
+        // Each pair must cover 7h-20h30: one morning + one evening, or D3 full day
+        if ($fonctionCode === 'AS') {
+            $isFirstInPair = ($slotIndex % 2 === 0);
+            $pairIndex = intdiv($slotIndex, 2);
+            $pattern = ($dayIndex + $pairIndex) % 3; // rotate pattern per pair per day
+
+            if ($isFirstInPair) {
+                // First AS in pair: morning or full-day shift
+                if ($pattern === 0 && !empty($asFullDayShifts)) {
+                    // Pattern A: D3 full day (7h-20h30, 12h)
+                    return $asFullDayShifts[array_rand($asFullDayShifts)];
+                } elseif ($pattern === 1 && !empty($asMorningShifts)) {
+                    // Pattern B: D1 (7h-15h30) — needs evening partner
+                    return $asMorningShifts[0]; // D1
+                } else {
+                    // Pattern C: D4 (7h-19h) — needs evening partner
+                    $d4 = array_filter($asMorningShifts, fn($h) => $h['code'] === 'D4');
+                    return !empty($d4) ? array_values($d4)[0] : ($asMorningShifts[0] ?? $asFullDayShifts[0] ?? null);
+                }
+            } else {
+                // Second AS in pair: complement to cover 7h-20h30
+                if ($pattern === 0) {
+                    // First got D3 (full day) → second can be morning reinforcement (D1 or D4)
+                    return !empty($asMorningShifts) ? $asMorningShifts[array_rand($asMorningShifts)] : $asFullDayShifts[0];
+                } else {
+                    // First got D1 or D4 → second must be evening (S3 or S4)
+                    if ($pattern === 1 && !empty($asEveningShifts)) {
+                        // Prefer S3 (13h-20h30) for better overlap with D1 (ends 15h30)
+                        $s3 = array_filter($asEveningShifts, fn($h) => $h['code'] === 'S3');
+                        return !empty($s3) ? array_values($s3)[0] : $asEveningShifts[0];
+                    } else {
+                        // S4 (14h-20h30) pairs well with D4 (ends 19h — good overlap)
+                        $s4 = array_filter($asEveningShifts, fn($h) => $h['code'] === 'S4');
+                        return !empty($s4) ? array_values($s4)[0] : $asEveningShifts[0];
+                    }
+                }
+            }
+        }
+
+        // ── INF / ASSC: coverage logic ──
+        if ($nbTotal >= 2) {
+            $pattern = $dayIndex % 3;
+            if ($pattern === 0) {
+                return ($slotIndex === 0 && !empty($fullDayShifts))
+                    ? $fullDayShifts[array_rand($fullDayShifts)]
+                    : (!empty($morningShifts) ? $morningShifts[array_rand($morningShifts)] : $fullDayShifts[0]);
+            } elseif ($pattern === 1) {
+                return ($slotIndex === 0)
+                    ? (!empty($morningShifts) ? $morningShifts[array_rand($morningShifts)] : $fullDayShifts[0])
+                    : (!empty($eveningShifts) ? $eveningShifts[array_rand($eveningShifts)] : $fullDayShifts[0]);
+            } else {
+                return ($slotIndex === 0 && !empty($fullDayShifts))
+                    ? $fullDayShifts[array_rand($fullDayShifts)]
+                    : (!empty($eveningShifts) ? $eveningShifts[array_rand($eveningShifts)] : $fullDayShifts[0]);
+            }
+        }
+
+        // Single person (INF or ASSC seul par module) → full day for max coverage
+        return !empty($fullDayShifts) ? $fullDayShifts[array_rand($fullDayShifts)] : $morningShifts[0];
+    };
+
+    // ── Helper: check consecutive days ──
+    $getConsecutive = function ($userId, $date) use (&$userDays) {
+        $count = 0;
+        for ($back = 1; $back <= 7; $back++) {
+            $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+            if (isset($userDays[$userId][$prevDate])) $count++;
+            else break;
+        }
+        return $count;
+    };
+
+    // ── Helper: check if user is eligible ──
+    $isEligible = function ($u, $date) use (&$absenceMap, &$desirMap, &$userDays) {
+        if (isset($absenceMap[$u['id']][$date])) return false;
+        if (isset($desirMap[$u['id']][$date]) && $desirMap[$u['id']][$date] === 'jour_off') return false;
+        if (isset($userDays[$u['id']][$date])) return false;
+        return true;
+    };
+
+    // ── Helper: check structured rules ──
+    // $shiftCode can be null for early module-only checks (before shift is picked)
+    $checkRules = function ($u, $shiftCode, $modId, $date) use (&$structuredRules, &$ruleUserMap, &$userDays) {
+        $dow = (int) date('N', strtotime($date));
+
+        foreach ($structuredRules as $rule) {
+            // Check if rule applies to this user
+            if ($rule['target_mode'] === 'all') {
+                // applies to everyone
+            } elseif ($rule['target_mode'] === 'fonction') {
+                if (($u['fonction_code'] ?? '') !== $rule['target_fonction_code']) continue;
+            } elseif ($rule['target_mode'] === 'users') {
+                if (!isset($ruleUserMap[$rule['id']][$u['id']])) continue;
+            } else {
+                continue;
+            }
+
+            $p = $rule['params'];
+
+            switch ($rule['rule_type']) {
+                case 'shift_only':
+                    if ($shiftCode !== null && !empty($p['shift_codes']) && !in_array($shiftCode, $p['shift_codes'])) {
+                        return false;
+                    }
+                    break;
+                case 'shift_exclude':
+                    if ($shiftCode !== null && !empty($p['shift_codes']) && in_array($shiftCode, $p['shift_codes'])) {
+                        return false;
+                    }
+                    break;
+                case 'module_only':
+                    if (!empty($p['module_ids']) && !in_array($modId, $p['module_ids'])) {
+                        return false;
+                    }
+                    break;
+                case 'module_exclude':
+                    if (!empty($p['module_ids']) && in_array($modId, $p['module_ids'])) {
+                        return false;
+                    }
+                    break;
+                case 'no_weekend':
+                    if ($dow >= 6) return false;
+                    break;
+                case 'max_days_week':
+                    $maxDays = (int) ($p['max_days'] ?? 5);
+                    // Count days assigned this ISO week
+                    $weekStart = date('Y-m-d', strtotime('monday this week', strtotime($date)));
+                    $count = 0;
+                    for ($i = 0; $i < 7; $i++) {
+                        $wd = date('Y-m-d', strtotime("$weekStart +$i days"));
+                        if (isset($userDays[$u['id']][$wd])) $count++;
+                    }
+                    if ($count >= $maxDays) return false;
+                    break;
+            }
+        }
+        return true;
+    };
+
+    // ── PASS 1: Fill besoins_couverture (required positions) ──
+    for ($d = 1; $d <= $daysInMonth; $d++) {
+        $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
+        $dow = (int) date('N', strtotime($date)); // 1=Mon 7=Sun
+
+        foreach ($besoinsIdx as $modId => $dows) {
+            if ($moduleFilter && $modId !== $moduleFilter) continue;
+            if (!isset($dows[$dow])) continue;
+
+            foreach ($dows[$dow] as $fonctionId => $nbReqd) {
+                // Find eligible users for this module + fonction
+                $candidates = [];
+                foreach ($users as $u) {
+                    if ($u['fonction_id'] !== $fonctionId) continue;
+                    $uMods = $userModuleMap[$u['id']] ?? [];
+                    if (!in_array($modId, $uMods) && !in_array($poolModuleId, $uMods)) continue;
+                    if (!$isEligible($u, $date)) continue;
+                    if (!$checkRules($u, null, $modId, $date)) continue; // early module/weekend/max_days check
+
+                    // Score: hours deficit + module preference + randomness
+                    $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                    $currentHours = $userHours[$u['id']] ?? 0;
+                    $deficit = $targetMonthHours - $currentHours;
+                    $isPrincipal = ($u['principal_module_id'] === $modId) ? $iaBonusPrincipal : 0;
+
+                    // Part-time users get a bonus to ensure they get assigned regularly
+                    $tauxBonus = ($u['taux'] < 100) ? 5 : 0;
+
+                    // AS: boost score based on weekly hours deficit (ensures weekly balance)
+                    $weeklyBonus = 0;
+                    if ($u['fonction_code'] === 'AS') {
+                        $wk = $getWeekNum($date);
+                        $weeklyTarget = $getWeeklyTarget($u);
+                        $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                        $weeklyBonus = round($weeklyTarget - $currentWeekHours);
+                    }
+
+                    $candidates[] = [
+                        'user' => $u,
+                        'score' => $deficit + $isPrincipal + $tauxBonus + $weeklyBonus + rand(0, $iaRandomMax),
+                    ];
+                }
+
+                usort($candidates, fn($a, $b) => $b['score'] <=> $a['score']);
+
+                $assignedForSlot = 0;
+                foreach ($candidates as $c) {
+                    if ($assignedForSlot >= $nbReqd) break;
+                    $u = $c['user'];
+
+                    // Consecutive days check: AS max 3, others max iaConsecutifMaxBes
+                    $maxConsec = ($u['fonction_code'] === 'AS') ? $iaConsecutifMaxAS : $iaConsecutifMaxBes;
+                    if ($getConsecutive($u['id'], $date) >= $maxConsec) continue;
+
+                    // AS weekly hours cap: don't exceed weekly target (+5h tolerance)
+                    if ($u['fonction_code'] === 'AS') {
+                        $wk = $getWeekNum($date);
+                        $weeklyTarget = $getWeeklyTarget($u);
+                        $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                        if ($currentWeekHours >= $weeklyTarget + 5) continue;
+                    }
+
+                    // Pick shift based on coverage pattern + fonction
+                    $shift = $pickShift($modId, $assignedForSlot, $nbReqd, $d, $u, $u['fonction_code']);
+                    if (!$shift) continue;
+                    if (!$checkRules($u, $shift['code'], $modId, $date)) continue; // shift-level rule check
+
+                    // AS weekly hours: check if this shift would exceed weekly target
+                    if ($u['fonction_code'] === 'AS') {
+                        $wk = $getWeekNum($date);
+                        $weeklyTarget = $getWeeklyTarget($u);
+                        $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                        if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 5) continue; // +5h tolerance for coverage
+                    }
+
+                    // Part-time: prefer shorter shifts (but not for AS — AS pairing is critical)
+                    if ($u['taux'] < 80 && $assignedForSlot > 0 && $u['fonction_code'] !== 'AS') {
+                        if (!empty($morningShifts)) $shift = $morningShifts[array_rand($morningShifts)];
+                    }
+
+                    $groupeId = $getGroupeId($u['fonction_code'], $modId, $assignedForSlot);
+                    if ($u['fonction_code'] === 'AS') {
+                        if (!isset($moduleASSlotIdx[$modId][$date])) $moduleASSlotIdx[$modId][$date] = 0;
+                        $moduleASSlotIdx[$modId][$date]++;
+                    }
+
+                    $stmtInsert->execute([
+                        Uuid::v4(), $planningId, $u['id'], $date,
+                        $shift['id'], $modId, $groupeId, 'present', null
+                    ]);
+
+                    $wk = $getWeekNum($date);
+                    $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
+                    $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
+                    $userDays[$u['id']][$date] = true;
+                    $userShifts[$u['id']][$date] = $shift['code'];
+                    $assigned++;
+                    $assignedForSlot++;
+                }
+
+                if ($assignedForSlot < $nbReqd) {
+                    $conflicts[] = [
+                        'date' => $date,
+                        'module_id' => $modId,
+                        'fonction_id' => $fonctionId,
+                        'requis' => $nbReqd,
+                        'assigne' => $assignedForSlot,
+                    ];
+                }
+            }
+        }
+    }
+
+    // ── PASS 1.5: Entraide — fill AS gaps with cross-module AS ──
+    // When a module doesn't have enough AS, borrow from other modules
+    if (!empty($conflicts)) {
+        $asConflicts = [];
+        foreach ($conflicts as $ci => $c) {
+            // Only process AS conflicts
+            if ($c['fonction_id'] !== $fonctionAS) continue;
+            $asConflicts[] = $ci;
+        }
+
+        foreach ($asConflicts as $ci) {
+            $c = $conflicts[$ci];
+            $date = $c['date'];
+            $modId = $c['module_id'];
+            $nbMissing = $c['requis'] - $c['assigne'];
+            $filled = 0;
+
+            // Find AS from ANY module (not just this one) who are available
+            $candidates = [];
+            foreach ($users as $u) {
+                if ($u['fonction_code'] !== 'AS') continue;
+                if (!$isEligible($u, $date)) continue;
+                if (!$checkRules($u, null, $modId, $date)) continue; // early module/weekend/max_days check
+
+                // Skip if already at consecutive max
+                if ($getConsecutive($u['id'], $date) >= $iaConsecutifMaxAS) continue;
+
+                // Weekly hours check (relaxed: +8h tolerance for entraide)
+                $wk = $getWeekNum($date);
+                $weeklyTarget = $getWeeklyTarget($u);
+                $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                if ($currentWeekHours >= $weeklyTarget + 8) continue;
+
+                // Monthly hours check
+                $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $currentHours = $userHours[$u['id']] ?? 0;
+                $deficit = $targetMonthHours - $currentHours;
+
+                // Prefer users with most hours deficit + not from this module (real entraide)
+                $isPrincipal = ($u['principal_module_id'] === $modId) ? -5 : 0; // deprioritize same module (already tried)
+                $candidates[] = [
+                    'user' => $u,
+                    'score' => $deficit + $isPrincipal + rand(0, $iaRandomMax),
+                ];
+            }
+
+            usort($candidates, fn($a, $b) => $b['score'] <=> $a['score']);
+
+            foreach ($candidates as $ca) {
+                if ($filled >= $nbMissing) break;
+                $u = $ca['user'];
+
+                // Determine slot index for shift pairing (continue from what's already assigned)
+                $slotIdx = $c['assigne'] + $filled;
+                $shift = $pickShift($modId, $slotIdx, $c['requis'], (int) substr($date, -2), $u, 'AS');
+                if (!$shift) continue;
+                if (!$checkRules($u, $shift['code'], $modId, $date)) continue; // shift-level rule check
+
+                // Final weekly check with shift duration
+                $wk = $getWeekNum($date);
+                $weeklyTarget = $getWeeklyTarget($u);
+                $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 8) continue;
+
+                $asSlotIdx1_5 = $moduleASSlotIdx[$modId][$date] ?? ($c['assigne'] + $filled);
+                $groupeId = $getGroupeId('AS', $modId, $asSlotIdx1_5);
+                if (!isset($moduleASSlotIdx[$modId][$date])) $moduleASSlotIdx[$modId][$date] = 0;
+                $moduleASSlotIdx[$modId][$date]++;
+
+                $stmtInsert->execute([
+                    Uuid::v4(), $planningId, $u['id'], $date,
+                    $shift['id'], $modId, $groupeId, 'entraide', null
+                ]);
+
+                $wk = $getWeekNum($date);
+                $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
+                $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
+                $userDays[$u['id']][$date] = true;
+                $userShifts[$u['id']][$date] = $shift['code'];
+                $assigned++;
+                $filled++;
+            }
+
+            // Update conflict count
+            $conflicts[$ci]['assigne'] += $filled;
+            if ($conflicts[$ci]['assigne'] >= $conflicts[$ci]['requis']) {
+                unset($conflicts[$ci]);
+            }
+        }
+        $conflicts = array_values($conflicts); // re-index
+    }
+
+    // ── PASS 2: Fill remaining unassigned employees (balance hours) ──
+    if (!$moduleFilter) {
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
+            $dow = (int) date('N', strtotime($date));
+            $wk = $getWeekNum($date);
+
+            foreach ($users as $u) {
+                if (isset($userDays[$u['id']][$date])) continue;
+                if (!$isEligible($u, $date)) continue;
+
+                $isAS = ($u['fonction_code'] === 'AS');
+                $principalMod = $u['principal_module_id'];
+
+                // Early structured rules check (module/weekend/max_days)
+                if ($principalMod && !$checkRules($u, null, $principalMod, $date)) continue;
+
+                $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $currentHours = $userHours[$u['id']] ?? 0;
+                if ($currentHours >= $targetMonthHours) continue;
+
+                // Consecutive check: AS max 3, others max iaConsecutifMax
+                $maxConsec = $isAS ? $iaConsecutifMaxAS : $iaConsecutifMax;
+                if ($getConsecutive($u['id'], $date) >= $maxConsec) continue;
+
+                // AS: weekly hours cap — don't exceed weekly target
+                if ($isAS) {
+                    $weeklyTarget = $getWeeklyTarget($u);
+                    $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                    if ($currentWeekHours >= $weeklyTarget) continue;
+                }
+
+                // Weekend: AS work 7j/7 (no skip), others reduced probability
+                if (!$isAS && $dow >= 6 && rand(1, 100) <= $iaWeekendSkipProb) continue;
+
+                if (!$principalMod) continue;
+
+                // Direction/weekend off check
+                if (in_array($u['role'], ['direction', 'responsable']) && $iaDirWeekendOff && $dow >= 6) continue;
+
+                // Night module → night shift
+                $isNight = ($principalMod === $nightModuleId);
+                if ($isNight && !empty($nightShifts)) {
+                    $shift = $nightShifts[array_rand($nightShifts)];
+                } elseif (in_array($u['role'], ['direction', 'responsable']) && $adminShift) {
+                    $shift = $adminShift;
+                } else if ($isAS) {
+                    // AS: only D1, D3, D4, S3, S4 — alternate morning/evening
+                    $lastShiftCode = null;
+                    for ($back = 1; $back <= 3; $back++) {
+                        $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+                        if (isset($userShifts[$u['id']][$prevDate])) { $lastShiftCode = $userShifts[$u['id']][$prevDate]; break; }
+                    }
+                    $wasMorning = $lastShiftCode && in_array($lastShiftCode, ['D1','D3','D4']);
+                    $asAll = array_merge($asMorningShifts, $asFullDayShifts, $asEveningShifts);
+                    if ($wasMorning && !empty($asEveningShifts)) {
+                        $shift = $asEveningShifts[array_rand($asEveningShifts)];
+                    } elseif (!$wasMorning && !empty($asMorningShifts)) {
+                        $shift = $asMorningShifts[array_rand($asMorningShifts)];
+                    } else {
+                        if (empty($asAll)) continue;
+                        $shift = $asAll[array_rand($asAll)];
+                    }
+
+                    // AS: check shift won't exceed weekly target
+                    $weeklyTarget = $getWeeklyTarget($u);
+                    $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                    if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 2) continue;
+                } else {
+                    // INF, ASSC, etc.
+                    $lastShiftCode = null;
+                    for ($back = 1; $back <= 3; $back++) {
+                        $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+                        if (isset($userShifts[$u['id']][$prevDate])) { $lastShiftCode = $userShifts[$u['id']][$prevDate]; break; }
+                    }
+                    $wasMorning = $lastShiftCode && in_array($lastShiftCode, ['A1','A2','A3','D1','D4','C1']);
+                    if ($wasMorning && !empty($eveningShifts)) {
+                        $shift = $eveningShifts[array_rand($eveningShifts)];
+                    } elseif (!$wasMorning && !empty($morningShifts)) {
+                        $shift = $morningShifts[array_rand($morningShifts)];
+                    } else {
+                        $allShifts = array_merge($morningShifts, $eveningShifts);
+                        if (empty($allShifts)) continue;
+                        $shift = $allShifts[array_rand($allShifts)];
+                    }
+
+                    // Part-time: prefer shorter shifts (non-AS)
+                    if ($u['taux'] < 60 && !empty($morningShifts)) {
+                        $shortest = $morningShifts[0];
+                        foreach ($morningShifts as $ms) {
+                            if ($ms['duree_effective'] < $shortest['duree_effective']) $shortest = $ms;
+                        }
+                        $shift = $shortest;
+                    }
+                }
+
+                // Structured rules: shift-level check
+                if (!$checkRules($u, $shift['code'], $principalMod, $date)) continue;
+
+                $groupeIdP2 = null;
+                if ($isAS) {
+                    $asSlotP2 = $moduleASSlotIdx[$principalMod][$date] ?? 0;
+                    $groupeIdP2 = $getGroupeId('AS', $principalMod, $asSlotP2);
+                    if (!isset($moduleASSlotIdx[$principalMod][$date])) $moduleASSlotIdx[$principalMod][$date] = 0;
+                    $moduleASSlotIdx[$principalMod][$date]++;
+                }
+
+                $stmtInsert->execute([
+                    Uuid::v4(), $planningId, $u['id'], $date,
+                    $shift['id'], $principalMod, $groupeIdP2, 'present', null
+                ]);
+                $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
+                $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
+                $userDays[$u['id']][$date] = true;
+                $userShifts[$u['id']][$date] = $shift['code'];
+                $assigned++;
+            }
+        }
+    }
+
+    // ── PASS 3 (IA): Optimize planning with AI if hybrid or ai mode ──
+    $iaTokensIn = 0;
+    $iaTokensOut = 0;
+    $iaCostUsd = 0;
+    $iaProviderUsed = 'local';
+    $iaModelUsed = 'algorithme-v1';
+    $iaOptimizations = 0;
+
+    if ($mode !== 'local' && !empty($aiApiKey)) {
+        $iaProviderUsed = $aiProvider;
+        $iaModelUsed = $aiModel;
+
+        // Build context for IA
+        $modulesInfo = Db::fetchAll("SELECT m.id, m.code, m.nom, COUNT(e.id) as nb_etages FROM modules m LEFT JOIN etages e ON e.module_id = m.id GROUP BY m.id ORDER BY m.ordre");
+        $fonctionsInfo = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY ordre");
+
+        // Build conflict summary
+        $conflictSummary = [];
+        foreach ($conflicts as $c) {
+            $modCode = '';
+            foreach ($modulesInfo as $mi) { if ($mi['id'] === $c['module_id']) { $modCode = $mi['code']; break; } }
+            $foncCode = '';
+            foreach ($fonctionsInfo as $fi) { if ($fi['id'] === $c['fonction_id']) { $foncCode = $fi['code']; break; } }
+            $conflictSummary[] = "{$c['date']} {$modCode} {$foncCode}: requis={$c['requis']} assigné={$c['assigne']}";
+        }
+
+        // Build current assignments summary (per user per day)
+        $currentAssignments = Db::fetchAll(
+            "SELECT pa.user_id, pa.date_jour, ht.code AS horaire_code, m.code AS module_code,
+                    u.nom, u.prenom, f.code AS fonction_code
+             FROM planning_assignations pa
+             JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+             JOIN modules m ON m.id = pa.module_id
+             JOIN users u ON u.id = pa.user_id
+             LEFT JOIN fonctions f ON f.id = u.fonction_id
+             WHERE pa.planning_id = ?
+             ORDER BY pa.date_jour, m.code, f.code",
+            [$planningId]
+        );
+
+        // Group assignments by day for concise output
+        $byDay = [];
+        foreach ($currentAssignments as $a) {
+            $byDay[$a['date_jour']][] = "{$a['module_code']}/{$a['fonction_code']}: {$a['prenom']} {$a['nom']} ({$a['horaire_code']})";
+        }
+
+        // Hours summary per user
+        $hoursSummary = [];
+        foreach ($users as $u) {
+            if (($userHours[$u['id']] ?? 0) > 0) {
+                $target = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $actual = round($userHours[$u['id']] ?? 0);
+                if (abs($target - $actual) > 5) {
+                    $hoursSummary[] = "{$u['prenom']} {$u['nom']} ({$u['fonction_code']}, {$u['taux']}%): {$actual}h / cible {$target}h";
+                }
+            }
+        }
+
+        // Build list of available employees (with IDs so IA can reference them)
+        $availableStaff = [];
+        foreach ($users as $u) {
+            if (in_array($u['fonction_code'], ['AS', 'INF', 'ASSC'])) {
+                $mods = $userModuleMap[$u['id']] ?? [];
+                $modCodes = [];
+                foreach ($modulesInfo as $mi) { if (in_array($mi['id'], $mods)) $modCodes[] = $mi['code']; }
+                $currentH = round($userHours[$u['id']] ?? 0);
+                $targetH = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $availableStaff[] = "  {$u['id']} | {$u['prenom']} {$u['nom']} | {$u['fonction_code']} | {$u['taux']}% | modules:" . implode(',', $modCodes) . " | heures:{$currentH}/{$targetH}h";
+            }
+        }
+
+        // Build days with current assignments summary (compact)
+        $assignSummary = [];
+        foreach ($byDay as $day => $entries) {
+            $assignSummary[] = "$day: " . implode(', ', array_slice($entries, 0, 20));
+        }
+
+        // Fetch human IA rules from database
+        $iaRules = Db::fetchAll(
+            "SELECT titre, description, importance FROM ia_human_rules WHERE actif = 1 ORDER BY CASE WHEN importance = 'important' THEN 1 WHEN importance = 'moyen' THEN 2 ELSE 3 END, created_at DESC"
+        );
+
+        $prompt = "Tu es un expert en planification EMS (maison de retraite). Analyse ce planning et propose des optimisations.\n\n";
+        $prompt .= "## Règles métier\n";
+        $prompt .= "- AS: 2 par étage, 7j/7, max 3 jours consécutifs, horaires D1(7h-15h30)/D3(7h-20h30,12h)/D4(7h-19h)/S3(13h-20h30)/S4(14h-20h30)\n";
+        $prompt .= "- INF: 1 par module, 7j/7\n";
+        $prompt .= "- ASSC: 1 par module, 7j/7\n";
+        $prompt .= "- Couverture: chaque étage doit être couvert 7h-20h30 (paire matin+soir ou D3)\n";
+        $prompt .= "- Heures hebdo: respect du taux contractuel\n";
+
+        // Add custom IA rules from database
+        if (!empty($iaRules)) {
+            $prompt .= "\n## Règles personnalisées (priorités)\n";
+            $importantRules = array_filter($iaRules, fn($r) => $r['importance'] === 'important');
+            $moyenRules = array_filter($iaRules, fn($r) => $r['importance'] === 'moyen');
+
+            if (!empty($importantRules)) {
+                $prompt .= "### IMPORTANT (doit être respecté)\n";
+                foreach ($importantRules as $rule) {
+                    $prompt .= "- " . trim($rule['titre']) . ": " . trim($rule['description']) . "\n";
+                }
+            }
+
+            if (!empty($moyenRules)) {
+                $prompt .= "### MOYEN (à considérer)\n";
+                foreach ($moyenRules as $rule) {
+                    $prompt .= "- " . trim($rule['titre']) . ": " . trim($rule['description']) . "\n";
+                }
+            }
+            $prompt .= "\n";
+        }
+        $prompt .= "\n";
+
+        $prompt .= "## Modules\n";
+        foreach ($modulesInfo as $mi) $prompt .= "- {$mi['code']} ({$mi['nom']}): {$mi['nb_etages']} étages\n";
+
+        $prompt .= "\n## Employés disponibles (utilise EXACTEMENT ces user_id UUID)\n";
+        $prompt .= implode("\n", array_slice($availableStaff, 0, 60)) . "\n";
+
+        $nbConflicts = count($conflictSummary);
+        $prompt .= "\n## Conflits ($nbConflicts positions non couvertes)\n";
+        if (empty($conflictSummary)) {
+            $prompt .= "Aucun conflit !\n";
+        } else {
+            $prompt .= implode("\n", array_slice($conflictSummary, 0, 30)) . "\n";
+            if (count($conflictSummary) > 30) $prompt .= "... et " . (count($conflictSummary) - 30) . " autres\n";
+        }
+
+        if (!empty($hoursSummary)) {
+            $prompt .= "\n## Déséquilibres d'heures (écart > 5h)\n";
+            $prompt .= implode("\n", array_slice($hoursSummary, 0, 20)) . "\n";
+        }
+
+        $prompt .= "\n## Demande\n";
+        $prompt .= "Réponds en JSON uniquement. Propose des modifications pour résoudre les conflits.\n";
+        if (!empty($iaRules)) {
+            $prompt .= "⚠️  RESPECTE ABSOLUMENT toutes les règles personnalisées ci-dessus, particulièrement les règles IMPORTANTES.\n";
+        }
+        $prompt .= "IMPORTANT: utilise UNIQUEMENT les user_id UUID listés ci-dessus. Ne les invente pas.\n";
+        $prompt .= "Vérifie que l'employé n'est pas déjà assigné ce jour-là et qu'il a la bonne fonction pour le poste.\n";
+        $prompt .= "Format: {\"optimizations\": [{\"action\": \"move|add|remove\", \"user_id\": \"UUID exact\", \"date\": \"YYYY-MM-DD\", \"to_shift\": \"D1|D3|D4|S3|S4\", \"module_code\": \"M1|M2|M3|M4\", \"reason\": \"...\"}], \"summary\": \"résumé en français\"}\n";
+        $prompt .= "Si aucune optimisation possible, retourne {\"optimizations\": [], \"summary\": \"Planning optimal\"}\n";
+
+        // Call IA API
+        $iaResponse = null;
+        $iaError = null;
+
+        if ($aiProvider === 'gemini') {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$aiModel}:generateContent?key={$aiApiKey}";
+            $payload = json_encode([
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['temperature' => 0.3, 'maxOutputTokens' => 16384, 'responseMimeType' => 'application/json'],
+            ]);
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 90,
+            ]);
+            $raw = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $raw) {
+                $resp = json_decode($raw, true);
+                
+                $finishReason = $resp['candidates'][0]['finishReason'] ?? '';
+                $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                
+                if ($finishReason === 'MAX_TOKENS' && empty($text)) {
+                    $iaError = "Gemini ran out of tokens during thinking (MAX_TOKENS)";
+                    error_log("zerdaTime IA Gemini error: MAX_TOKENS reached.");
+                } else {
+                    $usage = $resp['usageMetadata'] ?? [];
+                    $iaTokensIn = (int) ($usage['promptTokenCount'] ?? 0);
+                    $iaTokensOut = (int) ($usage['candidatesTokenCount'] ?? 0);
+
+                    // Gemini pricing (approximate per model)
+                    $priceIn = 0; $priceOut = 0;
+                    if (str_contains($aiModel, 'flash')) { $priceIn = 0.075 / 1000000; $priceOut = 0.30 / 1000000; }
+                    elseif (str_contains($aiModel, 'pro')) { $priceIn = 1.25 / 1000000; $priceOut = 5.00 / 1000000; }
+                    $iaCostUsd = $iaTokensIn * $priceIn + $iaTokensOut * $priceOut;
+
+                    // Extract JSON from response (may be wrapped in markdown code block)
+                    if (preg_match('/\{[\s\S]*\}/', $text, $m)) {
+                        $iaResponse = json_decode($m[0], true);
+                    }
+                    if (!$iaResponse) {
+                        $iaError = "Failed to parse JSON from Gemini response";
+                        error_log("zerdaTime IA Gemini JSON parse error. Raw text: " . substr($text, 0, 500));
+                    }
+                }
+            } else {
+                $iaError = "Gemini API error (HTTP $httpCode)";
+                error_log("zerdaTime IA Gemini error: HTTP $httpCode — " . substr($raw, 0, 500));
+            }
+
+        } elseif ($aiProvider === 'claude') {
+            $url = "https://api.anthropic.com/v1/messages";
+            $payload = json_encode([
+                'model' => $aiModel,
+                'max_tokens' => 4096,
+                'temperature' => 0.3,
+                'messages' => [['role' => 'user', 'content' => $prompt]],
+            ]);
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $aiApiKey,
+                    'anthropic-version: 2023-06-01',
+                ],
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 60,
+            ]);
+            $raw = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $raw) {
+                $resp = json_decode($raw, true);
+                $text = $resp['content'][0]['text'] ?? '';
+                $usage = $resp['usage'] ?? [];
+                $iaTokensIn = (int) ($usage['input_tokens'] ?? 0);
+                $iaTokensOut = (int) ($usage['output_tokens'] ?? 0);
+
+                // Claude pricing (approximate per model)
+                $priceIn = 0; $priceOut = 0;
+                if (str_contains($aiModel, 'haiku')) { $priceIn = 0.80 / 1000000; $priceOut = 4.00 / 1000000; }
+                elseif (str_contains($aiModel, 'sonnet')) { $priceIn = 3.00 / 1000000; $priceOut = 15.00 / 1000000; }
+                elseif (str_contains($aiModel, 'opus')) { $priceIn = 15.00 / 1000000; $priceOut = 75.00 / 1000000; }
+                $iaCostUsd = $iaTokensIn * $priceIn + $iaTokensOut * $priceOut;
+
+                // Extract JSON from response (may be wrapped in markdown code block)
+                if (preg_match('/\{[\s\S]*\}/', $text, $m)) {
+                    $iaResponse = json_decode($m[0], true);
+                }
+            } else {
+                $iaError = "Claude API error (HTTP $httpCode)";
+                error_log("zerdaTime IA Claude error: HTTP $httpCode — " . substr($raw, 0, 500));
+            }
+        }
+
+        // Reconnect to DB because the long API call might have caused a timeout
+        Db::reconnect();
+
+        // Apply IA optimizations if any (with validation)
+        if ($iaResponse && !empty($iaResponse['optimizations'])) {
+            $horaireByCode = [];
+            foreach ($horaires as $h) $horaireByCode[$h['code']] = $h;
+            $moduleByCode = [];
+            foreach ($modulesInfo as $mi) $moduleByCode[$mi['code']] = $mi['id'];
+
+            // Build set of valid user IDs for validation
+            $validUserIds = [];
+            foreach ($users as $u) $validUserIds[$u['id']] = true;
+
+            foreach ($iaResponse['optimizations'] as $opt) {
+                $action = $opt['action'] ?? '';
+                $userId = $opt['user_id'] ?? '';
+                $date = $opt['date'] ?? '';
+                $toShift = $opt['to_shift'] ?? '';
+                $modCode = $opt['module_code'] ?? '';
+                $modId = $moduleByCode[$modCode] ?? null;
+
+                // Validate user_id exists in our users table
+                if (!$userId || !$date) continue;
+                if (!isset($validUserIds[$userId])) {
+                    error_log("zerdaTime IA: skipped invalid user_id '$userId'");
+                    continue;
+                }
+                // Validate date is within the month
+                if (!str_starts_with($date, $mois)) continue;
+
+                try {
+                    if ($action === 'move' && $toShift && isset($horaireByCode[$toShift])) {
+                        Db::exec(
+                            "UPDATE planning_assignations SET horaire_type_id = ?, module_id = COALESCE(?, module_id)
+                             WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                            [$horaireByCode[$toShift]['id'], $modId, $planningId, $userId, $date]
+                        );
+                        $iaOptimizations++;
+                    } elseif ($action === 'add' && $toShift && isset($horaireByCode[$toShift]) && $modId) {
+                        $exists = Db::getOne(
+                            "SELECT id FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                            [$planningId, $userId, $date]
+                        );
+                        if (!$exists) {
+                            Db::exec(
+                                "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, statut, notes)
+                                 VALUES (?, ?, ?, ?, ?, ?, 'present', 'IA')",
+                                [Uuid::v4(), $planningId, $userId, $date, $horaireByCode[$toShift]['id'], $modId]
+                            );
+                            $assigned++;
+                            $iaOptimizations++;
+                        }
+                    } elseif ($action === 'remove') {
+                        Db::exec(
+                            "DELETE FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                            [$planningId, $userId, $date]
+                        );
+                        $assigned--;
+                        $iaOptimizations++;
+                    }
+                } catch (\Throwable $e) {
+                    error_log("zerdaTime IA optimization error: " . $e->getMessage());
+                    continue; // Skip this optimization, don't crash
+                }
+            }
+        }
+    }
+
+    // Log usage for expenses tracking
+    $endTime = microtime(true);
+    $durationMs = isset($startTime) ? (int)(($endTime - $startTime) * 1000) : 0;
+    Db::exec(
+        "INSERT INTO ia_usage_log (id, planning_id, mois_annee, provider, model, tokens_in, tokens_out, cost_usd, nb_assignations, nb_conflicts, duration_ms, admin_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+        [Uuid::v4(), $planningId, $mois, $iaProviderUsed, $iaModelUsed, $iaTokensIn, $iaTokensOut, $iaCostUsd, $assigned, count($conflicts), $durationMs, $_SESSION['admin']['id'] ?? null]
+    );
+
+    $message = "$assigned assignations générées";
+    if ($mode !== 'local') {
+        $message .= " · IA: $iaOptimizations optimisations";
+        if ($iaError ?? null) $message .= " (⚠ $iaError)";
+    }
+
+    respond([
+        'success' => true,
+        'message' => $message,
+        'assigned' => $assigned,
+        'conflicts' => $conflicts,
+        'nb_conflicts' => count($conflicts),
+        'mode' => $mode,
+        'ia_optimizations' => $iaOptimizations,
+        'ia_cost' => round($iaCostUsd, 6),
+        'ia_summary' => $iaResponse['summary'] ?? null,
+        'ia_prompt' => $prompt ?? null,
+    ]);
+}
+
+/**
+ * Clear all assignations for a planning (or just for a module)
+ */
+function admin_clear_planning()
+{
+    global $params;
+    require_admin();
+
+    $planningId = $params['planning_id'] ?? '';
+    if (!$planningId) bad_request('planning_id requis');
+
+    $planning = Db::fetch("SELECT * FROM plannings WHERE id = ?", [$planningId]);
+    if (!$planning) not_found('Planning non trouvé');
+    // DEV MODE: autoriser vider un planning finalisé — TODO: réactiver après dev
+    // if ($planning['statut'] === 'final') bad_request('Planning finalisé, impossible de vider');
+
+    $moduleId = $params['module_id'] ?? null;
+
+    if ($moduleId) {
+        $deleted = Db::exec(
+            "DELETE FROM planning_assignations WHERE planning_id = ? AND module_id = ?",
+            [$planningId, $moduleId]
+        );
+    } else {
+        $deleted = Db::exec(
+            "DELETE FROM planning_assignations WHERE planning_id = ?",
+            [$planningId]
+        );
+    }
+
+    respond(['success' => true, 'message' => "$deleted assignations supprimées", 'deleted' => $deleted]);
+}
+
+/**
+ * Send planning by email to employees
+ */
+function admin_send_planning_email()
+{
+    global $params;
+    require_admin();
+
+    $planningId = $params['planning_id'] ?? '';
+    $mois = $params['mois'] ?? '';
+    $dest = $params['dest'] ?? 'all';
+    $moduleId = $params['module_id'] ?? null;
+    $customMessage = Sanitize::text($params['message'] ?? '', 1000);
+
+    if (!$planningId || !$mois) bad_request('Paramètres manquants');
+
+    $planning = Db::fetch("SELECT * FROM plannings WHERE id = ?", [$planningId]);
+    if (!$planning) not_found('Planning non trouvé');
+
+    // Get users to email
+    $query = "SELECT DISTINCT u.id, u.email, u.prenom, u.nom
+              FROM planning_assignations pa
+              JOIN users u ON u.id = pa.user_id
+              WHERE pa.planning_id = ? AND u.email IS NOT NULL AND u.email != ''";
+    $queryParams = [$planningId];
+
+    if ($dest === 'module' && $moduleId) {
+        $query .= " AND pa.module_id = ?";
+        $queryParams[] = $moduleId;
+    }
+
+    $recipients = Db::fetchAll($query, $queryParams);
+
+    if (empty($recipients)) {
+        respond(['success' => false, 'message' => 'Aucun destinataire trouvé']);
+        return;
+    }
+
+    // Get EMS name for email subject
+    $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+    $monthNames = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    [$year, $month] = explode('-', $mois);
+    $monthLabel = $monthNames[(int)$month - 1] . ' ' . $year;
+
+    $subject = "Planning $monthLabel — $emsNom";
+    $sent = 0;
+
+    foreach ($recipients as $r) {
+        // Build individual planning for this user
+        $assignations = Db::fetchAll(
+            "SELECT pa.date_jour, ht.code AS horaire_code, ht.heure_debut, ht.heure_fin,
+                    m.code AS module_code, pa.statut
+             FROM planning_assignations pa
+             JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+             JOIN modules m ON m.id = pa.module_id
+             WHERE pa.planning_id = ? AND pa.user_id = ?
+             ORDER BY pa.date_jour",
+            [$planningId, $r['id']]
+        );
+
+        $rows = '';
+        foreach ($assignations as $a) {
+            $date = date('d/m', strtotime($a['date_jour']));
+            $jour = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][(int)date('w', strtotime($a['date_jour']))];
+            $rows .= "<tr>
+                <td style='padding:4px 8px;border:1px solid #ddd'>$jour $date</td>
+                <td style='padding:4px 8px;border:1px solid #ddd;font-weight:700'>{$a['horaire_code']}</td>
+                <td style='padding:4px 8px;border:1px solid #ddd'>{$a['heure_debut']} — {$a['heure_fin']}</td>
+                <td style='padding:4px 8px;border:1px solid #ddd'>{$a['module_code']}</td>
+            </tr>";
+        }
+
+        $body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>
+            <h2 style='color:#2c3e50'>Planning — $monthLabel</h2>
+            <p>Bonjour {$r['prenom']},</p>";
+
+        if ($customMessage) {
+            $body .= "<p>" . nl2br(htmlspecialchars($customMessage)) . "</p>";
+        }
+
+        $body .= "<table style='border-collapse:collapse;width:100%;margin:16px 0'>
+            <thead><tr style='background:#2c3e50;color:#fff'>
+                <th style='padding:6px 8px;text-align:left'>Jour</th>
+                <th style='padding:6px 8px;text-align:left'>Horaire</th>
+                <th style='padding:6px 8px;text-align:left'>Heures</th>
+                <th style='padding:6px 8px;text-align:left'>Module</th>
+            </tr></thead>
+            <tbody>$rows</tbody>
+        </table>
+        <p style='color:#888;font-size:12px'>$emsNom — Planning généré automatiquement</p>
+        </div>";
+
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: $emsNom <noreply@zkriva.com>\r\n";
+
+        if (@mail($r['email'], $subject, $body, $headers)) {
+            $sent++;
+        }
+    }
+
+    respond([
+        'success' => true,
+        'message' => "$sent email(s) envoyé(s) sur " . count($recipients),
+        'sent' => $sent,
+        'total' => count($recipients),
+    ]);
+}
+
+/**
+ * Get planning archives (all months with a planning)
+ */
+function admin_get_planning_archives()
+{
+    require_responsable();
+
+    $archives = Db::fetchAll(
+        "SELECT p.mois_annee, p.statut,
+                COUNT(DISTINCT pa.user_id) AS nb_users,
+                COUNT(pa.id) AS nb_assignations,
+                COALESCE(SUM(ht.duree_effective), 0) AS total_hours
+         FROM plannings p
+         LEFT JOIN planning_assignations pa ON pa.planning_id = p.id
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         GROUP BY p.id
+         ORDER BY p.mois_annee DESC"
+    );
+
+    respond(['success' => true, 'archives' => $archives]);
+}

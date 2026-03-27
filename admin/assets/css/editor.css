@@ -1,0 +1,242 @@
+/* ===== Zasamix Rich Editor ===== */
+
+.zs-editor-wrap {
+    border: 1px solid rgba(0,34,28,.1);
+    border-radius: 0.3125rem;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color .15s ease;
+}
+.zs-editor-wrap:focus-within {
+    border-color: rgba(140,152,164,.25);
+    box-shadow: 0 0 1rem 0 rgba(140,152,164,.25);
+}
+
+/* Toolbar */
+.zs-ed-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(0,34,28,.08);
+    background: #f8f9fa;
+}
+
+.zs-ed-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #495057;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+.zs-ed-btn:hover {
+    background: rgba(0,0,0,.06);
+    color: #212529;
+}
+.zs-ed-btn.active {
+    background: var(--bs-primary, #0d6efd);
+    color: #fff;
+}
+
+.zs-ed-sep {
+    width: 1px;
+    height: 20px;
+    background: rgba(0,0,0,.1);
+    margin: 0 3px;
+}
+
+/* Editor content area */
+.zs-ed-content {
+    min-height: 120px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.zs-ed-content .ProseMirror {
+    min-height: 120px;
+    padding: 0.75rem 1rem;
+    outline: none;
+    font-size: .9375rem;
+    line-height: 1.6;
+    color: #1e2022;
+}
+
+.zs-ed-content .ProseMirror > *:first-child { margin-top: 0; }
+.zs-ed-content .ProseMirror > *:last-child { margin-bottom: 0; }
+
+/* Placeholder */
+.zs-ed-content .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: #8c98a4;
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+
+/* Typography inside editor */
+.zs-ed-content .ProseMirror h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 .5rem;
+}
+.zs-ed-content .ProseMirror h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: .875rem 0 .4rem;
+}
+.zs-ed-content .ProseMirror p {
+    margin: 0 0 .5rem;
+}
+.zs-ed-content .ProseMirror ul,
+.zs-ed-content .ProseMirror ol {
+    padding-left: 1.5rem;
+    margin: .5rem 0;
+}
+.zs-ed-content .ProseMirror blockquote {
+    border-left: 3px solid var(--bs-primary, #0d6efd);
+    padding-left: .75rem;
+    margin: .5rem 0;
+    color: #6c757d;
+}
+.zs-ed-content .ProseMirror code {
+    background: rgba(0,0,0,.05);
+    border-radius: 3px;
+    padding: .1em .3em;
+    font-size: .85em;
+}
+.zs-ed-content .ProseMirror pre {
+    background: #1e1e2e;
+    color: #e0e0e0;
+    border-radius: 6px;
+    padding: .75rem 1rem;
+    overflow-x: auto;
+    font-size: .85rem;
+}
+.zs-ed-content .ProseMirror a {
+    color: var(--bs-primary, #0d6efd);
+    text-decoration: underline;
+}
+.zs-ed-content .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: .5rem 0;
+}
+.zs-ed-content .ProseMirror mark {
+    background: #fef3cd;
+    padding: .05em .15em;
+    border-radius: 2px;
+}
+.zs-ed-content .ProseMirror hr {
+    border: none;
+    border-top: 2px solid rgba(0,0,0,.1);
+    margin: 1rem 0;
+}
+
+/* ===== Dark Theme ===== */
+
+[data-theme="dark"] .zs-editor-wrap {
+    border-color: #2a2a4a;
+    background: #1a1a2e;
+}
+[data-theme="dark"] .zs-editor-wrap:focus-within {
+    border-color: #4a6da7;
+    box-shadow: 0 0 .5rem 0 rgba(74,109,167,.2);
+}
+
+[data-theme="dark"] .zs-ed-toolbar {
+    background: #16213e;
+    border-bottom-color: #2a2a4a;
+}
+[data-theme="dark"] .zs-ed-btn {
+    color: #c0c7d0;
+}
+[data-theme="dark"] .zs-ed-btn:hover {
+    background: rgba(255,255,255,.08);
+    color: #e0e0e0;
+}
+[data-theme="dark"] .zs-ed-btn.active {
+    background: #4a6da7;
+    color: #fff;
+}
+[data-theme="dark"] .zs-ed-sep {
+    background: rgba(255,255,255,.1);
+}
+
+[data-theme="dark"] .zs-ed-content .ProseMirror {
+    color: #e0e0e0;
+}
+[data-theme="dark"] .zs-ed-content .ProseMirror p.is-editor-empty:first-child::before {
+    color: #6b7280;
+}
+[data-theme="dark"] .zs-ed-content .ProseMirror blockquote {
+    border-left-color: #4a6da7;
+    color: #9ca3af;
+}
+[data-theme="dark"] .zs-ed-content .ProseMirror code {
+    background: rgba(255,255,255,.08);
+}
+[data-theme="dark"] .zs-ed-content .ProseMirror mark {
+    background: #854d0e;
+    color: #fef3cd;
+}
+[data-theme="dark"] .zs-ed-content .ProseMirror hr {
+    border-top-color: #2a2a4a;
+}
+
+/* ===== Rich Content Display (read-only) ===== */
+.zs-rich-content h2 { font-size: 1.2rem; font-weight: 600; margin: .75rem 0 .4rem; }
+.zs-rich-content h3 { font-size: 1.05rem; font-weight: 600; margin: .6rem 0 .3rem; }
+.zs-rich-content p { margin: 0 0 .4rem; }
+.zs-rich-content ul, .zs-rich-content ol { padding-left: 1.5rem; margin: .4rem 0; }
+.zs-rich-content blockquote {
+    border-left: 3px solid var(--bs-primary, #0d6efd);
+    padding-left: .75rem;
+    margin: .4rem 0;
+    color: #6c757d;
+}
+.zs-rich-content code { background: rgba(0,0,0,.05); border-radius: 3px; padding: .1em .3em; font-size: .85em; }
+.zs-rich-content a { color: var(--bs-primary, #0d6efd); text-decoration: underline; }
+.zs-rich-content img { max-width: 100%; height: auto; border-radius: 4px; margin: .4rem 0; }
+.zs-rich-content mark { background: #fef3cd; padding: .05em .15em; border-radius: 2px; }
+
+[data-theme="dark"] .zs-rich-content blockquote { border-left-color: #4a6da7; color: #9ca3af; }
+[data-theme="dark"] .zs-rich-content code { background: rgba(255,255,255,.08); }
+[data-theme="dark"] .zs-rich-content mark { background: #854d0e; color: #fef3cd; }
+
+/* ===== Responsive ===== */
+@media (max-width: 575.98px) {
+    .zs-ed-toolbar {
+        gap: 1px;
+        padding: 3px 4px;
+    }
+    .zs-ed-btn {
+        width: 28px;
+        height: 28px;
+        font-size: .8rem;
+    }
+    .zs-ed-content .ProseMirror {
+        padding: .5rem .75rem;
+        font-size: .875rem;
+    }
+}
+
+/* Comment post button inside editor */
+.zs-comment-post-btn {
+    pointer-events: auto;
+    opacity: .85;
+    transition: opacity .2s;
+}
+.zs-comment-post-btn:hover { opacity: 1; }
+.zs-editor-wrap:has(.zs-comment-post-btn) .zs-ed-content .ProseMirror {
+    padding-bottom: 2.5rem;
+}

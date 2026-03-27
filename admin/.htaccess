@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /zerdatime/admin/
+
+  # Don't rewrite actual files and directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Logout action
+  RewriteRule ^logout/?$ index.php?action=logout [QSA,L]
+
+  # Clean URLs → index.php with page (and optional id) parameter
+  RewriteRule ^([a-z][a-z0-9-]*)/?$ index.php?page=$1 [QSA,L]
+  RewriteRule ^([a-z][a-z0-9-]*)/([a-zA-Z0-9_-]+)/?$ index.php?page=$1&id=$2 [QSA,L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

@@ -1,0 +1,15 @@
+# Forcer le téléchargement des fichiers installables
+<FilesMatch "\.(ps1|py|bat|zip|part)$">
+    ForceType application/octet-stream
+    Header set Content-Disposition "attachment"
+</FilesMatch>
+
+# Désactiver la compression gzip pour les gros fichiers
+<FilesMatch "\.(zip|part|bin)$">
+    SetEnv no-gzip 1
+</FilesMatch>
+
+# Désactiver gzip pour download.php (streaming)
+<Files "download.php">
+    SetEnv no-gzip 1
+</Files>

@@ -1,0 +1,114 @@
+<?php
+return [
+    'dashboard' => [
+        'admin_get_dashboard_stats', 'admin_get_system_info',
+    ],
+    'users' => [
+        'admin_get_users', 'admin_get_user', 'admin_search_users', 'admin_create_user',
+        'admin_update_user', 'admin_toggle_user', 'admin_reset_user_password',
+        'admin_upload_user_avatar', 'admin_delete_user_avatar', 'admin_flag_photo',
+        'admin_delete_user_permanent',
+    ],
+    'planning' => [
+        'admin_get_planning', 'admin_save_assignation', 'admin_delete_assignation',
+        'admin_create_planning', 'admin_finalize_planning',
+        'admin_generate_planning', 'admin_get_planning_stats',
+        'admin_get_planning_refs', 'admin_clear_planning',
+        'admin_send_planning_email', 'admin_get_planning_archives',
+    ],
+    'desirs' => [
+        'admin_get_desirs', 'admin_validate_desir', 'admin_get_user_permanents',
+        'admin_get_permanents_pending', 'admin_validate_permanent',
+    ],
+    'absences' => [
+        'admin_get_absences', 'admin_validate_absence', 'admin_set_remplacement',
+        'admin_upload_justificatif', 'admin_delete_justificatif',
+    ],
+    'modules' => [
+        'admin_get_modules', 'admin_create_module', 'admin_update_module', 'admin_delete_module',
+        'admin_get_etages', 'admin_get_groupes',
+        'admin_create_groupe', 'admin_update_groupe', 'admin_delete_groupe',
+    ],
+    'horaires' => [
+        'admin_get_horaires', 'admin_create_horaire', 'admin_update_horaire', 'admin_toggle_horaire', 'admin_delete_horaire',
+    ],
+    'votes' => [
+        'admin_get_proposals', 'admin_create_proposal', 'admin_toggle_vote_status',
+        'admin_validate_proposal', 'admin_delete_proposal', 'admin_get_proposal_votes',
+    ],
+    'messages' => [
+        'admin_get_messages', 'admin_reply_message',
+    ],
+    'emails' => [
+        'admin_get_all_emails', 'admin_get_email_detail', 'admin_get_email_contacts',
+        'admin_send_email', 'admin_delete_email', 'admin_get_email_stats',
+        'admin_upload_attachment', 'admin_download_attachment',
+    ],
+    'config' => [
+        'admin_get_config', 'admin_save_config', 'admin_assign_module_responsable',
+        'admin_generate_structure', 'admin_update_module_config', 'admin_get_ia_usage',
+        'admin_get_ia_rules', 'admin_create_ia_rule', 'admin_update_ia_rule',
+        'admin_delete_ia_rule', 'admin_toggle_ia_rule',
+        'admin_upload_logo',
+    ],
+    'besoins' => [
+        'admin_get_besoins', 'admin_save_besoin', 'admin_delete_besoin',
+        'admin_reset_module_besoins', 'admin_copy_module_besoins',
+    ],
+    'repartition' => [
+        'admin_get_repartition',
+    ],
+    'vacances' => [
+        'admin_get_vacances', 'admin_validate_vacances', 'admin_bulk_validate_vacances',
+        'admin_get_periodes_bloquees', 'admin_add_periode_bloquee', 'admin_update_periode_bloquee', 'admin_delete_periode_bloquee',
+    ],
+    'pv' => [
+        'admin_get_pv_list', 'admin_create_pv', 'admin_get_pv', 'admin_update_pv',
+        'admin_finalize_pv', 'admin_delete_pv', 'admin_restore_pv', 'admin_purge_pv',
+        'admin_archive_pv', 'admin_unarchive_pv',
+        'admin_validate_pv', 'admin_reject_pv', 'admin_send_pv_email',
+        'admin_get_pv_refs',
+        'admin_upload_pv_audio', 'admin_serve_pv_audio',
+        'admin_transcribe_external', 'admin_structure_pv_external',
+    ],
+    'sondages' => [
+        'admin_get_sondages', 'admin_get_sondage', 'admin_create_sondage',
+        'admin_update_sondage', 'admin_toggle_sondage', 'admin_delete_sondage',
+        'admin_generate_sondage_questions',
+    ],
+    'documents' => [
+        'admin_get_documents', 'admin_get_document_services', 'admin_upload_document',
+        'admin_update_document', 'admin_delete_document', 'admin_toggle_document_visibility',
+        'admin_set_document_access', 'admin_get_document_access',
+        'admin_create_service', 'admin_update_service', 'admin_serve_document',
+    ],
+    'changements' => [
+        'admin_get_changements', 'admin_valider_changement', 'admin_get_changement_detail',
+    ],
+    'fiches_salaire' => [
+        'admin_get_fiches_salaire', 'admin_upload_fiche_salaire', 'admin_bulk_upload_fiches',
+        'admin_delete_fiche_salaire', 'admin_serve_fiche_salaire',
+    ],
+    'import_export' => [
+        'admin_export_planning', 'admin_export_users', 'admin_export_absences',
+        'admin_import_users', 'admin_import_polypoint',
+    ],
+    'alerts' => [
+        'admin_get_alerts', 'admin_get_alert_reads', 'admin_create_alert', 'admin_toggle_alert', 'admin_delete_alert',
+    ],
+    'todos' => [
+        'admin_get_todos', 'admin_create_todo', 'admin_update_todo', 'admin_delete_todo',
+        'admin_get_todo_users',
+    ],
+    'notes' => [
+        'admin_get_notes', 'admin_create_note', 'admin_update_note', 'admin_delete_note',
+        'admin_toggle_pin_note',
+    ],
+    'roadmap' => [
+        'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
+    ],
+    'menus' => [
+        'admin_get_menus', 'admin_save_menu', 'admin_delete_menu',
+        'admin_get_menu_reservations', 'admin_get_reservations_jour',
+    ],
+];

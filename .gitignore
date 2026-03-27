@@ -1,0 +1,37 @@
+# Secrets & config
+config/config.php
+.env
+.env.*
+
+# Cache & uploads
+cache/
+uploads/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+.claude/
+.grok/
+
+# Large binaries & AI models
+whisper-local/downloads/
+assets/ai/
+*.wasm
+*.onnx
+*.bin
+*.exe
+*.zip
+*.whl
+*.docx
+*.ogg
+*.mp3
+
+# Storage (user uploads)
+storage/
+
+# OS
+.DS_Store
+Thumbs.db
