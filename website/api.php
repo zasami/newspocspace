@@ -29,6 +29,11 @@ switch ($action) {
             'semaine_fin' => $sunday->format('Y-m-d')]);
         break;
 
+    case 'get_menus_last_update':
+        $ts = Db::getOne("SELECT MAX(updated_at) FROM menus");
+        respond(['success' => true, 'last_update' => $ts ?: '']);
+        break;
+
     case 'famille_login':
         $email = trim($input['email'] ?? '');
         $password = trim($input['password'] ?? '');
