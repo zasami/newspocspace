@@ -750,8 +750,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         setModalStep('success');
     });
 
-    // Init
+    // Init + auto-refresh every 60s
     loadWeek();
+    setInterval(loadWeek, 60000);
 })();
 </script>
 
