@@ -88,8 +88,8 @@ switch ($action) {
 
         // Re-verify auth
         $resident = Db::fetch(
-            "SELECT id, date_naissance, code_acces FROM residents
-             WHERE id = ? AND correspondant_email = ? AND is_active = 1",
+            "SELECT id, date_naissance, code_acces, correspondant_nom, correspondant_prenom
+             FROM residents WHERE id = ? AND correspondant_email = ? AND is_active = 1",
             [$residentId, $email]
         );
         if (!$resident) {
@@ -118,16 +118,11 @@ switch ($action) {
         }
 
         $id = Uuid::v4();
-        // Use a placeholder created_by since public users aren't in the users table
-        // We'll use the resident_id as a reference
+        $visiteurNom = trim(($resident['correspondant_prenom'] ?? '') . ' ' . ($resident['correspondant_nom'] ?? ''));
         Db::exec(
-            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [$id, $dateJour, $repas, $residentId,
-             ($resident['correspondant_prenom'] ?? '') . ' ' . ($resident['correspondant_nom'] ?? ''),
-             $nbPersonnes, $remarques,
-             // created_by requires a user UUID — use a system placeholder
-             '00000000-0000-0000-0000-000000000000']
+            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [$id, $dateJour, $repas, $residentId, $visiteurNom, $nbPersonnes, $remarques]
         );
 
         respond(['success' => true, 'message' => 'Réservation confirmée']);
