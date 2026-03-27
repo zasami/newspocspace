@@ -30,6 +30,25 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
     </div>
   </div>
 
+  <!-- Modal Permissions -->
+  <div class="modal fade" id="udPermModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès zerdaTime</h5>
+          <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        </div>
+        <div class="modal-body" id="udPermBody">
+          <p class="text-muted small">Chargement...</p>
+        </div>
+        <div class="modal-footer d-flex">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-sm btn-primary ms-auto" id="udPermSaveBtn"><i class="bi bi-check-lg"></i> Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tabs -->
   <ul class="nav nav-tabs mb-3" id="userTabs">
     <li class="nav-item">
@@ -148,7 +167,10 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
                 ${u.taux ? `<span class="text-muted ud-text-sm">${Math.round(u.taux)}%</span>` : ''}
               </div>
             </div>
-            <div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-warning btn-sm" id="udPermBtn">
+                <i class="bi bi-shield-check"></i> Permissions
+              </button>
               <a href="${AdminURL.page('user-edit', u.id)}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil"></i> Modifier
               </a>
@@ -174,6 +196,11 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
         planMois.value = `${nextM.getFullYear()}-${String(nextM.getMonth()+1).padStart(2,'0')}`;
 
         planMois.addEventListener('change', loadPlanning);
+
+        // Permissions button
+        document.getElementById('udPermBtn')?.addEventListener('click', () => {
+            loadPermissionsModal(userId);
+        });
 
         await Promise.all([loadDesirs(), loadPermanents(), loadAbsences(), loadPlanning()]);
     }
@@ -295,6 +322,103 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
             }
         }
         tbody.innerHTML = row + '</tr>';
+    }
+
+    async function loadPermissionsModal(uid) {
+        const panel = document.getElementById('udPermBody');
+        const modalEl = document.getElementById('udPermModal');
+        if (!panel || !modalEl) return;
+
+        const permModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        panel.innerHTML = '<p class="text-muted small">Chargement...</p>';
+        permModal.show();
+
+        const res = await adminApiPost('admin_get_user_permissions', { user_id: uid });
+        if (!res.success || !res.permissions) {
+            panel.innerHTML = '<p class="text-danger small">Erreur chargement permissions</p>';
+            return;
+        }
+
+        const perms = res.permissions;
+        const groups = {
+            'Pages': Object.entries(perms).filter(([k]) => k.startsWith('page_')),
+            'Cuisine': Object.entries(perms).filter(([k]) => k.startsWith('cuisine_')),
+        };
+
+        panel.innerHTML = '';
+
+        // Presets
+        const presetRow = document.createElement('div');
+        presetRow.className = 'mb-3 d-flex gap-1 flex-wrap';
+        const presets = [
+            { label: 'Standard (tout)', fn: () => setAll(true) },
+            { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_emails']) },
+            { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_emails']) },
+            { label: 'Aucun accès', fn: () => setAll(false) },
+        ];
+        presets.forEach(p => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-outline-secondary btn-sm';
+            btn.textContent = p.label;
+            btn.addEventListener('click', p.fn);
+            presetRow.appendChild(btn);
+        });
+        panel.appendChild(presetRow);
+
+        // Groups
+        for (const [groupName, entries] of Object.entries(groups)) {
+            const h = document.createElement('div');
+            h.className = 'fw-semibold small mb-1 mt-2';
+            h.textContent = groupName;
+            panel.appendChild(h);
+
+            entries.forEach(([key, info]) => {
+                const wrap = document.createElement('div');
+                wrap.className = 'form-check form-switch';
+
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.className = 'form-check-input';
+                input.id = 'udperm_' + key;
+                input.dataset.key = key;
+                input.checked = info.granted === 1;
+
+                const label = document.createElement('label');
+                label.className = 'form-check-label small';
+                label.htmlFor = input.id;
+                label.textContent = info.label;
+
+                wrap.appendChild(input);
+                wrap.appendChild(label);
+                panel.appendChild(wrap);
+            });
+        }
+
+        function setAll(val) {
+            panel.querySelectorAll('input[data-key]').forEach(el => { el.checked = val; });
+        }
+
+        function applyPreset(allowed) {
+            panel.querySelectorAll('input[data-key]').forEach(el => {
+                el.checked = allowed.includes(el.dataset.key);
+            });
+        }
+
+        // Save handler
+        document.getElementById('udPermSaveBtn').onclick = async () => {
+            const data = {};
+            panel.querySelectorAll('input[data-key]').forEach(el => {
+                data[el.dataset.key] = el.checked ? 1 : 0;
+            });
+            const r = await adminApiPost('admin_save_user_permissions', { user_id: uid, permissions: data });
+            if (r.success) {
+                showToast('Accès mis à jour', 'success');
+                permModal.hide();
+            } else {
+                showToast(r.message || 'Erreur', 'error');
+            }
+        };
     }
 
     window.initUserdetailPage = initUserdetailPage;
