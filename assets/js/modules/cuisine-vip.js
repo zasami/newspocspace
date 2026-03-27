@@ -1,22 +1,31 @@
 /**
- * Cuisine VIP — VIP table management with inline search
+ * Cuisine VIP — VIP table management
+ * Residents are added via topbar search (@nom or @chambre)
  */
-import { apiPost, toast, escapeHtml, debounce } from '../helpers.js';
+import { apiPost, toast, escapeHtml } from '../helpers.js';
+
+let residentHandler = null;
 
 export async function init() {
-    document.getElementById('cvSearch')?.addEventListener('input', debounce(searchResidents, 300));
-
-    // Close results on outside click
-    document.addEventListener('click', e => {
-        if (!e.target.closest('#cvSearch') && !e.target.closest('#cvSearchResults')) {
-            document.getElementById('cvSearchResults').innerHTML = '';
+    // Listen for resident selection from topbar search
+    residentHandler = async (e) => {
+        const { id, name } = e.detail;
+        const result = await apiPost('cuisine_save_vip', { resident_id: id, vip_action: 'add' });
+        if (result.success) {
+            toast(name + ' ajouté à la table VIP', 'success');
+            loadVip();
+        } else {
+            toast(result.message || 'Erreur', 'error');
         }
-    });
-
+    };
+    window.addEventListener('resident-selected', residentHandler);
     loadVip();
 }
 
-export function destroy() {}
+export function destroy() {
+    if (residentHandler) window.removeEventListener('resident-selected', residentHandler);
+    residentHandler = null;
+}
 
 async function loadVip() {
     const body = document.getElementById('cvBody');
@@ -41,16 +50,12 @@ async function loadVip() {
         card.onmouseenter = () => { card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; };
         card.onmouseleave = () => { card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; };
 
-        // Header
-        const header = document.createElement('div');
-        header.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:1rem 1.25rem;border-bottom:1px solid #E8E5E0';
-
         const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid #E8E5E0';
         header.innerHTML = '<div style="width:40px;height:40px;border-radius:50%;background:#D4C4A8;color:#6B5B3E;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0">' + escapeHtml(initials) + '</div>'
-            + '<div style="flex:1;min-width:0">'
-            + '<div style="font-weight:600;font-size:.92rem;color:#1A1A18">' + escapeHtml(r.prenom + ' ' + r.nom) + '</div>'
-            + '<div style="font-size:.78rem;color:#6b7280">' + escapeHtml(r.chambre ? 'Ch. ' + r.chambre : '') + (r.etage ? ' · Ét. ' + r.etage : '') + '</div>'
-            + '</div>';
+            + '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.92rem;color:#1A1A18">' + escapeHtml(r.prenom + ' ' + r.nom) + '</div>'
+            + '<div style="font-size:.78rem;color:#6b7280">' + escapeHtml(r.chambre ? 'Ch. ' + r.chambre : '') + (r.etage ? ' · Ét. ' + r.etage : '') + '</div></div>';
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-outline-danger';
@@ -60,15 +65,13 @@ async function loadVip() {
         removeBtn.addEventListener('click', async () => {
             if (!confirm('Retirer ' + r.prenom + ' ' + r.nom + ' de la table VIP ?')) return;
             const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'remove' });
-            if (result.success) { toast('Retiré de la table VIP', 'success'); loadVip(); }
+            if (result.success) { toast('Retiré', 'success'); loadVip(); }
         });
         header.appendChild(removeBtn);
         card.appendChild(header);
 
-        // Body — menu spécial
         const cardBody = document.createElement('div');
         cardBody.style.cssText = 'padding:1rem 1.25rem';
-
         const label = document.createElement('label');
         label.style.cssText = 'display:block;font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem';
         label.textContent = 'Menu spécial';
@@ -91,51 +94,9 @@ async function loadVip() {
             toast(result.success ? 'Menu spécial mis à jour' : 'Erreur', result.success ? 'success' : 'error');
         });
         cardBody.appendChild(saveBtn);
-
         card.appendChild(cardBody);
         grid.appendChild(card);
     });
 
     body.appendChild(grid);
-}
-
-async function searchResidents() {
-    const raw = document.getElementById('cvSearch')?.value || '';
-    const list = document.getElementById('cvSearchResults');
-    if (!list) return;
-
-    // Support @nom, @chambre, or just typing
-    const q = raw.startsWith('@') ? raw.slice(1).trim() : raw.trim();
-    if (q.length < 2) { list.innerHTML = ''; return; }
-
-    const res = await apiPost('cuisine_get_residents', { search: q });
-    list.innerHTML = '';
-
-    const nonVip = (res.residents || []).filter(r => !r.is_vip);
-    if (!nonVip.length) {
-        list.innerHTML = '<div class="cuis-autocomplete-item" style="color:#888;font-style:italic;padding:.6rem .75rem">Aucun résident trouvé</div>';
-        return;
-    }
-
-    nonVip.forEach(r => {
-        const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
-        const item = document.createElement('div');
-        item.className = 'cuis-autocomplete-item';
-        item.style.cssText = 'display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer';
-
-        item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;flex-shrink:0">' + escapeHtml(initials) + '</div>'
-            + '<div style="flex:1"><div style="font-weight:600;font-size:.88rem">' + escapeHtml(r.prenom + ' ' + r.nom) + '</div>'
-            + '<div style="font-size:.75rem;color:#6b7280">Ch. ' + escapeHtml(r.chambre || '-') + ' · Ét. ' + escapeHtml(r.etage || '-') + '</div></div>';
-
-        item.addEventListener('click', async () => {
-            const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'add' });
-            if (result.success) {
-                toast(r.prenom + ' ' + r.nom + ' ajouté à la table VIP', 'success');
-                document.getElementById('cvSearch').value = '';
-                list.innerHTML = '';
-                loadVip();
-            }
-        });
-        list.appendChild(item);
-    });
 }

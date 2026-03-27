@@ -88,6 +88,7 @@ async function loadPage(pageId, params = {}) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     updateNavActive(pageId);
     updateTopbarTitle(pageId);
+    updateSearchPlaceholder(pageId);
     closeMobileSidebar();
 }
 
@@ -100,6 +101,19 @@ function updateNavActive(pageId) {
 }
 
 /* ── Topbar title ── */
+
+const searchPlaceholders = {
+    'cuisine-vip': '@nom ou @chambre pour chercher un résident...',
+    'cuisine-famille': '@nom ou @chambre pour chercher un résident...',
+    'cuisine-reservations': 'Chercher un collaborateur...',
+    'cuisine-menus': 'Chercher un menu, une page...',
+};
+
+function updateSearchPlaceholder(pageId) {
+    const input = document.getElementById('feSearchInput');
+    if (!input) return;
+    input.placeholder = searchPlaceholders[pageId] || 'Rechercher (collègues, pages…)';
+}
 
 function updateTopbarTitle(pageId) {
     const el = document.getElementById('feTopbarTitle');
@@ -306,8 +320,10 @@ async function runSearch(q, container) {
         });
     });
 
-    // Search residents (@ prefix or cuisine users)
-    if (window.__ZT__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
+    // Search residents — on cuisine pages or with @ prefix or digits
+    const residentPages = ['cuisine-vip', 'cuisine-famille', 'cuisine-home'];
+    const isResidentPage = residentPages.includes(currentPage);
+    if (isResidentPage || window.__ZT__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
         try {
             const { apiPost } = await import('./helpers.js');
             const resRes = await apiPost('cuisine_get_residents', { search: q });
@@ -318,7 +334,8 @@ async function runSearch(q, container) {
                         key: r.id,
                         label: `${r.prenom} ${r.nom}`,
                         meta: `Ch. ${r.chambre || '-'} · Ét. ${r.etage || '-'}`,
-                        chambre: r.chambre
+                        chambre: r.chambre,
+                        isVip: r.is_vip
                     });
                 });
             }
@@ -340,7 +357,7 @@ async function runSearch(q, container) {
         }
         if (item.type === 'resident') {
             const initials = (item.label.split(' ').map(w => w[0] || '').join('').substring(0, 2)).toUpperCase();
-            return `<a class="fe-search-item" data-link="cuisine-vip" data-slug="${item.key}">
+            return `<a class="fe-search-item fe-search-resident" data-resident-id="${item.key}" data-resident-name="${escapeHtml(item.label)}">
                 <span class="fe-search-item-icon" style="background:#D4C4A8;color:#6B5B3E">${escapeHtml(initials)}</span>
                 <div>
                     <div class="fe-search-item-name">${escapeHtml(item.label)}</div>
@@ -358,6 +375,19 @@ async function runSearch(q, container) {
         </a>`;
     }).join('');
     container.classList.add('show');
+
+    // Resident click → dispatch event for active page to handle
+    container.querySelectorAll('.fe-search-resident').forEach(el => {
+        el.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = el.dataset.residentId;
+            const name = el.dataset.residentName;
+            container.classList.remove('show');
+            document.getElementById('feSearchInput').value = '';
+            window.dispatchEvent(new CustomEvent('resident-selected', { detail: { id, name } }));
+        });
+    });
 }
 
 async function getColleagues() {
