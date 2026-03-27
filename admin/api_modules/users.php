@@ -187,7 +187,8 @@ function admin_update_user()
     $values = [];
 
     $allowed = ['nom', 'prenom', 'email', 'telephone', 'taux', 'fonction_id', 'role', 'type_contrat',
-                'employee_id', 'date_entree', 'date_fin_contrat', 'solde_vacances'];
+                'employee_id', 'date_entree', 'date_fin_contrat', 'solde_vacances',
+                'type_employe', 'include_planning', 'include_vacances', 'include_desirs'];
 
     foreach ($allowed as $field) {
         if (isset($params[$field])) {

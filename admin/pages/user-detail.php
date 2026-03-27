@@ -161,6 +161,7 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
               <h5 class="mb-1">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</h5>
               <div class="d-flex flex-wrap gap-2 align-items-center">
                 <span class="badge bg-secondary">${escapeHtml(u.role)}</span>
+                <span class="badge ${u.type_employe === 'externe' ? 'bg-warning text-dark' : 'bg-success bg-opacity-75'}">${escapeHtml(u.type_employe || 'interne')}</span>
                 ${u.fonction_nom ? `<span class="badge bg-primary bg-opacity-25 text-dark border">${escapeHtml(u.fonction_nom)}</span>` : ''}
                 ${modules}
                 <span class="text-muted ud-text-sm">${escapeHtml(u.email)}</span>

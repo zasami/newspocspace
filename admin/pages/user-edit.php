@@ -41,13 +41,34 @@ if (!$userId) {
             </div>
           </div>
           <div class="row g-2 mb-2">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Rôle</label>
               <div class="zs-select" id="editRole" data-placeholder="Collaborateur"></div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Contrat</label>
               <div class="zs-select" id="editContrat" data-placeholder="CDI"></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Type employé</label>
+              <div class="zs-select" id="editTypeEmploye" data-placeholder="Interne"></div>
+            </div>
+          </div>
+          <div class="card card-body bg-light p-2 mb-2" id="editExterneOverrides" style="display:none">
+            <small class="fw-semibold text-muted mb-1 d-block"><i class="bi bi-gear"></i> Overrides externe</small>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="editInclPlanning">
+                <label class="form-check-label small" for="editInclPlanning">Inclure dans le planning</label>
+              </div>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="editInclVacances">
+                <label class="form-check-label small" for="editInclVacances">Inclure dans les vacances</label>
+              </div>
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="editInclDesirs">
+                <label class="form-check-label small" for="editInclDesirs">Inclure dans les désirs</label>
+              </div>
             </div>
           </div>
           <div class="row g-2 mb-2">
@@ -179,6 +200,20 @@ async function initUsereditPage() {
         { value: 'interim', label: 'Intérim' },
     ], { value: u.type_contrat || 'CDI' });
 
+    zerdaSelect.init('#editTypeEmploye', [
+        { value: 'interne', label: 'Interne' },
+        { value: 'externe', label: 'Externe' },
+    ], { value: u.type_employe || 'interne', onSelect: toggleExterneOverrides });
+
+    function toggleExterneOverrides(val) {
+        document.getElementById('editExterneOverrides').style.display = (val || zerdaSelect.getValue('#editTypeEmploye')) === 'externe' ? 'block' : 'none';
+    }
+    toggleExterneOverrides(u.type_employe);
+
+    document.getElementById('editInclPlanning').checked = u.include_planning == 1;
+    document.getElementById('editInclVacances').checked = u.include_vacances == 1;
+    document.getElementById('editInclDesirs').checked = u.include_desirs == 1;
+
     document.getElementById('editUserForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = {
@@ -195,6 +230,10 @@ async function initUsereditPage() {
             date_entree: document.getElementById('editDateEntree').value,
             date_fin_contrat: document.getElementById('editDateFin').value,
             solde_vacances: document.getElementById('editVacances').value,
+            type_employe: zerdaSelect.getValue('#editTypeEmploye') || 'interne',
+            include_planning: document.getElementById('editInclPlanning').checked ? 1 : null,
+            include_vacances: document.getElementById('editInclVacances').checked ? 1 : null,
+            include_desirs: document.getElementById('editInclDesirs').checked ? 1 : null,
         };
 
         const res = await adminApiPost('admin_update_user', data);

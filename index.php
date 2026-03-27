@@ -233,7 +233,7 @@ if ($user && !empty($deniedPerms)) {
 <script nonce="<?= $cspNonce ?>">
 window.__ZT__ = {
   csrfToken: '<?= $csrfToken ?>',
-  user: <?= $user ? json_encode(['id' => $user['id'], 'prenom' => $user['prenom'], 'nom' => $user['nom'], 'email' => $user['email'], 'role' => $user['role'], 'taux' => $user['taux'], 'fonction_id' => $user['fonction_id']], JSON_HEX_TAG) : 'null' ?>,
+  user: <?= $user ? json_encode(['id' => $user['id'], 'prenom' => $user['prenom'], 'nom' => $user['nom'], 'email' => $user['email'], 'role' => $user['role'], 'taux' => $user['taux'], 'fonction_id' => $user['fonction_id'], 'type_employe' => $user['type_employe'] ?? 'interne'], JSON_HEX_TAG) : 'null' ?>,
   canChangement: <?= $canChangement ? 'true' : 'false' ?>,
   mustChangePassword: <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>,
   tempPasswordExpires: <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>,

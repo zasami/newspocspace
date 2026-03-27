@@ -105,7 +105,12 @@ function parseRoute() {
     path = path.replace(/^\/+|\/+$/g, '');
 
     const parts = path.split('/').filter(Boolean);
-    const pageId = parts[0] || 'home';
+    let pageId = parts[0] || 'home';
+
+    // External employees: redirect home → cuisine
+    if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
+        pageId = 'cuisine';
+    }
     const params = {};
     if (parts.length > 1) params.slug = parts[1];
 
