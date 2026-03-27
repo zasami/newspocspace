@@ -750,16 +750,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         setModalStep('success');
     });
 
-    // Init + check for menu updates every 30s (lightweight timestamp check)
-    let lastMenuUpdate = null;
+    // Init
     loadWeek();
-    setInterval(async () => {
-        const res = await apiCall('get_menus_last_update', {});
-        if (res.success && res.last_update && res.last_update !== lastMenuUpdate) {
-            lastMenuUpdate = res.last_update;
-            loadWeek();
-        }
-    }, 30000);
 })();
 </script>
 
