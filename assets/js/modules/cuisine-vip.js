@@ -83,15 +83,23 @@ async function loadVip() {
         textarea.rows = 2;
         textarea.placeholder = 'Régime, allergies, préférences...';
         textarea.value = r.menu_special || '';
+        const originalVal = r.menu_special || '';
         cardBody.appendChild(textarea);
 
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn btn-sm btn-primary';
         saveBtn.style.cssText = 'margin-top:.5rem;border-radius:8px;font-size:.78rem';
         saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
+        saveBtn.disabled = true;
+
+        textarea.addEventListener('input', () => {
+            saveBtn.disabled = textarea.value === originalVal;
+        });
+
         saveBtn.addEventListener('click', async () => {
             const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'set_menu', menu_special: textarea.value });
             toast(result.success ? 'Menu spécial mis à jour' : 'Erreur', result.success ? 'success' : 'error');
+            if (result.success) saveBtn.disabled = true;
         });
         cardBody.appendChild(saveBtn);
         card.appendChild(cardBody);
