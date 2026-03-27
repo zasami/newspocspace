@@ -421,7 +421,6 @@ a:hover { color: var(--ws-green-hover); }
 }
 .ws-btn-outline:hover {
   background: rgba(46,125,50,0.08);
-  border-color: rgba(46,125,50,0.3);
   opacity: 1;
 }
 
