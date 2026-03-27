@@ -78,6 +78,16 @@ $sidebarNav = [
     ],
 ];
 
+// Add profile link for external users
+if ($user && ($user['type_employe'] ?? '') === 'externe') {
+    $sidebarNav['compte'] = [
+        'label' => 'Mon compte',
+        'items' => [
+            'profile' => ['label' => 'Mon profil', 'icon' => 'person-circle'],
+        ],
+    ];
+}
+
 // Filter sidebar items by user permissions (Permission::PAGE_MAP)
 if ($user && !empty($deniedPerms)) {
     foreach ($sidebarNav as $catId => &$cat) {
