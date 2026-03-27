@@ -1,3 +1,23 @@
+<?php
+// Load zerdaTime DB to fetch dynamic menus
+require_once __DIR__ . '/../init.php';
+
+// Get current week's menus (Monday → Sunday)
+$dt = new DateTime();
+$dow = (int) $dt->format('N');
+$wsMonday = (clone $dt)->modify('-' . ($dow - 1) . ' days');
+$wsSunday = (clone $wsMonday)->modify('+6 days');
+$wsMenus = Db::fetchAll(
+    "SELECT date_jour, repas, entree, plat, salade, accompagnement, dessert, remarques
+     FROM menus WHERE date_jour BETWEEN ? AND ? ORDER BY date_jour ASC, repas ASC",
+    [$wsMonday->format('Y-m-d'), $wsSunday->format('Y-m-d')]
+);
+$wsMenusByKey = [];
+foreach ($wsMenus as $m) {
+    $wsMenusByKey[$m['date_jour'] . '_' . $m['repas']] = $m;
+}
+$wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -299,51 +319,37 @@
     </div>
     <div class="ws-menu-week">
       <div class="row g-3">
+        <?php
+        for ($i = 0; $i < 7; $i++):
+            $d = (clone $wsMonday)->modify("+{$i} days");
+            $dateStr = $d->format('Y-m-d');
+            $midiMenu = $wsMenusByKey[$dateStr . '_midi'] ?? null;
+            $soirMenu = $wsMenusByKey[$dateStr . '_soir'] ?? null;
+        ?>
         <div class="col-md-6 col-lg">
           <div class="ws-menu-day">
-            <div class="ws-menu-day-header">Lundi</div>
+            <div class="ws-menu-day-header"><?= h($wsDays[$i]) ?></div>
             <div class="ws-menu-day-body">
-              <div class="ws-menu-meal"><span class="ws-menu-type">Midi</span> Potage de légumes · Émincé de poulet, riz, haricots verts · Fruit de saison</div>
-              <div class="ws-menu-meal"><span class="ws-menu-type">Soir</span> Salade composée · Gratin dauphinois · Yaourt</div>
+              <?php if ($midiMenu): ?>
+                <div class="ws-menu-meal">
+                  <span class="ws-menu-type">Midi</span>
+                  <?= h(implode(' · ', array_filter([$midiMenu['entree'], $midiMenu['plat'], $midiMenu['accompagnement'], $midiMenu['dessert']]))) ?>
+                </div>
+              <?php else: ?>
+                <div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">Midi</span> <em>Menu à venir</em></div>
+              <?php endif; ?>
+              <?php if ($soirMenu): ?>
+                <div class="ws-menu-meal">
+                  <span class="ws-menu-type">Soir</span>
+                  <?= h(implode(' · ', array_filter([$soirMenu['entree'], $soirMenu['plat'], $soirMenu['accompagnement'], $soirMenu['dessert']]))) ?>
+                </div>
+              <?php else: ?>
+                <div class="ws-menu-meal ws-menu-empty"><span class="ws-menu-type">Soir</span> <em>Menu à venir</em></div>
+              <?php endif; ?>
             </div>
           </div>
         </div>
-        <div class="col-md-6 col-lg">
-          <div class="ws-menu-day">
-            <div class="ws-menu-day-header">Mardi</div>
-            <div class="ws-menu-day-body">
-              <div class="ws-menu-meal"><span class="ws-menu-type">Midi</span> Velouté de potiron · Filet de perche, pommes vapeur, épinards · Crème renversée</div>
-              <div class="ws-menu-meal"><span class="ws-menu-type">Soir</span> Soupe minestrone · Omelette aux fines herbes · Compote</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg">
-          <div class="ws-menu-day">
-            <div class="ws-menu-day-header">Mercredi</div>
-            <div class="ws-menu-day-body">
-              <div class="ws-menu-meal"><span class="ws-menu-type">Midi</span> Salade de carottes · Rôti de bœuf, purée, petits pois · Tarte aux pommes</div>
-              <div class="ws-menu-meal"><span class="ws-menu-type">Soir</span> Bouillon · Risotto aux champignons · Fruit</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg">
-          <div class="ws-menu-day">
-            <div class="ws-menu-day-header">Jeudi</div>
-            <div class="ws-menu-day-body">
-              <div class="ws-menu-meal"><span class="ws-menu-type">Midi</span> Salade verte · Escalope de veau, pâtes, brocolis · Flan au caramel</div>
-              <div class="ws-menu-meal"><span class="ws-menu-type">Soir</span> Potage du jour · Quiche lorraine, salade · Yaourt aux fruits</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg">
-          <div class="ws-menu-day">
-            <div class="ws-menu-day-header">Vendredi</div>
-            <div class="ws-menu-day-body">
-              <div class="ws-menu-meal"><span class="ws-menu-type">Midi</span> Crudités · Pavé de saumon, riz pilaf, courgettes · Mousse au chocolat</div>
-              <div class="ws-menu-meal"><span class="ws-menu-type">Soir</span> Velouté de légumes · Croûtes au fromage · Fruit de saison</div>
-            </div>
-          </div>
-        </div>
+        <?php endfor; ?>
       </div>
       <p class="ws-menu-note"><i class="bi bi-info-circle"></i> Menus susceptibles de modifications. Régimes spéciaux disponibles sur demande.</p>
     </div>
