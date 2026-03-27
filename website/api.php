@@ -117,12 +117,29 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Une réservation existe déjà pour ce résident à cette date']);
         }
 
+        // Find or create a user for this correspondent
+        $corrEmail = $email;
+        $corrUser = Db::fetch("SELECT id FROM users WHERE email = ?", [$corrEmail]);
+        if (!$corrUser) {
+            $corrUserId = Uuid::v4();
+            $corrNom = $resident['correspondant_nom'] ?? '';
+            $corrPrenom = $resident['correspondant_prenom'] ?? '';
+            Db::exec(
+                "INSERT INTO users (id, email, password, nom, prenom, role, type_employe, is_active)
+                 VALUES (?, ?, ?, ?, ?, 'collaborateur', 'externe', 1)",
+                [$corrUserId, $corrEmail, password_hash('famille-' . bin2hex(random_bytes(8)), PASSWORD_DEFAULT),
+                 $corrNom, $corrPrenom]
+            );
+        } else {
+            $corrUserId = $corrUser['id'];
+        }
+
         $id = Uuid::v4();
         $visiteurNom = trim(($resident['correspondant_prenom'] ?? '') . ' ' . ($resident['correspondant_nom'] ?? ''));
         Db::exec(
-            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [$id, $dateJour, $repas, $residentId, $visiteurNom, $nbPersonnes, $remarques]
+            "INSERT INTO reservations_famille (id, date_jour, repas, resident_id, visiteur_nom, nb_personnes, remarques, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $dateJour, $repas, $residentId, $visiteurNom, $nbPersonnes, $remarques, $corrUserId]
         );
 
         respond(['success' => true, 'message' => 'Réservation confirmée']);
