@@ -384,3 +384,182 @@ function cuisine_save_vip()
         bad_request('Action non reconnue');
     }
 }
+
+// ═══════════════════════════════════════
+// VIP Sessions
+// ═══════════════════════════════════════
+
+function cuisine_get_vip_session()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $sessionId = $params['session_id'] ?? '';
+
+    // If no session_id, get current/upcoming one
+    if (!$sessionId) {
+        $session = Db::fetch(
+            "SELECT * FROM vip_sessions WHERE date_session >= ? ORDER BY date_session ASC LIMIT 1",
+            [date('Y-m-d')]
+        );
+        if (!$session) {
+            // Get most recent past one
+            $session = Db::fetch("SELECT * FROM vip_sessions ORDER BY date_session DESC LIMIT 1");
+        }
+    } else {
+        $session = Db::fetch("SELECT * FROM vip_sessions WHERE id = ?", [$sessionId]);
+    }
+
+    if (!$session) {
+        respond(['success' => true, 'session' => null, 'residents' => [], 'accompagnateurs' => [], 'history' => []]);
+        return;
+    }
+
+    // Residents
+    $residents = Db::fetchAll(
+        "SELECT vsr.id AS link_id, vsr.menu_special, r.id, r.nom, r.prenom, r.chambre, r.etage
+         FROM vip_session_residents vsr
+         JOIN residents r ON r.id = vsr.resident_id
+         WHERE vsr.session_id = ?
+         ORDER BY r.nom, r.prenom",
+        [$session['id']]
+    );
+
+    // Accompagnateurs
+    $accompagnateurs = Db::fetchAll(
+        "SELECT vsa.id AS link_id, u.id AS user_id, u.prenom, u.nom, u.photo, f.nom AS fonction_nom, f.code AS fonction_code
+         FROM vip_session_accompagnateurs vsa
+         JOIN users u ON u.id = vsa.user_id
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE vsa.session_id = ?
+         ORDER BY u.nom",
+        [$session['id']]
+    );
+
+    // History (all sessions)
+    $history = Db::fetchAll(
+        "SELECT vs.id, vs.date_session, vs.menu_plat, vs.statut,
+                (SELECT COUNT(*) FROM vip_session_residents vsr2 WHERE vsr2.session_id = vs.id) AS nb_residents
+         FROM vip_sessions vs ORDER BY vs.date_session DESC LIMIT 12"
+    );
+
+    respond([
+        'success' => true,
+        'session' => $session,
+        'residents' => $residents,
+        'accompagnateurs' => $accompagnateurs,
+        'history' => $history,
+    ]);
+}
+
+function cuisine_create_vip_session()
+{
+    $user = require_permission('cuisine_table_vip');
+    global $params;
+
+    $dateSession = Sanitize::date($params['date_session'] ?? '');
+    if (!$dateSession) bad_request('Date requise');
+
+    $id = Uuid::v4();
+    Db::exec(
+        "INSERT INTO vip_sessions (id, date_session, created_by) VALUES (?, ?, ?)",
+        [$id, $dateSession, $user['id']]
+    );
+    respond(['success' => true, 'id' => $id, 'message' => 'Session VIP créée']);
+}
+
+function cuisine_save_vip_session_menu()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $sessionId = $params['session_id'] ?? '';
+    if (!$sessionId) bad_request('Session requise');
+
+    Db::exec(
+        "UPDATE vip_sessions SET menu_entree = ?, menu_plat = ?, menu_accompagnement = ?, menu_dessert = ?, menu_remarques = ?, updated_at = NOW() WHERE id = ?",
+        [
+            Sanitize::text($params['menu_entree'] ?? '', 500),
+            Sanitize::text($params['menu_plat'] ?? '', 500),
+            Sanitize::text($params['menu_accompagnement'] ?? '', 500),
+            Sanitize::text($params['menu_dessert'] ?? '', 500),
+            Sanitize::text($params['menu_remarques'] ?? '', 2000),
+            $sessionId,
+        ]
+    );
+    respond(['success' => true, 'message' => 'Menu VIP enregistré']);
+}
+
+function cuisine_add_vip_resident()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $sessionId = $params['session_id'] ?? '';
+    $residentId = $params['resident_id'] ?? '';
+    if (!$sessionId || !$residentId) bad_request('Session et résident requis');
+
+    $existing = Db::fetch("SELECT id FROM vip_session_residents WHERE session_id = ? AND resident_id = ?", [$sessionId, $residentId]);
+    if ($existing) bad_request('Résident déjà dans cette session');
+
+    Db::exec(
+        "INSERT INTO vip_session_residents (id, session_id, resident_id) VALUES (?, ?, ?)",
+        [Uuid::v4(), $sessionId, $residentId]
+    );
+    respond(['success' => true, 'message' => 'Résident ajouté']);
+}
+
+function cuisine_remove_vip_resident()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $linkId = $params['link_id'] ?? '';
+    if (!$linkId) bad_request('ID requis');
+
+    Db::exec("DELETE FROM vip_session_residents WHERE id = ?", [$linkId]);
+    respond(['success' => true, 'message' => 'Résident retiré']);
+}
+
+function cuisine_add_vip_accompagnateur()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $sessionId = $params['session_id'] ?? '';
+    $userId = $params['user_id'] ?? '';
+    if (!$sessionId || !$userId) bad_request('Session et accompagnateur requis');
+
+    $existing = Db::fetch("SELECT id FROM vip_session_accompagnateurs WHERE session_id = ? AND user_id = ?", [$sessionId, $userId]);
+    if ($existing) bad_request('Déjà assigné');
+
+    Db::exec(
+        "INSERT INTO vip_session_accompagnateurs (id, session_id, user_id) VALUES (?, ?, ?)",
+        [Uuid::v4(), $sessionId, $userId]
+    );
+    respond(['success' => true, 'message' => 'Accompagnateur ajouté']);
+}
+
+function cuisine_remove_vip_accompagnateur()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $linkId = $params['link_id'] ?? '';
+    if (!$linkId) bad_request('ID requis');
+
+    Db::exec("DELETE FROM vip_session_accompagnateurs WHERE id = ?", [$linkId]);
+    respond(['success' => true, 'message' => 'Accompagnateur retiré']);
+}
+
+function cuisine_close_vip_session()
+{
+    require_permission('cuisine_table_vip');
+    global $params;
+
+    $sessionId = $params['session_id'] ?? '';
+    if (!$sessionId) bad_request('Session requise');
+
+    Db::exec("UPDATE vip_sessions SET statut = 'termine', updated_at = NOW() WHERE id = ?", [$sessionId]);
+    respond(['success' => true, 'message' => 'Session terminée']);
+}

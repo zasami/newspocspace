@@ -74,5 +74,9 @@ return [
         'cuisine_get_residents', 'cuisine_search_visiteurs', 'cuisine_save_visiteur',
         'cuisine_get_reservations_famille', 'cuisine_save_reservation_famille', 'cuisine_delete_reservation_famille',
         'cuisine_get_vip', 'cuisine_save_vip',
+        'cuisine_get_vip_session', 'cuisine_create_vip_session', 'cuisine_save_vip_session_menu',
+        'cuisine_add_vip_resident', 'cuisine_remove_vip_resident',
+        'cuisine_add_vip_accompagnateur', 'cuisine_remove_vip_accompagnateur',
+        'cuisine_close_vip_session',
     ],
 ];
