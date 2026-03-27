@@ -20,12 +20,36 @@ export async function init() {
     document.getElementById('crSaveBtn')?.addEventListener('click', saveCommande);
     document.getElementById('crUserSearch')?.addEventListener('input', debounce(searchUsers, 300));
 
-    // Radio toggle style
-    document.querySelectorAll('#crModal input[name="crChoix"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            document.querySelectorAll('#crModal input[name="crChoix"]').forEach(r => {
-                r.closest('label').classList.toggle('active', r.checked);
+    // Choix toggle
+    document.querySelectorAll('#crModal .menu-choix-option').forEach(opt => {
+        opt.querySelector('input')?.addEventListener('change', () => {
+            document.querySelectorAll('#crModal .menu-choix-option').forEach(o => {
+                o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
             });
+            opt.style.borderColor = 'var(--zt-teal)'; opt.style.background = 'var(--zt-accent-bg)';
+        });
+    });
+    // Paiement toggle
+    document.querySelectorAll('#crModal input[name="crPaiement"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('#crModal .menu-pay-option').forEach(el => {
+                el.style.borderColor = 'var(--zt-border)'; el.style.background = '';
+            });
+            if (radio.checked) {
+                radio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)';
+                radio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)';
+            }
+        });
+    });
+    // Quick tags
+    document.querySelectorAll('#crModal .cr-quick-tag').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            const input = document.getElementById('crRemarques');
+            const tag = btn.dataset.tag;
+            if (input.value.toLowerCase().includes(tag.toLowerCase())) return;
+            input.value = input.value.trim() ? input.value.trim() + ', ' + tag : tag;
+            btn.style.background = 'var(--zt-accent-bg)'; btn.style.borderColor = 'var(--zt-teal)';
         });
     });
 
@@ -94,13 +118,30 @@ function openAddModal() {
     document.getElementById('crUserSearch').value = '';
     document.getElementById('crUserId').value = '';
     document.getElementById('crUserResults').innerHTML = '';
-    document.getElementById('crNb').value = 1;
-    document.getElementById('crPaiement').value = 'salaire';
+    document.getElementById('crNb').value = '1';
     document.getElementById('crRemarques').value = '';
-    document.querySelector('#crModal input[name="crChoix"][value="menu"]').checked = true;
-    document.querySelectorAll('#crModal input[name="crChoix"]').forEach(r => {
-        r.closest('label').classList.toggle('active', r.checked);
+
+    // Reset choix
+    const menuRadio = document.querySelector('#crModal input[name="crChoix"][value="menu"]');
+    if (menuRadio) menuRadio.checked = true;
+    document.querySelectorAll('#crModal .menu-choix-option').forEach(o => {
+        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
     });
+    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--zt-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--zt-accent-bg)'; }
+
+    // Reset paiement
+    const salRadio = document.querySelector('#crModal input[name="crPaiement"][value="salaire"]');
+    if (salRadio) salRadio.checked = true;
+    document.querySelectorAll('#crModal .menu-pay-option').forEach(o => {
+        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+    });
+    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)'; }
+
+    // Reset quick tags
+    document.querySelectorAll('#crModal .cr-quick-tag').forEach(b => {
+        b.style.background = ''; b.style.borderColor = '';
+    });
+
     modal?.show();
 }
 
@@ -113,9 +154,22 @@ async function searchUsers() {
     const res = await apiPost('cuisine_search_users', { q });
     list.innerHTML = '';
     (res.users || []).forEach(u => {
+        const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
         const item = document.createElement('div');
         item.className = 'cuis-autocomplete-item';
-        item.textContent = u.prenom + ' ' + u.nom + (u.fonction_nom ? ' — ' + u.fonction_nom : '');
+        item.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem';
+
+        if (u.photo) {
+            item.innerHTML = '<img src="' + escapeHtml(u.photo) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">';
+        } else {
+            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--zt-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
+        }
+
+        const info = document.createElement('div');
+        info.innerHTML = '<div style="font-weight:600;font-size:0.88rem">' + escapeHtml(u.prenom + ' ' + u.nom) + '</div>'
+            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--zt-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
+        item.appendChild(info);
+
         item.addEventListener('click', () => {
             document.getElementById('crUserSearch').value = u.prenom + ' ' + u.nom;
             document.getElementById('crUserId').value = u.id;
@@ -138,7 +192,7 @@ async function saveCommande() {
         user_id: userId,
         choix: document.querySelector('#crModal input[name="crChoix"]:checked')?.value || 'menu',
         nb_personnes: document.getElementById('crNb')?.value || 1,
-        paiement: document.getElementById('crPaiement')?.value || 'salaire',
+        paiement: document.querySelector('#crModal input[name="crPaiement"]:checked')?.value || 'salaire',
         remarques: document.getElementById('crRemarques')?.value || '',
     };
 

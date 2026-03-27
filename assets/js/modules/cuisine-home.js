@@ -51,13 +51,7 @@ export async function init() {
     document.getElementById('chAddCmdBtn')?.addEventListener('click', openCmdModal);
     document.getElementById('chCmdSaveBtn')?.addEventListener('click', saveCmdCommande);
     document.getElementById('chCmdUserSearch')?.addEventListener('input', debounce(searchCmdUsers, 300));
-    document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(r => {
-        r.addEventListener('change', () => {
-            document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(x => {
-                x.closest('label').classList.toggle('active', x.checked);
-            });
-        });
-    });
+    initCmdModalEvents();
 
     await loadAll();
 }
@@ -347,15 +341,66 @@ function openCmdModal() {
     document.getElementById('chCmdUserSearch').value = '';
     document.getElementById('chCmdUserId').value = '';
     document.getElementById('chCmdUserResults').innerHTML = '';
-    document.getElementById('chCmdNb').value = 1;
-    document.getElementById('chCmdPaiement').value = 'salaire';
+    document.getElementById('chCmdNb').value = '1';
     document.getElementById('chCmdRemarques').value = '';
+
+    // Reset choix radio
     const menuRadio = document.querySelector('#chCmdModal input[name="chCmdChoix"][value="menu"]');
     if (menuRadio) menuRadio.checked = true;
-    document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(r => {
-        r.closest('label').classList.toggle('active', r.checked);
+    document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(o => {
+        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
     });
+    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--zt-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--zt-accent-bg)'; }
+
+    // Reset paiement radio
+    const salRadio = document.querySelector('#chCmdModal input[name="chCmdPaiement"][value="salaire"]');
+    if (salRadio) salRadio.checked = true;
+    document.querySelectorAll('#chCmdModal .menu-pay-option').forEach(o => {
+        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+    });
+    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)'; }
+
+    // Reset quick tags
+    document.querySelectorAll('#chCmdModal .ch-quick-tag').forEach(b => {
+        b.style.background = ''; b.style.borderColor = '';
+    });
+
     cmdModal?.show();
+}
+
+function initCmdModalEvents() {
+    // Choix toggle
+    document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(opt => {
+        opt.querySelector('input')?.addEventListener('change', () => {
+            document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(o => {
+                o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+            });
+            opt.style.borderColor = 'var(--zt-teal)'; opt.style.background = 'var(--zt-accent-bg)';
+        });
+    });
+    // Paiement toggle
+    document.querySelectorAll('#chCmdModal input[name="chCmdPaiement"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('#chCmdModal .menu-pay-option').forEach(el => {
+                el.style.borderColor = 'var(--zt-border)'; el.style.background = '';
+            });
+            if (radio.checked) {
+                radio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)';
+                radio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)';
+            }
+        });
+    });
+    // Quick tags
+    document.querySelectorAll('#chCmdModal .ch-quick-tag').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            const input = document.getElementById('chCmdRemarques');
+            const tag = btn.dataset.tag;
+            if (input.value.toLowerCase().includes(tag.toLowerCase())) return;
+            input.value = input.value.trim() ? input.value.trim() + ', ' + tag : tag;
+            btn.style.background = 'var(--zt-accent-bg)'; btn.style.borderColor = 'var(--zt-teal)';
+        });
+    });
 }
 
 async function searchCmdUsers() {
@@ -367,9 +412,24 @@ async function searchCmdUsers() {
     const res = await apiPost('cuisine_search_users', { q });
     list.innerHTML = '';
     (res.users || []).forEach(u => {
+        const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
         const item = document.createElement('div');
         item.className = 'cuis-autocomplete-item';
-        item.textContent = u.prenom + ' ' + u.nom + (u.fonction_nom ? ' — ' + u.fonction_nom : '');
+        item.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem';
+
+        // Avatar
+        if (u.photo) {
+            item.innerHTML = '<img src="' + escapeHtml(u.photo) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">';
+        } else {
+            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--zt-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
+        }
+
+        // Name + fonction
+        const info = document.createElement('div');
+        info.innerHTML = '<div style="font-weight:600;font-size:0.88rem">' + escapeHtml(u.prenom + ' ' + u.nom) + '</div>'
+            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--zt-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
+        item.appendChild(info);
+
         item.addEventListener('click', () => {
             document.getElementById('chCmdUserSearch').value = u.prenom + ' ' + u.nom;
             document.getElementById('chCmdUserId').value = u.id;
@@ -385,6 +445,7 @@ async function saveCmdCommande() {
 
     const btn = document.getElementById('chCmdSaveBtn');
     btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Envoi...';
 
     const res = await apiPost('cuisine_add_commande', {
         date_jour: todayStr(),
@@ -392,11 +453,13 @@ async function saveCmdCommande() {
         user_id: userId,
         choix: document.querySelector('#chCmdModal input[name="chCmdChoix"]:checked')?.value || 'menu',
         nb_personnes: document.getElementById('chCmdNb')?.value || 1,
-        paiement: document.getElementById('chCmdPaiement')?.value || 'salaire',
+        paiement: document.querySelector('#chCmdModal input[name="chCmdPaiement"]:checked')?.value || 'salaire',
         remarques: document.getElementById('chCmdRemarques')?.value || '',
     });
 
     btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> Confirmer la commande';
+
     if (res.success) {
         toast('Commande enregistrée', 'success');
         cmdModal?.hide();

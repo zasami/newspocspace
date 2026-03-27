@@ -192,7 +192,7 @@ function cuisine_search_users()
 
     $like = "%$q%";
     $users = Db::fetchAll(
-        "SELECT u.id, u.prenom, u.nom, f.nom AS fonction_nom, f.code AS fonction_code
+        "SELECT u.id, u.prenom, u.nom, u.photo, f.nom AS fonction_nom, f.code AS fonction_code
          FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id
          WHERE u.is_active = 1 AND (u.nom LIKE ? OR u.prenom LIKE ? OR u.email LIKE ?)
          ORDER BY u.nom, u.prenom LIMIT 15",
