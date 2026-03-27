@@ -46,6 +46,12 @@ async function loadPage(pageId, params = {}) {
         history.replaceState({}, '', `${BASE}/login`);
     }
 
+    // External employees: home → cuisine-home
+    if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
+        pageId = 'cuisine-home';
+        history.replaceState({}, '', `${BASE}/cuisine-home`);
+    }
+
     document.body.classList.toggle('no-nav', pageId === 'login');
 
     if (currentModule?.destroy) {

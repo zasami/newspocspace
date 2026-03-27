@@ -8,6 +8,7 @@ let menuMonday = null;
 let menusCache = [];
 let myReservationsCache = {};
 let resModal = null;
+let menuRefreshInterval = null;
 
 const DAYS_FR = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 const DAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -45,6 +46,9 @@ export async function init() {
     }
 
     await Promise.all([loadWeek(), loadNextShift(), loadMenus()]);
+
+    // Auto-refresh menus every 60s so new menus from chef appear live
+    menuRefreshInterval = setInterval(loadMenus, 60000);
 }
 
 /* ═══════════════════════════════════════════
@@ -466,4 +470,11 @@ async function handleReservation(e) {
 
 function closeModal() { if (resModal) resModal.hide(); }
 
-export function destroy() {}
+export function destroy() {
+    if (menuRefreshInterval) { clearInterval(menuRefreshInterval); menuRefreshInterval = null; }
+    resModal = null;
+    currentMonday = null;
+    menuMonday = null;
+    menusCache = [];
+    myReservationsCache = {};
+}

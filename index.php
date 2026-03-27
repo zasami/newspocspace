@@ -26,6 +26,12 @@ $canChangement = $user && !empty($user['fonction_id']) && (bool) Db::getOne(
     [$user['fonction_id'], $user['id']]
 );
 
+// Backfill type_employe in session if missing (post-migration)
+if ($user && !isset($user['type_employe'])) {
+    $user['type_employe'] = Db::getOne("SELECT type_employe FROM users WHERE id = ?", [$user['id']]) ?: 'interne';
+    $_SESSION['zt_user']['type_employe'] = $user['type_employe'];
+}
+
 // Per-user denied permissions
 $deniedPerms = $user ? ($_SESSION['zt_user']['denied_perms'] ?? []) : [];
 
