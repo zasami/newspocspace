@@ -64,6 +64,7 @@
         <option value="midi">Midi</option>
         <option value="soir">Soir</option>
       </select>
+      <button class="btn btn-sm btn-primary" id="chAddCmdBtn"><i class="bi bi-plus-lg"></i> Ajouter</button>
       <button class="btn btn-sm btn-outline-secondary" id="chPrintCommandes" title="Imprimer commandes"><i class="bi bi-printer"></i></button>
     </div>
   </div>
@@ -148,6 +149,62 @@
       <div class="modal-footer d-flex" style="flex-shrink:0">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-sm btn-primary ms-auto" id="chReuseSaveBtn"><i class="bi bi-check-lg"></i> Copier</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ajouter commande -->
+<div class="modal fade" id="chCmdModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
+    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+      <div class="modal-header" style="flex-shrink:0">
+        <div>
+          <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Ajouter une commande</h5>
+          <small class="text-muted">Saisir une commande pour un collaborateur</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+      </div>
+      <div class="modal-body" style="flex:1;overflow-y:auto">
+        <div class="mb-2 position-relative">
+          <label class="form-label small fw-bold">Collaborateur</label>
+          <input type="text" class="form-control" id="chCmdUserSearch" placeholder="Chercher un collaborateur..." autocomplete="off">
+          <input type="hidden" id="chCmdUserId">
+          <div class="cuis-autocomplete-list" id="chCmdUserResults"></div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Choix</label>
+          <div class="d-flex gap-2">
+            <label class="btn btn-sm btn-outline-primary flex-fill text-center active" style="cursor:pointer">
+              <input type="radio" name="chCmdChoix" value="menu" checked class="d-none"> <i class="bi bi-egg-fried"></i> Menu
+            </label>
+            <label class="btn btn-sm btn-outline-success flex-fill text-center" style="cursor:pointer">
+              <input type="radio" name="chCmdChoix" value="salade" class="d-none"> <i class="bi bi-flower1"></i> Salade
+            </label>
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label small fw-bold">Nb personnes</label>
+            <input type="number" class="form-control" id="chCmdNb" min="1" max="10" value="1">
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-bold">Paiement</label>
+            <select class="form-select" id="chCmdPaiement">
+              <option value="salaire">Salaire</option>
+              <option value="caisse">Cash</option>
+              <option value="carte">Carte</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-0">
+          <label class="form-label small fw-bold">Remarques</label>
+          <input type="text" class="form-control" id="chCmdRemarques" placeholder="Allergies, sans porc...">
+        </div>
+      </div>
+      <div class="modal-footer d-flex" style="flex-shrink:0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-sm btn-primary ms-auto" id="chCmdSaveBtn"><i class="bi bi-check-lg"></i> Enregistrer</button>
       </div>
     </div>
   </div>

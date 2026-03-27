@@ -61,7 +61,7 @@ $sidebarNav = [
         'label' => 'Cuisine',
         'items' => [
             'cuisine-menus'    => ['label' => 'Menus',                'icon' => 'journal-text'],
-            'cuisine-reservations' => ['label' => 'Réservations collab', 'icon' => 'people'],
+            'cuisine-reservations' => ['label' => 'Commandes',           'icon' => 'receipt'],
             'cuisine-famille'  => ['label' => 'Réservations famille', 'icon' => 'house-heart'],
             'cuisine-vip'      => ['label' => 'Table VIP',           'icon' => 'star'],
         ],

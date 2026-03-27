@@ -2,12 +2,13 @@
  * Cuisine Home — Dashboard for external cuisine employees
  * 7 day cards, inline menu display, create/edit/reuse/print
  */
-import { apiPost, toast, escapeHtml } from '../helpers.js';
+import { apiPost, toast, escapeHtml, debounce } from '../helpers.js';
 
 const DAYS_FR = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 let menuMonday = null;
 let menuModal = null;
 let reuseModal = null;
+let cmdModal = null;
 let menusCache = {};
 let canEdit = true;
 let reuseSource = null; // menu data to copy
@@ -27,6 +28,8 @@ export async function init() {
     if (mEl) menuModal = new bootstrap.Modal(mEl);
     const rEl = document.getElementById('chReuseModal');
     if (rEl) reuseModal = new bootstrap.Modal(rEl);
+    const cEl = document.getElementById('chCmdModal');
+    if (cEl) cmdModal = new bootstrap.Modal(cEl);
 
     // Navigation
     document.getElementById('chMenuPrev')?.addEventListener('click', () => { menuMonday = shiftWeek(menuMonday, -7); loadAll(); });
@@ -45,6 +48,16 @@ export async function init() {
     // Commandes
     document.getElementById('chRepas')?.addEventListener('change', loadCommandes);
     document.getElementById('chPrintCommandes')?.addEventListener('click', printCommandes);
+    document.getElementById('chAddCmdBtn')?.addEventListener('click', openCmdModal);
+    document.getElementById('chCmdSaveBtn')?.addEventListener('click', saveCmdCommande);
+    document.getElementById('chCmdUserSearch')?.addEventListener('input', debounce(searchCmdUsers, 300));
+    document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(r => {
+        r.addEventListener('change', () => {
+            document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(x => {
+                x.closest('label').classList.toggle('active', x.checked);
+            });
+        });
+    });
 
     await loadAll();
 }
@@ -52,6 +65,7 @@ export async function init() {
 export function destroy() {
     menuModal = null;
     reuseModal = null;
+    cmdModal = null;
     menuMonday = null;
     menusCache = {};
 }
@@ -294,19 +308,102 @@ async function loadCommandes() {
         return;
     }
 
-    let html = '<table class="table table-sm table-striped mb-0" id="chCmdTable">'
-        + '<thead><tr><th>Nom</th><th>Fonction</th><th>Choix</th><th>Pers.</th><th>Paiement</th><th>Remarques</th></tr></thead><tbody>';
+    const table = document.createElement('table');
+    table.className = 'table table-sm table-striped mb-0';
+    table.id = 'chCmdTable';
+    table.innerHTML = '<thead><tr><th>Nom</th><th>Fonction</th><th>Choix</th><th>Pers.</th><th>Paiement</th><th>Remarques</th><th></th></tr></thead>';
+    const tbody = document.createElement('tbody');
     res.reservations.forEach(r => {
-        html += '<tr>'
-            + '<td>' + escapeHtml(r.prenom + ' ' + r.nom) + '</td>'
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + escapeHtml(r.prenom + ' ' + r.nom) + '</td>'
             + '<td class="small">' + escapeHtml(r.fonction_nom || r.fonction_code || '-') + '</td>'
             + '<td><span class="badge ' + (r.choix === 'menu' ? 'bg-primary' : 'bg-success') + '" style="font-size:.72rem">' + escapeHtml(r.choix) + '</span></td>'
             + '<td>' + r.nb_personnes + '</td>'
             + '<td class="small">' + escapeHtml(r.paiement || '-') + '</td>'
-            + '<td class="small">' + escapeHtml(r.remarques || '-') + '</td></tr>';
+            + '<td class="small">' + escapeHtml(r.remarques || '-') + '</td><td></td>';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-sm btn-outline-danger';
+        delBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+        delBtn.title = 'Annuler';
+        delBtn.addEventListener('click', async () => {
+            if (!confirm('Annuler cette commande ?')) return;
+            const result = await apiPost('cuisine_delete_commande', { id: r.id });
+            if (result.success) { toast('Annulée', 'success'); loadCommandes(); }
+        });
+        tr.lastElementChild.appendChild(delBtn);
+        tbody.appendChild(tr);
     });
-    html += '</tbody></table>';
-    body.innerHTML = html;
+    table.appendChild(tbody);
+    body.innerHTML = '';
+    body.appendChild(table);
+}
+
+// ═══════════════════════════════════════
+// ADD COMMANDE (from dashboard)
+// ═══════════════════════════════════════
+
+function openCmdModal() {
+    document.getElementById('chCmdUserSearch').value = '';
+    document.getElementById('chCmdUserId').value = '';
+    document.getElementById('chCmdUserResults').innerHTML = '';
+    document.getElementById('chCmdNb').value = 1;
+    document.getElementById('chCmdPaiement').value = 'salaire';
+    document.getElementById('chCmdRemarques').value = '';
+    const menuRadio = document.querySelector('#chCmdModal input[name="chCmdChoix"][value="menu"]');
+    if (menuRadio) menuRadio.checked = true;
+    document.querySelectorAll('#chCmdModal input[name="chCmdChoix"]').forEach(r => {
+        r.closest('label').classList.toggle('active', r.checked);
+    });
+    cmdModal?.show();
+}
+
+async function searchCmdUsers() {
+    const q = document.getElementById('chCmdUserSearch')?.value || '';
+    const list = document.getElementById('chCmdUserResults');
+    if (!list) return;
+    if (q.length < 2) { list.innerHTML = ''; return; }
+
+    const res = await apiPost('cuisine_search_users', { q });
+    list.innerHTML = '';
+    (res.users || []).forEach(u => {
+        const item = document.createElement('div');
+        item.className = 'cuis-autocomplete-item';
+        item.textContent = u.prenom + ' ' + u.nom + (u.fonction_nom ? ' — ' + u.fonction_nom : '');
+        item.addEventListener('click', () => {
+            document.getElementById('chCmdUserSearch').value = u.prenom + ' ' + u.nom;
+            document.getElementById('chCmdUserId').value = u.id;
+            list.innerHTML = '';
+        });
+        list.appendChild(item);
+    });
+}
+
+async function saveCmdCommande() {
+    const userId = document.getElementById('chCmdUserId')?.value;
+    if (!userId) { toast('Sélectionnez un collaborateur', 'error'); return; }
+
+    const btn = document.getElementById('chCmdSaveBtn');
+    btn.disabled = true;
+
+    const res = await apiPost('cuisine_add_commande', {
+        date_jour: todayStr(),
+        repas: document.getElementById('chRepas')?.value || 'midi',
+        user_id: userId,
+        choix: document.querySelector('#chCmdModal input[name="chCmdChoix"]:checked')?.value || 'menu',
+        nb_personnes: document.getElementById('chCmdNb')?.value || 1,
+        paiement: document.getElementById('chCmdPaiement')?.value || 'salaire',
+        remarques: document.getElementById('chCmdRemarques')?.value || '',
+    });
+
+    btn.disabled = false;
+    if (res.success) {
+        toast('Commande enregistrée', 'success');
+        cmdModal?.hide();
+        loadCommandes();
+    } else {
+        toast(res.message || 'Erreur', 'error');
+    }
 }
 
 // ═══════════════════════════════════════

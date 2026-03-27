@@ -122,6 +122,85 @@ function cuisine_get_reservations_collab()
     ]);
 }
 
+function cuisine_add_commande()
+{
+    require_permission('cuisine_reservations_collab');
+    global $params;
+
+    $dateJour = Sanitize::date($params['date_jour'] ?? '');
+    $repas = in_array($params['repas'] ?? '', ['midi', 'soir']) ? $params['repas'] : 'midi';
+    $userId = $params['user_id'] ?? '';
+    $choix = in_array($params['choix'] ?? '', ['menu', 'salade']) ? $params['choix'] : 'menu';
+    $nbPersonnes = Sanitize::int($params['nb_personnes'] ?? 1);
+    $remarques = Sanitize::text($params['remarques'] ?? '', 500);
+    $paiement = in_array($params['paiement'] ?? '', ['salaire', 'caisse', 'carte']) ? $params['paiement'] : 'salaire';
+
+    if (!$dateJour) bad_request('Date requise');
+    if (!$userId) bad_request('Collaborateur requis');
+    if ($nbPersonnes < 1 || $nbPersonnes > 10) bad_request('Nombre de personnes invalide');
+
+    // Verify user exists
+    $user = Db::fetch("SELECT id FROM users WHERE id = ? AND is_active = 1", [$userId]);
+    if (!$user) bad_request('Collaborateur introuvable');
+
+    // Find or create menu for that date/repas
+    $menu = Db::fetch("SELECT id FROM menus WHERE date_jour = ? AND repas = ?", [$dateJour, $repas]);
+    if (!$menu) bad_request('Aucun menu pour cette date/repas. Créez d\'abord le menu.');
+
+    $menuId = $menu['id'];
+
+    // Check if already has a reservation
+    $existing = Db::fetch(
+        "SELECT id FROM menu_reservations WHERE menu_id = ? AND user_id = ? AND statut = 'confirmee'",
+        [$menuId, $userId]
+    );
+
+    if ($existing) {
+        Db::exec(
+            "UPDATE menu_reservations SET choix = ?, nb_personnes = ?, remarques = ?, paiement = ?, updated_at = NOW() WHERE id = ?",
+            [$choix, $nbPersonnes, $remarques, $paiement, $existing['id']]
+        );
+    } else {
+        Db::exec(
+            "INSERT INTO menu_reservations (id, menu_id, user_id, choix, nb_personnes, remarques, paiement) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [Uuid::v4(), $menuId, $userId, $choix, $nbPersonnes, $remarques, $paiement]
+        );
+    }
+
+    respond(['success' => true, 'message' => 'Commande enregistrée']);
+}
+
+function cuisine_delete_commande()
+{
+    require_permission('cuisine_reservations_collab');
+    global $params;
+
+    $id = Sanitize::text($params['id'] ?? '', 36);
+    if (!$id) bad_request('ID requis');
+
+    Db::exec("UPDATE menu_reservations SET statut = 'annulee', updated_at = NOW() WHERE id = ?", [$id]);
+    respond(['success' => true, 'message' => 'Commande annulée']);
+}
+
+function cuisine_search_users()
+{
+    require_permission('cuisine_reservations_collab');
+    global $params;
+
+    $q = trim($params['q'] ?? '');
+    if (mb_strlen($q) < 2) { respond(['success' => true, 'users' => []]); return; }
+
+    $like = "%$q%";
+    $users = Db::fetchAll(
+        "SELECT u.id, u.prenom, u.nom, f.nom AS fonction_nom, f.code AS fonction_code
+         FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE u.is_active = 1 AND (u.nom LIKE ? OR u.prenom LIKE ? OR u.email LIKE ?)
+         ORDER BY u.nom, u.prenom LIMIT 15",
+        [$like, $like, $like]
+    );
+    respond(['success' => true, 'users' => $users]);
+}
+
 function cuisine_get_residents()
 {
     require_permission('cuisine_reservations_famille');
