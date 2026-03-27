@@ -1,23 +1,22 @@
 /**
- * Cuisine VIP — VIP table management
+ * Cuisine VIP — VIP table management with inline search
  */
 import { apiPost, toast, escapeHtml, debounce } from '../helpers.js';
 
-let modal = null;
-
 export async function init() {
-    const modalEl = document.getElementById('cvModal');
-    if (modalEl) modal = new bootstrap.Modal(modalEl);
-    document.getElementById('cvAddBtn')?.addEventListener('click', () => {
-        document.getElementById('cvResidentSearch').value = '';
-        document.getElementById('cvResidentResults').innerHTML = '';
-        modal?.show();
+    document.getElementById('cvSearch')?.addEventListener('input', debounce(searchResidents, 300));
+
+    // Close results on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#cvSearch') && !e.target.closest('#cvSearchResults')) {
+            document.getElementById('cvSearchResults').innerHTML = '';
+        }
     });
-    document.getElementById('cvResidentSearch')?.addEventListener('input', debounce(searchResidents, 300));
+
     loadVip();
 }
 
-export function destroy() { modal = null; }
+export function destroy() {}
 
 async function loadVip() {
     const body = document.getElementById('cvBody');
@@ -33,63 +32,107 @@ async function loadVip() {
     }
 
     body.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem';
+
     res.residents.forEach(r => {
         const card = document.createElement('div');
-        card.className = 'cuis-vip-card';
+        card.style.cssText = 'border:1px solid #E8E5E0;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:box-shadow 0.2s';
+        card.onmouseenter = () => { card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'; };
+        card.onmouseleave = () => { card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; };
 
+        // Header
         const header = document.createElement('div');
-        header.className = 'cuis-vip-header';
-        header.innerHTML = '<strong>' + escapeHtml(r.prenom + ' ' + r.nom) + '</strong>'
-            + '<span class="text-muted small">' + escapeHtml(r.chambre ? 'Ch. ' + r.chambre : '') + ' ' + escapeHtml(r.etage ? '— Ét. ' + r.etage : '') + '</span>';
+        header.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:1rem 1.25rem;border-bottom:1px solid #E8E5E0';
+
+        const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
+        header.innerHTML = '<div style="width:40px;height:40px;border-radius:50%;background:#D4C4A8;color:#6B5B3E;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0">' + escapeHtml(initials) + '</div>'
+            + '<div style="flex:1;min-width:0">'
+            + '<div style="font-weight:600;font-size:.92rem;color:#1A1A18">' + escapeHtml(r.prenom + ' ' + r.nom) + '</div>'
+            + '<div style="font-size:.78rem;color:#6b7280">' + escapeHtml(r.chambre ? 'Ch. ' + r.chambre : '') + (r.etage ? ' · Ét. ' + r.etage : '') + '</div>'
+            + '</div>';
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-outline-danger';
+        removeBtn.style.cssText = 'width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0';
         removeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
         removeBtn.title = 'Retirer VIP';
         removeBtn.addEventListener('click', async () => {
+            if (!confirm('Retirer ' + r.prenom + ' ' + r.nom + ' de la table VIP ?')) return;
             const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'remove' });
             if (result.success) { toast('Retiré de la table VIP', 'success'); loadVip(); }
         });
         header.appendChild(removeBtn);
         card.appendChild(header);
 
+        // Body — menu spécial
+        const cardBody = document.createElement('div');
+        cardBody.style.cssText = 'padding:1rem 1.25rem';
+
+        const label = document.createElement('label');
+        label.style.cssText = 'display:block;font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem';
+        label.textContent = 'Menu spécial';
+        cardBody.appendChild(label);
+
         const textarea = document.createElement('textarea');
-        textarea.className = 'form-control form-control-sm mt-2';
+        textarea.className = 'form-control';
+        textarea.style.cssText = 'border-radius:8px;border:1px solid #E8E5E0;font-size:.85rem;resize:vertical';
         textarea.rows = 2;
-        textarea.placeholder = 'Menu spécial...';
+        textarea.placeholder = 'Régime, allergies, préférences...';
         textarea.value = r.menu_special || '';
-        card.appendChild(textarea);
+        cardBody.appendChild(textarea);
 
         const saveBtn = document.createElement('button');
-        saveBtn.type = 'button';
-        saveBtn.className = 'btn btn-sm btn-outline-primary mt-1';
+        saveBtn.className = 'btn btn-sm btn-primary';
+        saveBtn.style.cssText = 'margin-top:.5rem;border-radius:8px;font-size:.78rem';
         saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
         saveBtn.addEventListener('click', async () => {
             const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'set_menu', menu_special: textarea.value });
             toast(result.success ? 'Menu spécial mis à jour' : 'Erreur', result.success ? 'success' : 'error');
         });
-        card.appendChild(saveBtn);
-        body.appendChild(card);
+        cardBody.appendChild(saveBtn);
+
+        card.appendChild(cardBody);
+        grid.appendChild(card);
     });
+
+    body.appendChild(grid);
 }
 
 async function searchResidents() {
-    const q = document.getElementById('cvResidentSearch')?.value || '';
-    const list = document.getElementById('cvResidentResults');
+    const raw = document.getElementById('cvSearch')?.value || '';
+    const list = document.getElementById('cvSearchResults');
     if (!list) return;
+
+    // Support @nom, @chambre, or just typing
+    const q = raw.startsWith('@') ? raw.slice(1).trim() : raw.trim();
     if (q.length < 2) { list.innerHTML = ''; return; }
 
     const res = await apiPost('cuisine_get_residents', { search: q });
     list.innerHTML = '';
-    (res.residents || []).filter(r => !r.is_vip).forEach(r => {
+
+    const nonVip = (res.residents || []).filter(r => !r.is_vip);
+    if (!nonVip.length) {
+        list.innerHTML = '<div class="cuis-autocomplete-item" style="color:#888;font-style:italic;padding:.6rem .75rem">Aucun résident trouvé</div>';
+        return;
+    }
+
+    nonVip.forEach(r => {
+        const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
         const item = document.createElement('div');
         item.className = 'cuis-autocomplete-item';
-        item.textContent = r.prenom + ' ' + r.nom + (r.chambre ? ' — Ch. ' + r.chambre : '');
+        item.style.cssText = 'display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;cursor:pointer';
+
+        item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;flex-shrink:0">' + escapeHtml(initials) + '</div>'
+            + '<div style="flex:1"><div style="font-weight:600;font-size:.88rem">' + escapeHtml(r.prenom + ' ' + r.nom) + '</div>'
+            + '<div style="font-size:.75rem;color:#6b7280">Ch. ' + escapeHtml(r.chambre || '-') + ' · Ét. ' + escapeHtml(r.etage || '-') + '</div></div>';
+
         item.addEventListener('click', async () => {
             const result = await apiPost('cuisine_save_vip', { resident_id: r.id, vip_action: 'add' });
             if (result.success) {
-                toast('Ajouté à la table VIP', 'success');
-                modal?.hide();
+                toast(r.prenom + ' ' + r.nom + ' ajouté à la table VIP', 'success');
+                document.getElementById('cvSearch').value = '';
+                list.innerHTML = '';
                 loadVip();
             }
         });

@@ -306,6 +306,25 @@ async function runSearch(q, container) {
         });
     });
 
+    // Search residents (@ prefix or cuisine users)
+    if (window.__ZT__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
+        try {
+            const { apiPost } = await import('./helpers.js');
+            const resRes = await apiPost('cuisine_get_residents', { search: q });
+            if (resRes.residents) {
+                resRes.residents.slice(0, 6).forEach(r => {
+                    items.push({
+                        type: 'resident',
+                        key: r.id,
+                        label: `${r.prenom} ${r.nom}`,
+                        meta: `Ch. ${r.chambre || '-'} · Ét. ${r.etage || '-'}`,
+                        chambre: r.chambre
+                    });
+                });
+            }
+        } catch (e) {}
+    }
+
     if (items.length === 0) {
         container.innerHTML = '<div class="fe-search-item" style="opacity:.5"><span>Aucun résultat</span></div>';
         container.classList.add('show');
@@ -317,6 +336,16 @@ async function runSearch(q, container) {
             return `<a class="fe-search-item" data-link="${item.key}">
                 <span class="fe-search-item-icon"><i class="bi bi-file-text"></i></span>
                 <span class="fe-search-item-name">${escapeHtml(item.label)}</span>
+            </a>`;
+        }
+        if (item.type === 'resident') {
+            const initials = (item.label.split(' ').map(w => w[0] || '').join('').substring(0, 2)).toUpperCase();
+            return `<a class="fe-search-item" data-link="cuisine-vip" data-slug="${item.key}">
+                <span class="fe-search-item-icon" style="background:#D4C4A8;color:#6B5B3E">${escapeHtml(initials)}</span>
+                <div>
+                    <div class="fe-search-item-name">${escapeHtml(item.label)}</div>
+                    <div class="fe-search-item-meta"><i class="bi bi-door-open"></i> ${escapeHtml(item.meta)}</div>
+                </div>
             </a>`;
         }
         const initials = (item.label.split(' ').map(w => w[0] || '').join('').substring(0, 2)).toUpperCase();
