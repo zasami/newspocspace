@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>E.M.S. La Terrassière SA — Établissement Médico-Social, Genève</title>
-<meta name="description" content="EMS La Terrassière SA, établissement médico-social à Genève. Soins de qualité, accompagnement bienveillant pour personnes âgées dans un cadre chaleureux et naturel.">
+<meta name="description" content="EMS La Terrassière SA, établissement médico-social au centre de Genève. Soins de qualité, accompagnement bienveillant pour personnes âgées dans un cadre chaleureux.">
 <meta name="keywords" content="EMS, Terrassière, Genève, maison de retraite, personnes âgées, soins, accompagnement, médico-social">
 <meta name="theme-color" content="#2E7D32">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
@@ -50,7 +50,7 @@
   <div class="container">
     <div class="ws-hero-content">
       <img src="EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-hero-logo">
-      <h1 class="ws-hero-title">Un lieu de vie<br>chaleureux et <span class="ws-accent-light">naturel</span></h1>
+      <h1 class="ws-hero-title">Un lieu de vie<br>chaleureux <span class="ws-accent-light">au centre de Genève</span></h1>
       <p class="ws-hero-desc">
         Depuis plus de 30 ans, l'EMS La Terrassière SA accompagne les personnes âgées
         avec respect, dignité et professionnalisme au cœur de Genève.
@@ -95,7 +95,7 @@
       <h2 class="ws-section-title">Une mission centrée sur <span class="ws-accent">l'humain</span></h2>
       <p class="ws-section-desc">
         L'EMS La Terrassière offre un accompagnement personnalisé dans un environnement
-        naturel et sécurisant, favorisant l'autonomie et le bien-être de chaque résident.
+        chaleureux et sécurisant au centre de Genève, favorisant l'autonomie et le bien-être de chaque résident.
       </p>
     </div>
     <div class="row g-4">
@@ -115,9 +115,9 @@
       </div>
       <div class="col-md-4">
         <div class="ws-card ws-card-icon">
-          <div class="ws-card-ic"><i class="bi bi-tree"></i></div>
-          <h3>Cadre naturel</h3>
-          <p>Un environnement verdoyant et chaleureux, conçu pour que chaque résident se sente chez soi tout en profitant de la nature.</p>
+          <div class="ws-card-ic"><i class="bi bi-geo-alt"></i></div>
+          <h3>Au centre de Genève</h3>
+          <p>Un emplacement idéal en plein cœur de la ville, facilitant les visites des proches et l'accès aux services urbains.</p>
         </div>
       </div>
     </div>
@@ -571,7 +571,7 @@
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-camera-reels"></i> Notre cadre</div>
       <h2 class="ws-section-title">Découvrez <span class="ws-accent">La Terrassière</span> en images</h2>
-      <p class="ws-section-desc">Un environnement chaleureux et naturel, pensé pour le confort et le bien-être de chaque résident.</p>
+      <p class="ws-section-desc">Un environnement chaleureux au centre de Genève, pensé pour le confort et le bien-être de chaque résident.</p>
     </div>
     <div class="row g-4">
       <div class="col-lg-8">

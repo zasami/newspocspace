@@ -85,6 +85,7 @@ class Auth
             'fonction_id'=> $user['fonction_id'],
             'taux'       => $user['taux'],
             'photo'      => $user['photo'],
+            'denied_perms' => Permission::getDenied($user['id']),
         ];
         $_SESSION['zt_last_activity'] = time();
 

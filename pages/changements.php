@@ -51,8 +51,8 @@
     <!-- Liste collègues -->
     <div class="chg-slide-left">
       <div class="chg-slide-search">
-        <i class="bi bi-search chg-slide-search-icon"></i>
-        <input type="text" class="form-control chg-slide-search-input" id="chgColSearch" placeholder="Rechercher un collègue...">
+        <i class="bi bi-search chg-search-icon"></i>
+        <input type="text" class="form-control chg-search-input" id="chgColSearch" placeholder="Rechercher un collègue...">
       </div>
       <div class="chg-colleague-list" id="chgColList"></div>
     </div>
@@ -79,32 +79,38 @@
   </div>
 </div>
 
-<!-- ── Modal confirmation (Bootstrap 5) ── -->
+<!-- ── Modal confirmation (Bootstrap 5 — style admin absences) ── -->
 <div class="modal fade" id="chgConfirmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered chg-modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-arrow-left-right"></i> Confirmer l'échange</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <div class="d-flex align-items-center gap-3" id="chgConfirmHeader">
+          <i class="bi bi-arrow-left-right"></i>
+          <span class="fw-semibold">Confirmer l'échange</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center chg-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="chgConfirmBody">
         <!-- Filled by JS -->
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" data-bs-dismiss="modal"><i class="bi bi-x"></i> Annuler</button>
-        <button class="btn btn-primary" id="chgSubmitBtn"><i class="bi bi-send"></i> Envoyer la demande</button>
+      <div class="modal-footer d-flex">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm chg-btn-envoyer ms-auto px-3" id="chgSubmitBtn"><i class="bi bi-send"></i> Envoyer la demande</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── Modal refus (Bootstrap 5) ── -->
+<!-- ── Modal refus (Bootstrap 5 — style admin absences) ── -->
 <div class="modal fade" id="refusModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
+  <div class="modal-dialog modal-dialog-centered chg-modal-dialog-sm">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Refuser le changement</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-x-circle"></i>
+          <span class="fw-semibold">Refuser le changement</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center chg-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -112,9 +118,9 @@
           <textarea class="form-control" id="refusRaison" rows="2" placeholder="Expliquer la raison..." maxlength="500"></textarea>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-danger" id="refusConfirmBtn"><i class="bi bi-x-circle"></i> Refuser</button>
+      <div class="modal-footer d-flex">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm chg-btn-refuser ms-auto px-3" id="refusConfirmBtn"><i class="bi bi-x-circle"></i> Refuser</button>
       </div>
     </div>
   </div>

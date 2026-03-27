@@ -7,14 +7,19 @@ import { apiPost, escapeHtml } from '../helpers.js';
 let weekStart = null;
 let data = null;
 let activeModuleId = null;
+let horairesModal = null;
 
 export async function init() {
     document.getElementById('repPrevWeek')?.addEventListener('click', () => moveWeek(-7));
     document.getElementById('repNextWeek')?.addEventListener('click', () => moveWeek(7));
     document.getElementById('repToday')?.addEventListener('click', () => { weekStart = null; load(); });
 
+    const modalEl = document.getElementById('repHorairesModal');
+    if (modalEl) horairesModal = new bootstrap.Modal(modalEl);
+    document.getElementById('repInfoBtn')?.addEventListener('click', showHorairesModal);
+
     // Default to user's principal module
-    const user = window.__TR__?.user;
+    const user = window.__ZT__?.user;
     if (user?.modules?.length) {
         const principal = user.modules.find(m => m.is_principal) || user.modules[0];
         if (principal) activeModuleId = principal.module_id || principal.id;
@@ -36,7 +41,6 @@ async function load() {
     if (!activeModuleId && data.modules.length) activeModuleId = data.modules[0].id;
 
     renderTabs();
-    renderLegend();
     renderGrid();
 }
 
@@ -56,40 +60,52 @@ function fmtShort(dateStr) {
     return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
 }
 
-/* ── Tabs ── */
+/* ── Tabs (sliding pill) ── */
 function renderTabs() {
     const container = document.getElementById('repModuleTabs');
-    let html = '';
-    for (const mod of data.modules) {
-        const active = mod.id === activeModuleId;
-        html += `<button class="btn btn-sm rep-tab${active ? ' rep-tab-active' : ''}" data-mod="${escapeHtml(mod.id)}">${escapeHtml(mod.code || mod.nom)}</button>`;
-    }
-    container.innerHTML = html;
 
-    container.querySelectorAll('.rep-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            activeModuleId = btn.dataset.mod;
-            renderTabs();
-            renderGrid();
+    // Build HTML only once (first render or module list changed)
+    if (!container.querySelector('.rep-tabs')) {
+        let html = '<div class="rep-tabs"><div class="rep-tabs-slider" id="repTabsSlider"></div>';
+        for (const mod of data.modules) {
+            html += `<button class="rep-tab" data-mod="${escapeHtml(mod.id)}">${escapeHtml(mod.code || mod.nom)}</button>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+
+        container.querySelectorAll('.rep-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeModuleId = btn.dataset.mod;
+                updateSlider();
+                renderGrid();
+            });
         });
-    });
+    }
+
+    updateSlider();
 }
 
-/* ── Legend ── */
-function renderLegend() {
-    const container = document.getElementById('repLegend');
-    let html = '';
-    for (const h of data.horaires) {
-        const color = h.couleur || '#1a1a1a';
-        const debut = h.heure_debut?.slice(0, 5) || '';
-        const fin = h.heure_fin?.slice(0, 5) || '';
-        html += `<span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.78rem">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${escapeHtml(color)}"></span>
-            <strong>${escapeHtml(h.code)}</strong>
-            <span class="text-muted">${debut}–${fin}</span>
-        </span>`;
+function updateSlider() {
+    const container = document.getElementById('repModuleTabs');
+    const tabs = container.querySelectorAll('.rep-tab');
+    const slider = document.getElementById('repTabsSlider');
+    if (!slider || !tabs.length) return;
+
+    tabs.forEach(t => t.classList.remove('rep-tab-active'));
+
+    let activeBtn = null;
+    tabs.forEach(t => {
+        if (t.dataset.mod === activeModuleId) { t.classList.add('rep-tab-active'); activeBtn = t; }
+    });
+
+    if (activeBtn) {
+        const parent = activeBtn.parentElement;
+        const parentRect = parent.getBoundingClientRect();
+        const btnRect = activeBtn.getBoundingClientRect();
+        const offsetLeft = btnRect.left - parentRect.left - 3; // 3px = padding
+        slider.style.width = btnRect.width + 'px';
+        slider.style.transform = `translateX(${offsetLeft}px)`;
     }
-    container.innerHTML = html;
 }
 
 /* ── Grid ── */
@@ -185,6 +201,37 @@ function renderGrid() {
     }
 
     body.innerHTML = html;
+}
+
+/* ── Horaires detail modal ── */
+function showHorairesModal() {
+    if (!data?.horaires?.length) return;
+
+    let html = '<div style="display:flex;flex-direction:column">';
+    for (let i = 0; i < data.horaires.length; i++) {
+        const h = data.horaires[i];
+        const color = h.couleur || '#1a1a1a';
+        const debut = h.heure_debut?.slice(0, 5) || '';
+        const fin = h.heure_fin?.slice(0, 5) || '';
+        const bg = i % 2 === 0 ? 'var(--zt-bg, #F7F5F2)' : 'var(--zt-bg-card, #fff)';
+
+        html += `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1.25rem;background:${bg};border-bottom:1px solid var(--zt-border-light)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:${escapeHtml(color)};color:#fff;font-weight:700;font-size:0.95rem;flex-shrink:0">${escapeHtml(h.code)}</span>
+            <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:0.92rem;color:var(--zt-text)">${escapeHtml(h.code)}</div>
+                <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.15rem">
+                    <span style="font-size:0.82rem;color:var(--zt-text-secondary)"><i class="bi bi-clock" style="font-size:0.72rem;margin-right:0.2rem"></i>${debut} — ${fin}</span>
+                    ${h.duree_effective ? `<span style="font-size:0.78rem;color:var(--zt-text-muted)"><i class="bi bi-hourglass-split" style="font-size:0.68rem;margin-right:0.15rem"></i>${escapeHtml(h.duree_effective)}h eff.</span>` : ''}
+                </div>
+            </div>
+            <div style="width:12px;height:12px;border-radius:50%;background:${escapeHtml(color)};flex-shrink:0"></div>
+        </div>`;
+    }
+    html += '</div>';
+
+    document.getElementById('repHorairesBody').innerHTML = html;
+    if (horairesModal) horairesModal.show();
 }
 
 export function destroy() {}

@@ -24,6 +24,7 @@ const moduleMap = {
     'fiches-salaire': () => import('./modules/fiches-salaire.js'),
     'covoiturage': () => import('./modules/covoiturage.js'),
     'repartition': () => import('./modules/repartition.js'),
+    'cuisine':    () => import('./modules/cuisine.js'),
 };
 
 let currentModule = null;
@@ -35,7 +36,7 @@ async function loadPage(pageId, params = {}) {
     const content = document.getElementById('app-content');
     if (!content) return;
 
-    if (!window.__TR__?.user && pageId !== 'login') {
+    if (!window.__ZT__?.user && pageId !== 'login') {
         pageId = 'login';
         history.replaceState({}, '', `${BASE}/login`);
     }
@@ -92,7 +93,7 @@ function updateNavActive(pageId) {
 function updateTopbarTitle(pageId) {
     const el = document.getElementById('feTopbarTitle');
     if (!el) return;
-    const labels = window.__TR__?.pageLabels || {};
+    const labels = window.__ZT__?.pageLabels || {};
     el.textContent = labels[pageId] || pageId;
 }
 
@@ -215,7 +216,7 @@ function setupLogout() {
     const doLogout = async () => {
         const { apiPost } = await import('./helpers.js');
         await apiPost('logout');
-        window.__TR__.user = null;
+        window.__ZT__.user = null;
         window.location.href = `${BASE}/login`;
     };
 
@@ -266,7 +267,7 @@ async function runSearch(q, container) {
     const items = [];
 
     // Search pages
-    const labels = window.__TR__?.pageLabels || {};
+    const labels = window.__ZT__?.pageLabels || {};
     for (const [key, label] of Object.entries(labels)) {
         if (label.toLowerCase().includes(q) || key.toLowerCase().includes(q)) {
             items.push({ type: 'page', key, label });
@@ -337,7 +338,7 @@ function escapeHtml(str) {
 
 /* ── Temp password banner ── */
 function showTempPasswordBanner() {
-    const expires = window.__TR__.tempPasswordExpires;
+    const expires = window.__ZT__.tempPasswordExpires;
     if (!expires) return;
 
     const banner = document.createElement('div');
@@ -390,13 +391,13 @@ function init() {
     window.__trNavigate = navigateTo;
 
     // Poll notification badge + check alerts + offline support
-    if (window.__TR__?.user) {
+    if (window.__ZT__?.user) {
         pollNotifBadge();
         setInterval(pollNotifBadge, 60000); // every 60s
         checkPendingAlerts();
         import('./modules/offline.js').then(m => m.initOffline()).catch(() => {});
         initFullscreen();
-        if (window.__TR__.mustChangePassword) showTempPasswordBanner();
+        if (window.__ZT__.mustChangePassword) showTempPasswordBanner();
     }
 }
 

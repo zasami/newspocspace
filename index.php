@@ -26,6 +26,9 @@ $canChangement = $user && !empty($user['fonction_id']) && (bool) Db::getOne(
     [$user['fonction_id'], $user['id']]
 );
 
+// Per-user denied permissions
+$deniedPerms = $user ? ($_SESSION['zt_user']['denied_perms'] ?? []) : [];
+
 $sidebarNav = [
     'main' => [
         'label' => 'Navigation',
@@ -48,6 +51,12 @@ $sidebarNav = [
             'messages'    => ['label' => 'Messages',        'icon' => 'chat-dots'],
         ],
     ],
+    'services' => [
+        'label' => 'Services',
+        'items' => [
+            'cuisine'   => ['label' => 'Cuisine',          'icon' => 'egg-fried'],
+        ],
+    ],
     'info' => [
         'label' => 'Informations',
         'items' => [
@@ -59,6 +68,23 @@ $sidebarNav = [
         ],
     ],
 ];
+
+// Filter sidebar items by user permissions (Permission::PAGE_MAP)
+if ($user && !empty($deniedPerms)) {
+    foreach ($sidebarNav as $catId => &$cat) {
+        foreach ($cat['items'] as $key => $item) {
+            $permKey = Permission::PAGE_MAP[$key] ?? null;
+            if ($permKey && in_array($permKey, $deniedPerms)) {
+                unset($cat['items'][$key]);
+            }
+        }
+        // Remove empty categories
+        if (empty($cat['items'])) {
+            unset($sidebarNav[$catId]);
+        }
+    }
+    unset($cat);
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -205,14 +231,15 @@ $sidebarNav = [
 
 <!-- App Config -->
 <script nonce="<?= $cspNonce ?>">
-window.__TR__ = {
+window.__ZT__ = {
   csrfToken: '<?= $csrfToken ?>',
   user: <?= $user ? json_encode(['id' => $user['id'], 'prenom' => $user['prenom'], 'nom' => $user['nom'], 'email' => $user['email'], 'role' => $user['role'], 'taux' => $user['taux'], 'fonction_id' => $user['fonction_id']], JSON_HEX_TAG) : 'null' ?>,
   canChangement: <?= $canChangement ? 'true' : 'false' ?>,
   mustChangePassword: <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>,
   tempPasswordExpires: <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>,
   appUrl: '<?= APP_URL ?>',
-  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
+  deniedPerms: <?= json_encode($deniedPerms, JSON_HEX_TAG) ?>,
+  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
 };
 </script>
 <script nonce="<?= $cspNonce ?>" src="assets/js/vendor/bootstrap.bundle.min.js"></script>

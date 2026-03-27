@@ -36,7 +36,7 @@ async function loadMessages() {
         return;
     }
 
-    const userId = window.__TR__?.user?.id;
+    const userId = window.__ZT__?.user?.id;
 
     container.innerHTML = messages.map(m => {
         const isMine = m.from_user_id === userId;

@@ -35,7 +35,7 @@
   </div>
 </div>
 
-<div class="d-flex gap-2 flex-wrap">
+<div class="d-flex gap-2 flex-wrap" style="align-items:flex-start">
   <!-- Mon planning de la semaine -->
   <div class="card" style="flex:1; min-width:300px;">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
@@ -87,6 +87,28 @@
         </div>
         <div class="modal-footer d-flex" id="menuReservationFooter">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal confirmation annulation commande -->
+  <div class="modal fade" id="menuCancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-triangle" style="color:#c0392b;font-size:1.1rem"></i>
+            <span class="fw-semibold">Annuler la commande</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        </div>
+        <div class="modal-body">
+          <p style="margin:0;font-size:0.92rem">Êtes-vous sûr de vouloir annuler votre commande ? Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer d-flex">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Non, garder</button>
+          <button type="button" class="btn btn-sm btn-danger ms-auto" id="menuCancelConfirmBtn"><i class="bi bi-x-circle"></i> Oui, annuler</button>
         </div>
       </div>
     </div>

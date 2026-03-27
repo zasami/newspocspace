@@ -7,8 +7,8 @@ export async function apiPost(action, data = {}) {
     const headers = { 'Content-Type': 'application/json' };
 
     const readOnly = action.startsWith('get_') || ['me', 'login', 'request_reset', 'reset_password'].includes(action);
-    if (!readOnly && window.__TR__?.csrfToken) {
-        headers['X-CSRF-Token'] = window.__TR__.csrfToken;
+    if (!readOnly && window.__ZT__?.csrfToken) {
+        headers['X-CSRF-Token'] = window.__ZT__.csrfToken;
     }
 
     try {
@@ -17,7 +17,7 @@ export async function apiPost(action, data = {}) {
 
         // Update CSRF token if returned
         if (json.csrf) {
-            window.__TR__.csrfToken = json.csrf;
+            window.__ZT__.csrfToken = json.csrf;
         }
 
         if (!res.ok && !json.message) {

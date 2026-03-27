@@ -40,7 +40,7 @@ export async function init() {
             if (banner) {
                 banner.remove();
                 document.body.style.paddingTop = '';
-                window.__TR__.mustChangePassword = false;
+                window.__ZT__.mustChangePassword = false;
             }
         } else {
             toast(res.message || 'Erreur');
@@ -127,7 +127,7 @@ function renderProfileHero(user) {
         try {
             const res = await fetch('/zerdatime/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__TR__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__ZT__?.csrfToken || '' },
                 body: fd
             });
             const json = await res.json();
@@ -140,7 +140,7 @@ function renderProfileHero(user) {
                     img.outerHTML = `<img src="${json.photo_url}?t=${Date.now()}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)" id="profileAvatarImg">`;
                 }
                 // Update session
-                if (window.__TR__?.user) window.__TR__.user.photo = json.photo_url;
+                if (window.__ZT__?.user) window.__ZT__.user.photo = json.photo_url;
                 // Update topbar avatar
                 const topbar = document.getElementById('topbarAvatar');
                 if (topbar) {

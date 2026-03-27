@@ -25,24 +25,47 @@ let state = {
     refusId: null,
 };
 
+let confirmModal = null;
+let refusModalInstance = null;
+
 export async function init() {
     const now = new Date();
     state.myMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     state.colMonth = state.myMonth;
 
+    // Bootstrap modals
+    const cmEl = document.getElementById('chgConfirmModal');
+    const rmEl = document.getElementById('refusModal');
+    if (cmEl) confirmModal = new bootstrap.Modal(cmEl);
+    if (rmEl) refusModalInstance = new bootstrap.Modal(rmEl);
+
+    // Reset destination on confirm modal close
+    if (cmEl) cmEl.addEventListener('hidden.bs.modal', onConfirmModalClosed);
+
     bindEvents();
     await Promise.all([loadMyPlanning(), loadColleagues(), loadChangements()]);
-    // Show hint after calendar loaded
     el('chgMyHint')?.classList.remove('chg-hidden');
 }
 
 export function destroy() {
+    confirmModal = null;
+    refusModalInstance = null;
+    const cmEl = document.getElementById('chgConfirmModal');
+    if (cmEl) cmEl.removeEventListener('hidden.bs.modal', onConfirmModalClosed);
     state = {
         myMonth: null, myPlanning: [], dateDemandeur: null, myAssignOnDate: null,
         myFonctionId: null, collegues: [], collegueId: null, collegue: null,
         colMonth: null, colPlanning: [], dateDestinataire: null, colAssignOnDate: null,
         dualOffset: 0, refusId: null
     };
+}
+
+function onConfirmModalClosed() {
+    state.dateDestinataire = null;
+    state.colAssignOnDate = null;
+    if (state.collegueId) {
+        renderCalendar('chgColCal', state.colMonth, state.colPlanning, onColDayClick, null);
+    }
 }
 
 /* ═══ Events ═══ */
@@ -55,8 +78,6 @@ function bindEvents() {
     el('chgColSearch')?.addEventListener('input', renderColleagueList);
     el('chgSubmitBtn')?.addEventListener('click', submitChangement);
     el('refusConfirmBtn')?.addEventListener('click', confirmRefus);
-    document.querySelectorAll('[data-close-confirm]').forEach(b => b.addEventListener('click', closeConfirmModal));
-    document.querySelectorAll('[data-close-refus]').forEach(b => b.addEventListener('click', closeRefusModal));
     el('changementsList')?.addEventListener('click', onListClick);
 }
 
@@ -75,7 +96,6 @@ function onMyDayClick(date, assign) {
     if (!assign) return;
     state.dateDemandeur = date;
     state.myAssignOnDate = assign;
-    // Reset colleague selection
     state.collegueId = null;
     state.collegue = null;
     state.dateDestinataire = null;
@@ -90,26 +110,32 @@ function openSlidedown() {
     const slide = el('chgSlidedown');
     if (!slide) return;
 
-    // Update header
     el('chgSlideDate').textContent = formatDateFr(state.dateDemandeur);
     const a = state.myAssignOnDate;
+    const badgeEl = el('chgSlideBadge');
     if (a && a.horaire_type_id) {
-        const bg = escapeHtml(a.couleur || '#6c757d');
-        el('chgSlideBadge').innerHTML = `<span class="chg-badge-inline" style="background:${bg}">${escapeHtml(a.horaire_code)}</span>`;
+        badgeEl.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'chg-badge-inline';
+        span.style.background = a.couleur || '#6c757d';
+        span.textContent = a.horaire_code;
+        badgeEl.appendChild(span);
     } else {
-        el('chgSlideBadge').innerHTML = '<span class="chg-badge-inline" style="background:#999">Repos</span>';
+        badgeEl.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'chg-badge-inline';
+        span.style.background = '#999';
+        span.textContent = 'Repos';
+        badgeEl.appendChild(span);
     }
 
-    // Reset right panel
     el('chgSlidePlaceholder')?.classList.remove('chg-hidden');
     el('chgColPanel')?.classList.add('chg-hidden');
     el('chgColSearch').value = '';
     renderColleagueList();
 
-    // Open with animation
     slide.classList.remove('chg-slide-closed');
 
-    // Scroll to slidedown
     setTimeout(() => {
         slide.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -189,28 +215,58 @@ function selectColleague(id) {
     state.colAssignOnDate = null;
     state.colMonth = state.myMonth;
 
-    // Highlight active colleague
     renderColleagueList();
 
-    // Show colleague panel
     el('chgSlidePlaceholder')?.classList.add('chg-hidden');
     el('chgColPanel')?.classList.remove('chg-hidden');
 
-    const initials = ((c.prenom || '').charAt(0) + (c.nom || '').charAt(0)).toUpperCase();
-    const avatar = c.photo
-        ? `<img src="${escapeHtml(c.photo)}" alt="" class="chg-col-avatar">`
-        : `<div class="chg-col-avatar-initials">${initials}</div>`;
+    const headerEl = el('chgColPanelHeader');
+    headerEl.innerHTML = '';
 
-    el('chgColPanelHeader').innerHTML = `
-        ${avatar}
-        <div class="chg-col-info">
-            <div class="chg-col-name">${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</div>
-            <div class="chg-col-meta">
-                ${c.fonction_code ? `<span class="chg-col-fonction">${escapeHtml(c.fonction_code)}</span>` : ''}
-                ${c.module_code ? `<span class="chg-col-module">${escapeHtml(c.module_code)}</span>` : ''}
-                ${c.taux ? `<span class="chg-col-taux">${Math.round(c.taux)}%</span>` : ''}
-            </div>
-        </div>`;
+    const initials = ((c.prenom || '').charAt(0) + (c.nom || '').charAt(0)).toUpperCase();
+    if (c.photo) {
+        const img = document.createElement('img');
+        img.src = c.photo;
+        img.alt = '';
+        img.className = 'chg-col-avatar';
+        headerEl.appendChild(img);
+    } else {
+        const div = document.createElement('div');
+        div.className = 'chg-col-avatar-initials';
+        div.textContent = initials;
+        headerEl.appendChild(div);
+    }
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'chg-col-info';
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'chg-col-name';
+    nameDiv.textContent = `${c.prenom} ${c.nom}`;
+    infoDiv.appendChild(nameDiv);
+
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'chg-col-meta';
+    if (c.fonction_code) {
+        const fSpan = document.createElement('span');
+        fSpan.className = 'chg-col-fonction';
+        fSpan.textContent = c.fonction_code;
+        metaDiv.appendChild(fSpan);
+    }
+    if (c.module_code) {
+        const mSpan = document.createElement('span');
+        mSpan.className = 'chg-col-module';
+        mSpan.textContent = c.module_code;
+        metaDiv.appendChild(mSpan);
+    }
+    if (c.taux) {
+        const tSpan = document.createElement('span');
+        tSpan.className = 'chg-col-taux';
+        tSpan.textContent = `${Math.round(c.taux)}%`;
+        metaDiv.appendChild(tSpan);
+    }
+    infoDiv.appendChild(metaDiv);
+    headerEl.appendChild(infoDiv);
 
     loadColPlanning();
 }
@@ -240,59 +296,125 @@ function openConfirmModal() {
     const c = state.collegue;
 
     const body = el('chgConfirmBody');
-    body.innerHTML = `
-        <div class="chg-confirm-block">
-            <div class="chg-confirm-row">
-                <div class="chg-confirm-side chg-confirm-give">
-                    <div class="chg-confirm-label"><i class="bi bi-box-arrow-up-right"></i> Vous cédez</div>
-                    <div class="chg-confirm-date">${escapeHtml(formatDateFr(state.dateDemandeur))}</div>
-                    ${a ? buildBadge(a.horaire_code, a.couleur, a.module_nom) : '<span class="chg-badge-inline" style="background:#999">Repos</span>'}
-                </div>
-                <div class="chg-confirm-arrow"><i class="bi bi-arrow-left-right"></i></div>
-                <div class="chg-confirm-side chg-confirm-take">
-                    <div class="chg-confirm-label"><i class="bi bi-box-arrow-in-down-left"></i> Vous prenez</div>
-                    <div class="chg-confirm-date">${escapeHtml(formatDateFr(state.dateDestinataire))}</div>
-                    ${b ? buildBadge(b.horaire_code, b.couleur, b.module_nom) : '<span class="chg-badge-inline" style="background:#999">Repos</span>'}
-                </div>
-            </div>
-            <div class="chg-confirm-with">
-                <i class="bi bi-person"></i> Échange avec <strong>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</strong>
-            </div>
-        </div>
+    body.innerHTML = '';
 
-        <div class="chg-dual-section">
-            <h4 class="chg-dual-title"><i class="bi bi-layout-split"></i> Comparaison</h4>
-            <div class="chg-dual-nav">
-                <button class="btn btn-sm btn-outline-secondary" id="chgDualPrevM"><i class="bi bi-chevron-left"></i></button>
-                <span class="chg-dual-range" id="chgDualRangeM"></span>
-                <button class="btn btn-sm btn-outline-secondary" id="chgDualNextM"><i class="bi bi-chevron-right"></i></button>
-            </div>
-            <div class="chg-dual-grid-wrap">
-                <table class="chg-dual-table" id="chgDualTableM"></table>
-            </div>
-        </div>
+    // Confirm block
+    const block = document.createElement('div');
+    block.className = 'chg-confirm-block';
 
-        <div class="form-group mt-3">
-            <label class="form-label">Motif (optionnel)</label>
-            <textarea class="form-control" id="chgMotif" rows="2" placeholder="Raison de l'échange..." maxlength="500"></textarea>
-        </div>`;
+    // Row: give / arrow / take
+    const row = document.createElement('div');
+    row.className = 'chg-confirm-row';
 
-    el('chgDualPrevM')?.addEventListener('click', () => { state.dualOffset -= 7; renderDualGridModal(); });
-    el('chgDualNextM')?.addEventListener('click', () => { state.dualOffset += 7; renderDualGridModal(); });
+    // Give side
+    const giveSide = document.createElement('div');
+    giveSide.className = 'chg-confirm-side chg-confirm-give';
+    const giveLabel = document.createElement('div');
+    giveLabel.className = 'chg-confirm-label';
+    giveLabel.innerHTML = '<i class="bi bi-box-arrow-up-right"></i> Vous cédez';
+    const giveDate = document.createElement('div');
+    giveDate.className = 'chg-confirm-date';
+    giveDate.textContent = formatDateFr(state.dateDemandeur);
+    giveSide.appendChild(giveLabel);
+    giveSide.appendChild(giveDate);
+    giveSide.appendChild(buildBadgeEl(a));
+    row.appendChild(giveSide);
+
+    // Arrow
+    const arrowDiv = document.createElement('div');
+    arrowDiv.className = 'chg-confirm-arrow';
+    arrowDiv.innerHTML = '<i class="bi bi-arrow-left-right"></i>';
+    row.appendChild(arrowDiv);
+
+    // Take side
+    const takeSide = document.createElement('div');
+    takeSide.className = 'chg-confirm-side chg-confirm-take';
+    const takeLabel = document.createElement('div');
+    takeLabel.className = 'chg-confirm-label';
+    takeLabel.innerHTML = '<i class="bi bi-box-arrow-in-down-left"></i> Vous prenez';
+    const takeDate = document.createElement('div');
+    takeDate.className = 'chg-confirm-date';
+    takeDate.textContent = formatDateFr(state.dateDestinataire);
+    takeSide.appendChild(takeLabel);
+    takeSide.appendChild(takeDate);
+    takeSide.appendChild(buildBadgeEl(b));
+    row.appendChild(takeSide);
+
+    block.appendChild(row);
+
+    // "Échange avec" line
+    const withDiv = document.createElement('div');
+    withDiv.className = 'chg-confirm-with';
+    const withIcon = document.createElement('i');
+    withIcon.className = 'bi bi-person';
+    withDiv.appendChild(withIcon);
+    withDiv.append(' Échange avec ');
+    const withStrong = document.createElement('strong');
+    withStrong.textContent = `${c.prenom} ${c.nom}`;
+    withDiv.appendChild(withStrong);
+    block.appendChild(withDiv);
+    body.appendChild(block);
+
+    // Dual grid section
+    const dualSection = document.createElement('div');
+    dualSection.className = 'chg-dual-section';
+
+    const dualTitle = document.createElement('h4');
+    dualTitle.className = 'chg-dual-title';
+    dualTitle.innerHTML = '<i class="bi bi-layout-split"></i> Comparaison';
+    dualSection.appendChild(dualTitle);
+
+    const dualNav = document.createElement('div');
+    dualNav.className = 'chg-dual-nav';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn btn-sm btn-outline-secondary';
+    prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    prevBtn.addEventListener('click', () => { state.dualOffset -= 7; renderDualGridModal(); });
+
+    const rangeSpan = document.createElement('span');
+    rangeSpan.className = 'chg-dual-range';
+    rangeSpan.id = 'chgDualRangeM';
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-sm btn-outline-secondary';
+    nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    nextBtn.addEventListener('click', () => { state.dualOffset += 7; renderDualGridModal(); });
+
+    dualNav.appendChild(prevBtn);
+    dualNav.appendChild(rangeSpan);
+    dualNav.appendChild(nextBtn);
+    dualSection.appendChild(dualNav);
+
+    const gridWrap = document.createElement('div');
+    gridWrap.className = 'chg-dual-grid-wrap';
+    const table = document.createElement('table');
+    table.className = 'chg-dual-table';
+    table.id = 'chgDualTableM';
+    gridWrap.appendChild(table);
+    dualSection.appendChild(gridWrap);
+    body.appendChild(dualSection);
+
+    // Motif
+    const motifGroup = document.createElement('div');
+    motifGroup.className = 'form-group mt-3';
+    const motifLabel = document.createElement('label');
+    motifLabel.className = 'form-label';
+    motifLabel.textContent = 'Motif (optionnel)';
+    const motifArea = document.createElement('textarea');
+    motifArea.className = 'form-control';
+    motifArea.id = 'chgMotif';
+    motifArea.rows = 2;
+    motifArea.placeholder = "Raison de l'échange...";
+    motifArea.maxLength = 500;
+    motifGroup.appendChild(motifLabel);
+    motifGroup.appendChild(motifArea);
+    body.appendChild(motifGroup);
+
     state.dualOffset = 0;
     renderDualGridModal();
 
-    el('chgConfirmModal')?.classList.remove('chg-hidden');
-}
-
-function closeConfirmModal() {
-    el('chgConfirmModal')?.classList.add('chg-hidden');
-    // Reset destination selection
-    state.dateDestinataire = null;
-    state.colAssignOnDate = null;
-    if (state.collegueId) {
-        renderCalendar('chgColCal', state.colMonth, state.colPlanning, onColDayClick, null);
-    }
+    if (confirmModal) confirmModal.show();
 }
 
 /* ═══ Dual planning grid ═══ */
@@ -327,79 +449,147 @@ function buildDualGridHtml(tableId, rangeId) {
     state.colPlanning.forEach(a => { colByDate[a.date_jour] = a; });
 
     const c = state.collegue;
+    const tableEl = el(tableId);
+    if (!tableEl) return;
 
-    let html = '<thead><tr><th class="chg-dual-user-col"></th>';
+    // Build with DOM
+    tableEl.innerHTML = '';
+
+    // Thead
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const thEmpty = document.createElement('th');
+    thEmpty.className = 'chg-dual-user-col';
+    headRow.appendChild(thEmpty);
+
     days.forEach(d => {
         const dt = new Date(d + 'T00:00:00');
         const isSwapDem = d === state.dateDemandeur;
         const isSwapDest = d === state.dateDestinataire;
-        let cls = 'chg-dual-day-col';
-        if (isSwapDem) cls += ' chg-dual-swap-dem';
-        if (isSwapDest) cls += ' chg-dual-swap-dest';
+        const th = document.createElement('th');
+        th.className = 'chg-dual-day-col';
+        if (isSwapDem) th.classList.add('chg-dual-swap-dem');
+        if (isSwapDest) th.classList.add('chg-dual-swap-dest');
         const dayName = JOURS[dt.getDay() === 0 ? 6 : dt.getDay() - 1];
-        html += `<th class="${cls}"><div>${dayName}</div><small>${dt.getDate()}</small></th>`;
+        const dayDiv = document.createElement('div');
+        dayDiv.textContent = dayName;
+        const small = document.createElement('small');
+        small.textContent = dt.getDate();
+        th.appendChild(dayDiv);
+        th.appendChild(small);
+        headRow.appendChild(th);
     });
-    html += '</tr></thead><tbody>';
+    thead.appendChild(headRow);
+    tableEl.appendChild(thead);
 
-    html += '<tr><td class="chg-dual-user-col"><i class="bi bi-person-fill"></i> Vous</td>';
-    html += buildDualRow(days, myByDate, colByDate, state.dateDemandeur, state.dateDestinataire);
-    html += '</tr>';
+    // Tbody
+    const tbody = document.createElement('tbody');
 
-    html += `<tr><td class="chg-dual-user-col"><i class="bi bi-person"></i> ${escapeHtml(c.prenom)}</td>`;
-    html += buildDualRow(days, colByDate, myByDate, state.dateDestinataire, state.dateDemandeur);
-    html += '</tr></tbody>';
+    // My row
+    const myRow = document.createElement('tr');
+    const myTd = document.createElement('td');
+    myTd.className = 'chg-dual-user-col';
+    myTd.innerHTML = '<i class="bi bi-person-fill"></i> Vous';
+    myRow.appendChild(myTd);
+    buildDualRowDOM(myRow, days, myByDate, colByDate, state.dateDemandeur, state.dateDestinataire);
+    tbody.appendChild(myRow);
 
-    const tableEl = el(tableId);
-    if (tableEl) tableEl.innerHTML = html;
+    // Col row
+    const colRow = document.createElement('tr');
+    const colTd = document.createElement('td');
+    colTd.className = 'chg-dual-user-col';
+    colTd.innerHTML = `<i class="bi bi-person"></i> ${escapeHtml(c.prenom)}`;
+    colRow.appendChild(colTd);
+    buildDualRowDOM(colRow, days, colByDate, myByDate, state.dateDestinataire, state.dateDemandeur);
+    tbody.appendChild(colRow);
+
+    tableEl.appendChild(tbody);
 }
 
-function buildDualRow(days, byDate, otherByDate, giveDate, takeDate) {
-    let html = '';
+function buildDualRowDOM(row, days, byDate, otherByDate, giveDate, takeDate) {
     days.forEach(d => {
         const a = byDate[d];
         const isGive = d === giveDate;
         const isTake = d === takeDate;
-        let cls = 'chg-dual-day-col';
-        if (isGive) cls += ' chg-dual-cell-give';
-        if (isTake) cls += ' chg-dual-cell-take';
+        const td = document.createElement('td');
+        td.className = 'chg-dual-day-col';
+        if (isGive) td.classList.add('chg-dual-cell-give');
+        if (isTake) td.classList.add('chg-dual-cell-take');
 
-        html += `<td class="${cls}">`;
-        html += cellBadge(a);
+        td.appendChild(cellBadgeDOM(a));
 
         if (isGive) {
-            html += '<div class="chg-sim-out">';
-            html += '<i class="bi bi-arrow-up-right chg-sim-arrow-out"></i>';
-            html += `<span class="chg-sim-dashed chg-sim-dashed-out">${cellBadgeRaw(a)}</span>`;
-            html += '</div>';
+            const sim = document.createElement('div');
+            sim.className = 'chg-sim-out';
+            const arrow = document.createElement('i');
+            arrow.className = 'bi bi-arrow-up-right chg-sim-arrow-out';
+            sim.appendChild(arrow);
+            const dashed = document.createElement('span');
+            dashed.className = 'chg-sim-dashed chg-sim-dashed-out';
+            dashed.appendChild(cellBadgeDOM(a));
+            sim.appendChild(dashed);
+            td.appendChild(sim);
         }
         if (isTake) {
             const other = otherByDate[giveDate];
-            html += '<div class="chg-sim-in">';
-            html += '<i class="bi bi-arrow-down-left chg-sim-arrow-in"></i>';
-            html += `<span class="chg-sim-dashed chg-sim-dashed-in">${cellBadgeRaw(other)}</span>`;
-            html += '</div>';
+            const sim = document.createElement('div');
+            sim.className = 'chg-sim-in';
+            const arrow = document.createElement('i');
+            arrow.className = 'bi bi-arrow-down-left chg-sim-arrow-in';
+            sim.appendChild(arrow);
+            const dashed = document.createElement('span');
+            dashed.className = 'chg-sim-dashed chg-sim-dashed-in';
+            dashed.appendChild(cellBadgeDOM(other));
+            sim.appendChild(dashed);
+            td.appendChild(sim);
         }
 
-        html += '</td>';
+        row.appendChild(td);
     });
-    return html;
 }
 
-function cellBadge(a) {
+function cellBadgeDOM(a) {
     if (a && a.horaire_type_id) {
-        const bg = escapeHtml(a.couleur || '#6c757d');
-        return `<span class="chg-dual-badge" style="background:${bg}">${escapeHtml(a.horaire_code)}</span>`;
+        const span = document.createElement('span');
+        span.className = 'chg-dual-badge';
+        span.style.background = a.couleur || '#6c757d';
+        span.textContent = a.horaire_code;
+        return span;
     }
-    if (a && (a.assign_statut === 'repos' || !a.horaire_type_id)) return '<span class="chg-dual-repos">R</span>';
-    return '<span class="chg-dual-empty">—</span>';
+    if (a && (a.assign_statut === 'repos' || !a.horaire_type_id)) {
+        const span = document.createElement('span');
+        span.className = 'chg-dual-repos';
+        span.textContent = 'R';
+        return span;
+    }
+    const span = document.createElement('span');
+    span.className = 'chg-dual-empty';
+    span.textContent = '—';
+    return span;
 }
 
-function cellBadgeRaw(a) {
+function buildBadgeEl(a) {
+    const wrap = document.createElement('div');
     if (a && a.horaire_type_id) {
-        const bg = escapeHtml(a.couleur || '#6c757d');
-        return `<span class="chg-dual-badge" style="background:${bg}">${escapeHtml(a.horaire_code)}</span>`;
+        const span = document.createElement('span');
+        span.className = 'chg-badge-inline';
+        span.style.background = a.couleur || '#6c757d';
+        span.textContent = a.horaire_code;
+        wrap.appendChild(span);
+        if (a.module_nom) {
+            const small = document.createElement('small');
+            small.className = 'text-muted ms-1';
+            small.textContent = a.module_nom;
+            wrap.appendChild(small);
+        }
+    } else {
+        const span = document.createElement('span');
+        span.className = 'chg-badge-inline';
+        span.style.background = '#999';
+        span.textContent = 'Repos';
+        wrap.appendChild(span);
     }
-    return '<span class="chg-dual-repos">R</span>';
+    return wrap;
 }
 
 /* ═══ Submit ═══ */
@@ -417,7 +607,7 @@ async function submitChangement() {
     btn.disabled = false;
     if (res.success) {
         toast('Demande envoyée');
-        closeConfirmModal();
+        if (confirmModal) confirmModal.hide();
         closeSlidedown();
         await loadChangements();
     } else {
@@ -441,19 +631,38 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
     if (startDow === 0) startDow = 7;
     const startOffset = startDow - 1;
 
-    let html = '<div class="chg-cal-header">';
-    JOURS.forEach(j => { html += `<div class="chg-cal-hcell">${j}</div>`; });
-    html += '</div><div class="chg-cal-body">';
+    const frag = document.createDocumentFragment();
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'chg-cal-header';
+    JOURS.forEach(j => {
+        const hcell = document.createElement('div');
+        hcell.className = 'chg-cal-hcell';
+        hcell.textContent = j;
+        header.appendChild(hcell);
+    });
+    frag.appendChild(header);
+
+    // Body
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'chg-cal-body';
 
     const totalDays = lastDay.getDate();
     const totalCells = Math.ceil((totalDays + startOffset) / 7) * 7;
+    let weekDiv = null;
 
     for (let i = 0; i < totalCells; i++) {
-        if (i % 7 === 0) html += '<div class="chg-cal-week">';
+        if (i % 7 === 0) {
+            weekDiv = document.createElement('div');
+            weekDiv.className = 'chg-cal-week';
+        }
 
         const dayNum = i - startOffset + 1;
         if (dayNum < 1 || dayNum > totalDays) {
-            html += '<div class="chg-cal-cell chg-cal-empty"></div>';
+            const empty = document.createElement('div');
+            empty.className = 'chg-cal-cell chg-cal-empty';
+            weekDiv.appendChild(empty);
         } else {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
             const assign = byDate[dateStr];
@@ -463,48 +672,60 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
             const isPast = dateStr < today;
             const isWeekend = (i % 7 === 5) || (i % 7 === 6);
 
-            let cls = 'chg-cal-cell';
-            if (hasShift) cls += ' chg-cal-has-shift';
-            else if (hasAssign) cls += ' chg-cal-clickable';
-            if (isSelected) cls += ' chg-cal-selected';
-            if (isPast) cls += ' chg-cal-past';
-            if (isWeekend) cls += ' chg-cal-weekend';
-            if (dateStr === today) cls += ' chg-cal-today';
+            const cell = document.createElement('div');
+            cell.className = 'chg-cal-cell';
+            if (hasShift) cell.classList.add('chg-cal-has-shift');
+            else if (hasAssign) cell.classList.add('chg-cal-clickable');
+            if (isSelected) cell.classList.add('chg-cal-selected');
+            if (isPast) cell.classList.add('chg-cal-past');
+            if (isWeekend) cell.classList.add('chg-cal-weekend');
+            if (dateStr === today) cell.classList.add('chg-cal-today');
 
-            const clickable = !isPast && hasAssign;
-
-            html += `<div class="${cls}" ${clickable ? `data-cal-date="${dateStr}"` : ''}>`;
-            html += `<div class="chg-cal-day">${dayNum}</div>`;
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'chg-cal-day';
+            dayDiv.textContent = dayNum;
+            cell.appendChild(dayDiv);
 
             if (assign) {
                 if (hasShift) {
-                    const bg = escapeHtml(assign.couleur || '#6c757d');
-                    html += `<div class="chg-cal-badge" style="background:${bg}">${escapeHtml(assign.horaire_code)}</div>`;
+                    const badge = document.createElement('div');
+                    badge.className = 'chg-cal-badge';
+                    badge.style.background = assign.couleur || '#6c757d';
+                    badge.textContent = assign.horaire_code;
+                    cell.appendChild(badge);
                     if (assign.module_code) {
-                        html += `<div class="chg-cal-module">${escapeHtml(assign.module_code)}</div>`;
+                        const modDiv = document.createElement('div');
+                        modDiv.className = 'chg-cal-module';
+                        modDiv.textContent = assign.module_code;
+                        cell.appendChild(modDiv);
                     }
                 } else if (assign.assign_statut === 'repos') {
-                    html += '<div class="chg-cal-repos">R</div>';
+                    const r = document.createElement('div');
+                    r.className = 'chg-cal-repos';
+                    r.textContent = 'R';
+                    cell.appendChild(r);
                 } else if (assign.assign_statut === 'absence') {
-                    html += '<div class="chg-cal-absence">A</div>';
+                    const ab = document.createElement('div');
+                    ab.className = 'chg-cal-absence';
+                    ab.textContent = 'A';
+                    cell.appendChild(ab);
                 }
             }
 
-            html += '</div>';
+            const clickable = !isPast && hasAssign;
+            if (clickable) {
+                cell.addEventListener('click', () => onDayClick(dateStr, byDate[dateStr]));
+            }
+
+            weekDiv.appendChild(cell);
         }
 
-        if (i % 7 === 6) html += '</div>';
+        if (i % 7 === 6) bodyDiv.appendChild(weekDiv);
     }
 
-    html += '</div>';
-    container.innerHTML = html;
-
-    container.querySelectorAll('[data-cal-date]').forEach(cell => {
-        cell.addEventListener('click', () => {
-            const d = cell.dataset.calDate;
-            onDayClick(d, byDate[d]);
-        });
-    });
+    frag.appendChild(bodyDiv);
+    container.innerHTML = '';
+    container.appendChild(frag);
 }
 
 /* ═══ Changements list ═══ */
@@ -523,7 +744,7 @@ async function loadChangements() {
         return;
     }
 
-    const userId = window.__TR__?.user?.id;
+    const userId = window.__ZT__?.user?.id;
 
     container.innerHTML = items.map(ch => {
         const iAmDemandeur = ch.demandeur_id === userId;
@@ -540,7 +761,7 @@ async function loadChangements() {
             case 'en_attente_collegue': statutHtml = '<span class="badge badge-pending">En attente</span>'; break;
             case 'confirme_collegue': statutHtml = '<span class="badge badge-info">Attente admin</span>'; break;
             case 'valide': statutHtml = '<span class="badge badge-success">Validé</span>'; break;
-            case 'refuse': statutHtml = `<span class="badge badge-refused">Refusé</span>`; break;
+            case 'refuse': statutHtml = '<span class="badge badge-refused">Refusé</span>'; break;
         }
 
         let actionsHtml = '';
@@ -609,7 +830,7 @@ function onListClick(e) {
     if (refuseBtn) {
         state.refusId = refuseBtn.dataset.refuse;
         el('refusRaison').value = '';
-        el('refusModal').classList.remove('chg-hidden');
+        if (refusModalInstance) refusModalInstance.show();
         return;
     }
 
@@ -631,16 +852,12 @@ async function confirmRefus() {
     const res = await apiPost('refuser_changement', { id: state.refusId, raison });
     if (res.success) {
         toast('Demande refusée');
-        closeRefusModal();
+        if (refusModalInstance) refusModalInstance.hide();
         state.refusId = null;
         await loadChangements();
     } else {
         toast(res.message || 'Erreur');
     }
-}
-
-function closeRefusModal() {
-    el('refusModal')?.classList.add('chg-hidden');
 }
 
 /* ═══ Helpers ═══ */
@@ -665,13 +882,6 @@ function formatDateFr(dateStr) {
 function formatDateShort(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
-}
-
-function buildBadge(code, couleur, moduleName) {
-    const bg = escapeHtml(couleur || '#6c757d');
-    let html = `<span class="chg-badge-inline" style="background:${bg}">${escapeHtml(code || 'Repos')}</span>`;
-    if (moduleName) html += ` <small class="text-muted">${escapeHtml(moduleName)}</small>`;
-    return html;
 }
 
 function buildBadgeHtml(code, couleur, moduleName) {

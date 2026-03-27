@@ -609,31 +609,46 @@ body.no-nav #app-content {
 }
 .card-body { padding: 1.25rem; }
 
-/* ── Repartition tabs ── */
-.rep-tab {
+/* ── Repartition toggle tabs (sliding pill) ── */
+.rep-tabs {
+  display: inline-flex;
+  position: relative;
+  background: var(--zt-bg, #F7F5F2);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 0;
+}
+.rep-tabs-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: calc(100% - 6px);
   background: var(--zt-bg-card, #fff);
-  color: var(--zt-text-secondary);
-  border: 1.5px solid var(--zt-border);
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 0.35rem 1rem;
-  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+  pointer-events: none;
 }
-.rep-tab:hover {
-  background: var(--zt-accent-bg);
-  color: var(--zt-text);
-  border-color: var(--zt-text-muted);
+.rep-tab {
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--zt-text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  white-space: nowrap;
 }
+.rep-tab:hover { color: var(--zt-text); }
 .rep-tab-active {
-  background: var(--zt-teal, #191918);
-  color: #fff;
-  border-color: var(--zt-teal, #191918);
-}
-.rep-tab-active:hover {
-  background: var(--zt-teal-light, #3D3D3C);
-  color: #fff;
-  border-color: var(--zt-teal-light, #3D3D3C);
+  color: var(--zt-text);
+  font-weight: 600;
 }
 
 /* ── Page header ── */
@@ -2431,9 +2446,6 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .chg-col-hint strong { color: var(--zt-teal); }
 .chg-col-active { background: rgba(188,210,203,.2) !important; }
 
-/* Confirmation modal */
-.chg-modal-confirm { max-width: 640px; width: 95vw; }
-
 @media (max-width: 700px) {
   .chg-top-row { grid-template-columns: 1fr; }
   .chg-slide-row { grid-template-columns: 1fr; }
@@ -2716,6 +2728,27 @@ input[type="checkbox"]:not(.form-check-input):hover {
 }
 .chg-info.refus { color: var(--zt-red); }
 
+/* ── Changements — Modals (style admin absences) ── */
+.chg-modal-dialog { max-width: 600px; }
+.chg-modal-dialog-sm { max-width: 420px; }
+.chg-modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--zt-border, #e5e7eb);
+}
+.chg-modal-close i { font-size: .85rem; }
+.chg-btn-envoyer {
+  background: var(--zt-bg, #f5f3ee); border: 1px solid var(--zt-border, #e5e7eb);
+  color: var(--zt-text-muted); border-radius: var(--zt-radius-sm, 8px);
+  transition: all .2s;
+}
+.chg-btn-envoyer:hover { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
+.chg-btn-refuser {
+  background: var(--zt-bg, #f5f3ee); border: 1px solid var(--zt-border, #e5e7eb);
+  color: var(--zt-text-muted); border-radius: var(--zt-radius-sm, 8px);
+  transition: all .2s;
+}
+.chg-btn-refuser:hover { background: #E2B8AE; color: #7B3B2C; border-color: #E2B8AE; }
+
 /* ── Changements responsive ── */
 @media (max-width: 600px) {
   .chg-confirm-row { flex-direction: column; }
@@ -2723,8 +2756,6 @@ input[type="checkbox"]:not(.form-check-input):hover {
   .chg-confirm-take { border-radius: 0 0 8px 8px; }
   .chg-confirm-arrow { justify-content: center; padding: 0.35rem 0; }
   .chg-cal-cell { min-height: 48px; }
-  .chg-modal-sm { max-width: 95vw; }
-  .chg-modal-confirm { max-width: 98vw; }
 }
 
 /* ── Alert Modal (haute importance) ── */

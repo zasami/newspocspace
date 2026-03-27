@@ -14,7 +14,7 @@ let selectedUserIds = null;
 let filterTempSelection = new Set();
 let activeFonctionTags = new Set();
 let activeModuleTabs = new Set();
-const myUserId = window.__TR__?.user?.id || '';
+const myUserId = window.__ZT__?.user?.id || '';
 
 // Context menu state
 let ctxMenuEl = null;

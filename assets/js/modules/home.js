@@ -15,7 +15,7 @@ const CHOIX_LABELS = { menu: 'Menu', salade: 'Salade' };
 const PAIEMENT_LABELS = { salaire: 'Salaire', caisse: 'Cash', carte: 'Carte' };
 
 export async function init() {
-    const user = window.__TR__?.user;
+    const user = window.__ZT__?.user;
     const nameEl = document.getElementById('homeUserName');
     if (nameEl && user) nameEl.textContent = user.prenom || '';
 
@@ -337,11 +337,22 @@ function buildExistingReservationView(form, footer, menu, myRes) {
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
         ${menu.date_jour >= today ? `<button type="button" class="btn btn-sm btn-outline-danger btn-cancel-res"><i class="bi bi-x-lg"></i> Annuler la commande</button>` : ''}
     `;
-    footer.querySelector('.btn-cancel-res')?.addEventListener('click', async () => {
-        if (!confirm('Annuler votre commande ?')) return;
-        await apiPost('annuler_reservation_menu', { reservation_id: myRes.id });
-        closeModal();
-        await loadMenus();
+    footer.querySelector('.btn-cancel-res')?.addEventListener('click', () => {
+        const cancelModalEl = document.getElementById('menuCancelModal');
+        if (!cancelModalEl) return;
+        const cancelModal = new bootstrap.Modal(cancelModalEl);
+        const confirmBtn = document.getElementById('menuCancelConfirmBtn');
+        const handler = async () => {
+            confirmBtn.disabled = true;
+            await apiPost('annuler_reservation_menu', { reservation_id: myRes.id });
+            cancelModal.hide();
+            closeModal();
+            await loadMenus();
+            confirmBtn.disabled = false;
+        };
+        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        document.getElementById('menuCancelConfirmBtn').addEventListener('click', handler);
+        cancelModal.show();
     });
 }
 

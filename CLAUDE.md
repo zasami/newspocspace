@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git — Règle obligatoire
+
+**IMPORTANT** : Avant de modifier un fichier, toujours committer l'état actuel avec `git add -A && git commit -m "backup avant modif"` pour pouvoir revenir en arrière si besoin.
+
 ## Project Overview
 
 zerdaTime is an EMS (care home) staff scheduling application for EMS in Geneva. PHP+vanilla JS SPA for employees, server-rendered Bootstrap admin panel for managers. No build tools, no framework — plain PHP backend, ES modules frontend.

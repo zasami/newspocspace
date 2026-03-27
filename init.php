@@ -106,6 +106,16 @@ function require_admin(): array
     return $user;
 }
 
+function require_permission(string $key): array
+{
+    $user = require_auth();
+    $denied = $_SESSION['zt_user']['denied_perms'] ?? [];
+    if (in_array($key, $denied)) {
+        forbidden('Accès non autorisé');
+    }
+    return $user;
+}
+
 function get_pagination(): array
 {
     global $params;

@@ -486,7 +486,7 @@ async function discardDraft() {
 }
 
 function openReply(email, recipients, replyAll) {
-    const userId = window.__TR__?.user?.id;
+    const userId = window.__ZT__?.user?.id;
     const to = [email.from_user_id].filter(id => id !== userId);
     let cc = [];
     if (replyAll) {
@@ -602,7 +602,7 @@ async function sendEmail() {
             fd.append('file', file);
 
             try {
-                const csrfToken = window.__TR__?.csrfToken;
+                const csrfToken = window.__ZT__?.csrfToken;
                 const headers = {};
                 if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
@@ -612,7 +612,7 @@ async function sendEmail() {
                     headers,
                 });
                 const json = await uploadRes.json();
-                if (json.csrf) window.__TR__.csrfToken = json.csrf;
+                if (json.csrf) window.__ZT__.csrfToken = json.csrf;
             } catch (err) {
                 console.warn('Attachment upload error:', err);
             }

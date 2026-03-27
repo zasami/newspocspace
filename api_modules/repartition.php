@@ -37,7 +37,7 @@ function get_repartition()
     $modules = Db::fetchAll("SELECT id, nom, code, ordre FROM modules ORDER BY ordre");
 
     // Horaires
-    $horaires = Db::fetchAll("SELECT id, code, heure_debut, heure_fin, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code");
+    $horaires = Db::fetchAll("SELECT id, code, heure_debut, heure_fin, duree_effective, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code");
 
     // Fonctions
     $fonctions = Db::fetchAll("SELECT id, nom, code, ordre FROM fonctions ORDER BY ordre");

@@ -21,8 +21,8 @@ export async function init() {
         const res = await apiPost('login', { email, password });
 
         if (res.success) {
-            window.__TR__.user = res.user;
-            if (res.csrf) window.__TR__.csrfToken = res.csrf;
+            window.__ZT__.user = res.user;
+            if (res.csrf) window.__ZT__.csrfToken = res.csrf;
             const role = res.user?.role;
             if (role === 'admin' || role === 'direction') {
                 window.location.href = '/zerdatime/admin/';

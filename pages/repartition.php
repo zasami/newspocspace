@@ -11,11 +11,27 @@
   </div>
 </div>
 
-<!-- Module tabs -->
-<div id="repModuleTabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem"></div>
+<!-- Module tabs + bouton horaires -->
+<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem">
+  <div id="repModuleTabs" style="display:flex;gap:0.4rem;flex-wrap:wrap;flex:1"></div>
+  <button class="btn btn-sm btn-outline-secondary" id="repInfoBtn" style="display:inline-flex;align-items:center;gap:0.4rem;border-radius:8px;flex-shrink:0" title="Détail des horaires"><i class="bi bi-clock"></i> Horaires</button>
+</div>
 
-<!-- Legend -->
-<div id="repLegend" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem"></div>
+<!-- Modal horaires -->
+<div class="modal fade" id="repHorairesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-clock"></i> Horaires types</h5>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+      </div>
+      <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto" id="repHorairesBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Grid -->
 <div class="card">

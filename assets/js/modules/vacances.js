@@ -7,7 +7,7 @@ import { apiPost, escapeHtml, toast } from '../helpers.js';
 
 const MO = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DJ = ['D','L','M','M','J','V','S'];
-const ME = window.__TR__?.user?.id || '';
+const ME = window.__ZT__?.user?.id || '';
 
 let year, month, data = null, modFilter = '';
 let dragging = false, dStart = null, dEnd = null;
