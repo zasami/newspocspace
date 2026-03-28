@@ -85,6 +85,8 @@ $topbarPlaceholders = [
     'pv'        => 'Rechercher un procès-verbal...',
     'cuisine'   => 'Rechercher un menu...',
     'reservations' => 'Rechercher une réservation...',
+    'residents'    => 'Rechercher un résident...',
+    'famille'      => 'Rechercher un résident...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher un collaborateur...';
 
