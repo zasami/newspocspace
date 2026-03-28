@@ -286,5 +286,14 @@
         "category": "Planning",
         "done": false,
         "order": 32
+    },
+    {
+        "id": "espace-famille",
+        "title": "Espace famille",
+        "desc": "Dans le site web il yaura un bouton espace famille, avec le login , il peuve voir les activités faites les prochaines activité, les sortie etc....il peuve voir si possible le suivi midical et la galérie photos",
+        "difficulty": "difficile",
+        "category": "Site web",
+        "done": false,
+        "order": 33
     }
 ]
