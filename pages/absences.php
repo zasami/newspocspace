@@ -1,4 +1,17 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$absInitData = Db::fetchAll(
+    "SELECT a.*, u2.prenom AS valide_par_prenom, u2.nom AS valide_par_nom,
+            ur.prenom AS remplacement_prenom, ur.nom AS remplacement_nom
+     FROM absences a
+     LEFT JOIN users u2 ON u2.id = a.valide_par
+     LEFT JOIN users ur ON ur.id = a.remplacement_user_id
+     WHERE a.user_id = ?
+     ORDER BY a.date_debut DESC",
+    [$uid]
+);
+?>
 <style>
 .abs-dropzone {
   border: 2px dashed var(--zt-border, #d1cfc9); border-radius: 10px; padding: 24px 16px;
@@ -136,3 +149,4 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['absences' => $absInitData], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

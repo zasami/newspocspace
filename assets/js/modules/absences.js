@@ -9,7 +9,7 @@ function _lbRemoveAll() { _lbListeners.forEach(l => l.el.removeEventListener(l.e
 
 let selectedFile = null;
 
-export async function init() {
+export function init() {
     initDropZone();
 
     document.getElementById('absenceForm')?.addEventListener('submit', async (e) => {
@@ -38,7 +38,9 @@ export async function init() {
         }
     });
 
-    await loadAbsences();
+    // Initial render from SSR data
+    const ssrAbsences = window.__ZT_PAGE_DATA__?.absences || [];
+    renderAbsences(ssrAbsences);
 }
 
 function initDropZone() {
@@ -133,10 +135,13 @@ async function uploadJustificatif(absenceId, file) {
 
 async function loadAbsences() {
     const res = await apiPost('get_mes_absences');
+    renderAbsences(res.absences || []);
+}
+
+function renderAbsences(absences) {
     const tbody = document.getElementById('absencesTableBody');
     if (!tbody) return;
 
-    const absences = res.absences || [];
     if (!absences.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:2rem">Aucune absence enregistrée</td></tr>';
         return;

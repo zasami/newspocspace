@@ -1,14 +1,13 @@
 /**
  * Collègues absences module
  */
-import { apiPost, escapeHtml, formatDate, absenceTypeBadge, statusBadge } from '../helpers.js';
+import { escapeHtml, formatDate, absenceTypeBadge, statusBadge } from '../helpers.js';
 
-export async function init() {
-    const res = await apiPost('get_absences_collegues');
+export function init() {
+    const absences = window.__ZT_PAGE_DATA__?.absences || [];
     const tbody = document.getElementById('colleguesTableBody');
     if (!tbody) return;
 
-    const absences = res.absences || [];
     if (!absences.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:2rem">Aucune absence en cours</td></tr>';
         return;
