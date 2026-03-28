@@ -38,8 +38,17 @@ export async function init() {
     }
 
     // Load buddy count first, then week
-    await loadBuddyCount();
-    await loadWeek();
+    // Use SSR data on first load to avoid waterfall requests
+    const ssr = window.__ZT_PAGE_DATA__;
+    if (ssr) {
+        const count = ssr.buddy_count ?? 0;
+        document.getElementById('covBuddyCount').textContent = count;
+        hasBuddies = count > 0;
+        renderWeek(ssr);
+    } else {
+        await loadBuddyCount();
+        await loadWeek();
+    }
 }
 
 // ── Buddy management ──
@@ -180,6 +189,14 @@ async function loadWeek() {
         grid.innerHTML = '<div class="col-12 text-center py-4 text-muted"><i class="bi bi-exclamation-triangle"></i> ' + (res.message || 'Erreur') + '</div>';
         return;
     }
+
+    renderWeek(res);
+}
+
+function renderWeek(res) {
+    updateWeekLabel();
+
+    const grid = document.getElementById('covWeekGrid');
 
     // Show/hide no-buddies alert
     const noBuddiesAlert = document.getElementById('covNoBuddiesAlert');

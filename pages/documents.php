@@ -1,4 +1,17 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php
+require_once __DIR__ . "/../init.php";
+if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+
+// SSR: fetch document services
+$ssrServices = Db::fetchAll(
+    "SELECT id, nom, slug, icone, couleur
+     FROM document_services
+     WHERE actif = 1
+     ORDER BY ordre, nom"
+);
+
+$ssrData = ['services' => $ssrServices];
+?>
 <div class="page-header">
   <h1><i class="bi bi-folder2-open"></i> Documents</h1>
   <p>Consultez et téléchargez les documents de l'établissement</p>
@@ -68,3 +81,4 @@
 .doc-empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--zt-text-muted); }
 .doc-empty-state i { font-size:3rem; display:block; margin-bottom:.5rem; opacity:.4; }
 </style>
+<script type="application/json" id="__zt_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>

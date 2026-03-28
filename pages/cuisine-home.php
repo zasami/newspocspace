@@ -1,4 +1,58 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php
+require_once __DIR__ . "/../init.php";
+if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+
+$today = date('Y-m-d');
+$dt = new DateTime($today);
+$dow = (int)$dt->format('N');
+$monday = (clone $dt)->modify('-' . ($dow - 1) . ' days');
+$sunday = (clone $monday)->modify('+6 days');
+
+// SSR: menus de la semaine
+$ssrMenus = Db::fetchAll(
+    "SELECT m.id, m.date_jour, m.repas, m.entree, m.plat, m.salade, m.accompagnement, m.dessert, m.remarques,
+            (SELECT COUNT(*) FROM menu_reservations r WHERE r.menu_id = m.id AND r.statut = 'confirmee') AS nb_reservations,
+            (SELECT SUM(r2.nb_personnes) FROM menu_reservations r2 WHERE r2.menu_id = m.id AND r2.statut = 'confirmee') AS total_couverts
+     FROM menus m
+     WHERE m.date_jour BETWEEN ? AND ?
+     ORDER BY m.date_jour ASC, m.repas ASC",
+    [$monday->format('Y-m-d'), $sunday->format('Y-m-d')]
+);
+
+// SSR: commandes du jour (midi)
+$ssrCommandes = Db::fetchAll(
+    "SELECT r.id, r.choix, r.nb_personnes, r.remarques, r.paiement, r.statut, r.created_at,
+            u.prenom, u.nom, f.nom AS fonction_nom, f.code AS fonction_code
+     FROM menu_reservations r
+     JOIN menus m ON m.id = r.menu_id
+     JOIN users u ON u.id = r.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     WHERE m.date_jour = ? AND m.repas = 'midi' AND r.statut = 'confirmee'
+     ORDER BY u.nom, u.prenom",
+    [$today]
+);
+
+$ssrNbMenu   = count(array_filter($ssrCommandes, fn($r) => $r['choix'] === 'menu'));
+$ssrNbSalade = count(array_filter($ssrCommandes, fn($r) => $r['choix'] === 'salade'));
+
+// SSR: famille stats (midi)
+$ssrFamille = Db::fetchAll(
+    "SELECT rf.id FROM reservations_famille rf
+     WHERE rf.date_jour = ? AND rf.repas = 'midi' AND rf.statut = 'confirmee'",
+    [$today]
+);
+
+$ssrData = [
+    'success'       => true,
+    'menus'         => $ssrMenus,
+    'semaine_debut' => $monday->format('Y-m-d'),
+    'semaine_fin'   => $sunday->format('Y-m-d'),
+    'reservations'  => $ssrCommandes,
+    'nb_menu'       => $ssrNbMenu,
+    'nb_salade'     => $ssrNbSalade,
+    'nb_famille'    => count($ssrFamille),
+];
+?>
 <div class="page-header">
   <h1>Bonjour <span id="chUserName"></span></h1>
   <p>Tableau de bord cuisine</p>
@@ -319,3 +373,4 @@
   border: 1px solid var(--zt-border-light);
 }
 </style>
+<script type="application/json" id="__zt_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>

@@ -53,7 +53,15 @@ export async function init() {
     document.getElementById('chCmdUserSearch')?.addEventListener('input', debounce(searchCmdUsers, 300));
     initCmdModalEvents();
 
-    await loadAll();
+    // Use SSR data on first load to avoid waterfall requests
+    const ssr = window.__ZT_PAGE_DATA__;
+    if (ssr) {
+        renderMenuCards(ssr);
+        renderCommandes(ssr);
+        renderFamilleStats(ssr);
+    } else {
+        await loadAll();
+    }
 }
 
 export function destroy() {
@@ -81,6 +89,15 @@ async function loadMenuCards() {
 
     const res = await apiPost('cuisine_get_menus_semaine', { date: fmtDate(menuMonday) });
     if (!res.success) { container.innerHTML = '<p class="text-danger">Erreur</p>'; return; }
+
+    renderMenuCards(res);
+}
+
+function renderMenuCards(res) {
+    const container = document.getElementById('chMenuCards');
+    if (!container) return;
+
+    updateWeekLabel();
 
     menusCache = {};
     (res.menus || []).forEach(m => { menusCache[m.date_jour + '_' + (m.repas || 'midi')] = m; });
@@ -293,6 +310,13 @@ async function loadCommandes() {
     body.innerHTML = '<div class="text-center py-3"><span class="spinner"></span></div>';
     const res = await apiPost('cuisine_get_reservations_collab', { date: todayStr(), repas });
 
+    renderCommandes(res);
+}
+
+function renderCommandes(res) {
+    const body = document.getElementById('chCommandesBody');
+    if (!body) return;
+
     // chStatCouverts removed — replaced by famille stats
     document.getElementById('chStatMenu').textContent = res.nb_menu || 0;
     document.getElementById('chStatSalade').textContent = res.nb_salade || 0;
@@ -475,7 +499,11 @@ async function saveCmdCommande() {
 
 async function loadFamilleStats() {
     const res = await apiPost('cuisine_get_reservations_famille', { date: todayStr(), repas: 'midi' });
-    const count = res.reservations?.length || 0;
+    renderFamilleStats(res);
+}
+
+function renderFamilleStats(res) {
+    const count = res.nb_famille ?? res.reservations?.length ?? 0;
     document.getElementById('chStatFamille').textContent = count;
 }
 

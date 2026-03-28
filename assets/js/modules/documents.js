@@ -27,11 +27,15 @@ function formatDate(d) {
     return new Date(d).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function renderServices(data) {
+    services = data || [];
+    renderServicePills();
+}
+
 async function loadServices() {
     const res = await apiPost('get_document_services');
     if (!res.success) return;
-    services = res.services || [];
-    renderServicePills();
+    renderServices(res.services);
 }
 
 function renderServicePills() {
@@ -124,7 +128,13 @@ export async function init() {
         searchTimeout = setTimeout(loadDocuments, 300);
     });
 
-    await loadServices();
+    // Use SSR data on first load to avoid extra round-trip
+    const ssr = window.__ZT_PAGE_DATA__;
+    if (ssr) {
+        renderServices(ssr.services || []);
+    } else {
+        await loadServices();
+    }
     await loadDocuments();
 }
 
