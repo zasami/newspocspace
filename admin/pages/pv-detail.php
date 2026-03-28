@@ -1,3 +1,27 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$pvDetailId = $_GET['id'] ?? null;
+$pvDetailData = null;
+if ($pvDetailId) {
+    $pvDetailData = Db::fetch(
+        "SELECT pv.*, u.prenom AS creator_prenom, u.nom AS creator_nom,
+                f.code AS fonction_code, f.nom AS fonction_nom,
+                m.code AS module_code, m.nom AS module_nom,
+                e.code AS etage_code, e.nom AS etage_nom
+         FROM pv
+         LEFT JOIN users u ON u.id = pv.created_by
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         LEFT JOIN modules m ON m.id = pv.module_id
+         LEFT JOIN etages e ON e.id = pv.etage_id
+         WHERE pv.id = ?",
+        [$pvDetailId]
+    );
+    if ($pvDetailData) {
+        $pvDetailData['participants'] = !empty($pvDetailData['participants']) ? json_decode($pvDetailData['participants'], true) : [];
+        $pvDetailData['tags'] = !empty($pvDetailData['tags']) ? json_decode($pvDetailData['tags'], true) : [];
+    }
+}
+?>
 <!-- PV Detail Page -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
@@ -754,6 +778,7 @@ let editorModule = null;
 let editorInstance = null;
 let pvId = null;
 let pvData = null;
+const ssrPvData = <?= $pvDetailData ? json_encode($pvDetailData, JSON_HEX_TAG | JSON_HEX_APOS) : 'null' ?>;
 
 async function initPvdetailPage() {
   editorModule = await import('/zerdatime/assets/js/rich-editor.js');
@@ -765,14 +790,12 @@ async function initPvdetailPage() {
     return;
   }
 
-  const result = await adminApiPost('admin_get_pv', { id: pvId });
-  if (!result.success) {
-    toast('Erreur: ' + result.message);
+  if (!ssrPvData) {
+    toast('PV non trouvé');
     window.history.back();
     return;
   }
-
-  pvData = result.pv;
+  pvData = ssrPvData;
 
   // Si contenu sauvegardé dans localStorage (rechargement pendant blur), le restaurer
   const lsSaved = localStorage.getItem('zt_pv_blur_saved');

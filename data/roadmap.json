@@ -277,5 +277,14 @@
         "category": "Statistiques",
         "done": false,
         "order": 31
+    },
+    {
+        "id": "param-tres-fonctions-et-horraires",
+        "title": "Paramètres fonctions et horraires",
+        "desc": "Ajouter une page paramètres pou ajouter des fonction genre : annimation, hottelerie, nettoyage, femme de chambre, benevole...etc) ces données seront charger dans les selects dans les formulaires.  leur attribuer une horraires speciale  par exemple : civiliste il faite de luni au vendredi de 7h30 à 16h00 cad A2 par exemple pour que le programme le fait automatiquement pendant la génération de planning. l'admin ou le responsable peut modifier dans le planning faire des exeption ajouter de paramètres IA.",
+        "difficulty": "difficile",
+        "category": "Planning",
+        "done": false,
+        "order": 32
     }
 ]
