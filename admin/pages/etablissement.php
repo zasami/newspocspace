@@ -1,3 +1,38 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$cfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config ORDER BY config_key");
+$etabConfig = [];
+foreach ($cfgRows as $r) {
+    $etabConfig[$r['config_key']] = $r['config_value'];
+}
+
+$etabConfigModules = Db::fetchAll(
+    "SELECT m.id, m.code, m.nom, m.ordre,
+            u.id AS responsable_id,
+            CONCAT(u.prenom, ' ', u.nom) AS responsable_nom
+     FROM modules m
+     LEFT JOIN user_modules um ON um.module_id = m.id AND um.is_principal = 1
+     LEFT JOIN users u ON u.id = um.user_id AND u.role IN ('responsable','admin','direction')
+     ORDER BY m.ordre"
+);
+
+$etabModules = Db::fetchAll("SELECT * FROM modules ORDER BY ordre");
+foreach ($etabModules as &$m) {
+    $m['etages'] = Db::fetchAll("SELECT * FROM etages WHERE module_id = ? ORDER BY ordre", [$m['id']]);
+    foreach ($m['etages'] as &$e) {
+        $e['groupes'] = Db::fetchAll("SELECT * FROM groupes WHERE etage_id = ? ORDER BY ordre", [$e['id']]);
+    }
+    unset($e);
+}
+unset($m);
+
+$etabResponsables = Db::fetchAll(
+    "SELECT id, prenom, nom, role FROM users WHERE is_active = 1 AND role IN ('responsable','admin','direction') ORDER BY nom, prenom"
+);
+
+$etabGeoPays    = Db::fetchAll("SELECT code, nom FROM geo_pays ORDER BY sort_order");
+$etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions ORDER BY pays_code, sort_order");
+?>
 <style>
 .feature-toggle-card{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;border:1px solid var(--zt-border-light,#e5e7eb);border-radius:8px;background:var(--zt-bg-card,#fff);transition:border-color .2s,box-shadow .2s}
 .feature-toggle-card:hover{border-color:var(--zt-teal,#00b4a0);box-shadow:0 2px 8px rgba(0,180,160,.08)}
