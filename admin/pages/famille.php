@@ -295,7 +295,7 @@ $famResidents = Db::fetchAll(
         fd.append('file_name', file.name);
         Object.entries(extraFields || {}).forEach(([k, v]) => fd.append(k, v));
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const csrfToken = (window.__ZT_ADMIN__?.csrfToken || '');
         const resp = await fetch('/zerdatime/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': csrfToken },

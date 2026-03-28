@@ -25,7 +25,6 @@ $initResidents = Db::fetchAll(
 
 <div class="card">
   <div class="card-header d-flex align-items-center gap-2">
-    <input type="text" class="form-control form-control-sm" id="resSearch" placeholder="Rechercher..." style="max-width:250px">
     <div class="form-check form-switch ms-auto">
       <input type="checkbox" class="form-check-input" id="resShowInactive">
       <label class="form-check-label small" for="resShowInactive">Afficher inactifs</label>
@@ -277,7 +276,7 @@ $initResidents = Db::fetchAll(
     }
 
     async function load() {
-        const search = document.getElementById('resSearch')?.value || '';
+        const search = document.getElementById('topbarSearchInput')?.value || '';
         const showInactive = document.getElementById('resShowInactive')?.checked ? 1 : 0;
         const res = await adminApiPost('admin_get_residents', { search, show_inactive: showInactive });
         if (!res.success) return;
@@ -367,7 +366,7 @@ $initResidents = Db::fetchAll(
             fd.append('encrypted_iv', encrypted.iv);
             fd.append('resident_id', resId);
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const csrfToken = (window.__ZT_ADMIN__?.csrfToken || '');
             const resp = await fetch('/zerdatime/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': csrfToken },
@@ -481,7 +480,7 @@ $initResidents = Db::fetchAll(
     });
 
     let searchTimer = null;
-    document.getElementById('resSearch')?.addEventListener('input', () => {
+    document.getElementById('topbarSearchInput')?.addEventListener('input', () => {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(load, 300);
     });
