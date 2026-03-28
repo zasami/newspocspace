@@ -225,8 +225,7 @@ $activeSection = match($page) {
 <link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
 <link href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<!-- Tailwind CSS is NOT loaded in admin: admin uses Bootstrap + admin.css only.
-     The css_mode setting applies to the front-end app, not the admin panel. -->
+<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 </head>
 <body>
 
@@ -318,7 +317,23 @@ $activeSection = match($page) {
 
   <!-- PAGE CONTENT -->
   <div class="admin-content" id="adminContent">
-    <?php require $pageFile; ?>
+    <?php
+    // Catch fatal errors so that global compose panel + shortcuts still render
+    ob_start();
+    $pageError = null;
+    try {
+        require $pageFile;
+    } catch (\Throwable $e) {
+        $pageError = $e->getMessage();
+        error_log('[Admin page error] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    }
+    $pageOutput = ob_get_clean();
+    if ($pageError) {
+        echo '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle"></i> Erreur : ' . h($pageError) . '</div>';
+    } else {
+        echo $pageOutput;
+    }
+    ?>
   </div>
 </div>
 
@@ -747,7 +762,7 @@ function adminPrompt(opts = {}) {
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 
 <!-- ═══ GLOBAL COMPOSE PANEL ═══ -->
-<div class="compose-panel compose-panel--hidden" id="globalComposePanel">
+<div class="compose-panel" id="globalComposePanel">
   <div class="compose-panel-header" id="globalComposePanelHeader">
     <span class="compose-panel-title" id="globalComposePanelTitle">Nouveau message</span>
     <div class="compose-panel-header-actions">
@@ -903,9 +918,7 @@ function adminPrompt(opts = {}) {
 
         const panel = document.getElementById('globalComposePanel');
         if (panel) {
-            panel.classList.remove('minimized', 'compose-panel--hidden');
-            panel.classList.add('compose-panel--visible');
-            panel.offsetHeight;
+            panel.classList.remove('minimized');
             panel.classList.add('open');
         }
     }
@@ -914,7 +927,7 @@ function adminPrompt(opts = {}) {
         const panel = document.getElementById('globalComposePanel');
         if (panel) {
             panel.classList.remove('open');
-            setTimeout(() => { panel.classList.remove('compose-panel--visible'); panel.classList.add('compose-panel--hidden'); }, 300);
+            setTimeout(() => { panel.classList.remove('open'); }, 300);
         }
         if (composeEditor && editorModule) { editorModule.destroyEditor(composeEditor); composeEditor = null; }
         pendingFiles = [];
