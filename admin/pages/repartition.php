@@ -1,17 +1,124 @@
+<?php
+// ─── Données serveur — semaine courante ──────────────────────────────────────
+$dto = new DateTime();
+$dow = (int)$dto->format('N'); // 1=Mon
+$dto->modify('-' . ($dow - 1) . ' days');
+$weekStart = $dto->format('Y-m-d');
+
+$dtoStart = new DateTime($weekStart);
+$dtoEnd = clone $dtoStart;
+$dtoEnd->modify('+6 days');
+$weekEnd = $dtoEnd->format('Y-m-d');
+
+$weekNum = (int)$dtoStart->format('W');
+$year    = (int)$dtoStart->format('o');
+
+$frMonths = [
+    1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
+    5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
+    9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
+];
+
+$startDay   = (int)$dtoStart->format('j');
+$endDay     = (int)$dtoEnd->format('j');
+$startMonth = $frMonths[(int)$dtoStart->format('n')];
+$endMonth   = $frMonths[(int)$dtoEnd->format('n')];
+
+if ($dtoStart->format('n') === $dtoEnd->format('n')) {
+    $weekLabel = "Semaine $weekNum — $startDay au $endDay $endMonth $year";
+} else {
+    $weekLabel = "Semaine $weekNum — $startDay $startMonth au $endDay $endMonth $year";
+}
+
+$weekIso = "$year-W" . str_pad($weekNum, 2, '0', STR_PAD_LEFT);
+
+$repModules = Db::fetchAll("SELECT id, nom, code, ordre FROM modules ORDER BY ordre");
+foreach ($repModules as &$mod) {
+    $etages = Db::fetchAll("SELECT id, nom, code, ordre FROM etages WHERE module_id = ? ORDER BY ordre", [$mod['id']]);
+    foreach ($etages as &$etage) {
+        $etage['groupes'] = Db::fetchAll("SELECT id, nom, code, ordre FROM groupes WHERE etage_id = ? ORDER BY ordre", [$etage['id']]);
+    }
+    unset($etage);
+    $mod['etages'] = $etages;
+}
+unset($mod);
+
+$repHoraires  = Db::fetchAll("SELECT id, code, heure_debut, heure_fin, duree_effective, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code");
+$repFonctions = Db::fetchAll("SELECT id, nom, code, ordre FROM fonctions ORDER BY ordre");
+
+$repUsers = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.employee_id,
+            f.id AS fonction_id, f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
+            hm.id AS home_module_id, hm.code AS home_module_code, hm.nom AS home_module_nom, hm.ordre AS home_module_ordre
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules hm ON hm.id = um.module_id
+     WHERE u.is_active = 1
+     ORDER BY hm.ordre, f.ordre, u.nom"
+);
+
+$moisStart = $dtoStart->format('Y-m');
+$moisEnd   = $dtoEnd->format('Y-m');
+$moisList  = array_unique([$moisStart, $moisEnd]);
+$phMois    = implode(',', array_fill(0, count($moisList), '?'));
+$repPlannings = Db::fetchAll("SELECT id, mois_annee, statut FROM plannings WHERE mois_annee IN ($phMois)", $moisList);
+$planningIds  = array_column($repPlannings, 'id');
+
+$repAssignments = [];
+if ($planningIds) {
+    $phPlan  = implode(',', array_fill(0, count($planningIds), '?'));
+    $qParams = array_merge($planningIds, [$weekStart, $weekEnd]);
+    $repAssignments = Db::fetchAll(
+        "SELECT pa.date_jour, pa.user_id, pa.statut, pa.notes,
+                u.prenom AS user_prenom, u.nom AS user_nom,
+                f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
+                ht.code AS horaire_code, ht.couleur AS horaire_couleur,
+                ht.heure_debut, ht.heure_fin,
+                m.code AS module_code, m.id AS module_id,
+                g.code AS groupe_code, g.id AS groupe_id,
+                e.code AS etage_code
+         FROM planning_assignations pa
+         JOIN users u ON u.id = pa.user_id
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         LEFT JOIN modules m ON m.id = pa.module_id
+         LEFT JOIN groupes g ON g.id = pa.groupe_id
+         LEFT JOIN etages e ON e.id = g.etage_id
+         WHERE pa.planning_id IN ($phPlan)
+           AND pa.date_jour BETWEEN ? AND ?
+         ORDER BY pa.date_jour, m.ordre, f.ordre, u.nom",
+        $qParams
+    );
+}
+
+$frDays  = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+$repDays = [];
+for ($i = 0; $i < 7; $i++) {
+    $d = clone $dtoStart;
+    $d->modify("+$i days");
+    $repDays[] = [
+        'date'       => $d->format('Y-m-d'),
+        'label'      => $frDays[$i] . ' ' . $d->format('d'),
+        'short'      => $frDays[$i],
+        'is_weekend' => in_array($d->format('N'), ['6', '7']),
+    ];
+}
+?>
 <!-- Week navigator -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <div class="d-flex align-items-center gap-2">
     <button class="btn btn-outline-secondary btn-sm" id="repPrevWeek" title="Semaine precedente">
       <i class="bi bi-chevron-left"></i>
     </button>
-    <h6 class="mb-0 fw-semibold rep-week-label" id="repWeekLabel">Chargement...</h6>
+    <h6 class="mb-0 fw-semibold rep-week-label" id="repWeekLabel"><?= h($weekLabel) ?></h6>
     <button class="btn btn-outline-secondary btn-sm" id="repNextWeek" title="Semaine suivante">
       <i class="bi bi-chevron-right"></i>
     </button>
     <button class="btn btn-outline-primary btn-sm" id="repToday" title="Semaine courante">Aujourd'hui</button>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <input type="date" class="form-control form-control-sm rep-date-picker" id="repDatePicker">
+    <input type="date" class="form-control form-control-sm rep-date-picker" id="repDatePicker" value="<?= h($weekStart) ?>">
     <button class="btn btn-outline-secondary btn-sm" id="repPrint" title="Imprimer">
       <i class="bi bi-printer"></i>
     </button>
@@ -19,18 +126,32 @@
 </div>
 
 <!-- Planning status -->
-<div id="repPlanningStatus" class="mb-2 rep-planning-status"></div>
+<div id="repPlanningStatus" class="mb-2 rep-planning-status">
+  <?php if (!empty($repPlannings)):
+    $colors = ['brouillon' => 'secondary', 'provisoire' => 'info', 'final' => 'success'];
+    $badges = array_map(fn($p) => '<span class="badge bg-' . ($colors[$p['statut']] ?? 'secondary') . ' me-1">' . h($p['mois_annee']) . ' : ' . h($p['statut']) . '</span>', $repPlannings);
+    echo '<i class="bi bi-info-circle me-1"></i>Planning(s) : ' . implode('', $badges);
+  else: ?>
+    <span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette periode</span>
+  <?php endif; ?>
+</div>
 
 <!-- Legend -->
 <div class="mb-3 d-flex flex-wrap gap-2 align-items-center rep-legend" id="repLegend">
-  <span class="text-muted fw-medium">Legende :</span>
+  <span class="text-muted fw-medium">Légende :</span>
+  <?php foreach ($repHoraires as $h): ?>
+    <span class="rep-legend-item">
+      <span class="rep-badge" style="background:<?= htmlspecialchars($h['couleur'] ?? '#6c757d') ?>"><?= htmlspecialchars($h['code']) ?></span>
+      <span class="text-muted"><?= htmlspecialchars(substr($h['heure_debut'] ?? '', 0, 5)) ?>-<?= htmlspecialchars(substr($h['heure_fin'] ?? '', 0, 5)) ?></span>
+    </span>
+  <?php endforeach; ?>
 </div>
 
 <!-- Planning grid container -->
 <div id="repGrid" class="rep-grid-container">
   <div class="text-center py-5 text-muted">
     <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-    Chargement de la repartition...
+    Chargement de la répartition...
   </div>
 </div>
 
@@ -233,8 +354,21 @@
 <script<?= nonce() ?>>
 (function() {
 
-  let currentWeekISO = null;
-  let data = null;
+  let currentWeekISO = <?= json_encode($weekIso) ?>;
+  let data = {
+    success: true,
+    week_start: <?= json_encode($weekStart) ?>,
+    week_end: <?= json_encode($weekEnd) ?>,
+    week_label: <?= json_encode($weekLabel) ?>,
+    week_iso: <?= json_encode($weekIso) ?>,
+    days: <?= json_encode(array_values($repDays), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    modules: <?= json_encode(array_values($repModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    fonctions: <?= json_encode(array_values($repFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    horaires: <?= json_encode(array_values($repHoraires), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    plannings: <?= json_encode(array_values($repPlannings), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    assignments: <?= json_encode(array_values($repAssignments), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    users: <?= json_encode(array_values($repUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+  };
 
   // ─── ISO week helpers ───
   function dateToStr(d) {
@@ -245,24 +379,13 @@
     const m = isoWeek.match(/^(\d{4})-W(\d{2})$/);
     if (!m) return null;
     const yr = parseInt(m[1]), wk = parseInt(m[2]);
-    // Jan 4 is always in ISO week 1
     const jan4 = new Date(yr, 0, 4);
-    const dow = jan4.getDay() || 7; // 1=Mon..7=Sun
+    const dow = jan4.getDay() || 7;
     const week1Mon = new Date(jan4);
     week1Mon.setDate(jan4.getDate() - dow + 1);
     const target = new Date(week1Mon);
     target.setDate(week1Mon.getDate() + (wk - 1) * 7);
     return target;
-  }
-
-  function getISOWeek() {
-    const d = new Date();
-    const thu = new Date(d);
-    thu.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-    const yr = thu.getFullYear();
-    const jan1 = new Date(yr, 0, 1);
-    const wk = Math.ceil(((thu - jan1) / 86400000 + 1) / 7);
-    return yr + '-W' + String(wk).padStart(2, '0');
   }
 
   // ─── Load data ───
@@ -292,11 +415,11 @@
     // Planning status
     const statusEl = document.getElementById('repPlanningStatus');
     if (res.plannings && res.plannings.length) {
-      const badges = res.plannings.map(p => {
-        const colors = { brouillon: 'secondary', provisoire: 'info', final: 'success' };
-        return '<span class="badge bg-' + (colors[p.statut] || 'secondary') + ' me-1">' +
-               escapeHtml(p.mois_annee) + ' : ' + escapeHtml(p.statut) + '</span>';
-      }).join('');
+      const colors = { brouillon: 'secondary', provisoire: 'info', final: 'success' };
+      const badges = res.plannings.map(p =>
+        '<span class="badge bg-' + (colors[p.statut] || 'secondary') + ' me-1">' +
+        escapeHtml(p.mois_annee) + ' : ' + escapeHtml(p.statut) + '</span>'
+      ).join('');
       statusEl.innerHTML = '<i class="bi bi-info-circle me-1"></i>Planning(s) : ' + badges;
     } else {
       statusEl.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette periode</span>';
@@ -321,9 +444,7 @@
   }
 
   // ─── Build employee-centric index grouped by HOME module ───
-  // Returns: { home_module_code: { fonction_code: { user_id: { info, days: { date: [assignments] } } } } }
   function buildIndex() {
-    // First, build assignment lookup: user_id → date → [assignments]
     var assignByUser = {};
     (data.assignments || []).forEach(function(a) {
       var uid = a.user_id;
@@ -333,7 +454,6 @@
       assignByUser[uid][dt].push(a);
     });
 
-    // Then group users by their HOME module and fonction
     var idx = {};
     (data.users || []).forEach(function(u) {
       var mc  = u.home_module_code || '_NONE';
@@ -378,7 +498,6 @@
           : escapeHtml(a.etage_code || a.groupe_code);
         html += '<span class="rep-etage">' + loc + '</span>';
       }
-      // Show assigned module if different from home module (e.g. rotation)
       if (a.module_code && homeModuleCode && a.module_code !== homeModuleCode && homeModuleCode !== '_NONE') {
         html += '<span class="rep-mod-tag">' + escapeHtml(a.module_code) + '</span>';
       }
@@ -407,7 +526,6 @@
     };
     var colorCls = modColors[mod.code] || 'rep-mod-DEFAULT';
 
-    // Collect all function codes in this module and sort by fonction_ordre
     var fnCodes = Object.keys(modData);
     var fnMeta = {};
     fnCodes.forEach(function(fc) {
@@ -420,7 +538,6 @@
     });
     fnCodes.sort(function(a, b) { return (fnMeta[a].ordre || 999) - (fnMeta[b].ordre || 999); });
 
-    // Count employees
     var empCount = 0;
     fnCodes.forEach(function(fc) { empCount += Object.keys(modData[fc]).length; });
 
@@ -443,17 +560,14 @@
         var trCls = i === 0 ? ' class="fn-group-first"' : '';
         html += '<tr' + trCls + '>';
 
-        // Function cell with rowspan on first user
         if (i === 0) {
           html += '<td class="cell-fn" rowspan="' + users.length + '">' +
             escapeHtml(fnMeta[fc].nom || fc) + '</td>';
         }
 
-        // Employee name
         var fullName = (u.prenom || '') + ' ' + (u.nom || '');
         html += '<td class="cell-name" title="' + escapeHtml(fullName) + '">' + escapeHtml(fullName) + '</td>';
 
-        // Day cells
         days.forEach(function(d) {
           var entries = u.days[d.date] || [];
           var weCls   = d.is_weekend ? ' weekend' : '';
@@ -473,14 +587,11 @@
   function renderGrid() {
     var idx    = buildIndex();
     var modules   = data.modules || [];
-    var fonctions = data.fonctions || [];
     var days      = data.days || [];
     var html      = '';
 
-    // ── 1) RS / RUV section (direction, consolidated) ──
     var rsRuvCodes = ['RS', 'RUV'];
     var rsData = {};
-    // Collect users with RS/RUV fonction from all modules
     Object.keys(idx).forEach(function(mc) {
       rsRuvCodes.forEach(function(fc) {
         if (idx[mc][fc]) {
@@ -500,7 +611,6 @@
       );
     }
 
-    // ── 2) POOL section (users with no home module, excluding RS/RUV) ──
     if (idx['_NONE']) {
       var poolData = {};
       Object.keys(idx['_NONE']).forEach(function(fc) {
@@ -517,17 +627,13 @@
       }
     }
 
-    // ── 3) Each module (by home module, excluding RS/RUV) ──
     modules.forEach(function(mod) {
       var modData = idx[mod.code];
       if (!modData) return;
 
-      // Remove RS/RUV from module sections (they're shown above)
       var filtered = {};
       Object.keys(modData).forEach(function(fc) {
         if (rsRuvCodes.indexOf(fc) === -1) {
-          // Only include users that have at least one assignment this week
-          // or always show them (like the Excel does)
           filtered[fc] = modData[fc];
         }
       });
@@ -572,9 +678,9 @@
     window.print();
   });
 
-  // ─── Init ───
-  async function initRepartitionPage() {
-    await loadWeek(null);
+  // ─── Init — render synchronously from injected data ───
+  function initRepartitionPage() {
+    renderGrid();
   }
 
   window.initRepartitionPage = initRepartitionPage;

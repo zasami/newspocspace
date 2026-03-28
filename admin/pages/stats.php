@@ -1,3 +1,32 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$statTotalUsers    = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
+$statPendingAbs    = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
+$statPendingDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
+$statUnreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0 AND deleted = 0");
+
+$absParType = Db::fetchAll(
+    "SELECT type, COUNT(*) as total FROM absences WHERE statut = 'valide' AND date_fin >= CURDATE() GROUP BY type"
+);
+
+$recentAbsences = Db::fetchAll(
+    "SELECT a.*, u.prenom, u.nom, u.photo
+     FROM absences a
+     JOIN users u ON u.id = a.user_id
+     ORDER BY a.created_at DESC
+     LIMIT 10"
+);
+
+$year = date('Y');
+$absParMois = Db::fetchAll(
+    "SELECT MONTH(date_debut) as mois, COUNT(*) as total
+     FROM absences
+     WHERE YEAR(date_debut) = ?
+     GROUP BY MONTH(date_debut)
+     ORDER BY mois",
+    [$year]
+);
+?>
 <style>
 /* ── Stats page classes ── */
 .stats-section-title { letter-spacing: .5px; }
@@ -30,9 +59,9 @@
 <h5 class="mb-3"><i class="bi bi-bar-chart-line"></i> Statistiques</h5>
 
 <!-- Alerte vacances non validées -->
-<div class="vac-notice-bar stats-vac-alert--hidden" id="statsVacAlert" style="background:#e8e6dc;border-color:#dbd9d1;">
-  <span><strong id="statsVacAlertCount">0</strong> demande(s) de vacances en attente de validation.</span>
-  <a href="<?= admin_url('vacances') ?>" class="vac-notice-link">Voir les demandes &rarr;</a>
+<div class="vac-notice-bar <?= $statPendingAbs > 0 ? 'stats-vac-alert--visible' : 'stats-vac-alert--hidden' ?>" id="statsVacAlert" style="background:#e8e6dc;border-color:#dbd9d1;">
+  <span><strong id="statsVacAlertCount"><?= $statPendingAbs ?></strong> demande(s) d'absence en attente de validation.</span>
+  <a href="<?= admin_url('absences') ?>" class="vac-notice-link">Voir les demandes &rarr;</a>
 </div>
 
 <!-- ═══ Effectifs ═══ -->
@@ -45,7 +74,7 @@
           <i class="bi bi-people-fill fs-5"></i>
         </div>
         <div>
-          <div class="fs-3 fw-bold" id="statTotalUsers">—</div>
+          <div class="fs-3 fw-bold"><?= $statTotalUsers ?></div>
           <div class="text-muted small">Collaborateurs actifs</div>
         </div>
       </div>
@@ -58,7 +87,7 @@
           <i class="bi bi-star-fill fs-5"></i>
         </div>
         <div>
-          <div class="fs-3 fw-bold" id="statPendingDesirs">—</div>
+          <div class="fs-3 fw-bold"><?= $statPendingDesirs ?></div>
           <div class="text-muted small">Désirs en attente</div>
         </div>
       </div>
@@ -71,7 +100,7 @@
           <i class="bi bi-envelope-fill fs-5"></i>
         </div>
         <div>
-          <div class="fs-3 fw-bold" id="statUnreadMessages">—</div>
+          <div class="fs-3 fw-bold"><?= $statUnreadMsgs ?></div>
           <div class="text-muted small">Messages non lus</div>
         </div>
       </div>
@@ -84,8 +113,8 @@
           <i class="bi bi-sun-fill fs-5"></i>
         </div>
         <div>
-          <div class="fs-3 fw-bold" id="statPendingVacances">—</div>
-          <div class="text-muted small">Vacances en attente</div>
+          <div class="fs-3 fw-bold"><?= $statPendingAbs ?></div>
+          <div class="text-muted small">Absences en attente</div>
         </div>
       </div>
     </div>
@@ -102,7 +131,7 @@
           <i class="bi bi-hourglass-split fs-5"></i>
         </div>
         <div>
-          <div class="fs-3 fw-bold" id="statPendingAbsences">—</div>
+          <div class="fs-3 fw-bold"><?= $statPendingAbs ?></div>
           <div class="text-muted small">Absences en attente</div>
         </div>
       </div>
@@ -113,7 +142,23 @@
       <div class="card-body">
         <h6 class="fw-bold small mb-3">Absences actives par type</h6>
         <div id="statsAbsencesByType">
-          <span class="text-muted small">Chargement...</span>
+          <?php if (empty($absParType)): ?>
+            <p class="text-muted small mb-0">Aucune absence active</p>
+          <?php else:
+            $maxVal = max(array_column($absParType, 'total'));
+            $colors = ['vacances'=>'#bcd2cb','maladie'=>'#E2B8AE','accident'=>'#D4C4A8','formation'=>'#B8C9D4','conge_special'=>'#D0C4D8','militaire'=>'#C8C4BE'];
+            foreach ($absParType as $ab):
+              $pct = $maxVal > 0 ? round(($ab['total'] / $maxVal) * 100) : 0;
+              $color = $colors[$ab['type']] ?? '#6c757d';
+          ?>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="fw-500 small abs-bar-label"><?= h($ab['type']) ?></span>
+              <div class="flex-fill abs-bar-track">
+                <div class="abs-bar-fill" style="width:<?= $pct ?>%;background:<?= h($color) ?>"></div>
+              </div>
+              <span class="badge abs-bar-badge" style="background:<?= h($color) ?>"><?= (int)$ab['total'] ?></span>
+            </div>
+          <?php endforeach; endif; ?>
         </div>
       </div>
     </div>
@@ -146,7 +191,7 @@
 </div>
 
 <!-- ═══ Planning ═══ -->
-<h6 class="text-muted text-uppercase small fw-bold mb-2 stats-section-title"><i class="bi bi-calendar3"></i> Planning</h6>
+<h6 class="text-muted text-uppercase small fw-bold mb-2 stats-section-title"><i class="bi bi-calendar3"></i> Récentes demandes</h6>
 <div class="row g-3 mb-4">
   <div class="col-12">
     <div class="card border-0 shadow-sm">
@@ -163,8 +208,21 @@
                 <th>Statut</th>
               </tr>
             </thead>
-            <tbody id="statsRecentAbsences">
-              <tr><td colspan="5" class="text-center py-3 text-muted">Chargement...</td></tr>
+            <tbody>
+              <?php if (empty($recentAbsences)): ?>
+                <tr><td colspan="5" class="text-center py-3 text-muted">Aucune demande</td></tr>
+              <?php else: foreach (array_slice($recentAbsences, 0, 8) as $a):
+                $sc = $a['statut'] === 'valide' ? 'success' : ($a['statut'] === 'refuse' ? 'danger' : 'warning');
+                $tc = $a['type'] === 'vacances' ? 'info' : ($a['type'] === 'maladie' ? 'danger' : 'secondary');
+              ?>
+                <tr>
+                  <td><strong><?= h($a['prenom'] . ' ' . $a['nom']) ?></strong></td>
+                  <td><span class="badge bg-<?= $tc ?>"><?= h($a['type']) ?></span></td>
+                  <td><?= h($a['date_debut']) ?></td>
+                  <td><?= h($a['date_fin']) ?></td>
+                  <td><span class="badge bg-<?= $sc ?>"><?= h($a['statut']) ?></span></td>
+                </tr>
+              <?php endforeach; endif; ?>
             </tbody>
           </table>
         </div>
@@ -175,86 +233,16 @@
 
 <script<?= nonce() ?> src="/zerdatime/assets/js/vendor/chart.umd.min.js"></script>
 <script<?= nonce() ?>>
-async function initStatsPage() {
-    const res = await adminApiPost('admin_get_dashboard_stats');
-    if (!res.success) return;
+function initStatsPage() {
+    const absParType = <?= json_encode(array_values($absParType), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const absParMois = <?= json_encode(array_values($absParMois), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
-    const s = res.stats;
-
-    // Effectifs
-    document.getElementById('statTotalUsers').textContent = s.total_users;
-    document.getElementById('statPendingDesirs').textContent = s.pending_desirs;
-    document.getElementById('statUnreadMessages').textContent = s.unread_messages;
-    document.getElementById('statPendingAbsences').textContent = s.pending_absences;
-
-    // Vacances pending — use absences data or separate call
-    const pendingVac = (res.recent_absences || []).filter(a => a.type === 'vacances' && a.statut === 'en_attente').length;
-    document.getElementById('statPendingVacances').textContent = s.pending_absences > 0 ? s.pending_absences : 0;
-
-    // Vacation alert
-    if (s.pending_absences > 0) {
-        const alertEl = document.getElementById('statsVacAlert');
-        alertEl.classList.remove('stats-vac-alert--hidden');
-        alertEl.classList.add('stats-vac-alert--visible');
-        document.getElementById('statsVacAlertCount').textContent = s.pending_absences;
-    }
-
-    // Absences by type
-    const absEl = document.getElementById('statsAbsencesByType');
-    const abs = res.absences_par_type || [];
-    if (abs.length) {
-        const maxVal = Math.max(...abs.map(a => parseInt(a.total)));
-        absEl.innerHTML = abs.map(a => {
-            const pct = maxVal > 0 ? Math.round((parseInt(a.total) / maxVal) * 100) : 0;
-            const colors = {
-                'vacances': '#bcd2cb',
-                'maladie': '#E2B8AE',
-                'accident': '#D4C4A8',
-                'formation': '#B8C9D4',
-                'conge_special': '#D0C4D8',
-                'militaire': '#C8C4BE',
-            };
-            const color = colors[a.type] || '#6c757d';
-            return `<div class="d-flex align-items-center gap-2 mb-2">
-                <span class="fw-500 small abs-bar-label">${escapeHtml(a.type)}</span>
-                <div class="flex-fill abs-bar-track">
-                    <div class="abs-bar-fill" style="width:${pct}%;background:${color}"></div>
-                </div>
-                <span class="badge abs-bar-badge" style="background:${color}">${a.total}</span>
-            </div>`;
-        }).join('');
-    } else {
-        absEl.innerHTML = '<p class="text-muted small mb-0">Aucune absence active</p>';
-    }
-
-    // Recent absences table
-    const tbody = document.getElementById('statsRecentAbsences');
-    const absences = res.recent_absences || [];
-    if (!absences.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Aucune demande</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = absences.slice(0, 8).map(a => {
-        const sc = a.statut === 'valide' ? 'success' : a.statut === 'refuse' ? 'danger' : 'warning';
-        const tc = a.type === 'vacances' ? 'info' : a.type === 'maladie' ? 'danger' : 'secondary';
-        return `<tr>
-          <td><strong>${escapeHtml(a.prenom)} ${escapeHtml(a.nom)}</strong></td>
-          <td><span class="badge bg-${tc}">${escapeHtml(a.type)}</span></td>
-          <td>${escapeHtml(a.date_debut)}</td>
-          <td>${escapeHtml(a.date_fin)}</td>
-          <td><span class="badge bg-${sc}">${escapeHtml(a.statut)}</span></td>
-        </tr>`;
-    }).join('');
-
-    // ═══ CHARTS ═══
     if (typeof Chart !== 'undefined') {
         const moLabels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
 
         // Line chart: absences par mois
-        const parMois = res.absences_par_mois || [];
         const moisData = new Array(12).fill(0);
-        parMois.forEach(m => { moisData[parseInt(m.mois) - 1] = parseInt(m.total); });
+        absParMois.forEach(m => { moisData[parseInt(m.mois) - 1] = parseInt(m.total); });
 
         const ctxLine = document.getElementById('chartAbsencesMois');
         if (ctxLine) {
@@ -289,16 +277,15 @@ async function initStatsPage() {
             'vacances': '#bcd2cb', 'maladie': '#E2B8AE', 'accident': '#D4C4A8',
             'formation': '#B8C9D4', 'conge_special': '#D0C4D8', 'militaire': '#C8C4BE'
         };
-        const absTypes = res.absences_par_type || [];
         const ctxDoughnut = document.getElementById('chartAbsencesType');
-        if (ctxDoughnut && absTypes.length) {
+        if (ctxDoughnut && absParType.length) {
             new Chart(ctxDoughnut, {
                 type: 'doughnut',
                 data: {
-                    labels: absTypes.map(a => a.type),
+                    labels: absParType.map(a => a.type),
                     datasets: [{
-                        data: absTypes.map(a => parseInt(a.total)),
-                        backgroundColor: absTypes.map(a => typeColors[a.type] || '#6c757d'),
+                        data: absParType.map(a => parseInt(a.total)),
+                        backgroundColor: absParType.map(a => typeColors[a.type] || '#6c757d'),
                         borderWidth: 2,
                         borderColor: '#fff'
                     }]
