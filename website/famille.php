@@ -63,79 +63,95 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
   </div>
 
   <!-- ═══ DASHBOARD (hidden until login) ═══ -->
-  <div id="famDashboard" style="display:none">
+  <div id="famDashboard" style="display:none" class="fam-app">
 
-    <!-- Header -->
-    <div class="fam-header">
-      <div class="fam-header-avatar" id="famAvatar"></div>
-      <div class="fam-header-info">
-        <h2 id="famResidentName"></h2>
-        <p id="famResidentInfo"></p>
+    <!-- Sidebar fixe -->
+    <aside class="fam-sidebar" id="famSidebar">
+      <!-- Profil résident -->
+      <div class="fam-sb-profile">
+        <div class="fam-sb-avatar" id="famSbAvatar"></div>
+        <div class="fam-sb-name" id="famSbName"></div>
+        <div class="fam-sb-room" id="famSbRoom"></div>
       </div>
-      <div class="fam-header-actions">
-        <button class="fam-logout" id="famLogoutBtn"><i class="bi bi-box-arrow-right"></i> Déconnexion</button>
+
+      <!-- Navigation grands carrés -->
+      <nav class="fam-sb-nav">
+        <button class="fam-sb-card active" data-pane="dashboard">
+          <i class="bi bi-house"></i>
+          <span>Accueil</span>
+        </button>
+        <button class="fam-sb-card" data-pane="activites">
+          <i class="bi bi-calendar-event"></i>
+          <span>Activités</span>
+          <span class="fam-sb-count" id="famSbAct">0</span>
+        </button>
+        <button class="fam-sb-card" data-pane="medical">
+          <i class="bi bi-heart-pulse"></i>
+          <span>Suivi médical</span>
+          <span class="fam-sb-count" id="famSbMed">0</span>
+        </button>
+        <button class="fam-sb-card" data-pane="galerie">
+          <i class="bi bi-images"></i>
+          <span>Galerie</span>
+          <span class="fam-sb-count" id="famSbAlb">0</span>
+        </button>
+      </nav>
+
+      <!-- Logout en bas -->
+      <div class="fam-sb-footer">
+        <button class="fam-sb-logout" id="famLogoutBtn"><i class="bi bi-box-arrow-left"></i> Déconnexion</button>
       </div>
-    </div>
+    </aside>
 
-    <!-- Layout sidebar + contenu -->
-    <div class="fam-layout">
+    <!-- Contenu principal -->
+    <main class="fam-main">
+      <!-- Titre de page -->
+      <div class="fam-page-header">
+        <button class="fam-mobile-menu" id="famMobileMenu"><i class="bi bi-list"></i></button>
+        <h4 class="fam-page-title" id="famPageTitle">Accueil</h4>
+      </div>
 
-      <!-- Sidebar -->
-      <aside class="fam-sidebar">
-        <nav class="fam-sidebar-nav">
-          <button class="fam-sidebar-link active" data-pane="dashboard"><i class="bi bi-house"></i><span>Tableau de bord</span></button>
-          <button class="fam-sidebar-link" data-pane="activites"><i class="bi bi-calendar-event"></i><span>Activités</span><span class="fam-sidebar-badge" id="famSbAct">0</span></button>
-          <button class="fam-sidebar-link" data-pane="medical"><i class="bi bi-heart-pulse"></i><span>Suivi médical</span><span class="fam-sidebar-badge" id="famSbMed">0</span></button>
-          <button class="fam-sidebar-link" data-pane="galerie"><i class="bi bi-images"></i><span>Galerie photos</span><span class="fam-sidebar-badge" id="famSbAlb">0</span></button>
-        </nav>
-      </aside>
-
-      <!-- Main content -->
-      <main class="fam-main">
-
-        <!-- Dashboard -->
-        <div class="fam-pane active" id="paneDashboard">
-          <h5 class="fam-pane-title"><i class="bi bi-house"></i> Tableau de bord</h5>
-          <div class="fam-stats">
-            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAct">0</div><div class="fam-stat-label">Activités</div></div>
-            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatMed">0</div><div class="fam-stat-label">Avis médicaux</div></div>
-            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAlb">0</div><div class="fam-stat-label">Albums</div></div>
-            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatPho">0</div><div class="fam-stat-label">Photos</div></div>
+      <!-- Dashboard -->
+      <div class="fam-pane active" id="paneDashboard">
+        <div class="fam-stats">
+          <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAct">0</div><div class="fam-stat-label">Activités</div></div>
+          <div class="fam-stat-card"><div class="fam-stat-num" id="famStatMed">0</div><div class="fam-stat-label">Avis médicaux</div></div>
+          <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAlb">0</div><div class="fam-stat-label">Albums</div></div>
+          <div class="fam-stat-card"><div class="fam-stat-num" id="famStatPho">0</div><div class="fam-stat-label">Photos</div></div>
+        </div>
+        <div class="fam-dash-sections">
+          <div class="fam-dash-section">
+            <h6><i class="bi bi-calendar-event"></i> Dernières activités</h6>
+            <div id="famDashAct"></div>
           </div>
-          <div class="fam-dash-sections">
-            <div class="fam-dash-section">
-              <h6><i class="bi bi-calendar-event"></i> Dernières activités</h6>
-              <div id="famDashAct"></div>
-            </div>
-            <div class="fam-dash-section">
-              <h6><i class="bi bi-heart-pulse"></i> Derniers avis médicaux</h6>
-              <div id="famDashMed"></div>
-            </div>
+          <div class="fam-dash-section">
+            <h6><i class="bi bi-heart-pulse"></i> Derniers avis médicaux</h6>
+            <div id="famDashMed"></div>
           </div>
         </div>
+      </div>
 
-        <!-- Activités -->
-        <div class="fam-pane" id="paneActivites">
-          <h5 class="fam-pane-title"><i class="bi bi-calendar-event"></i> Activités</h5>
-          <div id="famActList" class="fam-act-list"></div>
-          <div id="famActDetail" style="display:none"></div>
-        </div>
+      <!-- Activités -->
+      <div class="fam-pane" id="paneActivites">
+        <div id="famActList" class="fam-act-list"></div>
+        <div id="famActDetail" style="display:none"></div>
+      </div>
 
-        <!-- Médical -->
-        <div class="fam-pane" id="paneMedical">
-          <h5 class="fam-pane-title"><i class="bi bi-heart-pulse"></i> Suivi médical</h5>
-          <div id="famMedList" class="fam-med-list"></div>
-        </div>
+      <!-- Médical -->
+      <div class="fam-pane" id="paneMedical">
+        <div id="famMedList" class="fam-med-list"></div>
+      </div>
 
-        <!-- Galerie -->
-        <div class="fam-pane" id="paneGalerie">
-          <h5 class="fam-pane-title"><i class="bi bi-images"></i> Galerie photos</h5>
-          <div id="famGalFolders"></div>
-          <div id="famGalAlbum" style="display:none"></div>
-        </div>
+      <!-- Galerie -->
+      <div class="fam-pane" id="paneGalerie">
+        <div id="famGalFolders"></div>
+        <div id="famGalAlbum" style="display:none"></div>
+      </div>
 
-      </main>
-    </div>
+    </main>
+
+    <!-- Overlay mobile -->
+    <div class="fam-sb-overlay" id="famSbOverlay"></div>
 
   </div>
 
@@ -279,10 +295,16 @@ function showDashboard() {
     document.getElementById('famLogin').style.display = 'none';
     document.getElementById('famDashboard').style.display = '';
 
+    // Sidebar profile
     const initials = ((resident.prenom?.[0] || '') + (resident.nom?.[0] || '')).toUpperCase();
-    document.getElementById('famAvatar').textContent = initials;
-    document.getElementById('famResidentName').textContent = resident.prenom + ' ' + resident.nom;
-    document.getElementById('famResidentInfo').textContent = 'Chambre ' + (resident.chambre || '—') + ' · Étage ' + (resident.etage || '—');
+    const avatarEl = document.getElementById('famSbAvatar');
+    if (resident.photo_url) {
+        avatarEl.innerHTML = '<img src="' + esc(resident.photo_url) + '" alt="">';
+    } else {
+        avatarEl.textContent = initials;
+    }
+    document.getElementById('famSbName').textContent = resident.prenom + ' ' + resident.nom;
+    document.getElementById('famSbRoom').textContent = 'Chambre ' + (resident.chambre || '—') + ' · Étage ' + (resident.etage || '—');
 
     loadDashboard();
 }
@@ -338,18 +360,37 @@ async function loadDashboard() {
 
 let tabsLoaded = { dashboard: true, activites: false, medical: false, galerie: false };
 
-document.querySelectorAll('.fam-sidebar-link').forEach(link => {
-    link.addEventListener('click', () => {
-        document.querySelectorAll('.fam-sidebar-link').forEach(l => l.classList.remove('active'));
+const paneLabels = { dashboard: 'Accueil', activites: 'Activités', medical: 'Suivi médical', galerie: 'Galerie photos' };
+
+document.querySelectorAll('.fam-sb-card').forEach(card => {
+    card.addEventListener('click', () => {
+        document.querySelectorAll('.fam-sb-card').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.fam-pane').forEach(p => p.classList.remove('active'));
-        link.classList.add('active');
-        const pane = link.dataset.pane;
+        card.classList.add('active');
+        const pane = card.dataset.pane;
         document.getElementById('pane' + pane.charAt(0).toUpperCase() + pane.slice(1)).classList.add('active');
+
+        // Update title
+        document.getElementById('famPageTitle').textContent = paneLabels[pane] || pane;
 
         if (pane === 'activites' && !tabsLoaded.activites) { tabsLoaded.activites = true; }
         if (pane === 'medical' && !tabsLoaded.medical) { tabsLoaded.medical = true; loadMedical(); }
         if (pane === 'galerie' && !tabsLoaded.galerie) { tabsLoaded.galerie = true; loadGalerie(); }
+
+        // Close mobile sidebar
+        document.getElementById('famSidebar').classList.remove('open');
+        document.getElementById('famSbOverlay').classList.remove('visible');
     });
+});
+
+// Mobile menu toggle
+document.getElementById('famMobileMenu')?.addEventListener('click', () => {
+    document.getElementById('famSidebar').classList.toggle('open');
+    document.getElementById('famSbOverlay').classList.toggle('visible');
+});
+document.getElementById('famSbOverlay')?.addEventListener('click', () => {
+    document.getElementById('famSidebar').classList.remove('open');
+    document.getElementById('famSbOverlay').classList.remove('visible');
 });
 
 // ── Activités ──────────────────────────────────────────────────────────────

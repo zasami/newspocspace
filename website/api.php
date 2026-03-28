@@ -18,7 +18,7 @@ function require_famille_auth(): array {
     if (!$token) respond(['success' => false, 'message' => 'Token requis'], 401);
 
     $session = Db::fetch(
-        "SELECT fs.*, r.nom AS resident_nom, r.prenom AS resident_prenom, r.chambre, r.etage
+        "SELECT fs.*, r.nom AS resident_nom, r.prenom AS resident_prenom, r.chambre, r.etage, r.photo_url AS resident_photo
          FROM famille_sessions fs
          JOIN residents r ON r.id = fs.resident_id
          WHERE fs.token = ? AND fs.expires_at > NOW()",
@@ -98,7 +98,7 @@ case 'famille_login':
 
     $resident = Db::fetch(
         "SELECT id, nom, prenom, chambre, etage, date_naissance, code_acces,
-                correspondant_nom, correspondant_prenom, correspondant_email
+                correspondant_nom, correspondant_prenom, correspondant_email, photo_url
          FROM residents
          WHERE correspondant_email = ? AND is_active = 1",
         [$email]
@@ -148,6 +148,7 @@ case 'famille_login':
             'etage' => $resident['etage'],
             'correspondant_nom' => $resident['correspondant_nom'],
             'correspondant_prenom' => $resident['correspondant_prenom'],
+            'photo_url' => $resident['photo_url'] ?? null,
         ],
         'encryption_key' => $encKey ?: null,
     ]);
@@ -175,6 +176,7 @@ case 'famille_check_session':
             'prenom' => $session['resident_prenom'],
             'chambre' => $session['chambre'],
             'etage' => $session['etage'],
+            'photo_url' => $session['resident_photo'] ?? null,
         ],
         'encryption_key' => $encKey ?: null,
     ]);

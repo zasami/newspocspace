@@ -23,6 +23,65 @@
 .fam-back { display: inline-flex; align-items: center; gap: 6px; color: var(--fam-text-muted); text-decoration: none; font-size: .9rem; margin-bottom: 16px; }
 .fam-back:hover { color: var(--fam-text); }
 
+/* ── App layout (after login) ── */
+.fam-app { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.fam-sidebar {
+  width: 240px; flex-shrink: 0; background: var(--fam-surface); border-right: 1px solid var(--fam-border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  overflow-y: auto;
+}
+.fam-sb-profile { padding: 28px 20px 20px; text-align: center; border-bottom: 1px solid var(--fam-border); }
+.fam-sb-avatar {
+  width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 12px; overflow: hidden;
+  background: var(--fam-green-light); display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 700; color: var(--fam-green);
+}
+.fam-sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.fam-sb-name { font-size: 1rem; font-weight: 700; color: var(--fam-text); }
+.fam-sb-room { font-size: .82rem; color: var(--fam-text-muted); margin-top: 2px; }
+
+/* ── Nav cards (grands carrés) ── */
+.fam-sb-nav { padding: 16px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.fam-sb-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 20px 12px; border-radius: var(--fam-radius); border: 1.5px solid var(--fam-border);
+  background: var(--fam-bg); cursor: pointer; transition: all .2s; position: relative;
+  font-size: .88rem; font-weight: 600; color: var(--fam-text-muted);
+}
+.fam-sb-card i { font-size: 1.6rem; }
+.fam-sb-card:hover { border-color: var(--fam-green); color: var(--fam-green); background: var(--fam-green-light); }
+.fam-sb-card.active { border-color: var(--fam-green); background: var(--fam-green); color: #fff; }
+.fam-sb-card.active .fam-sb-count { background: rgba(255,255,255,.25); color: #fff; }
+.fam-sb-count {
+  position: absolute; top: 8px; right: 8px; min-width: 22px; height: 22px;
+  background: var(--fam-border); color: var(--fam-text-muted); border-radius: 20px;
+  font-size: .7rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  padding: 0 6px;
+}
+
+/* ── Footer ── */
+.fam-sb-footer { padding: 14px; border-top: 1px solid var(--fam-border); }
+.fam-sb-logout {
+  width: 100%; padding: 10px; border-radius: var(--fam-radius-sm); border: 1.5px solid var(--fam-border);
+  background: transparent; color: var(--fam-text-muted); font-size: .85rem; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s;
+}
+.fam-sb-logout:hover { border-color: #C53030; color: #C53030; }
+
+/* ── Main content ── */
+.fam-main { flex: 1; margin-left: 240px; min-height: 100vh; background: var(--fam-bg); }
+.fam-page-header {
+  position: sticky; top: 0; z-index: 50; background: var(--fam-bg); padding: 18px 28px;
+  border-bottom: 1px solid var(--fam-border); display: flex; align-items: center; gap: 12px;
+}
+.fam-page-title { font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--fam-text); }
+.fam-mobile-menu { display: none; background: none; border: none; font-size: 1.4rem; color: var(--fam-text); cursor: pointer; padding: 4px; }
+
+/* ── Overlay mobile ── */
+.fam-sb-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 90; }
+
 /* ── Login ── */
 .fam-login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
 .fam-login-card { background: var(--fam-surface); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow-lg); max-width: 440px; width: 100%; padding: 40px 36px; }
@@ -51,14 +110,7 @@
 .fam-demo-use { background: var(--fam-green); color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: .75rem; font-weight: 600; cursor: pointer; }
 .fam-demo-use:hover { background: #256b28; }
 
-/* ── Header ── */
-.fam-header { display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: var(--fam-surface); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow); margin-bottom: 24px; }
-.fam-header-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--fam-green-light); color: var(--fam-green); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
-.fam-header-info h2 { font-size: 1.2rem; font-weight: 700; margin: 0 0 2px; }
-.fam-header-info p { font-size: .85rem; color: var(--fam-text-muted); margin: 0; }
-.fam-header-actions { margin-left: auto; }
-.fam-logout { background: none; border: 1.5px solid var(--fam-border); border-radius: var(--fam-radius-sm); padding: 8px 16px; font-size: .85rem; color: var(--fam-text-muted); cursor: pointer; transition: all .2s; }
-.fam-logout:hover { border-color: #C53030; color: #C53030; }
+/* ── (old header removed — now in sidebar) ── */
 
 /* ── Stats bar ── */
 .fam-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -66,22 +118,9 @@
 .fam-stat-num { font-size: 1.5rem; font-weight: 700; color: var(--fam-green); }
 .fam-stat-label { font-size: .75rem; color: var(--fam-text-muted); margin-top: 2px; }
 
-/* ── Layout sidebar + main ── */
-.fam-layout { display: flex; gap: 24px; min-height: 60vh; }
-.fam-sidebar { width: 240px; flex-shrink: 0; }
-.fam-sidebar-nav { position: sticky; top: 24px; background: var(--fam-surface); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-.fam-sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--fam-radius-sm); font-size: .88rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--fam-text-muted); transition: all .2s; text-align: left; width: 100%; }
-.fam-sidebar-link i { font-size: 1.05rem; width: 20px; text-align: center; flex-shrink: 0; }
-.fam-sidebar-link span:first-of-type { flex: 1; }
-.fam-sidebar-link:hover { background: var(--fam-bg); color: var(--fam-text); }
-.fam-sidebar-link.active { background: var(--fam-green); color: #fff; }
-.fam-sidebar-link.active .fam-sidebar-badge { background: rgba(255,255,255,.25); color: #fff; }
-.fam-sidebar-badge { background: var(--fam-bg); color: var(--fam-text-muted); padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 600; min-width: 24px; text-align: center; }
-.fam-main { flex: 1; min-width: 0; }
-.fam-pane { display: none; }
+/* ── Panes ── */
+.fam-pane { display: none; padding: 24px 28px; }
 .fam-pane.active { display: block; }
-.fam-pane-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-.fam-pane-title i { color: var(--fam-green); }
 
 /* ── Dashboard sections ── */
 .fam-dash-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
@@ -91,12 +130,6 @@
 .fam-dash-item { padding: 8px 0; border-bottom: 1px solid var(--fam-border); font-size: .85rem; }
 .fam-dash-item:last-child { border-bottom: none; }
 .fam-dash-item-date { font-size: .75rem; color: var(--fam-text-muted); }
-
-/* ── Mobile sidebar toggle ── */
-.fam-sidebar-toggle { display: none; }
-
-/* ── Mobile sidebar ── */
-.fam-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 90; }
 
 /* ── Activity cards ── */
 .fam-act-list { display: flex; flex-direction: column; gap: 12px; }
@@ -189,19 +222,17 @@
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .fam-layout { flex-direction: column; gap: 0; }
-  .fam-sidebar { width: 100%; position: fixed; bottom: 0; left: 0; z-index: 80; background: var(--fam-surface); border-top: 1px solid var(--fam-border); box-shadow: 0 -2px 12px rgba(0,0,0,.08); }
-  .fam-sidebar-nav { position: static; flex-direction: row; border-radius: 0; padding: 4px 8px; gap: 0; box-shadow: none; }
-  .fam-sidebar-link { flex-direction: column; gap: 2px; padding: 8px 6px; font-size: .7rem; text-align: center; justify-content: center; }
-  .fam-sidebar-link i { font-size: 1.1rem; width: auto; }
-  .fam-sidebar-badge { display: none; }
-  .fam-main { padding-bottom: 70px; }
+  .fam-sidebar { transform: translateX(-100%); transition: transform .3s ease; }
+  .fam-sidebar.open { transform: translateX(0); }
+  .fam-sb-overlay.visible { display: block; }
+  .fam-main { margin-left: 0 !important; }
+  .fam-mobile-menu { display: block; }
   .fam-dash-sections { grid-template-columns: 1fr; }
+  .fam-pane { padding: 16px; }
+  .fam-page-header { padding: 14px 16px; }
 }
 @media (max-width: 768px) {
   .fam-stats { grid-template-columns: repeat(2, 1fr); }
-  .fam-header { flex-direction: column; text-align: center; }
-  .fam-header-actions { margin-left: 0; }
   .fam-gal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .fam-detail-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
@@ -210,4 +241,6 @@
   .fam-login-card { padding: 28px 20px; }
   .fam-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
   .fam-lb-nav { display: none; }
+  .fam-sb-card { padding: 14px 10px; }
+  .fam-sb-card i { font-size: 1.3rem; }
 }
