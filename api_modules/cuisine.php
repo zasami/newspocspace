@@ -410,8 +410,20 @@ function cuisine_get_vip_session()
         $session = Db::fetch("SELECT * FROM vip_sessions WHERE id = ?", [$sessionId]);
     }
 
+    // Demo accompagnateurs (one per function: INF, AS, ASSC)
+    $demoStaff = [];
+    foreach (['INF', 'AS', 'ASSC'] as $code) {
+        $u = Db::fetch(
+            "SELECT u.id, u.prenom, u.nom, u.photo, f.code AS fonction_code, f.nom AS fonction_nom
+             FROM users u JOIN fonctions f ON f.id = u.fonction_id
+             WHERE f.code = ? AND u.is_active = 1 ORDER BY u.nom LIMIT 1",
+            [$code]
+        );
+        if ($u) $demoStaff[] = $u;
+    }
+
     if (!$session) {
-        respond(['success' => true, 'session' => null, 'residents' => [], 'accompagnateurs' => [], 'history' => []]);
+        respond(['success' => true, 'session' => null, 'residents' => [], 'accompagnateurs' => [], 'history' => [], 'demo_staff' => $demoStaff]);
         return;
     }
 
@@ -449,6 +461,7 @@ function cuisine_get_vip_session()
         'residents' => $residents,
         'accompagnateurs' => $accompagnateurs,
         'history' => $history,
+        'demo_staff' => $demoStaff,
     ]);
 }
 

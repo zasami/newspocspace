@@ -55,7 +55,7 @@ async function loadSession(sessionId) {
     currentSession = res.session;
 
     renderHistory(res.history || []);
-    renderAccompagnateurs(res.accompagnateurs || []);
+    renderDemoAccompagnateurs(res.demo_staff || []);
     renderMenu(res.session);
     renderResidents(res.residents || []);
     renderBadge(res.session);
@@ -98,50 +98,38 @@ function renderHistory(history) {
 }
 
 // ═══════════════════════════════════════
-// Accompagnateurs (stat cards top)
+// Accompagnateurs — cartes démo (géré par l'animation)
 // ═══════════════════════════════════════
 
-function renderAccompagnateurs(accompagnateurs) {
+function renderDemoAccompagnateurs(demoStaff) {
     const row = document.getElementById('cvAccompRow');
     if (!row) return;
 
-    if (!accompagnateurs.length && currentSession) {
-        row.innerHTML = '<div style="display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;background:#F0EDE8;border-radius:12px;font-size:.85rem;color:#6b7280">'
-            + '<i class="bi bi-person-plus"></i> Aucun accompagnateur. Cherchez <kbd>@nom</kbd> d\'un collaborateur pour en ajouter.'
-            + '</div>';
-        return;
-    }
-    if (!accompagnateurs.length) { row.innerHTML = ''; return; }
+    if (!demoStaff.length) { row.innerHTML = ''; return; }
 
-    let html = '<div style="display:flex;gap:.75rem;flex-wrap:wrap">';
-    accompagnateurs.forEach(a => {
+    const fonctionBg    = { 'ASSC': '#D4C4A8', 'INF': '#E2B8AE', 'AS': '#B8C9D4' };
+    const fonctionColor = { 'ASSC': '#6B5B3E', 'INF': '#7B3B2C', 'AS': '#3B4F6B' };
+
+    let cards = '';
+    demoStaff.forEach(a => {
         const initials = ((a.prenom?.[0] || '') + (a.nom?.[0] || '')).toUpperCase();
         const avatar = a.photo
             ? '<img src="' + escapeHtml(a.photo) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
             : '<div style="width:40px;height:40px;border-radius:50%;background:#B8C9D4;color:#3B4F6B;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0">' + escapeHtml(initials) + '</div>';
-
-        const fonctionBg = { 'ASC': '#D4C4A8', 'INF': '#E2B8AE', 'AS': '#B8C9D4', 'ANIM': '#D0C4D8' };
-        const fonctionColor = { 'ASC': '#6B5B3E', 'INF': '#7B3B2C', 'AS': '#3B4F6B', 'ANIM': '#5B4B6B' };
         const bg = fonctionBg[a.fonction_code] || '#bcd2cb';
         const fg = fonctionColor[a.fonction_code] || '#2d4a43';
-
-        html += '<div style="display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;background:#fff;border:1px solid #E8E5E0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        cards += '<div style="display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;background:#fff;border:1px solid #E8E5E0;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
             + avatar
             + '<div><div style="font-weight:600;font-size:.88rem;color:#1A1A18">' + escapeHtml(a.prenom + ' ' + a.nom) + '</div>'
-            + '<span style="display:inline-block;padding:1px 8px;border-radius:6px;font-size:.68rem;font-weight:700;background:' + bg + ';color:' + fg + '">' + escapeHtml(a.fonction_code || a.fonction_nom || '-') + '</span></div>'
-            + '<button class="btn btn-sm" style="width:24px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid #E8E5E0;font-size:.65rem;color:#999" data-remove-accomp="' + a.link_id + '" title="Retirer"><i class="bi bi-x"></i></button>'
+            + '<span style="display:inline-block;padding:1px 8px;border-radius:6px;font-size:.68rem;font-weight:700;background:' + bg + ';color:' + fg + '">' + escapeHtml(a.fonction_code || '-') + '</span></div>'
             + '</div>';
     });
-    html += '</div>';
-    row.innerHTML = html;
 
-    // Remove buttons
-    row.querySelectorAll('[data-remove-accomp]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const res = await apiPost('cuisine_remove_vip_accompagnateur', { link_id: btn.dataset.removeAccomp });
-            if (res.success) { toast('Retiré', 'success'); loadSession(currentSession?.id); }
-        });
-    });
+    row.innerHTML = '<div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem">'
+        + '<span style="font-size:.78rem;color:#6b7280;font-style:italic"><i class="bi bi-info-circle"></i> Accompagnateurs — gérés par l\'animation</span>'
+        + '<span style="padding:1px 8px;border-radius:6px;font-size:.68rem;font-weight:700;background:#F0EDE8;color:#6b7280">Démo</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:.75rem;flex-wrap:wrap">' + cards + '</div>';
 }
 
 // ═══════════════════════════════════════
@@ -174,7 +162,7 @@ function renderMenu(session) {
     card.innerHTML = '<div style="border:1px solid #E8E5E0;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
         + '<div style="padding:.85rem 1.25rem;border-bottom:1px solid #E8E5E0;display:flex;align-items:center;justify-content:space-between">'
         + '<span style="font-weight:700;font-size:.92rem;color:#1A1A18"><i class="bi bi-star-fill" style="color:#D4C4A8"></i> Menu VIP spécial</span>'
-        + '<button class="btn btn-sm btn-outline-primary" id="cvEditMenu" style="border-radius:8px;font-size:.75rem"><i class="bi bi-pencil"></i> Modifier</button>'
+        + '<button type="button" class="btn btn-sm btn-outline-primary" id="cvEditMenu" style="border-radius:8px;font-size:.75rem"><i class="bi bi-pencil"></i> Modifier</button>'
         + '</div>'
         + '<div style="padding:1rem 1.25rem">' + menuHtml + '</div></div>';
 
