@@ -1,3 +1,9 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$iaConfigRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config ORDER BY config_key");
+$iaConfig = [];
+foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']; }
+?>
 <style>
 /* ─── Pick cards (horaires & modules) ─── */
 .ia-pick-card {
@@ -1704,6 +1710,8 @@
 
 <script<?= nonce() ?>>
 (function() {
+    const ssrIaConfig = <?= json_encode($iaConfig, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+
     // Info modal content mapping
     const infoContents = {
         heures: {
@@ -1769,7 +1777,7 @@
         ia_admin_shift_code:       { el: 'iaAdminShiftCode',        def: 'A6', type: 'text' },
     };
 
-    async function initConfigiaPage() {
+    function initConfigiaPage() {
         // Expenses tab — attach FIRST to avoid being blocked by errors below
         const depTab = document.querySelector('[data-bs-target="#tabDepenses"]');
         if (depTab) {
@@ -1844,10 +1852,9 @@
             });
         });
 
-        // Load existing config
-        try {
-            const res = await adminApiPost('admin_get_config');
-            const config = res.config || {};
+        // Config injected by PHP
+        {
+            const config = ssrIaConfig;
 
             // Algo fields
             for (const [key, f] of Object.entries(fields)) {
@@ -1897,8 +1904,6 @@
             if (deepgramKeyEl) deepgramKeyEl.value = config.deepgram_api_key || '';
 
             updateApiKeyBadges(config);
-        } catch (e) {
-            console.error('Config load error:', e);
         }
     }
 
