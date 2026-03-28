@@ -1,3 +1,37 @@
+<?php
+// ─── Données serveur (statut en_attente, année courante) ──────────────────
+$vacAnnee = (int) date('Y');
+
+$vacancesRaw = Db::fetchAll(
+    "SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.statut, a.motif,
+            a.valide_par, a.valide_at, a.created_at,
+            u.prenom, u.nom, u.taux, u.photo,
+            f.code AS fonction_code,
+            m.code AS module_code, m.nom AS module_nom,
+            v.prenom AS valide_prenom, v.nom AS valide_nom
+     FROM absences a
+     JOIN users u ON u.id = a.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     LEFT JOIN users v ON v.id = a.valide_par
+     WHERE a.type = 'vacances' AND a.statut = 'en_attente'
+       AND a.date_debut <= ? AND a.date_fin >= ?
+     ORDER BY a.date_debut DESC",
+    ["{$vacAnnee}-12-31", "{$vacAnnee}-01-01"]
+);
+// Compute workdays
+foreach ($vacancesRaw as &$vac) {
+    $workdays = 0;
+    $d = new DateTime($vac['date_debut']);
+    $e = new DateTime($vac['date_fin']);
+    while ($d <= $e) { if ((int)$d->format('N') <= 5) $workdays++; $d->modify('+1 day'); }
+    $vac['jours_ouvres'] = $workdays;
+}
+unset($vac);
+
+$vacModules = Db::fetchAll("SELECT id, code, nom FROM modules ORDER BY ordre");
+?>
 <style>
 /* ── Shared action button base ── */
 .btn-desir-valider,
@@ -70,7 +104,7 @@
     <div class="zs-select vac-filter-select" id="vacModuleFilter" data-placeholder="Tous les modules"></div>
     <div class="d-flex align-items-center gap-1">
       <button class="btn btn-sm btn-outline-secondary" id="vacPrevYear"><i class="bi bi-chevron-left"></i></button>
-      <span class="fw-bold" id="vacYear"></span>
+      <span class="fw-bold" id="vacYear"><?= $vacAnnee ?></span>
       <button class="btn btn-sm btn-outline-secondary" id="vacNextYear"><i class="bi bi-chevron-right"></i></button>
     </div>
   </div>
@@ -120,7 +154,48 @@
           </tr>
         </thead>
         <tbody id="vacTableBody">
-          <tr><td colspan="10" class="text-center py-4 text-muted">Chargement...</td></tr>
+          <?php if (empty($vacancesRaw)): ?>
+          <tr><td colspan="10" class="text-center py-4 text-muted">Aucune demande en attente</td></tr>
+          <?php else: ?>
+          <?php foreach ($vacancesRaw as $v):
+              $badgeCls = ['valide'=>'badge-green','refuse'=>'badge-red','en_attente'=>'badge-beige'][$v['statut']] ?? 'badge-beige';
+              $canAct = $v['statut'] === 'en_attente';
+              $validePar = $v['valide_prenom'] ? h($v['valide_prenom'].' '.$v['valide_nom']).'<br><small class="text-muted">'.h($v['valide_at']??'').'</small>' : '—';
+              $initials = mb_strtoupper(mb_substr($v['prenom']??'',0,1).mb_substr($v['nom']??'',0,1));
+          ?>
+          <tr>
+            <td><?= $canAct ? '<input type="checkbox" class="vac-check" value="'.h($v['id']).'">' : '' ?></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <?php if (!empty($v['photo'])): ?>
+                  <img src="<?= h($v['photo']) ?>" class="vac-avatar-img">
+                <?php else: ?>
+                  <div class="vac-avatar-initials"><?= h($initials) ?></div>
+                <?php endif; ?>
+                <div>
+                  <strong><?= h($v['prenom'].' '.$v['nom']) ?></strong><br>
+                  <small class="text-muted"><?= h($v['fonction_code']??'') ?> · <?= (int)$v['taux'] ?>%</small>
+                </div>
+              </div>
+            </td>
+            <td><small><?= h($v['module_code']??'—') ?></small></td>
+            <td><?= h($v['date_debut']) ?></td>
+            <td><?= h($v['date_fin']) ?></td>
+            <td class="text-center"><span class="badge badge-blue"><?= (int)$v['jours_ouvres'] ?>j</span></td>
+            <td><small><?= h(substr($v['created_at']??'',0,10)) ?></small></td>
+            <td><span class="badge <?= $badgeCls ?>"><?= h($v['statut']) ?></span></td>
+            <td><small><?= $validePar ?></small></td>
+            <td>
+              <?php if ($canAct): ?>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-sm btn-desir-valider me-1" data-action="validate-vac" data-id="<?= h($v['id']) ?>" title="Valider"><i class="bi bi-check-lg"></i></button>
+                  <button class="btn btn-sm btn-desir-refuser" data-action="refuse-vac" data-id="<?= h($v['id']) ?>" title="Refuser"><i class="bi bi-x-lg"></i></button>
+                </div>
+              <?php else: ?>—<?php endif; ?>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+          <?php endif; ?>
         </tbody>
       </table>
     </div>
@@ -191,13 +266,15 @@
   </div>
 </div>
 
-<!-- Grid styles from admin.css (.tr-grid) -->
-
 <script<?= nonce() ?>>
-const MO = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+const MO = ['Jan','F\u00e9v','Mar','Avr','Mai','Juin','Juil','Ao\u00fb','Sep','Oct','Nov','D\u00e9c'];
 const DJ = ['D','L','M','M','J','V','S'];
-let vacYear = new Date().getFullYear();
-let vacData = null;
+let vacYear = <?= $vacAnnee ?>;
+// Données initiales injectées côté serveur
+let vacData = {
+    vacances: <?= json_encode(array_values($vacancesRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    modules:  <?= json_encode(array_values($vacModules),  JSON_HEX_TAG | JSON_HEX_APOS) ?>
+};
 let activeTab = 'list';
 
 function renderAvatar(photo, prenom, nom) {
@@ -209,8 +286,86 @@ function renderAvatar(photo, prenom, nom) {
 
 function el(id) { return document.getElementById(id); }
 
-async function initVacancesPage() {
-    el('vacYear').textContent = vacYear;
+function initVacancesPage() {
+    // Populate module filter from injected data
+    const moduleOpts = [{ value: '', label: 'Tous les modules' }];
+    (vacData.modules || []).forEach(m => moduleOpts.push({ value: m.id, label: `${m.code} \u2014 ${m.nom}` }));
+    zerdaSelect.init('#vacModuleFilter', moduleOpts, { onSelect: () => loadVacances(), value: '', search: true });
+
+    zerdaSelect.init('#vacStatutFilter', [
+        { value: 'en_attente', label: 'En attente' },
+        { value: '', label: 'Tous les statuts' },
+        { value: 'valide', label: 'Valid\u00e9es' },
+        { value: 'refuse', label: 'Refus\u00e9es' }
+    ], { onSelect: () => loadVacances(), value: 'en_attente' });
+
+    el('vacPrevYear')?.addEventListener('click', () => { vacYear--; el('vacYear').textContent = vacYear; loadVacances(); });
+    el('vacNextYear')?.addEventListener('click', () => { vacYear++; el('vacYear').textContent = vacYear; loadVacances(); });
+
+    el('vacCheckAll')?.addEventListener('change', e => {
+        document.querySelectorAll('.vac-check').forEach(c => c.checked = e.target.checked);
+        updateBulkBtns();
+    });
+    el('vacBulkValidate')?.addEventListener('click', () => bulkAction('valide'));
+    el('vacBulkRefuse')?.addEventListener('click', () => bulkAction('refuse'));
+
+    el('vacTabGrid')?.addEventListener('click', (e) => {
+        const cell = e.target.closest('[data-valid-vac]');
+        if (cell) validVacance(cell.dataset.validVac, 'valide');
+    });
+
+    el('vacFullscreen')?.addEventListener('click', () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    });
+    document.addEventListener('fullscreenchange', () => {
+        const icon = document.querySelector('#vacFullscreen i');
+        if (icon) icon.className = document.fullscreenElement ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+    });
+
+    el('vacAddBlocked')?.addEventListener('click', () => {
+        el('blockedEditId').value = '';
+        el('blockedDebut').value = '';
+        el('blockedFin').value = '';
+        el('blockedMotif').value = '';
+        el('blockedModalTitle').innerHTML = '<i class="bi bi-shield-lock"></i> Nouvelle p\u00e9riode bloqu\u00e9e';
+        el('blockedSubmit').innerHTML = '<i class="bi bi-check-lg"></i> Ajouter';
+        bootstrap.Modal.getOrCreateInstance(el('blockedModal')).show();
+    });
+    el('blockedSubmit')?.addEventListener('click', submitBlocked);
+
+    el('blockedTableBody')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const { action, id } = btn.dataset;
+        if (action === 'edit-blocked') {
+            el('blockedEditId').value = id;
+            el('blockedDebut').value = btn.dataset.debut;
+            el('blockedFin').value = btn.dataset.fin;
+            el('blockedMotif').value = btn.dataset.motif;
+            el('blockedModalTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier la p\u00e9riode';
+            el('blockedSubmit').innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
+            bootstrap.Modal.getOrCreateInstance(el('blockedModal')).show();
+        } else if (action === 'delete-blocked') {
+            if (!await adminConfirm({ title: 'Supprimer la p\u00e9riode', text: 'Supprimer cette p\u00e9riode bloqu\u00e9e ? Cette action est irr\u00e9versible.', icon: 'bi-calendar-x', type: 'danger', okText: 'Supprimer' })) return;
+            btn.disabled = true;
+            const res = await adminApiPost('admin_delete_periode_bloquee', { id });
+            if (res.success) { showToast('P\u00e9riode supprim\u00e9e', 'success'); loadBlocked(); }
+            else { showToast(res.message || 'Erreur', 'error'); btn.disabled = false; }
+        }
+    });
+
+    el('vacTableBody')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (btn.dataset.action === 'validate-vac') await validVacance(id, 'valide');
+        else if (btn.dataset.action === 'refuse-vac') await validVacance(id, 'refuse');
+    });
+
+    // Bind checkboxes on SSR-rendered rows
+    document.querySelectorAll('.vac-check').forEach(c => c.addEventListener('change', updateBulkBtns));
+    updateBulkBtns();
 
     // Tab switching
     document.querySelectorAll('#vacTabs a[data-tab]').forEach(a => {
@@ -226,100 +381,6 @@ async function initVacancesPage() {
             if (activeTab === 'blocked') loadBlocked();
         });
     });
-
-    // Filters
-    zerdaSelect.init('#vacStatutFilter', [
-        { value: 'en_attente', label: 'En attente' },
-        { value: '', label: 'Tous les statuts' },
-        { value: 'valide', label: 'Validées' },
-        { value: 'refuse', label: 'Refusées' }
-    ], { onSelect: () => loadVacances(), value: 'en_attente' });
-
-    zerdaSelect.init('#vacModuleFilter', [
-        { value: '', label: 'Tous les modules' }
-    ], { onSelect: () => loadVacances(), value: '' });
-    el('vacPrevYear')?.addEventListener('click', () => { vacYear--; el('vacYear').textContent = vacYear; loadVacances(); });
-    el('vacNextYear')?.addEventListener('click', () => { vacYear++; el('vacYear').textContent = vacYear; loadVacances(); });
-
-    // Check all
-    el('vacCheckAll')?.addEventListener('change', e => {
-        document.querySelectorAll('.vac-check').forEach(c => c.checked = e.target.checked);
-        updateBulkBtns();
-    });
-
-    // Bulk actions
-    el('vacBulkValidate')?.addEventListener('click', () => bulkAction('valide'));
-    el('vacBulkRefuse')?.addEventListener('click', () => bulkAction('refuse'));
-
-    // Grid cell click delegation
-    el('vacTabGrid')?.addEventListener('click', (e) => {
-        const cell = e.target.closest('[data-valid-vac]');
-        if (cell) validVacance(cell.dataset.validVac, 'valide');
-    });
-
-    // Fullscreen
-    el('vacFullscreen')?.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-        } else {
-            document.exitFullscreen();
-        }
-    });
-    document.addEventListener('fullscreenchange', () => {
-        const icon = document.querySelector('#vacFullscreen i');
-        if (icon) icon.className = document.fullscreenElement ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
-    });
-
-    // Blocked period — add
-    el('vacAddBlocked')?.addEventListener('click', () => {
-        el('blockedEditId').value = '';
-        el('blockedDebut').value = '';
-        el('blockedFin').value = '';
-        el('blockedMotif').value = '';
-        el('blockedModalTitle').innerHTML = '<i class="bi bi-shield-lock"></i> Nouvelle période bloquée';
-        el('blockedSubmit').innerHTML = '<i class="bi bi-check-lg"></i> Ajouter';
-        bootstrap.Modal.getOrCreateInstance(el('blockedModal')).show();
-    });
-    el('blockedSubmit')?.addEventListener('click', submitBlocked);
-
-    // Event delegation for edit/delete blocked
-    el('blockedTableBody')?.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-
-        if (action === 'edit-blocked') {
-            el('blockedEditId').value = id;
-            el('blockedDebut').value = btn.dataset.debut;
-            el('blockedFin').value = btn.dataset.fin;
-            el('blockedMotif').value = btn.dataset.motif;
-            el('blockedModalTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier la période';
-            el('blockedSubmit').innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
-            bootstrap.Modal.getOrCreateInstance(el('blockedModal')).show();
-        } else if (action === 'delete-blocked') {
-            if (!await adminConfirm({ title: 'Supprimer la période', text: 'Supprimer cette période bloquée ? Cette action est irréversible.', icon: 'bi-calendar-x', type: 'danger', okText: 'Supprimer' })) return;
-            btn.disabled = true;
-            const res = await adminApiPost('admin_delete_periode_bloquee', { id });
-            if (res.success) { showToast('Période supprimée', 'success'); loadBlocked(); }
-            else { showToast(res.message || 'Erreur', 'error'); btn.disabled = false; }
-        }
-    });
-
-    // Event delegation for vacation validate/refuse
-    el('vacTableBody')?.addEventListener('click', async (e) => {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const id = btn.dataset.id;
-        if (btn.dataset.action === 'validate-vac') {
-            await validVacance(id, 'valide');
-        } else if (btn.dataset.action === 'refuse-vac') {
-            await validVacance(id, 'refuse');
-        }
-    });
-
-    try { await loadVacances(); } catch(e) { console.error('loadVacances error:', e); }
-    try { await loadBlocked(); } catch(e) { console.error('loadBlocked error:', e); }
 }
 
 async function loadVacances() {
@@ -330,11 +391,10 @@ async function loadVacances() {
     vacData = res;
     const vacances = res.vacances || [];
 
-    // Populate module filter
     if (res.modules) {
         const prev = zerdaSelect.getValue('#vacModuleFilter') || '';
         const moduleOpts = [{ value: '', label: 'Tous les modules' }];
-        res.modules.forEach(m => { moduleOpts.push({ value: m.id, label: `${m.code} — ${m.nom}` }); });
+        res.modules.forEach(m => moduleOpts.push({ value: m.id, label: `${m.code} \u2014 ${m.nom}` }));
         zerdaSelect.init('#vacModuleFilter', moduleOpts, { onSelect: () => loadVacances(), value: prev, search: true });
     }
 
@@ -351,16 +411,14 @@ function renderList(vacances) {
     }
 
     const statusBadgeCls = { valide: 'badge-green', refuse: 'badge-red', en_attente: 'badge-beige' };
-
     tbody.innerHTML = vacances.map(v => {
         const badgeCls = statusBadgeCls[v.statut] || statusBadgeCls.en_attente;
         const canAct = v.statut === 'en_attente';
-        const validePar = v.valide_prenom ? `${escapeHtml(v.valide_prenom)} ${escapeHtml(v.valide_nom)}<br><small class="text-muted">${escapeHtml(v.valide_at || '')}</small>` : '—';
-
+        const validePar = v.valide_prenom ? `${escapeHtml(v.valide_prenom)} ${escapeHtml(v.valide_nom)}<br><small class="text-muted">${escapeHtml(v.valide_at || '')}</small>` : '\u2014';
         return `<tr>
           <td>${canAct ? `<input type="checkbox" class="vac-check" value="${v.id}">` : ''}</td>
-          <td><div class="d-flex align-items-center gap-2">${renderAvatar(v.photo, v.prenom, v.nom)}<div><strong>${escapeHtml(v.prenom)} ${escapeHtml(v.nom)}</strong><br><small class="text-muted">${escapeHtml(v.fonction_code || '')} · ${Math.round(v.taux)}%</small></div></div></td>
-          <td><small>${escapeHtml(v.module_code || '—')}</small></td>
+          <td><div class="d-flex align-items-center gap-2">${renderAvatar(v.photo, v.prenom, v.nom)}<div><strong>${escapeHtml(v.prenom)} ${escapeHtml(v.nom)}</strong><br><small class="text-muted">${escapeHtml(v.fonction_code || '')} \u00b7 ${Math.round(v.taux)}%</small></div></div></td>
+          <td><small>${escapeHtml(v.module_code || '\u2014')}</small></td>
           <td>${escapeHtml(v.date_debut)}</td>
           <td>${escapeHtml(v.date_fin)}</td>
           <td class="text-center"><span class="badge badge-blue">${v.jours_ouvres}j</span></td>
@@ -373,12 +431,11 @@ function renderList(vacances) {
                 <button class="btn btn-sm btn-desir-valider me-1" data-action="validate-vac" data-id="${v.id}" title="Valider"><i class="bi bi-check-lg"></i></button>
                 <button class="btn btn-sm btn-desir-refuser" data-action="refuse-vac" data-id="${v.id}" title="Refuser"><i class="bi bi-x-lg"></i></button>
               </div>
-            ` : '—'}
+            ` : '\u2014'}
           </td>
         </tr>`;
     }).join('');
 
-    // Bind checkboxes
     document.querySelectorAll('.vac-check').forEach(c => c.addEventListener('change', updateBulkBtns));
     updateBulkBtns();
 }
@@ -393,7 +450,7 @@ async function validVacance(id, statut) {
     const label = statut === 'valide' ? 'Valider' : 'Refuser';
     if (!await adminConfirm({ title: `${label} la demande`, text: `${label} cette demande de vacances ?`, icon: statut === 'valide' ? 'bi-check-circle' : 'bi-x-circle', type: statut === 'valide' ? 'success' : 'danger', okText: label })) return;
     const res = await adminApiPost('admin_validate_vacances', { id, statut });
-    if (res.success) { showToast(res.message, 'success'); await loadVacances(); }
+    if (res.success) { showToast(res.message, 'success'); location.reload(); }
     else showToast(res.message || 'Erreur', 'error');
 }
 
@@ -403,68 +460,33 @@ async function bulkAction(statut) {
     const label = statut === 'valide' ? 'Valider' : 'Refuser';
     if (!await adminConfirm({ title: `${label} en masse`, text: `${label} <strong>${ids.length}</strong> demande(s) de vacances ?`, icon: statut === 'valide' ? 'bi-check2-all' : 'bi-x-circle', type: statut === 'valide' ? 'success' : 'danger', okText: `${label} (${ids.length})` })) return;
     const res = await adminApiPost('admin_bulk_validate_vacances', { ids, statut });
-    if (res.success) { showToast(res.message, 'success'); await loadVacances(); }
+    if (res.success) { showToast(res.message, 'success'); location.reload(); }
     else showToast(res.message || 'Erreur', 'error');
 }
 
 // ═══ GRILLE ANNUELLE ═══
 function renderGrid() {
     const container = el('vacGridContent');
-    if (!vacData) { container.innerHTML = '<p class="text-muted p-3">Chargement...</p>'; return; }
-
-    // Fetch full year data for grid
-    adminApiPost('admin_get_vacances', { annee: vacYear }).then(res => {
-        const vacances = res.vacances || [];
-        buildGrid(container, vacances);
-    });
-}
-
-function buildGrid(container, vacances) {
-    // We need user list — fetch from vacances data
     adminApiPost('admin_get_vacances', { annee: vacYear, statut: '' }).then(res => {
         const allVac = res.vacances || [];
-
-        // Build user->vacation map
         const vacMap = {};
-        allVac.forEach(v => {
-            if (!vacMap[v.user_id]) vacMap[v.user_id] = [];
-            vacMap[v.user_id].push(v);
-        });
-
-        // Get unique users grouped by module
+        allVac.forEach(v => { if (!vacMap[v.user_id]) vacMap[v.user_id] = []; vacMap[v.user_id].push(v); });
         const userMap = {};
-        allVac.forEach(v => {
-            if (!userMap[v.user_id]) {
-                userMap[v.user_id] = { id: v.user_id, prenom: v.prenom, nom: v.nom, fn: v.fonction_code, mod: v.module_code || 'AUTRE', modNom: v.module_nom || 'Autre' };
-            }
-        });
+        allVac.forEach(v => { if (!userMap[v.user_id]) userMap[v.user_id] = { id: v.user_id, prenom: v.prenom, nom: v.nom, fn: v.fonction_code, mod: v.module_code || 'AUTRE', modNom: v.module_nom || 'Autre' }; });
         const users = Object.values(userMap);
-
-        // Group by module
         const groups = {};
-        users.forEach(u => {
-            if (!groups[u.mod]) groups[u.mod] = { label: u.modNom, list: [] };
-            groups[u.mod].list.push(u);
-        });
-
-        // Get blocked periods
-        adminApiPost('admin_get_periodes_bloquees', { annee: vacYear }).then(bres => {
-            const blocked = bres.periodes || [];
-            renderGridHTML(container, groups, vacMap, blocked);
-        });
+        users.forEach(u => { if (!groups[u.mod]) groups[u.mod] = { label: u.modNom, list: [] }; groups[u.mod].list.push(u); });
+        adminApiPost('admin_get_periodes_bloquees', { annee: vacYear }).then(bres => renderGridHTML(container, groups, vacMap, bres.periodes || []));
     });
 }
 
 function renderGridHTML(container, groups, vacMap, blocked) {
     const todayStr = new Date().toISOString().slice(0, 10);
-
-    // 12 months
     let h = '';
     for (let m = 0; m < 12; m++) {
         const dim = new Date(vacYear, m + 1, 0).getDate();
         const days = [];
         for (let d = 1; d <= dim; d++) days.push(new Date(vacYear, m, d));
-
         h += `<div class="mb-3"><h6 class="fw-bold">${MO[m]} ${vacYear}</h6>`;
         h += '<div class="tr-grid-wrap"><table class="tr-grid"><thead><tr><th class="col-user">Collaborateur</th>';
         days.forEach(d => {
@@ -472,7 +494,6 @@ function renderGridHTML(container, groups, vacMap, blocked) {
             h += `<th class="${we ? 'th-we' : ''}">${DJ[dow]}<br>${d.getDate()}</th>`;
         });
         h += '</tr></thead><tbody>';
-
         Object.entries(groups).forEach(([mod, grp]) => {
             h += `<tr class="mod-sep"><td colspan="${dim + 1}">${escapeHtml(grp.label)} <span class="badge badge-beige ms-2">${grp.list.length} emp.</span></td></tr>`;
             grp.list.forEach(u => {
@@ -483,68 +504,43 @@ function renderGridHTML(container, groups, vacMap, blocked) {
                     const td = ds === todayStr;
                     const bl = blocked.some(b => ds >= b.date_debut && ds <= b.date_fin);
                     const vac = uVacs.find(v => ds >= v.date_debut && ds <= v.date_fin);
-
                     let cls = 'dc';
                     if (we) cls += ' td-we';
                     if (td) cls += ' td-today';
                     if (bl) cls += ' dc-bl';
-                    if (vac) {
-                        if (vac.statut === 'valide') cls += ' dc-vv';
-                        else if (vac.statut === 'en_attente') cls += ' dc-va';
-                        else cls += ' dc-vr';
-                    }
-
+                    if (vac) { if (vac.statut === 'valide') cls += ' dc-vv'; else if (vac.statut === 'en_attente') cls += ' dc-va'; else cls += ' dc-vr'; }
                     let title = '';
-                    if (vac) title = `${vac.statut} · ${vac.date_debut} → ${vac.date_fin}`;
-                    if (bl) title += (title ? ' | ' : '') + 'Bloqué';
-
+                    if (vac) title = `${vac.statut} \u00b7 ${vac.date_debut} \u2192 ${vac.date_fin}`;
+                    if (bl) title += (title ? ' | ' : '') + 'Bloqu\u00e9';
                     if (vac && vac.statut === 'en_attente') cls += ' dc-clickable';
-                    const dataAttr = vac && vac.statut === 'en_attente' ?
-                        ` data-valid-vac="${vac.id}" title="Cliquer pour valider"` : '';
+                    const dataAttr = vac && vac.statut === 'en_attente' ? ` data-valid-vac="${vac.id}" title="Cliquer pour valider"` : '';
                     const icon = (!we && cls.includes('dc-vv')) ? '<i class="bi bi-check-lg vac-check-icon"></i>' : '';
-
                     h += `<td class="${cls}" title="${escapeHtml(title)}"${dataAttr}>${icon}</td>`;
                 });
                 h += '</tr>';
             });
         });
-
         h += '</tbody></table></div></div>';
     }
-
-    if (!Object.keys(groups).length) {
-        h = '<p class="text-muted p-3">Aucune demande de vacances cette année</p>';
-    }
-
+    if (!Object.keys(groups).length) h = '<p class="text-muted p-3">Aucune demande de vacances cette ann\u00e9e</p>';
     container.innerHTML = h;
 }
 
-function iso(d) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
+function iso(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 // ═══ PERIODES BLOQUEES ═══
 async function loadBlocked() {
     const tbody = el('blockedTableBody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span> Chargement...</td></tr>';
     let res;
-    try {
-        res = await adminApiPost('admin_get_periodes_bloquees', { annee: vacYear });
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Erreur de chargement</td></tr>';
-        return;
-    }
+    try { res = await adminApiPost('admin_get_periodes_bloquees', { annee: vacYear }); }
+    catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Erreur de chargement</td></tr>'; return; }
     const periodes = res.periodes || [];
-
-    if (!periodes.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Aucune période bloquée</td></tr>';
-        return;
-    }
-
+    if (!periodes.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Aucune p\u00e9riode bloqu\u00e9e</td></tr>'; return; }
     tbody.innerHTML = periodes.map(p => `<tr>
       <td>${escapeHtml(p.date_debut)}</td>
       <td>${escapeHtml(p.date_fin)}</td>
-      <td>${escapeHtml(p.motif || '—')}</td>
+      <td>${escapeHtml(p.motif || '\u2014')}</td>
       <td><small>${escapeHtml((p.created_by_prenom || '') + ' ' + (p.created_by_nom || ''))}</small></td>
       <td>
         <button class="btn btn-sm btn-blocked-edit me-1" data-action="edit-blocked" data-id="${p.id}" data-debut="${escapeHtml(p.date_debut)}" data-fin="${escapeHtml(p.date_fin)}" data-motif="${escapeHtml(p.motif || '')}" title="Modifier"><i class="bi bi-pencil"></i></button>
@@ -559,27 +555,19 @@ async function submitBlocked() {
     const fin = el('blockedFin')?.value;
     const motif = el('blockedMotif')?.value;
     if (!debut || !fin) { showToast('Dates requises', 'error'); return; }
-
     const btn = el('blockedSubmit');
     btn.disabled = true;
     try {
         let res;
-        if (editId) {
-            res = await adminApiPost('admin_update_periode_bloquee', { id: editId, date_debut: debut, date_fin: fin, motif });
-        } else {
-            res = await adminApiPost('admin_add_periode_bloquee', { date_debut: debut, date_fin: fin, motif });
-        }
+        if (editId) res = await adminApiPost('admin_update_periode_bloquee', { id: editId, date_debut: debut, date_fin: fin, motif });
+        else res = await adminApiPost('admin_add_periode_bloquee', { date_debut: debut, date_fin: fin, motif });
         if (res.success) {
             bootstrap.Modal.getOrCreateInstance(el('blockedModal'))?.hide();
             showToast(res.message, 'success');
             await loadBlocked();
         } else showToast(res.message || 'Erreur', 'error');
-    } catch (err) {
-        console.error('submitBlocked error:', err);
-        showToast('Erreur', 'error');
-    } finally {
-        btn.disabled = false;
-    }
+    } catch (err) { console.error('submitBlocked error:', err); showToast('Erreur', 'error'); }
+    finally { btn.disabled = false; }
 }
 
 window.initVacancesPage = initVacancesPage;

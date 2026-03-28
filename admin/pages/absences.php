@@ -1,3 +1,19 @@
+<?php
+// ─── Données serveur (filtre par défaut : en_attente) ─────────────────────
+$initAbsences = Db::fetchAll(
+    "SELECT a.*, u.prenom, u.nom, u.employee_id, u.photo, f.code AS fonction_code,
+            m.nom AS module_nom,
+            ur.prenom AS rempl_prenom, ur.nom AS rempl_nom
+     FROM absences a
+     JOIN users u ON u.id = a.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     LEFT JOIN users ur ON ur.id = a.remplacement_user_id
+     WHERE a.statut = 'en_attente'
+     ORDER BY a.created_at DESC"
+);
+?>
 <style>
 .btn-desir-valider {
   background: var(--cl-bg); border: 1px solid var(--cl-border); color: var(--cl-text-muted);
@@ -125,7 +141,52 @@
         </tr>
       </thead>
       <tbody id="absencesTableBody">
-        <tr><td colspan="9" class="text-center py-4 text-muted">Chargement...</td></tr>
+        <?php if (empty($initAbsences)): ?>
+        <tr><td colspan="9" class="text-center py-4 text-muted">Aucune absence en attente</td></tr>
+        <?php else: ?>
+        <?php foreach ($initAbsences as $idx => $a):
+            $sCls = ['valide'=>'badge-zt-valid','refuse'=>'badge-zt-refuse','en_attente'=>'badge-zt-attente'][$a['statut']] ?? 'badge-zt-attente';
+            $tCls = ['vacances'=>'badge-zt-vacances','maladie'=>'badge-zt-maladie','accident'=>'badge-zt-accident','conge_special'=>'badge-zt-conge_special','formation'=>'badge-zt-formation'][$a['type']] ?? 'badge-zt-attente';
+            $sLbl = ['valide'=>'Validé','refuse'=>'Refusé','en_attente'=>'En attente'][$a['statut']] ?? h($a['statut']);
+            $initials = mb_strtoupper(mb_substr($a['prenom']??'',0,1).mb_substr($a['nom']??'',0,1));
+            $rempl = $a['remplacement_type']
+                ? ($a['remplacement_type']==='collegue' ? h(($a['rempl_prenom']??'').' '.($a['rempl_nom']??'')) : h($a['remplacement_type']))
+                : '—';
+        ?>
+        <tr data-abs-idx="<?= $idx ?>" class="abs-row-clickable">
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <?php if (!empty($a['photo'])): ?>
+                <img src="<?= h($a['photo']) ?>" class="abs-avatar abs-avatar-sm">
+              <?php else: ?>
+                <div class="abs-avatar-initials abs-avatar-sm"><?= h($initials) ?></div>
+              <?php endif; ?>
+              <div>
+                <strong><?= h($a['prenom'].' '.$a['nom']) ?></strong><br>
+                <small class="text-muted"><?= h($a['fonction_code']??'') ?></small>
+              </div>
+            </div>
+          </td>
+          <td><small><?= h($a['module_nom']??'—') ?></small></td>
+          <td><span class="badge <?= $tCls ?>"><?= h($a['type']) ?></span></td>
+          <td><?= h($a['date_debut']) ?></td>
+          <td><?= h($a['date_fin']) ?></td>
+          <td><?= $a['justifie'] ? '<i class="bi bi-check abs-icon-valid"></i>' : '<i class="bi bi-x text-muted"></i>' ?></td>
+          <td><small><?= $rempl ?></small></td>
+          <td><span class="badge <?= $sCls ?>"><?= h($sLbl) ?></span></td>
+          <td>
+            <?php if ($a['statut'] === 'en_attente'): ?>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-sm btn-desir-valider me-1" data-valid-abs="<?= h($a['id']) ?>" title="Valider"><i class="bi bi-check-lg"></i></button>
+                <button class="btn btn-sm btn-desir-refuser" data-refuse-abs="<?= h($a['id']) ?>" title="Refuser"><i class="bi bi-x-lg"></i></button>
+              </div>
+            <?php else: ?>
+              —
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        <?php endif; ?>
       </tbody>
     </table>
   </div>
@@ -165,7 +226,8 @@
 </div>
 
 <script<?= nonce() ?>>
-let absData = [];
+// Données initiales injectées côté serveur (filtre: en_attente)
+let absData = <?= json_encode(array_values($initAbsences), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 let absDetailModalInstance = null;
 
 const statusClasses = { valide: 'badge-zt-valid', refuse: 'badge-zt-refuse', en_attente: 'badge-zt-attente' };
@@ -174,14 +236,14 @@ const typeClasses = { vacances: 'badge-zt-vacances', maladie: 'badge-zt-maladie'
 
 function makeBadge(text, cls) { return `<span class="badge ${cls}">${escapeHtml(text)}</span>`; }
 
-async function initAbsencesPage() {
+function initAbsencesPage() {
     absDetailModalInstance = new bootstrap.Modal(document.getElementById('absDetailModal'));
 
     zerdaSelect.init('#absStatutFilter', [
         { value: '', label: 'Tous les statuts' },
         { value: 'en_attente', label: 'En attente' },
-        { value: 'valide', label: 'Validé' },
-        { value: 'refuse', label: 'Refusé' }
+        { value: 'valide', label: 'Valid\u00e9' },
+        { value: 'refuse', label: 'Refus\u00e9' }
     ], { onSelect: () => loadAbsences(), value: 'en_attente' });
 
     zerdaSelect.init('#absTypeFilter', [
@@ -189,7 +251,7 @@ async function initAbsencesPage() {
         { value: 'vacances', label: 'Vacances' },
         { value: 'maladie', label: 'Maladie' },
         { value: 'accident', label: 'Accident' },
-        { value: 'conge_special', label: 'Congé spécial' },
+        { value: 'conge_special', label: 'Cong\u00e9 sp\u00e9cial' },
         { value: 'formation', label: 'Formation' }
     ], { onSelect: () => loadAbsences(), value: '' });
 
@@ -199,12 +261,10 @@ async function initAbsencesPage() {
         if (vBtn) { e.stopPropagation(); validAbsence(vBtn.dataset.validAbs, 'valide'); return; }
         const rBtn = e.target.closest('[data-refuse-abs]');
         if (rBtn) { e.stopPropagation(); validAbsence(rBtn.dataset.refuseAbs, 'refuse'); return; }
-        // Click on row to open detail
         const tr = e.target.closest('tr[data-abs-idx]');
         if (tr) openAbsDetail(parseInt(tr.dataset.absIdx));
     });
-
-    await loadAbsences();
+    // Initial render already done by PHP — no AJAX needed
 }
 
 function makeAvatar(a, size = 'sm') {
@@ -266,7 +326,6 @@ function openAbsDetail(idx) {
         ? (a.remplacement_type === 'collegue' ? `${escapeHtml(a.rempl_prenom || '')} ${escapeHtml(a.rempl_nom || '')}` : escapeHtml(a.remplacement_type))
         : '\u2014';
 
-    // Header
     document.getElementById('absDetailHeader').innerHTML = `
         ${makeAvatar(a, 'md')}
         <div>
@@ -274,24 +333,16 @@ function openAbsDetail(idx) {
             <small class="text-muted">${escapeHtml(a.fonction_code || '')} \u00b7 ${escapeHtml(a.module_nom || '')}</small>
         </div>`;
 
-    // Body
     let html = `
         <div class="abs-detail-row"><span class="abs-detail-label">Type</span><span class="abs-detail-value">${makeBadge(a.type, tCls)}</span></div>
         <div class="abs-detail-row"><span class="abs-detail-label">P\u00e9riode</span><span class="abs-detail-value">${escapeHtml(a.date_debut)} \u2192 ${escapeHtml(a.date_fin)}</span></div>
         <div class="abs-detail-row"><span class="abs-detail-label">Statut</span><span class="abs-detail-value">${makeBadge(statusLabels[a.statut] || a.statut, sCls)}</span></div>
         <div class="abs-detail-row"><span class="abs-detail-label">Remplacement</span><span class="abs-detail-value">${rempl}</span></div>`;
 
-    if (a.motif) {
-        html += `<div class="abs-detail-row"><span class="abs-detail-label">Motif</span><span class="abs-detail-value">${escapeHtml(a.motif)}</span></div>`;
-    }
-    if (a.commentaire) {
-        html += `<div class="abs-detail-row"><span class="abs-detail-label">Commentaire</span><span class="abs-detail-value">${escapeHtml(a.commentaire)}</span></div>`;
-    }
-    if (a.created_at) {
-        html += `<div class="abs-detail-row"><span class="abs-detail-label">D\u00e9pos\u00e9e le</span><span class="abs-detail-value">${escapeHtml(a.created_at.substring(0, 10))}</span></div>`;
-    }
+    if (a.motif) html += `<div class="abs-detail-row"><span class="abs-detail-label">Motif</span><span class="abs-detail-value">${escapeHtml(a.motif)}</span></div>`;
+    if (a.commentaire) html += `<div class="abs-detail-row"><span class="abs-detail-label">Commentaire</span><span class="abs-detail-value">${escapeHtml(a.commentaire)}</span></div>`;
+    if (a.created_at) html += `<div class="abs-detail-row"><span class="abs-detail-label">D\u00e9pos\u00e9e le</span><span class="abs-detail-value">${escapeHtml(a.created_at.substring(0, 10))}</span></div>`;
 
-    // Justificatif section
     html += '<div class="mt-3">';
     html += '<div class="d-flex justify-content-between align-items-center mb-2"><span class="fw-bold small">Justificatif</span>';
     html += `<label class="btn btn-sm btn-outline-secondary abs-upload-label"><i class="bi bi-upload"></i> Ajouter<input type="file" id="absJustUpload" data-id="${a.id}" accept="image/*,.pdf" class="abs-upload-input"></label>`;
@@ -301,19 +352,12 @@ function openAbsDetail(idx) {
         const ext = a.justificatif_path.split('.').pop().toLowerCase();
         const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
         const isPdf = ext === 'pdf';
-
         html += `<div class="abs-file-preview" data-file-url="${escapeHtml(a.justificatif_path)}" data-file-name="${escapeHtml(a.justificatif_name || '')}" data-file-type="${isImage ? 'image' : (isPdf ? 'pdf' : 'other')}">`;
-
-        if (isImage) {
-            html += `<img src="${escapeHtml(a.justificatif_path)}" alt="Justificatif">`;
-        } else if (isPdf) {
-            html += `<div class="abs-file-icon"><i class="bi bi-file-earmark-pdf abs-icon-pdf"></i></div>`;
-        } else {
-            html += `<div class="abs-file-icon"><i class="bi bi-file-earmark"></i></div>`;
-        }
+        if (isImage) html += `<img src="${escapeHtml(a.justificatif_path)}" alt="Justificatif">`;
+        else if (isPdf) html += `<div class="abs-file-icon"><i class="bi bi-file-earmark-pdf abs-icon-pdf"></i></div>`;
+        else html += `<div class="abs-file-icon"><i class="bi bi-file-earmark"></i></div>`;
         html += `<div class="abs-file-name"><i class="bi bi-paperclip"></i> ${escapeHtml(a.justificatif_name || 'Fichier')} <i class="bi bi-box-arrow-up-right ms-auto abs-icon-external"></i></div>`;
         html += '</div>';
-
         html += `<button class="btn btn-sm mt-2 btn-delete-justif" data-delete-justif="${a.id}"><i class="bi bi-trash"></i> Supprimer le justificatif</button>`;
     } else {
         html += '<div class="text-center text-muted py-3 abs-no-justif"><i class="bi bi-file-earmark-x"></i><br><small>Aucun justificatif</small></div>';
@@ -322,7 +366,6 @@ function openAbsDetail(idx) {
 
     document.getElementById('absDetailBody').innerHTML = html;
 
-    // Footer buttons — Annuler left, Refuser + Valider right
     let footerHtml = '';
     if (a.statut === 'en_attente') {
         footerHtml = `
@@ -336,7 +379,6 @@ function openAbsDetail(idx) {
     }
     document.getElementById('absDetailFooter').innerHTML = footerHtml;
 
-    // Bind modal body events (file preview, delete justif, upload)
     document.getElementById('absDetailBody').querySelector('.abs-file-preview')?.addEventListener('click', function() {
         openFileViewer(this.dataset.fileUrl, this.dataset.fileName, this.dataset.fileType);
     });
@@ -344,8 +386,6 @@ function openAbsDetail(idx) {
         deleteJustificatif(this.dataset.deleteJustif);
     });
     document.getElementById('absJustUpload')?.addEventListener('change', uploadJustificatif);
-
-    // Bind footer buttons
     document.getElementById('absDetailFooter').querySelector('[data-modal-valid]')?.addEventListener('click', function() {
         validAbsence(this.dataset.modalValid, 'valide', true);
     });
@@ -360,31 +400,21 @@ async function uploadJustificatif(e) {
     const file = e.target.files[0];
     if (!file) return;
     const id = e.target.dataset.id;
-
     const fd = new FormData();
     fd.append('action', 'admin_upload_justificatif');
     fd.append('absence_id', id);
     fd.append('file', file);
-
     try {
         const csrfToken = window.__ZT_ADMIN__?.csrfToken || '';
-        const resp = await fetch('/zerdatime/admin/api.php', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': csrfToken },
-            body: fd
-        });
+        const resp = await fetch('/zerdatime/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: fd });
         const res = await resp.json();
         if (res.csrf) window.__ZT_ADMIN__.csrfToken = res.csrf;
         if (res.success) {
-            showToast('Justificatif ajouté', 'success');
+            showToast('Justificatif ajout\u00e9', 'success');
             absDetailModalInstance.hide();
-            await loadAbsences();
-        } else {
-            showToast(res.message || 'Erreur', 'error');
-        }
-    } catch (err) {
-        showToast('Erreur upload', 'error');
-    }
+            location.reload();
+        } else { showToast(res.message || 'Erreur', 'error'); }
+    } catch (err) { showToast('Erreur upload', 'error'); }
 }
 
 async function deleteJustificatif(absenceId) {
@@ -393,16 +423,17 @@ async function deleteJustificatif(absenceId) {
     if (res.success) {
         showToast('Justificatif supprim\u00e9', 'success');
         absDetailModalInstance.hide();
-        await loadAbsences();
-    } else {
-        showToast(res.message || 'Erreur', 'error');
-    }
+        location.reload();
+    } else { showToast(res.message || 'Erreur', 'error'); }
 }
 
 async function validAbsence(id, statut, fromModal = false) {
     const res = await adminApiPost('admin_validate_absence', { id, statut });
-    if (res.success) { showToast(res.message, 'success'); if (fromModal) absDetailModalInstance.hide(); await loadAbsences(); }
-    else { showToast(res.message || 'Erreur', 'error'); }
+    if (res.success) {
+        showToast(res.message, 'success');
+        if (fromModal) absDetailModalInstance.hide();
+        location.reload();
+    } else { showToast(res.message || 'Erreur', 'error'); }
 }
 
 // ═══ FILE VIEWER (Lightbox) ═══
@@ -455,7 +486,6 @@ function openFileViewer(url, name, type) {
         apply();
     }
     function zoomBy(d) { const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, scale + d); }
-
     function closeLb() {
         lb.classList.add('zt-lightbox-hidden');
         document.body.style.overflow = '';
@@ -471,7 +501,6 @@ function openFileViewer(url, name, type) {
     _lbAdd(document.getElementById('ztLbZoomIn'), 'click', () => zoomBy(.25));
     _lbAdd(document.getElementById('ztLbZoomOut'), 'click', () => zoomBy(-.25));
     _lbAdd(document.getElementById('ztLbReset'), 'click', resetZoom);
-
     _lbAdd(document, 'keydown', (e) => {
         if (lb.classList.contains('zt-lightbox-hidden')) return;
         if (e.key === 'Escape') closeLb();

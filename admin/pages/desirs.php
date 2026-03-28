@@ -1,3 +1,38 @@
+<?php
+// ─── Données serveur (mois suivant, statut en_attente) ────────────────────
+$nextMonth = date('Y-m', strtotime('+1 month'));
+
+$initDesirs = Db::fetchAll(
+    "SELECT d.*, u.prenom, u.nom, u.employee_id, u.photo, f.code AS fonction_code,
+            ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur AS horaire_couleur,
+            ht.heure_debut AS horaire_debut, ht.heure_fin AS horaire_fin,
+            ht.duree_effective AS horaire_duree,
+            dp.jour_semaine AS permanent_jour_semaine
+     FROM desirs d
+     JOIN users u ON u.id = d.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN horaires_types ht ON ht.id = d.horaire_type_id
+     LEFT JOIN desirs_permanents dp ON dp.id = d.permanent_id
+     WHERE d.statut = 'en_attente' AND d.mois_cible = ?
+     ORDER BY d.date_souhaitee ASC, u.nom ASC",
+    [$nextMonth]
+);
+
+$initPermanents = Db::fetchAll(
+    "SELECT dp.*, u.prenom, u.nom, u.employee_id, u.photo, f.code AS fonction_code,
+            ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur AS horaire_couleur,
+            dp2.jour_semaine AS ancien_jour_semaine, dp2.type AS ancien_type,
+            ht2.code AS ancien_horaire_code, ht2.nom AS ancien_horaire_nom, ht2.couleur AS ancien_horaire_couleur
+     FROM desirs_permanents dp
+     JOIN users u ON u.id = dp.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN horaires_types ht ON ht.id = dp.horaire_type_id
+     LEFT JOIN desirs_permanents dp2 ON dp2.id = dp.replaces_id
+     LEFT JOIN horaires_types ht2 ON ht2.id = dp2.horaire_type_id
+     WHERE dp.statut = 'en_attente'
+     ORDER BY dp.created_at ASC"
+);
+?>
 <style>
 /* ── Action buttons ── */
 .btn-desir-valider {
@@ -69,9 +104,9 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div class="d-flex gap-2">
     <div class="zs-select desir-filter-select" id="desirStatutFilter" data-placeholder="Tous les statuts"></div>
-    <input type="month" class="form-control form-control-sm desir-filter-select" id="desirMoisFilter">
+    <input type="month" class="form-control form-control-sm desir-filter-select" id="desirMoisFilter" value="<?= h($nextMonth) ?>">
   </div>
-  <span id="desirsCount" class="text-muted desir-count"></span>
+  <span id="desirsCount" class="text-muted desir-count"><?= count($initDesirs) ? count($initDesirs).' désir(s)' : '' ?></span>
 </div>
 
 <div class="card">
@@ -89,15 +124,58 @@
         </tr>
       </thead>
       <tbody id="desirsTableBody">
-        <tr><td colspan="7" class="text-center py-4 text-muted">Chargement...</td></tr>
+        <?php if (empty($initDesirs)): ?>
+        <tr><td colspan="7" class="text-center py-4 text-muted">Aucun désir pour cette période</td></tr>
+        <?php else: ?>
+        <?php foreach ($initDesirs as $idx => $d):
+            $statusCls = $d['statut'] === 'valide' ? 'zt-valid' : ($d['statut'] === 'refuse' ? 'zt-refuse' : 'zt-attente');
+            $statusLabel = $d['statut'] === 'valide' ? 'Validé' : ($d['statut'] === 'refuse' ? 'Refusé' : 'En attente');
+            $isPermanent = !empty($d['permanent_id']);
+            $initials = mb_strtoupper(mb_substr($d['prenom']??'',0,1).mb_substr($d['nom']??'',0,1));
+        ?>
+        <tr class="desir-row" data-idx="<?= $idx ?>">
+          <td class="desir-click desir-collab">
+            <div class="d-flex align-items-center gap-2">
+              <?php if (!empty($d['photo'])): ?>
+                <img src="<?= h($d['photo']) ?>" class="desir-avatar">
+              <?php else: ?>
+                <div class="desir-avatar-initials"><?= h($initials) ?></div>
+              <?php endif; ?>
+              <div>
+                <strong><?= h($d['prenom'].' '.$d['nom']) ?></strong><br>
+                <small class="text-muted"><?= h($d['fonction_code']??'') ?></small>
+              </div>
+            </div>
+          </td>
+          <td class="desir-click"><?= h($d['date_souhaitee']) ?></td>
+          <td class="desir-click">
+            <?= $d['type'] === 'jour_off' ? '<span class="badge badge-zt-jour-off">Jour off</span>' : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>' ?>
+            <?php if ($isPermanent): ?><span class="badge badge-permanent" title="Désir permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span><?php endif; ?>
+          </td>
+          <td class="desir-click">
+            <?php if ($d['type'] === 'horaire_special' && !empty($d['horaire_code'])): ?>
+              <span class="badge badge-zt-horaire-dynamic" style="background:<?= h($d['horaire_couleur']??'#9B51E0') ?>"><?= h($d['horaire_code']) ?></span>
+            <?php else: ?><span class="text-muted">—</span><?php endif; ?>
+          </td>
+          <td class="desir-click"><?= !empty($d['detail']) ? '<small>'.h($d['detail']).'</small>' : '' ?></td>
+          <td class="desir-click"><span class="badge badge-<?= $statusCls ?>"><?= h($statusLabel) ?></span></td>
+          <td class="text-nowrap">
+            <?php if ($d['statut'] === 'en_attente'): ?>
+              <button class="btn btn-sm btn-desir-valider me-1" data-action="valide" data-id="<?= h($d['id']) ?>" title="Valider"><i class="bi bi-check-lg"></i></button>
+              <button class="btn btn-sm btn-desir-refuser" data-action="refuse" data-id="<?= h($d['id']) ?>" title="Refuser"><i class="bi bi-x-lg"></i></button>
+            <?php else: ?><span class="text-muted">—</span><?php endif; ?>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        <?php endif; ?>
       </tbody>
     </table>
   </div>
 </div>
 
 <!-- Permanents en attente -->
-<div id="permanentsPendingSection" class="mt-4 desir-hidden">
-  <h6 class="fw-600 mb-2"><i class="bi bi-pin-angle-fill desir-section-icon"></i> Désirs permanents en attente <span id="permanentsPendingCount" class="badge ms-1 desir-section-badge"></span></h6>
+<div id="permanentsPendingSection" class="mt-4<?= empty($initPermanents) ? ' desir-hidden' : '' ?>">
+  <h6 class="fw-600 mb-2"><i class="bi bi-pin-angle-fill desir-section-icon"></i> Désirs permanents en attente <span id="permanentsPendingCount" class="badge ms-1 desir-section-badge"><?= count($initPermanents) ?></span></h6>
   <div class="card">
     <div class="table-responsive">
       <table class="table table-hover mb-0">
@@ -111,7 +189,55 @@
             <th class="desir-th-actions">Actions</th>
           </tr>
         </thead>
-        <tbody id="permanentsPendingBody"></tbody>
+        <tbody id="permanentsPendingBody">
+          <?php
+          $joursSemainePhp = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+          foreach ($initPermanents as $p):
+              $jour = $joursSemainePhp[$p['jour_semaine']] ?? '?';
+              $isModification = !empty($p['replaces_id']);
+              $pInitials = mb_strtoupper(mb_substr($p['prenom']??'',0,1).mb_substr($p['nom']??'',0,1));
+          ?>
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <?php if (!empty($p['photo'])): ?>
+                  <img src="<?= h($p['photo']) ?>" class="desir-avatar">
+                <?php else: ?>
+                  <div class="desir-avatar-initials"><?= h($pInitials) ?></div>
+                <?php endif; ?>
+                <div>
+                  <strong><?= h($p['prenom'].' '.$p['nom']) ?></strong><br>
+                  <small class="text-muted"><?= h($p['fonction_code']??'') ?></small>
+                </div>
+              </div>
+            </td>
+            <td><?= $p['type'] === 'jour_off' ? '<span class="badge badge-zt-jour-off">Jour off</span>' : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>' ?></td>
+            <td><strong><?= h($jour) ?></strong></td>
+            <td>
+              <?php if (!empty($p['horaire_code'])): ?>
+                <span class="badge badge-zt-horaire-dynamic" style="background:<?= h($p['horaire_couleur']??'#9B51E0') ?>"><?= h($p['horaire_code']) ?></span>
+              <?php else: ?><span class="text-muted">—</span><?php endif; ?>
+            </td>
+            <td>
+              <?php if ($isModification):
+                  $ancienJour = $joursSemainePhp[$p['ancien_jour_semaine']] ?? '?';
+                  $ancienType = $p['ancien_type'] === 'jour_off' ? 'Jour off' : 'Horaire';
+                  $ancienHoraire = !empty($p['ancien_horaire_code']) ? ' ('.h($p['ancien_horaire_code']).')' : '';
+                  $nouveauHoraire = !empty($p['horaire_code']) ? ' ('.h($p['horaire_code']).')' : '';
+              ?>
+                <div class="perm-ancien"><small class="text-muted">Avant :</small> <?= h($ancienJour) ?> — <?= $ancienType.$ancienHoraire ?></div>
+                <div class="perm-nouveau"><small class="text-muted">Après :</small> <?= h($jour) ?> — <?= ($p['type']==='jour_off'?'Jour off':'Horaire').$nouveauHoraire ?></div>
+              <?php else: ?>
+                <span class="badge badge-permanent">Nouveau</span>
+              <?php endif; ?>
+            </td>
+            <td class="text-nowrap">
+              <button class="btn btn-sm btn-desir-valider me-1" data-perm-action="valide" data-perm-id="<?= h($p['id']) ?>" title="Valider"><i class="bi bi-check-lg"></i></button>
+              <button class="btn btn-sm btn-desir-refuser" data-perm-action="refuse" data-perm-id="<?= h($p['id']) ?>" title="Refuser"><i class="bi bi-x-lg"></i></button>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
       </table>
     </div>
   </div>
@@ -130,9 +256,7 @@
       </div>
       <div class="modal-body" id="desirModalBody"></div>
       <div class="modal-footer d-flex" id="desirModalFooter">
-        <button type="button" class="btn btn-outline-secondary px-3 py-1 desir-btn" data-bs-dismiss="modal">
-          Fermer
-        </button>
+        <button type="button" class="btn btn-outline-secondary px-3 py-1 desir-btn" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -140,29 +264,67 @@
 
 <script<?= nonce() ?>>
 (function() {
-    let desirsData = [];
+    // Données initiales injectées côté serveur
+    let desirsData = <?= json_encode(array_values($initDesirs), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let permsData  = <?= json_encode(array_values($initPermanents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let modalInstance = null;
 
     const joursSemaine = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
-    async function initDesirsPage() {
-        const now = new Date();
-        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        document.getElementById('desirMoisFilter').value =
-            `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
-
+    function initDesirsPage() {
         zerdaSelect.init('#desirStatutFilter', [
             { value: '', label: 'Tous les statuts' },
             { value: 'en_attente', label: 'En attente' },
-            { value: 'valide', label: 'Validé' },
-            { value: 'refuse', label: 'Refusé' }
+            { value: 'valide', label: 'Valid\u00e9' },
+            { value: 'refuse', label: 'Refus\u00e9' }
         ], { onSelect: () => loadDesirs(), value: 'en_attente' });
 
         document.getElementById('desirMoisFilter')?.addEventListener('change', loadDesirs);
-
         modalInstance = new bootstrap.Modal(document.getElementById('desirModal'));
 
-        await Promise.all([loadDesirs(), loadPermanentsPending()]);
+        // Event delegation — table rows (click cells)
+        document.getElementById('desirsTableBody').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (btn) {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                if (btn.dataset.action === 'valide') { doValidate(id, 'valide'); return; }
+                const tr = btn.closest('.desir-row');
+                const idx = parseInt(tr?.dataset.idx);
+                if (!isNaN(idx)) openDesirModal(idx, true);
+                return;
+            }
+            const td = e.target.closest('.desir-click');
+            if (td) {
+                const tr = td.closest('.desir-row');
+                const idx = parseInt(tr?.dataset.idx);
+                if (!isNaN(idx)) openDesirModal(idx);
+            }
+        });
+
+        // Event delegation — permanents table
+        document.getElementById('permanentsPendingBody').addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-perm-action]');
+            if (!btn) return;
+            e.stopPropagation();
+            const id = btn.dataset.permId;
+            const action = btn.dataset.permAction;
+            if (action === 'valide') {
+                await doValidatePermanent(id, 'valide');
+            } else {
+                const commentaire = prompt('Motif du refus (optionnel) :') || '';
+                await doValidatePermanent(id, 'refuse', commentaire);
+            }
+        });
+        // Initial render already done server-side
+    }
+
+    function formatDateFr(dateStr) {
+        if (!dateStr) return '\u2014';
+        const d = new Date(dateStr + 'T00:00:00');
+        const jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const mois = ['jan', 'f\u00e9v', 'mar', 'avr', 'mai', 'jun', 'jul', 'ao\u00fb', 'sep', 'oct', 'nov', 'd\u00e9c'];
+        return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
     }
 
     async function loadDesirs() {
@@ -174,16 +336,16 @@
         const tbody = document.getElementById('desirsTableBody');
         const countEl = document.getElementById('desirsCount');
 
-        countEl.textContent = desirsData.length ? `${desirsData.length} désir(s)` : '';
+        countEl.textContent = desirsData.length ? `${desirsData.length} d\u00e9sir(s)` : '';
 
         if (!desirsData.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Aucun désir pour cette période</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Aucun d\u00e9sir pour cette p\u00e9riode</td></tr>';
             return;
         }
 
         tbody.innerHTML = desirsData.map((d, idx) => {
             const statusCls = d.statut === 'valide' ? 'zt-valid' : d.statut === 'refuse' ? 'zt-refuse' : 'zt-attente';
-            const statusLabel = d.statut === 'valide' ? 'Validé' : d.statut === 'refuse' ? 'Refusé' : 'En attente';
+            const statusLabel = d.statut === 'valide' ? 'Valid\u00e9' : d.statut === 'refuse' ? 'Refus\u00e9' : 'En attente';
             const isPermanent = !!d.permanent_id;
             const initials = ((d.prenom?.[0] || '') + (d.nom?.[0] || '')).toUpperCase();
             const avatar = d.photo
@@ -192,35 +354,25 @@
 
             const typeBadge = d.type === 'jour_off'
                 ? '<span class="badge badge-zt-jour-off">Jour off</span>'
-                : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>';
+                : '<span class="badge badge-zt-horaire-special">Horaire sp\u00e9cial</span>';
 
-            // Colonne horaire
-            let horaireCell = '<span class="text-muted">—</span>';
+            let horaireCell = '<span class="text-muted">\u2014</span>';
             if (d.type === 'horaire_special' && d.horaire_code) {
                 const couleur = d.horaire_couleur || '#9B51E0';
                 horaireCell = `<span class="badge badge-zt-horaire-dynamic" style="background:${escapeHtml(couleur)}">${escapeHtml(d.horaire_code)}</span>`;
             }
 
-            // Colonne détail : afficher seulement s'il existe
             const detailCell = d.detail ? `<small>${escapeHtml(d.detail)}</small>` : '';
-
             const dateFmt = formatDateFr(d.date_souhaitee);
+            const permIcon = isPermanent ? ' <span class="badge badge-permanent" title="D\u00e9sir permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span>' : '';
 
-            // Permanent icon
-            const permIcon = isPermanent ? ' <span class="badge badge-permanent" title="Désir permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span>' : '';
-
-            // Boutons action inline
             let actionBtns = '';
             if (d.statut === 'en_attente') {
                 actionBtns = `
-                  <button class="btn btn-sm btn-desir-valider me-1" data-action="valide" data-id="${d.id}" title="Valider">
-                    <i class="bi bi-check-lg"></i>
-                  </button>
-                  <button class="btn btn-sm btn-desir-refuser" data-action="refuse" data-id="${d.id}" title="Refuser">
-                    <i class="bi bi-x-lg"></i>
-                  </button>`;
+                  <button class="btn btn-sm btn-desir-valider me-1" data-action="valide" data-id="${d.id}" title="Valider"><i class="bi bi-check-lg"></i></button>
+                  <button class="btn btn-sm btn-desir-refuser" data-action="refuse" data-id="${d.id}" title="Refuser"><i class="bi bi-x-lg"></i></button>`;
             } else {
-                actionBtns = '<span class="text-muted">—</span>';
+                actionBtns = '<span class="text-muted">\u2014</span>';
             }
 
             return `<tr class="desir-row" data-idx="${idx}">
@@ -233,38 +385,6 @@
               <td class="text-nowrap">${actionBtns}</td>
             </tr>`;
         }).join('');
-
-        // Lignes cliquables (sauf colonne actions)
-        tbody.querySelectorAll('.desir-click').forEach(td => {
-            td.addEventListener('click', () => {
-                const idx = parseInt(td.closest('.desir-row').dataset.idx);
-                openDesirModal(idx);
-            });
-        });
-
-        // Boutons action inline
-        tbody.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.id;
-                const action = btn.dataset.action;
-                if (action === 'valide') {
-                    doValidate(id, 'valide');
-                } else {
-                    // Ouvrir le modal en mode refus pour saisir le commentaire
-                    const idx = parseInt(btn.closest('.desir-row').dataset.idx);
-                    openDesirModal(idx, true);
-                }
-            });
-        });
-    }
-
-    function formatDateFr(dateStr) {
-        if (!dateStr) return '—';
-        const d = new Date(dateStr + 'T00:00:00');
-        const jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-        const mois = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
-        return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
     }
 
     function openDesirModal(idx, startRefus) {
@@ -272,41 +392,34 @@
         if (!d) return;
 
         const statusCls = d.statut === 'valide' ? 'zt-valid' : d.statut === 'refuse' ? 'zt-refuse' : 'zt-attente';
-        const statusLabel = d.statut === 'valide' ? 'Validé' : d.statut === 'refuse' ? 'Refusé' : 'En attente';
+        const statusLabel = d.statut === 'valide' ? 'Valid\u00e9' : d.statut === 'refuse' ? 'Refus\u00e9' : 'En attente';
         const isPermanent = !!d.permanent_id;
 
-        // Header
         const permLabel = isPermanent ? ' <span class="badge badge-permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span>' : '';
         document.getElementById('desirModalTitle').innerHTML = `${escapeHtml(d.prenom)} ${escapeHtml(d.nom)}${permLabel}`;
-        document.getElementById('desirModalSubtitle').textContent = `${d.fonction_code || ''} — Désir pour le ${formatDateFr(d.date_souhaitee)}`;
+        document.getElementById('desirModalSubtitle').textContent = `${d.fonction_code || ''} \u2014 D\u00e9sir pour le ${formatDateFr(d.date_souhaitee)}`;
 
-        // Header color
         const header = document.getElementById('desirModalHeader');
         header.className = 'modal-header';
-        const headerCls = d.statut === 'en_attente' ? 'desir-header-attente' : d.statut === 'valide' ? 'desir-header-valide' : 'desir-header-refuse';
-        header.classList.add(headerCls);
+        header.classList.add(d.statut === 'en_attente' ? 'desir-header-attente' : d.statut === 'valide' ? 'desir-header-valide' : 'desir-header-refuse');
 
-        // Body
         const typeBadge = d.type === 'jour_off'
             ? '<span class="badge badge-zt-jour-off badge-zt-status-lg"><i class="bi bi-moon"></i> Jour off</span>'
-            : '<span class="badge badge-zt-horaire-special badge-zt-status-lg"><i class="bi bi-clock"></i> Horaire spécial</span>';
+            : '<span class="badge badge-zt-horaire-special badge-zt-status-lg"><i class="bi bi-clock"></i> Horaire sp\u00e9cial</span>';
 
-        // Permanent info
         let permBlock = '';
         if (isPermanent) {
-            const joursSemaine = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
             const jourLabel = d.permanent_jour_semaine !== undefined ? joursSemaine[d.permanent_jour_semaine] : '';
             permBlock = `
             <div class="d-flex align-items-center gap-2 p-2 rounded mb-3 desir-perm-block">
               <i class="bi bi-pin-angle-fill desir-perm-icon"></i>
               <div>
-                <span class="fw-600 desir-perm-label">Désir permanent</span>
-                ${jourLabel ? `<small class="text-muted d-block">Chaque ${jourLabel} — validé automatiquement</small>` : ''}
+                <span class="fw-600 desir-perm-label">D\u00e9sir permanent</span>
+                ${jourLabel ? `<small class="text-muted d-block">Chaque ${jourLabel} \u2014 valid\u00e9 automatiquement</small>` : ''}
               </div>
             </div>`;
         }
 
-        // Horaire block
         let horaireBlock = '';
         if (d.type === 'horaire_special') {
             const couleur = d.horaire_couleur || '#9B51E0';
@@ -316,19 +429,18 @@
                   <span class="fw-bold" style="font-size:1.5rem;color:${escapeHtml(couleur)}">${escapeHtml(d.horaire_code)}</span>
                   <div>
                     <div class="fw-600">${escapeHtml(d.horaire_nom || '')}</div>
-                    <small class="text-muted">${escapeHtml(d.horaire_debut || '')} — ${escapeHtml(d.horaire_fin || '')}</small>
+                    <small class="text-muted">${escapeHtml(d.horaire_debut || '')} \u2014 ${escapeHtml(d.horaire_fin || '')}</small>
                     ${d.horaire_duree ? `<small class="text-muted ms-2">(${d.horaire_duree}h)</small>` : ''}
                   </div>
                 </div>`;
             }
         }
 
-        // Détail seulement s'il existe
         let detailBlock = '';
         if (d.detail) {
             detailBlock = `
             <div class="p-2 rounded mb-3 desir-detail-block">
-              <small class="text-muted"><i class="bi bi-pencil"></i> Détail</small>
+              <small class="text-muted"><i class="bi bi-pencil"></i> D\u00e9tail</small>
               <div class="desir-detail-text">${escapeHtml(d.detail)}</div>
             </div>`;
         }
@@ -348,7 +460,6 @@
             </div>`;
         }
 
-        // Champ commentaire refus
         let refusCommentHtml = '';
         if (d.statut === 'en_attente') {
             refusCommentHtml = `
@@ -373,20 +484,13 @@
             ${refusCommentHtml}
         `;
 
-        // Footer
         const footer = document.getElementById('desirModalFooter');
         if (d.statut === 'en_attente') {
             footer.innerHTML = `
-              <button type="button" class="btn btn-outline-secondary px-3 py-1 desir-btn" data-bs-dismiss="modal">
-                Fermer
-              </button>
+              <button type="button" class="btn btn-outline-secondary px-3 py-1 desir-btn" data-bs-dismiss="modal">Fermer</button>
               <div class="ms-auto d-flex gap-2">
-                <button type="button" class="btn btn-desir-refuser px-3 py-1 desir-btn" id="btnRefuserDesir">
-                  <i class="bi bi-x-circle"></i> Refuser
-                </button>
-                <button type="button" class="btn btn-desir-valider px-3 py-1 desir-btn" id="btnValiderDesir">
-                  <i class="bi bi-check-circle"></i> Valider
-                </button>
+                <button type="button" class="btn btn-desir-refuser px-3 py-1 desir-btn" id="btnRefuserDesir"><i class="bi bi-x-circle"></i> Refuser</button>
+                <button type="button" class="btn btn-desir-valider px-3 py-1 desir-btn" id="btnValiderDesir"><i class="bi bi-check-circle"></i> Valider</button>
               </div>`;
 
             footer.querySelector('#btnValiderDesir').addEventListener('click', () => doValidate(d.id, 'valide'));
@@ -396,23 +500,15 @@
                     block.classList.remove('desir-hidden');
                     document.getElementById('refusCommentaire').focus();
                     footer.querySelector('#btnRefuserDesir').innerHTML = '<i class="bi bi-x-circle"></i> Confirmer le refus';
-                    footer.querySelector('#btnRefuserDesir').classList.remove('btn-desir-refuser');
-                    footer.querySelector('#btnRefuserDesir').classList.add('btn-danger');
+                    footer.querySelector('#btnRefuserDesir').classList.replace('btn-desir-refuser', 'btn-danger');
                 } else {
-                    const commentaire = document.getElementById('refusCommentaire').value.trim();
-                    doValidate(d.id, 'refuse', commentaire);
+                    doValidate(d.id, 'refuse', document.getElementById('refusCommentaire').value.trim());
                 }
             });
 
-            // Si ouvert en mode refus, focus direct
-            if (startRefus) {
-                setTimeout(() => document.getElementById('refusCommentaire')?.focus(), 300);
-            }
+            if (startRefus) setTimeout(() => document.getElementById('refusCommentaire')?.focus(), 300);
         } else {
-            footer.innerHTML = `
-              <button type="button" class="btn btn-outline-secondary px-3 py-1 ms-auto desir-btn" data-bs-dismiss="modal">
-                Fermer
-              </button>`;
+            footer.innerHTML = `<button type="button" class="btn btn-outline-secondary px-3 py-1 ms-auto desir-btn" data-bs-dismiss="modal">Fermer</button>`;
         }
 
         modalInstance.show();
@@ -424,36 +520,29 @@
         if (res.success) {
             modalInstance.hide();
             showToast(res.message, 'success');
-            await loadDesirs();
-        } else {
-            showToast(res.message || 'Erreur', 'error');
-        }
+            location.reload();
+        } else { showToast(res.message || 'Erreur', 'error'); }
     }
 
     async function loadPermanentsPending() {
         const res = await adminApiPost('admin_get_permanents_pending');
-        const perms = res.permanents || [];
+        permsData = res.permanents || [];
         const section = document.getElementById('permanentsPendingSection');
         const tbody = document.getElementById('permanentsPendingBody');
         const countEl = document.getElementById('permanentsPendingCount');
 
-        if (!perms.length) {
-            section.classList.add('desir-hidden');
-            return;
-        }
-
+        if (!permsData.length) { section.classList.add('desir-hidden'); return; }
         section.classList.remove('desir-hidden');
-        countEl.textContent = perms.length;
+        countEl.textContent = permsData.length;
 
-        tbody.innerHTML = perms.map(p => {
+        tbody.innerHTML = permsData.map(p => {
             const jour = joursSemaine[p.jour_semaine] || '?';
             const isModification = !!p.replaces_id;
-
             const typeBadge = p.type === 'jour_off'
                 ? '<span class="badge badge-zt-jour-off">Jour off</span>'
-                : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>';
+                : '<span class="badge badge-zt-horaire-special">Horaire sp\u00e9cial</span>';
 
-            let horaireCell = '<span class="text-muted">—</span>';
+            let horaireCell = '<span class="text-muted">\u2014</span>';
             if (p.horaire_code) {
                 const c = p.horaire_couleur || '#9B51E0';
                 horaireCell = `<span class="badge badge-zt-horaire-dynamic" style="background:${escapeHtml(c)}">${escapeHtml(p.horaire_code)}</span>`;
@@ -465,8 +554,8 @@
                 const ancienType = p.ancien_type === 'jour_off' ? 'Jour off' : 'Horaire';
                 const ancienHoraire = p.ancien_horaire_code ? ` (${escapeHtml(p.ancien_horaire_code)})` : '';
                 modifCell = `
-                    <div class="perm-ancien"><small class="text-muted">Avant :</small> ${ancienJour} — ${ancienType}${ancienHoraire}</div>
-                    <div class="perm-nouveau"><small class="text-muted">Après :</small> ${jour} — ${p.type === 'jour_off' ? 'Jour off' : 'Horaire'}${p.horaire_code ? ' (' + escapeHtml(p.horaire_code) + ')' : ''}</div>`;
+                    <div class="perm-ancien"><small class="text-muted">Avant :</small> ${ancienJour} \u2014 ${ancienType}${ancienHoraire}</div>
+                    <div class="perm-nouveau"><small class="text-muted">Apr\u00e8s :</small> ${jour} \u2014 ${p.type === 'jour_off' ? 'Jour off' : 'Horaire'}${p.horaire_code ? ' (' + escapeHtml(p.horaire_code) + ')' : ''}</div>`;
             } else {
                 modifCell = '<span class="badge badge-permanent">Nouveau</span>';
             }
@@ -483,29 +572,11 @@
               <td>${horaireCell}</td>
               <td>${modifCell}</td>
               <td class="text-nowrap">
-                <button class="btn btn-sm btn-desir-valider me-1" data-perm-action="valide" data-perm-id="${p.id}" title="Valider">
-                  <i class="bi bi-check-lg"></i>
-                </button>
-                <button class="btn btn-sm btn-desir-refuser" data-perm-action="refuse" data-perm-id="${p.id}" title="Refuser">
-                  <i class="bi bi-x-lg"></i>
-                </button>
+                <button class="btn btn-sm btn-desir-valider me-1" data-perm-action="valide" data-perm-id="${p.id}" title="Valider"><i class="bi bi-check-lg"></i></button>
+                <button class="btn btn-sm btn-desir-refuser" data-perm-action="refuse" data-perm-id="${p.id}" title="Refuser"><i class="bi bi-x-lg"></i></button>
               </td>
             </tr>`;
         }).join('');
-
-        tbody.querySelectorAll('[data-perm-action]').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.permId;
-                const action = btn.dataset.permAction;
-                if (action === 'valide') {
-                    await doValidatePermanent(id, 'valide');
-                } else {
-                    const commentaire = prompt('Motif du refus (optionnel) :') || '';
-                    await doValidatePermanent(id, 'refuse', commentaire);
-                }
-            });
-        });
     }
 
     async function doValidatePermanent(id, statut, commentaire) {
@@ -514,9 +585,7 @@
         if (res.success) {
             showToast(res.message, 'success');
             await loadPermanentsPending();
-        } else {
-            showToast(res.message || 'Erreur', 'error');
-        }
+        } else { showToast(res.message || 'Erreur', 'error'); }
     }
 
     window.initDesirsPage = initDesirsPage;
