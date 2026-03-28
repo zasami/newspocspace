@@ -1,4 +1,9 @@
-<?php ?>
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$initResidents = Db::fetchAll(
+    "SELECT * FROM residents WHERE is_active = 1 ORDER BY nom, prenom"
+);
+?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0"><i class="bi bi-person-badge"></i> Résidents</h4>
   <button class="btn btn-primary btn-sm" id="resAddBtn"><i class="bi bi-plus-lg"></i> Ajouter un résident</button>
@@ -119,6 +124,7 @@
 
 <script<?= nonce() ?>>
 (function() {
+    const ssrResidents = <?= json_encode(array_values($initResidents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let modal = null;
     const modalEl = document.getElementById('resModal');
     if (modalEl) modal = new bootstrap.Modal(modalEl);
@@ -130,19 +136,14 @@
         document.getElementById('resMenuSpecialWrap').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    async function load() {
-        const search = document.getElementById('resSearch')?.value || '';
-        const showInactive = document.getElementById('resShowInactive')?.checked ? 1 : 0;
-        const res = await adminApiPost('admin_get_residents', { search, show_inactive: showInactive });
-        if (!res.success) return;
-
+    function renderResidents(residents) {
         tbody.innerHTML = '';
-        if (!res.residents?.length) {
+        if (!residents?.length) {
             tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">Aucun résident</td></tr>';
             return;
         }
 
-        res.residents.forEach(r => {
+        residents.forEach(r => {
             const tr = document.createElement('tr');
             if (!r.is_active) tr.style.opacity = '0.5';
             const corrName = [r.correspondant_prenom, r.correspondant_nom].filter(Boolean).join(' ');
@@ -174,6 +175,14 @@
 
             tbody.appendChild(tr);
         });
+    }
+
+    async function load() {
+        const search = document.getElementById('resSearch')?.value || '';
+        const showInactive = document.getElementById('resShowInactive')?.checked ? 1 : 0;
+        const res = await adminApiPost('admin_get_residents', { search, show_inactive: showInactive });
+        if (!res.success) return;
+        renderResidents(res.residents);
     }
 
     function openEdit(r) {
@@ -237,6 +246,6 @@
     });
     document.getElementById('resShowInactive')?.addEventListener('change', load);
 
-    load();
+    renderResidents(ssrResidents);
 })();
 </script>

@@ -1,3 +1,10 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$docServices = Db::fetchAll(
+    "SELECT s.*, (SELECT COUNT(*) FROM documents d WHERE d.service_id = s.id) AS doc_count
+     FROM document_services s ORDER BY s.ordre, s.nom"
+);
+?>
 <style>
 /* ─── Documents Admin ─── */
 .doc-toolbar { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; }
@@ -238,6 +245,7 @@
 
 <script<?= nonce() ?>>
 (function(){
+    const ssrServices = <?= json_encode(array_values($docServices), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let services = [];
     let currentFilter = '';
     let searchTimeout = null;
@@ -654,6 +662,9 @@
     });
 
     // ═══ Init ═══
-    loadServices().then(loadDocuments);
+    services = ssrServices;
+    renderServiceCards();
+    populateServiceSelects();
+    loadDocuments();
 })();
 </script>

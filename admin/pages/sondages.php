@@ -1,3 +1,15 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$sondageInitList = Db::fetchAll(
+    "SELECT s.*, u.prenom, u.nom,
+            (SELECT COUNT(*) FROM sondage_questions WHERE sondage_id = s.id) AS nb_questions,
+            (SELECT COUNT(DISTINCT user_id) FROM sondage_reponses WHERE sondage_id = s.id) AS nb_repondants
+     FROM sondages s
+     LEFT JOIN users u ON u.id = s.created_by
+     ORDER BY s.created_at DESC
+     LIMIT 20"
+);
+?>
 <!-- Admin Sondages Page -->
 <div class="container-fluid py-3">
 
@@ -109,17 +121,18 @@
 
 <script<?= nonce() ?>>
 (function() {
+    const sondageInitData = <?= json_encode(array_values($sondageInitList), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let selectedId = null;
     let currentStatut = '';
 
     // ─── Init ───
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         // Auto-select sondage if returning from editor
         const urlParams = new URLSearchParams(window.location.search);
         const autoSelect = urlParams.get('selected');
         if (autoSelect) selectedId = autoSelect;
 
-        await loadList();
+        renderList(sondageInitData);
 
         // Auto-load selected sondage after list is rendered
         if (autoSelect) loadDetail(autoSelect);
@@ -162,28 +175,16 @@
         }
     });
 
-    // ─── Load list ───
-    async function loadList() {
+    // ─── Render list ───
+    function renderList(list) {
         const container = document.getElementById('sondageListContainer');
-        container.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
 
-        const topInput = document.getElementById('topbarSearchInput');
-        const result = await adminApiPost('admin_get_sondages', {
-            search: topInput ? topInput.value : '',
-            statut: currentStatut,
-        });
-
-        if (!result.success) {
-            container.innerHTML = '<div class="text-center py-4 text-danger">Erreur de chargement</div>';
-            return;
-        }
-
-        if (!result.list || result.list.length === 0) {
+        if (!list || list.length === 0) {
             container.innerHTML = '<div class="text-center py-4 text-muted">Aucun sondage</div>';
             return;
         }
 
-        container.innerHTML = result.list.map(s => {
+        container.innerHTML = list.map(s => {
             const date = new Date(s.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
             const statusBadge = s.statut === 'ouvert'
                 ? '<span class="badge bg-success">Ouvert</span>'
@@ -205,6 +206,25 @@
         container.querySelectorAll('.sondage-item').forEach(item => {
             item.addEventListener('click', () => loadDetail(item.dataset.id));
         });
+    }
+
+    // ─── Load list ───
+    async function loadList() {
+        const container = document.getElementById('sondageListContainer');
+        container.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
+
+        const topInput = document.getElementById('topbarSearchInput');
+        const result = await adminApiPost('admin_get_sondages', {
+            search: topInput ? topInput.value : '',
+            statut: currentStatut,
+        });
+
+        if (!result.success) {
+            container.innerHTML = '<div class="text-center py-4 text-danger">Erreur de chargement</div>';
+            return;
+        }
+
+        renderList(result.list);
     }
 
     // ─── Load detail ───

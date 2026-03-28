@@ -1,3 +1,10 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$pvAdminModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, nom");
+$pvAdminEtages = Db::fetchAll("SELECT e.id, e.nom, e.code, m.id AS module_id, m.code AS module_code FROM etages e JOIN modules m ON m.id = e.module_id ORDER BY m.ordre, e.ordre");
+$pvAdminFonctions = Db::fetchAll("SELECT id, nom, code FROM fonctions ORDER BY ordre, nom");
+$pvAdminUsers = Db::fetchAll("SELECT u.id, u.prenom, u.nom, u.fonction_id, u.email, u.photo, f.nom AS fonction_nom FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id ORDER BY u.nom, u.prenom");
+?>
 <!-- PV List Page -->
 <style>
 /* PV Badge Colors - Theme aligned */
@@ -330,8 +337,14 @@
 </div>
 
 <script<?= nonce() ?>>
-document.addEventListener('DOMContentLoaded', async function() {
-  const refs = await adminApiPost('admin_get_pv_refs', {});
+document.addEventListener('DOMContentLoaded', function() {
+  const refs = {
+      success: true,
+      modules: <?= json_encode(array_values($pvAdminModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+      etages: <?= json_encode(array_values($pvAdminEtages), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+      fonctions: <?= json_encode(array_values($pvAdminFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+      users: <?= json_encode(array_values($pvAdminUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>
+  };
   if (!refs.success) return;
 
   // Fill selects
