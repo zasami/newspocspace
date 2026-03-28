@@ -25,7 +25,17 @@ export async function init() {
         if (principal) activeModuleId = principal.module_id || principal.id;
     }
 
-    await load();
+    const ssrData = window.__ZT_PAGE_DATA__;
+    if (ssrData?.success) {
+        data = ssrData;
+        weekStart = ssrData.week_start;
+        document.getElementById('repWeekLabel').textContent = `Semaine ${ssrData.week_num} — ${fmtShort(ssrData.week_start)} au ${fmtShort(ssrData.week_end)}`;
+        if (!activeModuleId && data.modules.length) activeModuleId = data.modules[0].id;
+        renderTabs();
+        renderGrid();
+    } else {
+        await load();
+    }
 }
 
 async function load() {

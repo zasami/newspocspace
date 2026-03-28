@@ -1,4 +1,65 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$repDto = new DateTime();
+$repDow = (int)$repDto->format('N');
+$repDto->modify('-' . ($repDow - 1) . ' days');
+$repWeekStart = $repDto->format('Y-m-d');
+$repDtoEnd = clone $repDto;
+$repDtoEnd->modify('+6 days');
+$repWeekEnd = $repDtoEnd->format('Y-m-d');
+$repWeekNum = (int)$repDto->format('W');
+$repYear = (int)$repDto->format('o');
+
+$repModules = Db::fetchAll("SELECT id, nom, code, ordre FROM modules ORDER BY ordre");
+$repHoraires = Db::fetchAll("SELECT id, code, heure_debut, heure_fin, duree_effective, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code");
+$repFonctions = Db::fetchAll("SELECT id, nom, code, ordre FROM fonctions ORDER BY ordre");
+$repUsers = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom,
+            f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
+            hm.id AS home_module_id, hm.code AS home_module_code, hm.nom AS home_module_nom
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules hm ON hm.id = um.module_id
+     WHERE u.is_active = 1
+     ORDER BY f.ordre, u.nom"
+);
+$repMoisStart = $repDto->format('Y-m');
+$repMoisEnd = $repDtoEnd->format('Y-m');
+$repMoisList = array_unique([$repMoisStart, $repMoisEnd]);
+$repPh = implode(',', array_fill(0, count($repMoisList), '?'));
+$repPlannings = Db::fetchAll("SELECT id, mois_annee, statut FROM plannings WHERE mois_annee IN ($repPh)", $repMoisList);
+$repPlanningIds = array_column($repPlannings, 'id');
+$repAssignments = [];
+if ($repPlanningIds) {
+    $repPhPlan = implode(',', array_fill(0, count($repPlanningIds), '?'));
+    $repAssignments = Db::fetchAll(
+        "SELECT pa.date_jour, pa.user_id, pa.statut,
+                ht.code AS horaire_code, ht.couleur AS horaire_couleur,
+                ht.heure_debut, ht.heure_fin,
+                m.code AS module_code, m.id AS module_id
+         FROM planning_assignations pa
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         LEFT JOIN modules m ON m.id = pa.module_id
+         WHERE pa.planning_id IN ($repPhPlan)
+           AND pa.date_jour BETWEEN ? AND ?
+         ORDER BY pa.date_jour, m.ordre",
+        array_merge($repPlanningIds, [$repWeekStart, $repWeekEnd])
+    );
+}
+$repFrDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+$repDays = [];
+for ($repI = 0; $repI < 7; $repI++) {
+    $repD = clone $repDto;
+    $repD->modify("+$repI days");
+    $repDays[] = [
+        'date'       => $repD->format('Y-m-d'),
+        'label'      => $repFrDays[$repI] . ' ' . $repD->format('d'),
+        'short'      => $repFrDays[$repI],
+        'is_weekend' => in_array($repD->format('N'), ['6', '7']),
+    ];
+}
+?>
 <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
   <div>
     <h1><i class="bi bi-grid-3x3-gap"></i> Répartition</h1>
@@ -44,3 +105,16 @@
     </table>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode([
+    'success'     => true,
+    'week_start'  => $repWeekStart,
+    'week_end'    => $repWeekEnd,
+    'week_num'    => $repWeekNum,
+    'year'        => $repYear,
+    'days'        => $repDays,
+    'modules'     => $repModules,
+    'horaires'    => $repHoraires,
+    'fonctions'   => $repFonctions,
+    'users'       => $repUsers,
+    'assignments' => $repAssignments,
+], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
