@@ -1,3 +1,10 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$apModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+$apFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
+$apEtages = Db::fetchAll("SELECT e.*, m.nom AS module_nom, m.code AS module_code FROM etages e JOIN modules m ON m.id = e.module_id ORDER BY m.ordre, e.ordre");
+$apCfgRow = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_tabs_config'");
+?>
 <div class="row">
   <div class="col-lg-8">
     <div class="card">
@@ -165,23 +172,14 @@
 
 <script<?= nonce() ?>>
 (function() {
+    let modulesData = <?= json_encode(array_values($apModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let fonctionsData = <?= json_encode(array_values($apFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let etagesData = <?= json_encode(array_values($apEtages), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let tabs = [];
-    let modulesData = [];
-    let fonctionsData = [];
-    let etagesData = [];
 
-    async function initAffichageplanningPage() {
-        // Load refs + etages in parallel
-        const [refsRes, etagesRes, cfgRes] = await Promise.all([
-            adminApiPost('admin_get_planning_refs'),
-            adminApiPost('admin_get_etages'),
-            adminApiPost('admin_get_config'),
-        ]);
-        modulesData = refsRes.modules || [];
-        fonctionsData = refsRes.fonctions || [];
-        etagesData = etagesRes.etages || [];
-
-        const cfg = cfgRes.config || {};
+    function initAffichageplanningPage() {
+        const planningTabsCfg = <?= json_encode($apCfgRow, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+        const cfg = planningTabsCfg ? { planning_tabs_config: planningTabsCfg } : {};
 
         if (cfg.planning_tabs_config) {
             try {

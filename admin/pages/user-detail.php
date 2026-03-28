@@ -1,6 +1,28 @@
 <?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
 $userId = $_GET['id'] ?? '';
 if (!$userId) { header('Location: ' . admin_url('users')); exit; }
+
+$detailUser = null;
+if ($userId) {
+    $detailUser = Db::fetch(
+        "SELECT u.*, f.nom AS fonction_nom, f.code AS fonction_code
+         FROM users u
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE u.id = ?",
+        [$userId]
+    );
+    if ($detailUser) {
+        unset($detailUser['password'], $detailUser['reset_token'], $detailUser['reset_expires']);
+        $detailUser['modules'] = Db::fetchAll(
+            "SELECT m.id, m.nom, m.code, um.is_principal
+             FROM user_modules um
+             JOIN modules m ON m.id = um.module_id
+             WHERE um.user_id = ?",
+            [$userId]
+        );
+    }
+}
 ?>
 <style>
 /* User detail page classes */
@@ -135,16 +157,16 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
 <script<?= nonce() ?>>
 (function() {
     const userId = '<?= h($userId) ?>';
+    const ssrUser = <?= $detailUser ? json_encode($detailUser, JSON_HEX_TAG | JSON_HEX_APOS) : 'null' ?>;
     const joursSemaine = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
     const joursComplets = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
-    async function initUserdetailPage() {
-        if (!userId) return;
-
-        // Load user header
-        const res = await adminApiPost('admin_get_user', { id: userId });
-        if (!res.success) { showToast('Utilisateur non trouvé', 'error'); return; }
-        const u = res.user;
+    function initUserdetailPage() {
+        if (!userId || !ssrUser) {
+            showToast('Utilisateur non trouvé', 'error');
+            return;
+        }
+        const u = ssrUser;
 
         const modules = (u.modules || []).map(m => `<span class="badge bg-info bg-opacity-25 text-dark border me-1">${escapeHtml(m.code)}</span>`).join('');
         const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
@@ -203,7 +225,7 @@ if (!$userId) { header('Location: ' . admin_url('users')); exit; }
             loadPermissionsModal(userId);
         });
 
-        await Promise.all([loadDesirs(), loadPermanents(), loadAbsences(), loadPlanning()]);
+        Promise.all([loadDesirs(), loadPermanents(), loadAbsences(), loadPlanning()]);
     }
 
     async function loadDesirs() {

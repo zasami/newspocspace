@@ -1,3 +1,25 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$planningUsers = Db::fetchAll(
+    "SELECT u.id, u.nom, u.prenom, u.taux, u.role, u.type_contrat,
+            f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
+            GROUP_CONCAT(m.id ORDER BY um.is_principal DESC) AS module_ids,
+            GROUP_CONCAT(m.code ORDER BY um.is_principal DESC) AS module_codes
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id
+     LEFT JOIN modules m ON m.id = um.module_id
+     WHERE u.is_active = 1
+     GROUP BY u.id
+     ORDER BY f.ordre, u.nom, u.prenom"
+);
+$planningHoraires = Db::fetchAll(
+    "SELECT id, code, nom, heure_debut, heure_fin, duree_effective, couleur
+     FROM horaires_types WHERE is_active = 1 ORDER BY code"
+);
+$planningModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+$planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
+?>
 <!-- Planning Admin — Toolbar -->
 <div class="planning-toolbar" id="planningToolbar">
   <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -612,7 +634,13 @@
 (function() {
     let planning = null;
     let assignations = [];
-    let refs = { users: [], horaires: [], modules: [], fonctions: [] };
+    let refs = {
+        success: true,
+        users: <?= json_encode(array_values($planningUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+        horaires: <?= json_encode(array_values($planningHoraires), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+        modules: <?= json_encode(array_values($planningModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+        fonctions: <?= json_encode(array_values($planningFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>
+    };
     let currentWeekStart = null;
     let cellModal = null;
     let statsModal = null;
@@ -662,13 +690,9 @@
             if (e.key === 'Escape' && isFullscreen && !document.querySelector('.modal.show')) toggleFullscreen();
         });
 
-        // Load refs first
-        const refsRes = await adminApiPost('admin_get_planning_refs');
-        if (refsRes.success) {
-            refs = refsRes;
-            populateFilters();
-            buildModuleSwitch();
-        }
+        // Refs already injected by PHP
+        populateFilters();
+        buildModuleSwitch();
 
         await reload();
     }
