@@ -30,9 +30,9 @@
 .fam-sidebar {
   width: 240px; flex-shrink: 0; background: var(--fam-surface); border-right: 1px solid var(--fam-border);
   display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
-  overflow-y: auto;
+  overflow: hidden;
 }
-.fam-sb-profile { padding: 28px 20px 20px; text-align: center; border-bottom: 1px solid var(--fam-border); }
+.fam-sb-profile { padding: 28px 20px 20px; text-align: center; border-bottom: 1px solid var(--fam-border); flex-shrink: 0; }
 .fam-sb-avatar {
   width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 12px; overflow: hidden;
   background: var(--fam-green-light); display: flex; align-items: center; justify-content: center;
@@ -43,7 +43,7 @@
 .fam-sb-room { font-size: .82rem; color: var(--fam-text-muted); margin-top: 2px; }
 
 /* ── Nav cards (grands carrés) ── */
-.fam-sb-nav { padding: 16px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.fam-sb-nav { padding: 16px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .fam-sb-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   padding: 20px 12px; border-radius: var(--fam-radius); border: 1.5px solid var(--fam-border);
@@ -62,7 +62,7 @@
 }
 
 /* ── Footer ── */
-.fam-sb-footer { padding: 14px; border-top: 1px solid var(--fam-border); }
+.fam-sb-footer { padding: 14px; border-top: 1px solid var(--fam-border); flex-shrink: 0; }
 .fam-sb-logout {
   width: 100%; padding: 10px; border-radius: var(--fam-radius-sm); border: 1.5px solid var(--fam-border);
   background: transparent; color: var(--fam-text-muted); font-size: .85rem; font-weight: 500;
