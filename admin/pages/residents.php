@@ -223,11 +223,14 @@ $initResidents = Db::fetchAll(
             const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
             const corrName = [r.correspondant_prenom, r.correspondant_nom].filter(Boolean).join(' ');
 
-            const hasPhoto = r.photo_path && r.photo_iv;
+            const photoSrc = r.photo_url || null;
+            const hasEncPhoto = r.photo_path && r.photo_iv;
             const avatarId = 'av_' + r.id.replace(/-/g, '');
 
             tr.innerHTML =
-                '<td><div class="' + (hasPhoto ? 'res-avatar' : 'res-avatar-initials') + '" id="' + avatarId + '">' + (hasPhoto ? '' : escapeHtml(initials)) + '</div></td>' +
+                '<td>' + (photoSrc
+                    ? '<img class="res-avatar" src="' + escapeHtml(photoSrc) + '" alt="">'
+                    : '<div class="' + (hasEncPhoto ? 'res-avatar' : 'res-avatar-initials') + '" id="' + avatarId + '">' + (hasEncPhoto ? '' : escapeHtml(initials)) + '</div>') + '</td>' +
                 '<td><strong>' + escapeHtml(r.nom) + '</strong></td>' +
                 '<td>' + escapeHtml(r.prenom) + '</td>' +
                 '<td>' + escapeHtml(r.chambre || '-') + '</td>' +
@@ -258,8 +261,8 @@ $initResidents = Db::fetchAll(
 
             tbody.appendChild(tr);
 
-            // Lazy decrypt photo
-            if (hasPhoto) {
+            // Lazy decrypt E2EE photo (only if no direct photo_url)
+            if (hasEncPhoto && !photoSrc) {
                 const avatarEl = document.getElementById(avatarId);
                 if (avatarEl) {
                     const img = document.createElement('img');
@@ -311,7 +314,13 @@ $initResidents = Db::fetchAll(
         placeholder.style.display = '';
         delBtn.style.display = 'none';
 
-        if (r && r.photo_path && photoCache[r.id]) {
+        if (r && r.photo_url) {
+            const img = document.createElement('img');
+            img.src = r.photo_url;
+            zone.insertBefore(img, zone.firstChild);
+            placeholder.style.display = 'none';
+            delBtn.style.display = '';
+        } else if (r && r.photo_path && photoCache[r.id]) {
             const img = document.createElement('img');
             img.src = photoCache[r.id];
             zone.insertBefore(img, zone.firstChild);
