@@ -1,4 +1,73 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$chgCurrentMois = date('Y-m');
+
+// Mon planning du mois courant
+$chgPlanning = Db::fetch("SELECT id, statut FROM plannings WHERE mois_annee = ?", [$chgCurrentMois]);
+$chgMyPlanning = [];
+if ($chgPlanning) {
+    $chgMyPlanning = Db::fetchAll(
+        "SELECT pa.id AS assignation_id, pa.date_jour, pa.statut AS assign_statut,
+                ht.id AS horaire_type_id, ht.code AS horaire_code, ht.nom AS horaire_nom,
+                ht.couleur, ht.heure_debut, ht.heure_fin,
+                m.nom AS module_nom, m.code AS module_code
+         FROM planning_assignations pa
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         LEFT JOIN modules m ON m.id = pa.module_id
+         WHERE pa.planning_id = ? AND pa.user_id = ?
+         ORDER BY pa.date_jour",
+        [$chgPlanning['id'], $uid]
+    );
+}
+
+// Collègues (même logique que get_collegues())
+$chgUserRow = Db::fetch("SELECT fonction_id FROM users WHERE id = ?", [$uid]);
+$chgFonctionId = $chgUserRow['fonction_id'] ?? null;
+$chgAllCollegues = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.photo, u.taux, u.fonction_id,
+            f.nom AS fonction_nom, f.code AS fonction_code,
+            m.nom AS module_nom, m.code AS module_code
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN (
+         SELECT pa.user_id, pa.module_id
+         FROM planning_assignations pa
+         WHERE pa.module_id IS NOT NULL
+         ORDER BY pa.date_jour DESC
+         LIMIT 1000
+     ) last_pa ON last_pa.user_id = u.id
+     LEFT JOIN modules m ON m.id = last_pa.module_id
+     WHERE u.id != ? AND u.is_active = 1
+     GROUP BY u.id
+     ORDER BY u.nom, u.prenom",
+    [$uid]
+);
+
+// Mes changements
+$chgChangements = Db::fetchAll(
+    "SELECT ch.*,
+            ud.prenom AS demandeur_prenom, ud.nom AS demandeur_nom,
+            ude.prenom AS destinataire_prenom, ude.nom AS destinataire_nom,
+            ht_dem.code AS horaire_demandeur_code, ht_dem.nom AS horaire_demandeur_nom, ht_dem.couleur AS horaire_demandeur_couleur,
+            ht_dest.code AS horaire_destinataire_code, ht_dest.nom AS horaire_destinataire_nom, ht_dest.couleur AS horaire_destinataire_couleur,
+            m_dem.nom AS module_demandeur_nom, m_dest.nom AS module_destinataire_nom,
+            ut.prenom AS traite_par_prenom, ut.nom AS traite_par_nom
+     FROM changements_horaire ch
+     JOIN users ud ON ud.id = ch.demandeur_id
+     JOIN users ude ON ude.id = ch.destinataire_id
+     JOIN planning_assignations pa_dem ON pa_dem.id = ch.assignation_demandeur_id
+     JOIN planning_assignations pa_dest ON pa_dest.id = ch.assignation_destinataire_id
+     LEFT JOIN horaires_types ht_dem ON ht_dem.id = pa_dem.horaire_type_id
+     LEFT JOIN horaires_types ht_dest ON ht_dest.id = pa_dest.horaire_type_id
+     LEFT JOIN modules m_dem ON m_dem.id = pa_dem.module_id
+     LEFT JOIN modules m_dest ON m_dest.id = pa_dest.module_id
+     LEFT JOIN users ut ON ut.id = ch.traite_par
+     WHERE ch.demandeur_id = ? OR ch.destinataire_id = ?
+     ORDER BY ch.created_at DESC",
+    [$uid, $uid]
+);
+?>
 <div class="page-header">
   <h1><i class="bi bi-arrow-left-right"></i> Changements d'horaire</h1>
   <p>Proposer un échange d'horaire croisé avec un collègue</p>
@@ -125,3 +194,10 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode([
+    'my_planning'  => $chgMyPlanning,
+    'collegues'    => $chgAllCollegues,
+    'changements'  => $chgChangements,
+    'my_fonction_id' => $chgFonctionId,
+    'current_mois' => $chgCurrentMois,
+], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

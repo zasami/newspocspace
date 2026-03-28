@@ -33,14 +33,12 @@ export async function init() {
     const modalEl = document.getElementById('menuReservationModal');
     if (modalEl) resModal = new bootstrap.Modal(modalEl);
 
-    const [desirsRes, unreadRes] = await Promise.all([
-        apiPost('get_mes_desirs', { mois: getCurrentMonth() }),
-        apiPost('get_unread_count'),
-    ]);
-
-    document.getElementById('statDesirs').textContent = (desirsRes.desirs?.length || 0) + '/4';
+    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    const desirCount = ssrData.desir_count || 0;
+    const maxDesirs = ssrData.max_desirs || 4;
+    document.getElementById('statDesirs').textContent = desirCount + '/' + maxDesirs;
     if (user?.taux) document.getElementById('statVacances').textContent = '—';
-    const unread = unreadRes.count || 0;
+    const unread = ssrData.unread_count || 0;
     document.getElementById('statMessages').textContent = unread;
     if (unread > 0) {
         const badge = document.getElementById('emailBadge');

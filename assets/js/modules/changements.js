@@ -28,10 +28,12 @@ let state = {
 let confirmModal = null;
 let refusModalInstance = null;
 
-export async function init() {
+export function init() {
+    const ssrData = window.__ZT_PAGE_DATA__ || {};
     const now = new Date();
-    state.myMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    state.myMonth = ssrData.current_mois || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     state.colMonth = state.myMonth;
+    state.myFonctionId = ssrData.my_fonction_id || null;
 
     // Bootstrap modals
     const cmEl = document.getElementById('chgConfirmModal');
@@ -43,7 +45,18 @@ export async function init() {
     if (cmEl) cmEl.addEventListener('hidden.bs.modal', onConfirmModalClosed);
 
     bindEvents();
-    await Promise.all([loadMyPlanning(), loadColleagues(), loadChangements()]);
+
+    // Seed state from SSR data and render immediately
+    state.myPlanning = ssrData.my_planning || [];
+    const allCollegues = ssrData.collegues || [];
+    state.collegues = state.myFonctionId
+        ? allCollegues.filter(c => c.fonction_id === state.myFonctionId)
+        : allCollegues;
+
+    renderMyPlanningFromState();
+    renderColleagueList();
+    renderChangements(ssrData.changements || []);
+
     el('chgMyHint')?.classList.remove('chg-hidden');
 }
 
@@ -82,6 +95,12 @@ function bindEvents() {
 }
 
 /* ═══ My planning ═══ */
+function renderMyPlanningFromState() {
+    const monthEl = el('chgMyMonth');
+    if (monthEl) monthEl.textContent = formatMonth(state.myMonth);
+    renderCalendar('chgMyCal', state.myMonth, state.myPlanning, onMyDayClick, state.dateDemandeur);
+}
+
 async function loadMyPlanning() {
     const monthEl = el('chgMyMonth');
     if (monthEl) monthEl.textContent = formatMonth(state.myMonth);
@@ -89,7 +108,7 @@ async function loadMyPlanning() {
 
     const res = await apiPost('get_mon_planning_mois', { mois: state.myMonth });
     state.myPlanning = res.assignations || [];
-    renderCalendar('chgMyCal', state.myMonth, state.myPlanning, onMyDayClick, state.dateDemandeur);
+    renderMyPlanningFromState();
 }
 
 function onMyDayClick(date, assign) {
@@ -730,11 +749,13 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
 
 /* ═══ Changements list ═══ */
 async function loadChangements() {
+    const res = await apiPost('get_mes_changements');
+    renderChangements(res.changements || []);
+}
+
+function renderChangements(items) {
     const container = el('changementsList');
     if (!container) return;
-
-    const res = await apiPost('get_mes_changements');
-    const items = res.changements || [];
 
     const countEl = el('chgListCount');
     if (countEl) countEl.textContent = items.length;

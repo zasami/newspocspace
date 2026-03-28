@@ -1,4 +1,17 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$homeCurrentMois = date('Y-m');
+$homeDesirCount = (int) Db::getOne(
+    "SELECT COUNT(*) FROM desirs WHERE user_id = ? AND mois_cible = ?",
+    [$uid, $homeCurrentMois]
+);
+$homeMaxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: 4);
+$homeUnread = (int) Db::getOne(
+    "SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
+    [$uid]
+);
+?>
 <div class="page-header">
   <h1>Bonjour <span id="homeUserName"></span></h1>
   <p>Voici votre tableau de bord</p>
@@ -114,3 +127,8 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode([
+    'desir_count' => $homeDesirCount,
+    'max_desirs'  => $homeMaxDesirs,
+    'unread_count' => $homeUnread,
+], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
