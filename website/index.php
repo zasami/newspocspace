@@ -2,20 +2,21 @@
 // Load zerdaTime DB to fetch dynamic menus
 require_once __DIR__ . '/../init.php';
 
-// Get current week's menus (Monday → Sunday)
+// Get 4 weeks of menus (current week Monday → +27 days) for continuous carousel
 $dt = new DateTime();
 $dow = (int) $dt->format('N');
 $wsMonday = (clone $dt)->modify('-' . ($dow - 1) . ' days');
-$wsSunday = (clone $wsMonday)->modify('+6 days');
+$wsEnd = (clone $wsMonday)->modify('+27 days');
 $wsMenus = Db::fetchAll(
     "SELECT date_jour, repas, entree, plat, salade, accompagnement, dessert, remarques
      FROM menus WHERE date_jour BETWEEN ? AND ? ORDER BY date_jour ASC, repas ASC",
-    [$wsMonday->format('Y-m-d'), $wsSunday->format('Y-m-d')]
+    [$wsMonday->format('Y-m-d'), $wsEnd->format('Y-m-d')]
 );
 $wsMenusByKey = [];
 foreach ($wsMenus as $m) {
     $wsMenusByKey[$m['date_jour'] . '_' . $m['repas']] = $m;
 }
+$wsStartDate = $dt->format('Y-m-d');
 $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 ?>
 <!DOCTYPE html>
@@ -318,12 +319,6 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       </p>
     </div>
     <div class="ws-menu-week">
-      <!-- Week nav -->
-      <div class="ws-menu-nav">
-        <button class="ws-menu-nav-btn" id="wsMenuPrev"><i class="bi bi-chevron-left"></i></button>
-        <span class="ws-menu-nav-label" id="wsMenuWeekLabel"></span>
-        <button class="ws-menu-nav-btn" id="wsMenuNext"><i class="bi bi-chevron-right"></i></button>
-      </div>
       <!-- Carousel container -->
       <div class="ws-carousel-wrap">
         <button class="ws-carousel-arrow ws-carousel-arrow-left" id="wsCarouselLeft"><i class="bi bi-chevron-left"></i></button>
@@ -432,24 +427,23 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 (function() {
     const DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
     const API = '/zerdatime/website/api.php';
-    let currentWeekOffset = 0;
-    let carouselPos = 0;
-    let menusCache = [];
     let authCache = null; // { email, password, resident }
 
-    function getMonday(offset) {
-        const d = new Date();
-        const day = d.getDay();
-        d.setDate(d.getDate() - day + (day === 0 ? -6 : 1) + offset * 7);
-        d.setHours(0,0,0,0);
-        return d;
-    }
+    // ── Menus cache indexé par "date_repas" ──
+    const menusByKey = {};
+    <?= json_encode(array_values($wsMenus), JSON_HEX_TAG | JSON_HEX_APOS) ?>.forEach(m => {
+        menusByKey[m.date_jour + '_' + (m.repas || 'midi')] = m;
+    });
+
+    // ── Date de départ du carousel (aujourd'hui) ──
+    const startDate = new Date('<?= $wsStartDate ?>T00:00:00');
+    // Limite : lundi de cette semaine → +27 jours
+    const minDate = new Date('<?= $wsMonday->format('Y-m-d') ?>T00:00:00');
+    const maxDate = new Date('<?= $wsEnd->format('Y-m-d') ?>T00:00:00');
+    let currentStart = new Date(startDate);
 
     function fmtDate(d) {
         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    }
-    function fmtDateFr(d) {
-        return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
     }
     function esc(s) { const t = document.createElement('span'); t.textContent = s; return t.innerHTML; }
 
@@ -462,82 +456,38 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         return res.json();
     }
 
-    // ── Week nav ──
-    function updateWeekLabel() {
-        const mon = getMonday(currentWeekOffset);
-        const sun = new Date(mon); sun.setDate(sun.getDate()+6);
-        const label = document.getElementById('wsMenuWeekLabel');
-        if (label) {
-            const weekLabel = currentWeekOffset === 0 ? 'Cette semaine' :
-                currentWeekOffset === 1 ? 'Semaine prochaine' :
-                'Semaine du ' + fmtDateFr(mon);
-            label.textContent = weekLabel + ' — ' + fmtDateFr(mon) + ' au ' + fmtDateFr(sun);
-        }
+    // ── Carousel arrows = ±1 jour ──
+    document.getElementById('wsCarouselLeft')?.addEventListener('click', () => navigateDay(-1));
+    document.getElementById('wsCarouselRight')?.addEventListener('click', () => navigateDay(1));
+
+    function navigateDay(dir) {
+        const next = new Date(currentStart);
+        next.setDate(next.getDate() + dir);
+        // Vérifier les limites (le 3e jour visible ne dépasse pas maxDate)
+        const lastVisible = new Date(next); lastVisible.setDate(lastVisible.getDate() + 2);
+        if (next < minDate || lastVisible > maxDate) return;
+        currentStart = next;
+        renderCards();
     }
 
-    document.getElementById('wsMenuPrev')?.addEventListener('click', () => {
-        if (currentWeekOffset > 0) { currentWeekOffset--; carouselPos = 0; loadWeek(); }
-    });
-    document.getElementById('wsMenuNext')?.addEventListener('click', () => {
-        if (currentWeekOffset < 3) { currentWeekOffset++; carouselPos = 0; loadWeek(); }
-    });
-
-    // ── Carousel arrows ──
-    document.getElementById('wsCarouselLeft')?.addEventListener('click', () => slideCarousel(-1));
-    document.getElementById('wsCarouselRight')?.addEventListener('click', () => slideCarousel(1));
-
-    function slideCarousel(dir) {
-        const newPos = carouselPos + dir;
-        // Passage à la semaine suivante quand on dépasse la fin
-        if (newPos > 4 && currentWeekOffset < 3) {
-            currentWeekOffset++;
-            carouselPos = 0;
-            loadWeek();
-            return;
-        }
-        // Passage à la semaine précédente quand on dépasse le début
-        if (newPos < 0 && currentWeekOffset > 0) {
-            currentWeekOffset--;
-            carouselPos = 4;
-            loadWeek();
-            return;
-        }
-        carouselPos = Math.max(0, Math.min(newPos, 4));
-        updateCarouselPosition();
-    }
-
-    function updateCarouselPosition() {
-        const track = document.getElementById('wsCarouselTrack');
-        if (!track) return;
-        track.style.transform = 'translateX(-' + (carouselPos * (100/3)) + '%)';
-    }
-
-    // ── Load menus ──
-    async function loadWeek() {
-        updateWeekLabel();
-        const mon = getMonday(currentWeekOffset);
-        const res = await apiCall('get_menus_semaine', { date: fmtDate(mon) });
-        menusCache = res.menus || [];
-
-        const menusByKey = {};
-        menusCache.forEach(m => { menusByKey[m.date_jour+'_'+(m.repas||'midi')] = m; });
-
+    // ── Rendu des 3 cartes visibles ──
+    function renderCards() {
         const track = document.getElementById('wsCarouselTrack');
         if (!track) return;
         const today = fmtDate(new Date());
-
         const MEAL_PRICE = { midi: 'CHF 14.50', soir: 'CHF 11.00' };
 
         track.innerHTML = '';
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(mon); d.setDate(d.getDate()+i);
+        for (let i = 0; i < 3; i++) {
+            const d = new Date(currentStart);
+            d.setDate(d.getDate() + i);
             const dateStr = fmtDate(d);
             const isToday = dateStr === today;
             const isPast = dateStr < today;
             const dayName = DAYS[d.getDay()];
-            const midi = menusByKey[dateStr+'_midi'];
-            const soir = menusByKey[dateStr+'_soir'];
-            const dayLabel = dayName + ' ' + d.getDate()+'/'+(d.getMonth()+1);
+            const midi = menusByKey[dateStr + '_midi'];
+            const soir = menusByKey[dateStr + '_soir'];
+            const dayLabel = dayName + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
 
             const wrapper = document.createElement('div');
             wrapper.className = 'ws-menu-card' + (isToday ? ' is-today' : '');
@@ -550,19 +500,19 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
                 + buildMealBlock('soir', soir, MEAL_PRICE)
                 + '</div>'
                 + '<div class="ws-card-footer">'
-                + '<button class="ws-btn ws-btn-reserve" data-date="'+dateStr+'" data-day="'+esc(dayLabel)+'"'+(isPast?' disabled':'')+'>'+
-                '<i class="bi bi-calendar-plus"></i> Réserver un repas</button>'
+                + '<button class="ws-btn ws-btn-reserve" data-date="' + dateStr + '" data-day="' + esc(dayLabel) + '"' + (isPast ? ' disabled' : '') + '>'
+                + '<i class="bi bi-calendar-plus"></i> Réserver un repas</button>'
                 + '</div></div>';
 
             track.appendChild(wrapper);
         }
 
-        // Reserve buttons (only non-disabled)
+        // Reserve buttons
         track.querySelectorAll('.ws-btn-reserve:not([disabled])').forEach(btn => {
             btn.addEventListener('click', () => openReservation(btn.dataset.date, btn.dataset.day));
         });
 
-        // Equal height via JS
+        // Equal height
         requestAnimationFrame(() => {
             const inners = track.querySelectorAll('.ws-card-inner');
             let maxH = 0;
@@ -571,7 +521,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
             if (maxH) inners.forEach(el => { el.style.height = maxH + 'px'; });
         });
 
-        updateCarouselPosition();
+        // Plus besoin de translateX — on rend toujours exactement 3 cartes
+        track.style.transform = '';
     }
 
     function buildMealBlock(repas, menu, prices) {
@@ -764,8 +715,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         setModalStep('success');
     });
 
-    // Init
-    loadWeek();
+    // Init — rendu immédiat depuis données PHP
+    renderCards();
 })();
 </script>
 
