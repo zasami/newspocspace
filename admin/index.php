@@ -878,15 +878,29 @@ function adminPrompt(opts = {}) {
         });
     }
 
+    function getFileIcon(mime) {
+        if (mime.includes('pdf')) return 'bi-file-earmark-pdf-fill';
+        if (mime.includes('word') || mime.includes('document')) return 'bi-file-earmark-word-fill';
+        if (mime.includes('sheet') || mime.includes('excel')) return 'bi-file-earmark-excel-fill';
+        return 'bi-file-earmark';
+    }
+
     function renderPendingFiles() {
         const el = document.getElementById('globalAttPreviewList');
         if (!el) return;
         if (!pendingFiles.length) { el.innerHTML = ''; return; }
-        el.innerHTML = pendingFiles.map((f, i) =>
-            '<div class="att-preview-item"><span class="att-preview-name">' + escapeHtml(f.name) + '</span>'
-            + '<button type="button" class="att-preview-del" data-idx="' + i + '"><i class="bi bi-x"></i></button></div>'
-        ).join('');
-        el.querySelectorAll('.att-preview-del').forEach(btn => {
+        el.innerHTML = pendingFiles.map((f, i) => {
+            const isImg = f.type.startsWith('image/');
+            const thumb = isImg
+                ? '<img src="' + URL.createObjectURL(f) + '" alt="">'
+                : '<i class="bi ' + getFileIcon(f.type) + '"></i>';
+            return '<div class="att-preview-card">'
+                + '<div class="att-preview-thumb">' + thumb + '</div>'
+                + '<div class="att-preview-name" title="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</div>'
+                + '<button class="att-preview-remove" data-idx="' + i + '">&times;</button>'
+                + '</div>';
+        }).join('');
+        el.querySelectorAll('.att-preview-remove').forEach(btn => {
             btn.addEventListener('click', () => {
                 pendingFiles.splice(parseInt(btn.dataset.idx), 1);
                 renderPendingFiles();
