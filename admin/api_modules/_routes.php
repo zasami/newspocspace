@@ -110,6 +110,7 @@ return [
     ],
     'residents' => [
         'admin_get_residents', 'admin_create_resident', 'admin_update_resident', 'admin_toggle_resident',
+        'admin_upload_resident_photo', 'admin_serve_resident_photo', 'admin_delete_resident_photo',
     ],
     'menus' => [
         'admin_get_menus', 'admin_save_menu', 'admin_delete_menu',

@@ -109,3 +109,74 @@ function admin_toggle_resident()
     Db::exec("UPDATE residents SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?", [$id]);
     respond(['success' => true, 'message' => 'Statut modifié']);
 }
+
+function admin_upload_resident_photo()
+{
+    require_responsable();
+
+    $residentId = $_POST['resident_id'] ?? '';
+    $encryptedIv = $_POST['encrypted_iv'] ?? '';
+
+    if (!$residentId || !$encryptedIv) bad_request('Paramètres manquants');
+
+    $resident = Db::fetch("SELECT id, photo_path FROM residents WHERE id = ?", [$residentId]);
+    if (!$resident) not_found('Résident introuvable');
+
+    if (empty($_FILES['file'])) bad_request('Aucun fichier');
+
+    // Delete old photo if exists
+    if ($resident['photo_path']) {
+        $oldPath = __DIR__ . '/../../' . $resident['photo_path'];
+        if (file_exists($oldPath)) unlink($oldPath);
+    }
+
+    $dir = 'uploads/famille/' . $residentId;
+    $absDir = __DIR__ . '/../../' . $dir;
+    if (!is_dir($absDir)) mkdir($absDir, 0755, true);
+
+    $storedName = 'photo_' . Uuid::v4() . '.enc';
+    $destPath = $dir . '/' . $storedName;
+
+    move_uploaded_file($_FILES['file']['tmp_name'], $absDir . '/' . $storedName);
+
+    Db::exec(
+        "UPDATE residents SET photo_path = ?, photo_iv = ?, updated_at = NOW() WHERE id = ?",
+        [$destPath, $encryptedIv, $residentId]
+    );
+
+    respond(['success' => true, 'message' => 'Photo enregistrée']);
+}
+
+function admin_serve_resident_photo()
+{
+    require_responsable();
+    global $params;
+
+    $id = $params['id'] ?? ($_GET['id'] ?? '');
+    $resident = Db::fetch("SELECT photo_path FROM residents WHERE id = ?", [$id]);
+    if (!$resident || !$resident['photo_path']) not_found('Pas de photo');
+
+    $absPath = __DIR__ . '/../../' . $resident['photo_path'];
+    if (!file_exists($absPath)) not_found('Fichier introuvable');
+
+    header('Content-Type: application/octet-stream');
+    header('Content-Length: ' . filesize($absPath));
+    header('Cache-Control: no-store');
+    readfile($absPath);
+    exit;
+}
+
+function admin_delete_resident_photo()
+{
+    require_admin();
+    global $params;
+
+    $id = $params['id'] ?? '';
+    $resident = Db::fetch("SELECT photo_path FROM residents WHERE id = ?", [$id]);
+    if ($resident && $resident['photo_path']) {
+        $path = __DIR__ . '/../../' . $resident['photo_path'];
+        if (file_exists($path)) unlink($path);
+    }
+    Db::exec("UPDATE residents SET photo_path = NULL, photo_iv = NULL WHERE id = ?", [$id]);
+    respond(['success' => true, 'message' => 'Photo supprimée']);
+}
