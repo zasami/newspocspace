@@ -56,6 +56,13 @@ if (str_contains($_SERVER['REQUEST_URI'], 'index.php?action=logout')) {
     exit;
 }
 
+// Global compose contacts (for compose panel on all pages)
+$globalComposeContacts = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.email, f.nom AS fonction_nom
+     FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id
+     WHERE u.is_active = 1 ORDER BY u.nom, u.prenom"
+);
+
 // Logout
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
@@ -739,6 +746,225 @@ function adminPrompt(opts = {}) {
 
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 
+<!-- ═══ GLOBAL COMPOSE PANEL ═══ -->
+<div class="compose-panel compose-panel--hidden" id="globalComposePanel">
+  <div class="compose-panel-header" id="globalComposePanelHeader">
+    <span class="compose-panel-title" id="globalComposePanelTitle">Nouveau message</span>
+    <div class="compose-panel-header-actions">
+      <button type="button" class="compose-panel-header-btn" id="globalComposeMinimize" title="Réduire"><i class="bi bi-dash-lg"></i></button>
+      <button type="button" class="compose-panel-header-btn" id="globalComposeClose" title="Fermer"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+  <div class="compose-panel-body">
+    <div class="compose-field">
+      <label>À</label>
+      <div class="zs-select" id="globalComposeTo" data-placeholder="— Choisir —"></div>
+      <div id="globalToTags" class="email-tags mt-1"></div>
+    </div>
+    <div class="compose-field">
+      <label>Cc</label>
+      <div class="zs-select" id="globalComposeCc" data-placeholder="— Choisir —"></div>
+      <div id="globalCcTags" class="email-tags mt-1"></div>
+    </div>
+    <div class="compose-field">
+      <input type="text" class="form-control form-control-sm" id="globalComposeSubject" placeholder="Sujet" maxlength="255">
+    </div>
+    <div id="globalComposeEditorWrap" class="zs-editor-wrap compose-editor-wrap"></div>
+  </div>
+  <div class="compose-panel-footer">
+    <button type="button" class="adm-email-btn" id="globalComposeSend"><i class="bi bi-send"></i> Envoyer</button>
+    <div class="compose-panel-footer-right">
+      <input type="file" id="globalComposeFile" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.csv">
+      <button type="button" class="compose-panel-footer-btn" id="globalComposeAttach" title="Joindre"><i class="bi bi-paperclip"></i></button>
+      <button type="button" class="compose-panel-footer-btn compose-panel-delete" id="globalComposeDiscard" title="Annuler"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>
+  <div class="att-preview-list" id="globalAttPreviewList"></div>
+</div>
+
+<script nonce="<?= $cspNonce ?>">
+// ═══ Global Compose Module ═══
+(function() {
+    const contacts = <?= json_encode(array_values($globalComposeContacts), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let editorModule = null;
+    let composeEditor = null;
+    let toSelected = [];
+    let ccSelected = [];
+    let pendingFiles = [];
+    let initialized = false;
+
+    async function getEditorModule() {
+        if (!editorModule) editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+        return editorModule;
+    }
+
+    const contactOpts = contacts.map(c => ({
+        value: c.id,
+        label: c.prenom + ' ' + c.nom + (c.fonction_nom ? ' (' + c.fonction_nom + ')' : ''),
+        searchText: c.prenom + ' ' + c.nom + ' ' + (c.email || '')
+    }));
+
+    function initSelects() {
+        if (initialized) return;
+        initialized = true;
+
+        zerdaSelect.init('#globalComposeTo', contactOpts, {
+            search: true,
+            onSelect: (val) => {
+                if (val && !toSelected.includes(val)) { toSelected.push(val); renderTags(toSelected, 'globalToTags'); }
+                zerdaSelect.setValue('#globalComposeTo', '');
+            }
+        });
+        zerdaSelect.init('#globalComposeCc', contactOpts, {
+            search: true,
+            onSelect: (val) => {
+                if (val && !ccSelected.includes(val)) { ccSelected.push(val); renderTags(ccSelected, 'globalCcTags'); }
+                zerdaSelect.setValue('#globalComposeCc', '');
+            }
+        });
+
+        document.getElementById('globalComposeMinimize')?.addEventListener('click', () => {
+            document.getElementById('globalComposePanel')?.classList.toggle('minimized');
+        });
+        document.getElementById('globalComposePanelHeader')?.addEventListener('click', () => {
+            const panel = document.getElementById('globalComposePanel');
+            if (panel?.classList.contains('minimized')) panel.classList.remove('minimized');
+        });
+        document.getElementById('globalComposeClose')?.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+        document.getElementById('globalComposeDiscard')?.addEventListener('click', close);
+        document.getElementById('globalComposeSend')?.addEventListener('click', send);
+        document.getElementById('globalComposeAttach')?.addEventListener('click', () => {
+            document.getElementById('globalComposeFile')?.click();
+        });
+        document.getElementById('globalComposeFile')?.addEventListener('change', (e) => {
+            for (const f of e.target.files) pendingFiles.push(f);
+            e.target.value = '';
+            renderPendingFiles();
+        });
+    }
+
+    function renderTags(ids, containerId) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = ids.map(id => {
+            const c = contacts.find(x => x.id === id);
+            if (!c) return '';
+            return '<span class="email-tag">' + escapeHtml(c.prenom + ' ' + c.nom)
+                + ' <button type="button" data-remove="' + id + '" data-container="' + containerId + '">&times;</button></span>';
+        }).join('');
+        el.querySelectorAll('[data-remove]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rid = btn.dataset.remove;
+                const cid = btn.dataset.container;
+                if (cid === 'globalToTags') toSelected = toSelected.filter(x => x !== rid);
+                else ccSelected = ccSelected.filter(x => x !== rid);
+                renderTags(cid === 'globalToTags' ? toSelected : ccSelected, cid);
+            });
+        });
+    }
+
+    function renderPendingFiles() {
+        const el = document.getElementById('globalAttPreviewList');
+        if (!el) return;
+        if (!pendingFiles.length) { el.innerHTML = ''; return; }
+        el.innerHTML = pendingFiles.map((f, i) =>
+            '<div class="att-preview-item"><span class="att-preview-name">' + escapeHtml(f.name) + '</span>'
+            + '<button type="button" class="att-preview-del" data-idx="' + i + '"><i class="bi bi-x"></i></button></div>'
+        ).join('');
+        el.querySelectorAll('.att-preview-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+                pendingFiles.splice(parseInt(btn.dataset.idx), 1);
+                renderPendingFiles();
+            });
+        });
+    }
+
+    async function open(prefill) {
+        initSelects();
+        prefill = prefill || {};
+        toSelected = prefill.to || [];
+        ccSelected = prefill.cc || [];
+        pendingFiles = [];
+        renderPendingFiles();
+        renderTags(toSelected, 'globalToTags');
+        renderTags(ccSelected, 'globalCcTags');
+
+        document.getElementById('globalComposeSubject').value = prefill.subject || '';
+        document.getElementById('globalComposePanelTitle').textContent = prefill.title || 'Nouveau message';
+
+        const editorWrap = document.getElementById('globalComposeEditorWrap');
+        const em = await getEditorModule();
+        if (composeEditor) { em.destroyEditor(composeEditor); composeEditor = null; }
+        em.createEditor(editorWrap, {
+            placeholder: 'Écrivez votre message...',
+            content: prefill.body || '',
+            mode: 'mini'
+        }).then(ed => { composeEditor = ed; });
+
+        const panel = document.getElementById('globalComposePanel');
+        if (panel) {
+            panel.classList.remove('minimized', 'compose-panel--hidden');
+            panel.classList.add('compose-panel--visible');
+            panel.offsetHeight;
+            panel.classList.add('open');
+        }
+    }
+
+    function close() {
+        const panel = document.getElementById('globalComposePanel');
+        if (panel) {
+            panel.classList.remove('open');
+            setTimeout(() => { panel.classList.remove('compose-panel--visible'); panel.classList.add('compose-panel--hidden'); }, 300);
+        }
+        if (composeEditor && editorModule) { editorModule.destroyEditor(composeEditor); composeEditor = null; }
+        pendingFiles = [];
+        renderPendingFiles();
+    }
+
+    async function send() {
+        const sujet = document.getElementById('globalComposeSubject')?.value.trim();
+        const contenu = editorModule ? editorModule.getHTML(composeEditor) : '';
+
+        if (!sujet) { showToast('Sujet requis', 'error'); return; }
+        if (!contenu || contenu === '<br>') { showToast('Message requis', 'error'); return; }
+        if (!toSelected.length) { showToast('Au moins un destinataire', 'error'); return; }
+
+        // Upload attachments first
+        const attachmentIds = [];
+        for (const file of pendingFiles) {
+            const fd = new FormData();
+            fd.append('action', 'admin_upload_attachment');
+            fd.append('file', file);
+            const resp = await fetch('/zerdatime/admin/api.php', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                body: fd
+            });
+            const r = await resp.json();
+            if (r.success && r.id) attachmentIds.push(r.id);
+        }
+
+        const res = await adminApiPost('admin_send_email', {
+            sujet,
+            contenu,
+            to: toSelected,
+            cc: ccSelected,
+            attachment_ids: attachmentIds
+        });
+
+        if (res.success) {
+            showToast('Message envoyé', 'success');
+            close();
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
+    }
+
+    // Expose globally
+    window.ztCompose = { open, close };
+})();
+</script>
+
 <!-- ═══ MODAL: Raccourcis clavier ═══ -->
 <div class="modal fade" id="shortcutsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -814,7 +1040,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
             { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/zerdatime/admin/stats') },
         ]},
         { group: 'Actions rapides', items: [
-            { id: 'act_email',        label: 'Nouveau message (email)', default: 'Ctrl+E', action: openComposeEmail },
+            { id: 'act_email',        label: 'Nouveau message (email)', default: 'Alt+E', action: openComposeEmail },
             { id: 'act_search',       label: 'Focus recherche',        default: 'Ctrl+K', action: focusSearch },
             { id: 'act_fullscreen',   label: 'Plein écran',            default: 'F11',    action: toggleFullscreen },
             { id: 'act_sidebar',      label: 'Replier/déplier sidebar', default: 'Ctrl+B', action: toggleSidebar },
@@ -824,12 +1050,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // ── Action implementations ──
     function openComposeEmail() {
-        if (!location.pathname.includes('/messages')) {
-            sessionStorage.setItem('zt_auto_compose', '1');
-            goTo('/zerdatime/admin/messages');
-        } else {
-            document.getElementById('btnComposeEmail')?.click();
-        }
+        if (window.ztCompose) window.ztCompose.open();
     }
 
     function focusSearch() {
@@ -1052,11 +1273,6 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         showToast('Raccourcis réinitialisés', 'success');
     });
 
-    // ── Auto-compose on messages page ──
-    if (sessionStorage.getItem('zt_auto_compose') === '1') {
-        sessionStorage.removeItem('zt_auto_compose');
-        setTimeout(function() { document.getElementById('btnComposeEmail')?.click(); }, 500);
-    }
 
     // Init list
     renderShortcutsList();
