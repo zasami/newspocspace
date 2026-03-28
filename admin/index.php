@@ -767,6 +767,7 @@ function adminPrompt(opts = {}) {
     <span class="compose-panel-title" id="globalComposePanelTitle">Nouveau message</span>
     <div class="compose-panel-header-actions">
       <button type="button" class="compose-panel-header-btn" id="globalComposeMinimize" title="Réduire"><i class="bi bi-dash-lg"></i></button>
+      <button type="button" class="compose-panel-header-btn" id="globalComposeExpand" title="Agrandir"><i class="bi bi-arrows-angle-expand"></i></button>
       <button type="button" class="compose-panel-header-btn" id="globalComposeClose" title="Fermer"><i class="bi bi-x-lg"></i></button>
     </div>
   </div>
@@ -838,8 +839,18 @@ function adminPrompt(opts = {}) {
             }
         });
 
-        document.getElementById('globalComposeMinimize')?.addEventListener('click', () => {
+        document.getElementById('globalComposeMinimize')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             document.getElementById('globalComposePanel')?.classList.toggle('minimized');
+        });
+        document.getElementById('globalComposeExpand')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = document.getElementById('globalComposePanel');
+            const icon = document.querySelector('#globalComposeExpand i');
+            if (panel) {
+                panel.classList.toggle('expanded');
+                if (icon) icon.className = panel.classList.contains('expanded') ? 'bi bi-arrows-angle-contract' : 'bi bi-arrows-angle-expand';
+            }
         });
         document.getElementById('globalComposePanelHeader')?.addEventListener('click', () => {
             const panel = document.getElementById('globalComposePanel');
@@ -940,8 +951,9 @@ function adminPrompt(opts = {}) {
     function close() {
         const panel = document.getElementById('globalComposePanel');
         if (panel) {
-            panel.classList.remove('open');
-            setTimeout(() => { panel.classList.remove('open'); }, 300);
+            panel.classList.remove('open', 'expanded');
+            const icon = document.querySelector('#globalComposeExpand i');
+            if (icon) icon.className = 'bi bi-arrows-angle-expand';
         }
         if (composeEditor && editorModule) { editorModule.destroyEditor(composeEditor); composeEditor = null; }
         pendingFiles = [];

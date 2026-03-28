@@ -1901,6 +1901,23 @@ body.zt-immersive .zt-immersive-pill {
 .compose-panel.open { display: flex; transform: translateY(0); }
 .compose-panel.minimized .compose-panel-body,
 .compose-panel.minimized .compose-panel-footer { display: none; }
+/* Expanded (Gmail-style fullscreen compose) */
+.compose-panel.expanded {
+  width: 70vw;
+  max-width: 900px;
+  right: 50%;
+  transform: translateX(50%);
+  bottom: 5vh;
+  max-height: 90vh;
+  border-bottom: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.05);
+}
+.compose-panel.expanded .compose-panel-body { max-height: 65vh; }
+.compose-panel.expanded .compose-panel-header { border-radius: var(--cl-radius) var(--cl-radius) 0 0; }
+@media (max-width: 768px) {
+  .compose-panel.expanded { width: 96vw; right: 50%; bottom: 2vh; }
+}
 .compose-panel-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px;
