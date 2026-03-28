@@ -1,3 +1,30 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$pvRecordId = $_GET['id'] ?? null;
+$pvRecordData = null;
+if ($pvRecordId) {
+    $pvRecordData = Db::fetch(
+        "SELECT pv.*, u.prenom AS creator_prenom, u.nom AS creator_nom,
+                f.code AS fonction_code, f.nom AS fonction_nom,
+                m.code AS module_code, m.nom AS module_nom,
+                e.code AS etage_code, e.nom AS etage_nom
+         FROM pv
+         LEFT JOIN users u ON u.id = pv.created_by
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         LEFT JOIN modules m ON m.id = pv.module_id
+         LEFT JOIN etages e ON e.id = pv.etage_id
+         WHERE pv.id = ?",
+        [$pvRecordId]
+    );
+    if ($pvRecordData) {
+        $pvRecordData['participants'] = !empty($pvRecordData['participants']) ? json_decode($pvRecordData['participants'], true) : [];
+        $pvRecordData['tags'] = !empty($pvRecordData['tags']) ? json_decode($pvRecordData['tags'], true) : [];
+    }
+}
+$pvRecordCfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key IN ('ollama_model','transcription_engine','pv_external_mode','deepgram_api_key','pv_structure_options') ORDER BY config_key");
+$pvRecordCfg = [];
+foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_value']; }
+?>
 <!-- PV Recording Page -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css">
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/emoji-picker.css">
@@ -950,6 +977,8 @@ let totalRecordingTime = 0;
 let recordingInterval = null;
 let pvId = null;
 let pvData = null;
+const ssrPvData = <?= $pvRecordData ? json_encode($pvRecordData, JSON_HEX_TAG | JSON_HEX_APOS) : 'null' ?>;
+const ssrCfg = <?= json_encode($pvRecordCfg, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 let audioStream = null;
 
 // Enregistreur principal (pour sauvegarder le fichier final complet)
@@ -1131,31 +1160,24 @@ async function initPvrecordPage() {
 
   console.log('[PV-INIT] Controls attached');
 
-  // Load config (async, ne bloque pas les contrôles)
-  try {
-    const cfgRes = await adminApiPost('admin_get_config');
-    console.log('[PV-INIT] Config loaded, externalMode:', cfgRes.config?.pv_external_mode);
-    if (cfgRes.config?.ollama_model) ollamaModel = cfgRes.config.ollama_model;
-    if (cfgRes.config?.transcription_engine) transcriptionEngine = cfgRes.config.transcription_engine;
-    if (cfgRes.config?.pv_external_mode === '1') externalMode = true;
-    if (cfgRes.config?.deepgram_api_key) deepgramApiKey = cfgRes.config.deepgram_api_key;
-    if (cfgRes.config?.pv_structure_options) {
-      try { pvSettings = { ...pvSettingsDefaults, ...JSON.parse(cfgRes.config.pv_structure_options) }; } catch {}
-    }
-    loadPvSettingsToUI();
-
-    // In external mode, we don't need local servers
-    if (externalMode) {
-      isAiReady = true;
-      document.querySelectorAll('#badgeVosk, #badgeWhisper, #badgeOllama').forEach(b => b.classList.add('pv-d-none'));
-      const extBadge = document.createElement('span');
-      extBadge.className = 'pv-ext-badge';
-      extBadge.setAttribute('data-status', 'online');
-      extBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">Cloud</span><span class="srv-status">actif</span>';
-      document.getElementById('badgeVosk')?.parentNode?.appendChild(extBadge);
-    }
-  } catch (e) {
-    console.error('[PV-INIT] Config error:', e);
+  // Config injected by PHP
+  if (ssrCfg.ollama_model) ollamaModel = ssrCfg.ollama_model;
+  if (ssrCfg.transcription_engine) transcriptionEngine = ssrCfg.transcription_engine;
+  if (ssrCfg.pv_external_mode === '1') externalMode = true;
+  if (ssrCfg.deepgram_api_key) deepgramApiKey = ssrCfg.deepgram_api_key;
+  if (ssrCfg.pv_structure_options) {
+    try { pvSettings = { ...pvSettingsDefaults, ...JSON.parse(ssrCfg.pv_structure_options) }; } catch {}
+  }
+  loadPvSettingsToUI();
+  // External mode UI
+  if (externalMode) {
+    isAiReady = true;
+    document.querySelectorAll('#badgeVosk, #badgeWhisper, #badgeOllama').forEach(b => b.classList.add('pv-d-none'));
+    const extBadge = document.createElement('span');
+    extBadge.className = 'pv-ext-badge';
+    extBadge.setAttribute('data-status', 'online');
+    extBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">Cloud</span><span class="srv-status">actif</span>';
+    document.getElementById('badgeVosk')?.parentNode?.appendChild(extBadge);
   }
 
   // Check serveurs locaux (fire-and-forget)
@@ -1170,26 +1192,19 @@ async function initPvrecordPage() {
   }
 
   pvId = AdminURL.currentId();
-  if (!pvId) {
+
+  if (!ssrPvData) {
     toast('PV non trouvé', 'error');
     window.history.back();
     return;
   }
+  pvData = ssrPvData;
+  updatePvInfo();
+  console.log('[PV-INIT] PV data loaded (SSR)');
 
-  try {
-    const result = await adminApiPost('admin_get_pv', { id: pvId });
-    if (!result.success) {
-      toast('Erreur: ' + result.message, 'error');
-      window.history.back();
-      return;
-    }
-
-    pvData = result.pv;
-    updatePvInfo();
-    console.log('[PV-INIT] PV data loaded');
-
-    // Initialize Tiptap editor
-    if (editorModule) {
+  // Initialize Tiptap editor
+  if (editorModule) {
+    try {
       // Si contenu sauvegardé dans localStorage (rechargement pendant blur), le restaurer
       const lsSaved = localStorage.getItem('zt_pv_blur_saved');
       const editorContent = lsSaved || pvData.contenu || pvData.transcription_brute || '';
@@ -1218,10 +1233,10 @@ async function initPvrecordPage() {
       if (pvData.validation_role) {
           zerdaSelect.setValue(document.getElementById('pvValidationRole'), pvData.validation_role);
       }
+    } catch (e) {
+      console.error('[PV-INIT] Error initializing editor:', e);
+      toast('Erreur lors du chargement', 'error');
     }
-  } catch (e) {
-    console.error('[PV-INIT] Error loading PV/editor:', e);
-    toast('Erreur lors du chargement', 'error');
   }
 
   initLocalAI();
