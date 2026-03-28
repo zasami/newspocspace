@@ -35,6 +35,30 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
       </div>
       <button class="fam-btn fam-btn-primary" id="famLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Se connecter</button>
       <div class="fam-error" id="famLoginError"></div>
+
+      <!-- DEMO: comptes test -->
+      <div style="margin-top:20px">
+        <button type="button" class="fam-demo-toggle" id="famDemoToggle">
+          <i class="bi bi-info-circle"></i> Comptes de démonstration
+        </button>
+        <div id="famDemoList" style="display:none;margin-top:10px">
+          <table class="fam-demo-table">
+            <thead><tr><th>Résident</th><th>Ch.</th><th>Email correspondant</th><th>Code</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Marguerite Dupont</td><td>101</td><td>jp.dupont@gmail.com</td><td><code>12031935</code></td>
+                <td><button class="fam-demo-use" data-email="jp.dupont@gmail.com" data-pwd="12031935">Utiliser</button></td></tr>
+              <tr><td>Jeanne Favre</td><td>102</td><td>michel.favre@bluewin.ch</td><td><code>22071938</code></td>
+                <td><button class="fam-demo-use" data-email="michel.favre@bluewin.ch" data-pwd="22071938">Utiliser</button></td></tr>
+              <tr><td>André Rochat</td><td>103</td><td>sophie.rochat@gmail.com</td><td><code>05111932</code></td>
+                <td><button class="fam-demo-use" data-email="sophie.rochat@gmail.com" data-pwd="05111932">Utiliser</button></td></tr>
+              <tr><td>Hélène Muller</td><td>104</td><td>thomas.muller@yahoo.fr</td><td><code>18011940</code></td>
+                <td><button class="fam-demo-use" data-email="thomas.muller@yahoo.fr" data-pwd="18011940">Utiliser</button></td></tr>
+              <tr><td>Robert Blanc</td><td>105</td><td>catherine.blanc@gmail.com</td><td><code>30091936</code></td>
+                <td><button class="fam-demo-use" data-email="catherine.blanc@gmail.com" data-pwd="30091936">Utiliser</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -632,6 +656,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────
+
+// Demo toggle + buttons
+document.getElementById('famDemoToggle')?.addEventListener('click', () => {
+    const list = document.getElementById('famDemoList');
+    list.style.display = list.style.display === 'none' ? '' : 'none';
+});
+document.querySelectorAll('.fam-demo-use').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('famEmail').value = btn.dataset.email;
+        document.getElementById('famPassword').value = btn.dataset.pwd;
+    });
+});
 
 checkSession();
 
