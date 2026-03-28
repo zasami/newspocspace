@@ -68,6 +68,9 @@ async function loadPage(pageId, params = {}) {
             return;
         }
         content.innerHTML = await res.text();
+        // Extract SSR data injected by PHP pages
+        const ssrEl = content.querySelector('script[type="application/json"][id="__zt_ssr__"]');
+        window.__ZT_PAGE_DATA__ = ssrEl ? JSON.parse(ssrEl.textContent) : null;
     } catch (e) {
         content.innerHTML = '<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Erreur de chargement</p></div>';
         return;

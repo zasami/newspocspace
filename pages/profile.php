@@ -1,4 +1,18 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$profUser = Db::fetch(
+    "SELECT u.*, f.nom AS fonction_nom FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id WHERE u.id = ? AND u.is_active = 1",
+    [$uid]
+);
+if ($profUser) {
+    unset($profUser['password'], $profUser['reset_token'], $profUser['reset_expires']);
+    $profUser['modules'] = Db::fetchAll(
+        "SELECT m.id, m.nom, m.code, um.is_principal FROM user_modules um JOIN modules m ON m.id = um.module_id WHERE um.user_id = ? ORDER BY um.is_principal DESC, m.ordre",
+        [$uid]
+    );
+}
+?>
 <div class="page-header">
   <h1><i class="bi bi-person"></i> Mon Profil</h1>
   <p>Vos informations personnelles et paramètres</p>
@@ -54,3 +68,4 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['user' => $profUser], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

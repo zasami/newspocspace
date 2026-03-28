@@ -3,12 +3,12 @@
  */
 import { apiPost, toast, escapeHtml } from '../helpers.js';
 
-export async function init() {
-    // Load profile
-    const res = await apiPost('me');
-    if (res.success && res.user) {
-        renderProfileHero(res.user);
-        renderProfile(res.user);
+export function init() {
+    // Profile data injected by PHP
+    const user = window.__ZT_PAGE_DATA__?.user;
+    if (user) {
+        renderProfileHero(user);
+        renderProfile(user);
     }
 
     // Password form
