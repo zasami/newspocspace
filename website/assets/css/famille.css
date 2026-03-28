@@ -66,16 +66,37 @@
 .fam-stat-num { font-size: 1.5rem; font-weight: 700; color: var(--fam-green); }
 .fam-stat-label { font-size: .75rem; color: var(--fam-text-muted); margin-top: 2px; }
 
-/* ── Tabs ── */
-.fam-tabs { display: flex; gap: 4px; background: var(--fam-surface); border-radius: var(--fam-radius); padding: 4px; margin-bottom: 24px; box-shadow: var(--fam-shadow); }
-.fam-tab { flex: 1; padding: 12px; text-align: center; border-radius: var(--fam-radius-sm); font-size: .9rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--fam-text-muted); transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.fam-tab.active { background: var(--fam-green); color: #fff; }
-.fam-tab:not(.active):hover { background: var(--fam-bg); }
-.fam-tab-badge { background: rgba(255,255,255,.3); padding: 2px 8px; border-radius: 20px; font-size: .75rem; }
-.fam-tab.active .fam-tab-badge { background: rgba(255,255,255,.25); }
-.fam-tab:not(.active) .fam-tab-badge { background: var(--fam-bg); color: var(--fam-text-muted); }
+/* ── Layout sidebar + main ── */
+.fam-layout { display: flex; gap: 24px; min-height: 60vh; }
+.fam-sidebar { width: 240px; flex-shrink: 0; }
+.fam-sidebar-nav { position: sticky; top: 24px; background: var(--fam-surface); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.fam-sidebar-link { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--fam-radius-sm); font-size: .88rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--fam-text-muted); transition: all .2s; text-align: left; width: 100%; }
+.fam-sidebar-link i { font-size: 1.05rem; width: 20px; text-align: center; flex-shrink: 0; }
+.fam-sidebar-link span:first-of-type { flex: 1; }
+.fam-sidebar-link:hover { background: var(--fam-bg); color: var(--fam-text); }
+.fam-sidebar-link.active { background: var(--fam-green); color: #fff; }
+.fam-sidebar-link.active .fam-sidebar-badge { background: rgba(255,255,255,.25); color: #fff; }
+.fam-sidebar-badge { background: var(--fam-bg); color: var(--fam-text-muted); padding: 2px 8px; border-radius: 20px; font-size: .72rem; font-weight: 600; min-width: 24px; text-align: center; }
+.fam-main { flex: 1; min-width: 0; }
 .fam-pane { display: none; }
 .fam-pane.active { display: block; }
+.fam-pane-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.fam-pane-title i { color: var(--fam-green); }
+
+/* ── Dashboard sections ── */
+.fam-dash-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.fam-dash-section { background: var(--fam-surface); border-radius: var(--fam-radius); padding: 20px; box-shadow: var(--fam-shadow); }
+.fam-dash-section h6 { font-size: .9rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.fam-dash-section h6 i { color: var(--fam-green); }
+.fam-dash-item { padding: 8px 0; border-bottom: 1px solid var(--fam-border); font-size: .85rem; }
+.fam-dash-item:last-child { border-bottom: none; }
+.fam-dash-item-date { font-size: .75rem; color: var(--fam-text-muted); }
+
+/* ── Mobile sidebar toggle ── */
+.fam-sidebar-toggle { display: none; }
+
+/* ── Mobile sidebar ── */
+.fam-sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.4); z-index: 90; }
 
 /* ── Activity cards ── */
 .fam-act-list { display: flex; flex-direction: column; gap: 12px; }
@@ -167,10 +188,18 @@
 .fam-empty p { font-size: .95rem; }
 
 /* ── Responsive ── */
+@media (max-width: 900px) {
+  .fam-layout { flex-direction: column; gap: 0; }
+  .fam-sidebar { width: 100%; position: fixed; bottom: 0; left: 0; z-index: 80; background: var(--fam-surface); border-top: 1px solid var(--fam-border); box-shadow: 0 -2px 12px rgba(0,0,0,.08); }
+  .fam-sidebar-nav { position: static; flex-direction: row; border-radius: 0; padding: 4px 8px; gap: 0; box-shadow: none; }
+  .fam-sidebar-link { flex-direction: column; gap: 2px; padding: 8px 6px; font-size: .7rem; text-align: center; justify-content: center; }
+  .fam-sidebar-link i { font-size: 1.1rem; width: auto; }
+  .fam-sidebar-badge { display: none; }
+  .fam-main { padding-bottom: 70px; }
+  .fam-dash-sections { grid-template-columns: 1fr; }
+}
 @media (max-width: 768px) {
   .fam-stats { grid-template-columns: repeat(2, 1fr); }
-  .fam-tabs { flex-wrap: wrap; }
-  .fam-tab { font-size: .82rem; padding: 10px 8px; }
   .fam-header { flex-direction: column; text-align: center; }
   .fam-header-actions { margin-left: 0; }
   .fam-gal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

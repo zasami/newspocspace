@@ -77,34 +77,64 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="fam-stats">
-      <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAct">0</div><div class="fam-stat-label">Activités</div></div>
-      <div class="fam-stat-card"><div class="fam-stat-num" id="famStatMed">0</div><div class="fam-stat-label">Avis médicaux</div></div>
-      <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAlb">0</div><div class="fam-stat-label">Albums</div></div>
-      <div class="fam-stat-card"><div class="fam-stat-num" id="famStatPho">0</div><div class="fam-stat-label">Photos</div></div>
-    </div>
+    <!-- Layout sidebar + contenu -->
+    <div class="fam-layout">
 
-    <!-- Tabs -->
-    <div class="fam-tabs">
-      <button class="fam-tab active" data-pane="activites"><i class="bi bi-calendar-event"></i> Activités</button>
-      <button class="fam-tab" data-pane="medical"><i class="bi bi-heart-pulse"></i> Suivi médical</button>
-      <button class="fam-tab" data-pane="galerie"><i class="bi bi-images"></i> Galerie</button>
-    </div>
+      <!-- Sidebar -->
+      <aside class="fam-sidebar">
+        <nav class="fam-sidebar-nav">
+          <button class="fam-sidebar-link active" data-pane="dashboard"><i class="bi bi-house"></i><span>Tableau de bord</span></button>
+          <button class="fam-sidebar-link" data-pane="activites"><i class="bi bi-calendar-event"></i><span>Activités</span><span class="fam-sidebar-badge" id="famSbAct">0</span></button>
+          <button class="fam-sidebar-link" data-pane="medical"><i class="bi bi-heart-pulse"></i><span>Suivi médical</span><span class="fam-sidebar-badge" id="famSbMed">0</span></button>
+          <button class="fam-sidebar-link" data-pane="galerie"><i class="bi bi-images"></i><span>Galerie photos</span><span class="fam-sidebar-badge" id="famSbAlb">0</span></button>
+        </nav>
+      </aside>
 
-    <!-- Panes -->
-    <div class="fam-pane active" id="paneActivites">
-      <div id="famActList" class="fam-act-list"></div>
-      <div id="famActDetail" style="display:none"></div>
-    </div>
+      <!-- Main content -->
+      <main class="fam-main">
 
-    <div class="fam-pane" id="paneMedical">
-      <div id="famMedList" class="fam-med-list"></div>
-    </div>
+        <!-- Dashboard -->
+        <div class="fam-pane active" id="paneDashboard">
+          <h5 class="fam-pane-title"><i class="bi bi-house"></i> Tableau de bord</h5>
+          <div class="fam-stats">
+            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAct">0</div><div class="fam-stat-label">Activités</div></div>
+            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatMed">0</div><div class="fam-stat-label">Avis médicaux</div></div>
+            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatAlb">0</div><div class="fam-stat-label">Albums</div></div>
+            <div class="fam-stat-card"><div class="fam-stat-num" id="famStatPho">0</div><div class="fam-stat-label">Photos</div></div>
+          </div>
+          <div class="fam-dash-sections">
+            <div class="fam-dash-section">
+              <h6><i class="bi bi-calendar-event"></i> Dernières activités</h6>
+              <div id="famDashAct"></div>
+            </div>
+            <div class="fam-dash-section">
+              <h6><i class="bi bi-heart-pulse"></i> Derniers avis médicaux</h6>
+              <div id="famDashMed"></div>
+            </div>
+          </div>
+        </div>
 
-    <div class="fam-pane" id="paneGalerie">
-      <div id="famGalFolders"></div>
-      <div id="famGalAlbum" style="display:none"></div>
+        <!-- Activités -->
+        <div class="fam-pane" id="paneActivites">
+          <h5 class="fam-pane-title"><i class="bi bi-calendar-event"></i> Activités</h5>
+          <div id="famActList" class="fam-act-list"></div>
+          <div id="famActDetail" style="display:none"></div>
+        </div>
+
+        <!-- Médical -->
+        <div class="fam-pane" id="paneMedical">
+          <h5 class="fam-pane-title"><i class="bi bi-heart-pulse"></i> Suivi médical</h5>
+          <div id="famMedList" class="fam-med-list"></div>
+        </div>
+
+        <!-- Galerie -->
+        <div class="fam-pane" id="paneGalerie">
+          <h5 class="fam-pane-title"><i class="bi bi-images"></i> Galerie photos</h5>
+          <div id="famGalFolders"></div>
+          <div id="famGalAlbum" style="display:none"></div>
+        </div>
+
+      </main>
     </div>
 
   </div>
@@ -261,28 +291,62 @@ async function loadDashboard() {
     const res = await api('famille_get_dashboard');
     if (!res.success) return;
 
-    document.getElementById('famStatAct').textContent = res.stats?.activites || 0;
-    document.getElementById('famStatMed').textContent = res.stats?.medical || 0;
-    document.getElementById('famStatAlb').textContent = res.stats?.albums || 0;
-    document.getElementById('famStatPho').textContent = res.stats?.photos || 0;
+    const s = res.stats || {};
+    document.getElementById('famStatAct').textContent = s.activites || 0;
+    document.getElementById('famStatMed').textContent = s.medical || 0;
+    document.getElementById('famStatAlb').textContent = s.albums || 0;
+    document.getElementById('famStatPho').textContent = s.photos || 0;
 
-    renderActivites(res.activites || []);
-    renderMedical(null); // lazy load on tab click
-    renderGalerieFolders(null); // lazy load on tab click
+    // Sidebar badges
+    document.getElementById('famSbAct').textContent = s.activites || 0;
+    document.getElementById('famSbMed').textContent = s.medical || 0;
+    document.getElementById('famSbAlb').textContent = s.albums || 0;
+
+    // Dashboard recent activités
+    const dashAct = document.getElementById('famDashAct');
+    const recentAct = res.activites || [];
+    if (recentAct.length) {
+        dashAct.innerHTML = recentAct.slice(0, 4).map(a =>
+            '<div class="fam-dash-item"><strong>' + esc(a.titre) + '</strong>' +
+            (a.nb_photos > 0 ? ' <small style="color:var(--fam-green)"><i class="bi bi-images"></i> ' + a.nb_photos + '</small>' : '') +
+            '<div class="fam-dash-item-date">' + fmtDate(a.date_activite) + '</div></div>'
+        ).join('');
+    } else {
+        dashAct.innerHTML = '<p class="text-muted" style="font-size:.85rem">Aucune activité</p>';
+    }
+
+    // Dashboard recent médical
+    const dashMed = document.getElementById('famDashMed');
+    const recentMed = res.medical || [];
+    if (recentMed.length) {
+        const typeLabel = { avis: 'Avis', rapport: 'Rapport', ordonnance: 'Ordonnance', autre: 'Autre' };
+        dashMed.innerHTML = recentMed.slice(0, 4).map(m =>
+            '<div class="fam-dash-item"><strong>' + esc(m.titre) + '</strong> <small style="opacity:.6">' + (typeLabel[m.type] || m.type) + '</small>' +
+            '<div class="fam-dash-item-date">' + fmtDate(m.date_avis) + '</div></div>'
+        ).join('');
+    } else {
+        dashMed.innerHTML = '<p class="text-muted" style="font-size:.85rem">Aucun avis médical</p>';
+    }
+
+    // Pre-render activités list for when they navigate to that pane
+    renderActivites(recentAct);
+    renderMedical(null); // lazy load on sidebar click
+    renderGalerieFolders(null); // lazy load on sidebar click
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 
-let tabsLoaded = { activites: true, medical: false, galerie: false };
+let tabsLoaded = { dashboard: true, activites: false, medical: false, galerie: false };
 
-document.querySelectorAll('.fam-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.fam-tab').forEach(t => t.classList.remove('active'));
+document.querySelectorAll('.fam-sidebar-link').forEach(link => {
+    link.addEventListener('click', () => {
+        document.querySelectorAll('.fam-sidebar-link').forEach(l => l.classList.remove('active'));
         document.querySelectorAll('.fam-pane').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        const pane = tab.dataset.pane;
+        link.classList.add('active');
+        const pane = link.dataset.pane;
         document.getElementById('pane' + pane.charAt(0).toUpperCase() + pane.slice(1)).classList.add('active');
 
+        if (pane === 'activites' && !tabsLoaded.activites) { tabsLoaded.activites = true; }
         if (pane === 'medical' && !tabsLoaded.medical) { tabsLoaded.medical = true; loadMedical(); }
         if (pane === 'galerie' && !tabsLoaded.galerie) { tabsLoaded.galerie = true; loadGalerie(); }
     });
