@@ -786,6 +786,7 @@ function adminPrompt(opts = {}) {
       <input type="text" class="form-control form-control-sm" id="globalComposeSubject" placeholder="Sujet" maxlength="255">
     </div>
     <div id="globalComposeEditorWrap" class="zs-editor-wrap compose-editor-wrap"></div>
+    <div class="att-preview-list" id="globalAttPreviewList"></div>
   </div>
   <div class="compose-panel-footer">
     <button type="button" class="adm-email-btn" id="globalComposeSend"><i class="bi bi-send"></i> Envoyer</button>
@@ -795,7 +796,6 @@ function adminPrompt(opts = {}) {
       <button type="button" class="compose-panel-footer-btn compose-panel-delete" id="globalComposeDiscard" title="Annuler"><i class="bi bi-trash3"></i></button>
     </div>
   </div>
-  <div class="att-preview-list" id="globalAttPreviewList"></div>
 </div>
 
 <script nonce="<?= $cspNonce ?>">

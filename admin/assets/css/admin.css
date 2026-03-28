@@ -1575,6 +1575,9 @@ body.zt-immersive .zt-immersive-pill {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 .att-preview-card {
   position: relative;
@@ -1887,6 +1890,7 @@ body.zt-immersive .zt-immersive-pill {
   right: 24px;
   width: 580px;
   max-width: calc(100vw - 48px);
+  max-height: 80vh;
   background: var(--cl-surface);
   border: 1px solid var(--cl-border);
   border-bottom: none;
@@ -1896,7 +1900,7 @@ body.zt-immersive .zt-immersive-pill {
   flex-direction: column;
   z-index: 1050;
   transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s, right 0.3s, max-height 0.3s;
 }
 .compose-panel.open { display: flex; transform: translateY(0); }
 .compose-panel.minimized .compose-panel-body,
@@ -1945,6 +1949,7 @@ body.zt-immersive .zt-immersive-pill {
 .compose-panel-footer {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 14px; border-top: 1px solid var(--cl-border);
+  flex-shrink: 0;
 }
 .compose-panel-footer-right { display: flex; align-items: center; gap: 4px; }
 .compose-panel-footer-btn {
