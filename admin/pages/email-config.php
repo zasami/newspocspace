@@ -104,7 +104,7 @@ $existingConfig = Db::fetch(
     const providerIcons = {
         infomaniak: 'bi-cloud', gmail: 'bi-google', outlook: 'bi-microsoft',
         ovh: 'bi-cloud-fill', gandi: 'bi-globe', ionos: 'bi-cloud-haze2',
-        bluewin: 'bi-phone', custom: 'bi-sliders'
+        bluewin: 'bi-phone', hostpoint: 'bi-flag', custom: 'bi-sliders'
     };
 
     // Render provider grid

@@ -59,6 +59,11 @@ class Mailer
                 'imap_host' => 'imaps.bluewin.ch', 'imap_port' => 993, 'imap_encryption' => 'ssl',
                 'smtp_host' => 'smtpauths.bluewin.ch', 'smtp_port' => 465, 'smtp_encryption' => 'ssl',
             ],
+            'hostpoint' => [
+                'label' => 'Hostpoint (Suisse)',
+                'imap_host' => 'imap.hostpoint.ch', 'imap_port' => 993, 'imap_encryption' => 'ssl',
+                'smtp_host' => 'smtp.hostpoint.ch', 'smtp_port' => 587, 'smtp_encryption' => 'tls',
+            ],
             'custom' => [
                 'label' => 'Personnalisé',
                 'imap_host' => '', 'imap_port' => 993, 'imap_encryption' => 'ssl',

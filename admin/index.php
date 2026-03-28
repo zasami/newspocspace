@@ -319,6 +319,13 @@ $activeSection = match($page) {
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>">
+window.__ZT_ADMIN__ = {
+  csrfToken: '<?= $csrfToken ?>',
+  adminId: '<?= h($admin['id']) ?>',
+  adminName: '<?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?>'
+};
+</script>
 
   <!-- PAGE CONTENT -->
   <div class="admin-content" id="adminContent">
@@ -343,13 +350,9 @@ $activeSection = match($page) {
 </div>
 
 <script nonce="<?= $cspNonce ?>">
-window.__ZT_ADMIN__ = {
-  csrfToken: '<?= $csrfToken ?>',
-  adminId: '<?= h($admin['id']) ?>',
-  adminName: '<?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?>',
-  mustChangePassword: <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>,
-  tempPasswordExpires: <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>
-};
+// Extend with extra properties
+window.__ZT_ADMIN__.mustChangePassword = <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>;
+window.__ZT_ADMIN__.tempPasswordExpires = <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>;
 
 // Temp password banner (admin)
 if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordExpires) {
