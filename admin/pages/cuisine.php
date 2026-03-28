@@ -1,4 +1,23 @@
-<?php ?>
+<?php
+// ─── Pre-fetch current week menus ────────────────────────────────────────────
+$dt = new DateTime();
+$dow = (int) $dt->format('N');
+$monday = (clone $dt)->modify('-' . ($dow - 1) . ' days');
+$sunday = (clone $monday)->modify('+6 days');
+$ssrMenus = Db::fetchAll(
+    "SELECT m.*,
+            u.prenom AS creator_prenom, u.nom AS creator_nom,
+            (SELECT COUNT(*) FROM menu_reservations r WHERE r.menu_id = m.id AND r.statut = 'confirmee') AS nb_reservations,
+            (SELECT SUM(r2.nb_personnes) FROM menu_reservations r2 WHERE r2.menu_id = m.id AND r2.statut = 'confirmee') AS total_couverts,
+            (SELECT COUNT(*) FROM menu_reservations r3 WHERE r3.menu_id = m.id AND r3.statut = 'confirmee' AND r3.choix = 'menu') AS nb_menu,
+            (SELECT COUNT(*) FROM menu_reservations r4 WHERE r4.menu_id = m.id AND r4.statut = 'confirmee' AND r4.choix = 'salade') AS nb_salade
+     FROM menus m
+     LEFT JOIN users u ON u.id = m.created_by
+     WHERE m.date_jour BETWEEN ? AND ?
+     ORDER BY m.date_jour ASC, m.repas ASC",
+    [$monday->format('Y-m-d'), $sunday->format('Y-m-d')]
+);
+?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0"><i class="bi bi-egg-fried"></i> Menus de la semaine</h4>
   <span class="badge bg-light text-muted border"><i class="bi bi-info-circle"></i> Lecture seule — les menus sont gérés par l'équipe cuisine</span>
@@ -17,6 +36,7 @@
 <script<?= nonce() ?>>
 (function() {
     const DAYS_FR = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    const ssrMenus = <?= json_encode(array_values($ssrMenus), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let menuMonday = getMonday(new Date());
 
     function updateWeekLabel() {
@@ -36,17 +56,13 @@
         loadMenus();
     });
 
-    async function loadMenus() {
+    function renderMenus(menus) {
         const body = document.getElementById('acMenuBody');
         if (!body) return;
         updateWeekLabel();
-        body.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
-
-        const res = await adminApiPost('admin_get_menus', { date: fmtDate(menuMonday) });
-        if (!res.success) { body.innerHTML = '<p class="text-danger">Erreur chargement</p>'; return; }
 
         const menusByKey = {};
-        (res.menus || []).forEach(m => { menusByKey[m.date_jour + '_' + (m.repas || 'midi')] = m; });
+        (menus || []).forEach(m => { menusByKey[m.date_jour + '_' + (m.repas || 'midi')] = m; });
 
         body.innerHTML = '';
         for (let i = 0; i < 7; i++) {
@@ -112,6 +128,15 @@
         }
     }
 
+    async function loadMenus() {
+        const body = document.getElementById('acMenuBody');
+        if (!body) return;
+        body.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+        const res = await adminApiPost('admin_get_menus', { date: fmtDate(menuMonday) });
+        if (!res.success) { body.innerHTML = '<p class="text-danger">Erreur chargement</p>'; return; }
+        renderMenus(res.menus || []);
+    }
+
     async function showMenuReservations(menuId, dateStr, repas) {
         const res = await adminApiPost('admin_get_menu_reservations', { menu_id: menuId });
         if (!res.success) return;
@@ -163,6 +188,7 @@
         return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
     }
 
-    loadMenus();
+    // Initial render from SSR data — no AJAX
+    renderMenus(ssrMenus);
 })();
 </script>

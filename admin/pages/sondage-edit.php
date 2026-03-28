@@ -2,6 +2,29 @@
 <?php
 $editId = $_GET['id'] ?? '';
 $isEdit = !empty($editId);
+
+$ssrSondage = null;
+$ssrQuestions = [];
+if ($isEdit) {
+    $ssrSondage = Db::fetch(
+        "SELECT s.*, u.prenom, u.nom
+         FROM sondages s LEFT JOIN users u ON u.id = s.created_by
+         WHERE s.id = ?",
+        [$editId]
+    );
+    if ($ssrSondage) {
+        $ssrQuestions = Db::fetchAll(
+            "SELECT * FROM sondage_questions WHERE sondage_id = ? ORDER BY ordre ASC",
+            [$editId]
+        );
+        foreach ($ssrQuestions as &$q) {
+            if (!empty($q['options'])) {
+                $q['options'] = json_decode($q['options'], true);
+            }
+        }
+        unset($q);
+    }
+}
 ?>
 
 <style>
@@ -532,6 +555,8 @@ $isEdit = !empty($editId);
 <script<?= nonce() ?>>
 (function() {
     const editId = document.getElementById('seEditId').value;
+    const ssrSondage = <?= json_encode($ssrSondage, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const ssrQuestions = <?= json_encode(array_values($ssrQuestions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let previewModal;
     let isDirty = false;
 
@@ -623,8 +648,11 @@ $isEdit = !empty($editId);
             link.addEventListener('click', (e) => guardNavigation(e, link.href));
         });
 
-        if (editId) {
-            // Show loading state
+        if (editId && ssrSondage) {
+            // Use SSR data — no AJAX needed
+            populateFromData(ssrSondage, ssrQuestions);
+        } else if (editId) {
+            // Fallback: AJAX
             document.getElementById('seQuestionsWrap').innerHTML = '<div class="se-loading"><span class="spinner-border spinner-border-sm"></span> Chargement…</div>';
             await loadExisting();
         } else {
@@ -633,20 +661,24 @@ $isEdit = !empty($editId);
         updateEmptyState();
     });
 
-    // ── Load existing sondage for editing ──
+    // ── Populate form from sondage + questions data ──
+    function populateFromData(sondage, questions) {
+        document.getElementById('seTitre').value = sondage.titre;
+        const descEl = document.getElementById('seDescription');
+        descEl.value = sondage.description || '';
+        descEl.style.height = 'auto';
+        descEl.style.height = descEl.scrollHeight + 'px';
+        document.getElementById('seAnonymous').checked = sondage.is_anonymous == 1;
+
+        document.getElementById('seQuestionsWrap').innerHTML = '';
+        (questions || []).forEach(q => addQuestion(q));
+    }
+
+    // ── Load existing sondage for editing (AJAX fallback) ──
     async function loadExisting() {
         const r = await adminApiPost('admin_get_sondage', { id: editId });
         if (!r.success) { toast('Sondage introuvable', 'error'); return; }
-
-        document.getElementById('seTitre').value = r.sondage.titre;
-        const descEl = document.getElementById('seDescription');
-        descEl.value = r.sondage.description || '';
-        descEl.style.height = 'auto';
-        descEl.style.height = descEl.scrollHeight + 'px';
-        document.getElementById('seAnonymous').checked = r.sondage.is_anonymous == 1;
-
-        document.getElementById('seQuestionsWrap').innerHTML = '';
-        (r.questions || []).forEach(q => addQuestion(q));
+        populateFromData(r.sondage, r.questions);
     }
 
     // ── Add question block ──

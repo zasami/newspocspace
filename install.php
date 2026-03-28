@@ -202,7 +202,7 @@ $allPassed = !in_array(false, $checks, true);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>zerdaTime — Installation</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Inter',sans-serif; background:#f0f2f5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }

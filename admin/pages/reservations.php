@@ -1,4 +1,19 @@
-<?php ?>
+<?php
+// ─── Pre-fetch today's collab reservations ───────────────────────────────────
+$ssrResaDate = date('Y-m-d');
+$ssrResaCollab = Db::fetchAll(
+    "SELECT r.id, r.choix, r.nb_personnes, r.remarques, r.paiement, r.statut, r.created_at,
+            m.date_jour, m.plat, m.salade,
+            u.prenom, u.nom, f.nom AS fonction_nom
+     FROM menu_reservations r
+     JOIN menus m ON m.id = r.menu_id
+     JOIN users u ON u.id = r.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     WHERE m.date_jour = ? AND r.statut = 'confirmee'
+     ORDER BY r.choix ASC, r.created_at ASC",
+    [$ssrResaDate]
+);
+?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0"><i class="bi bi-calendar-check"></i> Réservations repas</h4>
 </div>
@@ -55,6 +70,7 @@
 <script<?= nonce() ?>>
 (function() {
     const today = fmtDate(new Date());
+    const ssrResaCollab = <?= json_encode(array_values($ssrResaCollab), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
     // ═══════════════════════════════════════
     // TAB 1: Réservations collaborateurs
@@ -66,16 +82,10 @@
     document.getElementById('rcRepas')?.addEventListener('change', loadCollab);
     document.getElementById('resaTab-collab')?.addEventListener('shown.bs.tab', loadCollab);
 
-    async function loadCollab() {
+    function renderCollab(reservations) {
         const body = document.getElementById('rcBody');
-        const dateVal = document.getElementById('rcDate')?.value;
-        if (!body || !dateVal) return;
+        if (!body) return;
 
-        body.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
-        const res = await adminApiPost('admin_get_reservations_jour', { date: dateVal });
-        if (!res.success) { body.innerHTML = '<p class="text-danger">Erreur</p>'; return; }
-
-        const reservations = (res.reservations || []);
         if (!reservations.length) {
             body.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-people" style="font-size:2rem;opacity:.3"></i><br>Aucune réservation collaborateur pour cette date</div>';
             return;
@@ -111,6 +121,17 @@
         html += '</tbody></table></div></div></div>';
 
         body.innerHTML = html;
+    }
+
+    async function loadCollab() {
+        const body = document.getElementById('rcBody');
+        const dateVal = document.getElementById('rcDate')?.value;
+        if (!body || !dateVal) return;
+
+        body.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+        const res = await adminApiPost('admin_get_reservations_jour', { date: dateVal });
+        if (!res.success) { body.innerHTML = '<p class="text-danger">Erreur</p>'; return; }
+        renderCollab(res.reservations || []);
     }
 
     // Print
@@ -190,7 +211,7 @@
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
-    // Initial load
-    loadCollab();
+    // Initial render from SSR data — no AJAX
+    renderCollab(ssrResaCollab);
 })();
 </script>
