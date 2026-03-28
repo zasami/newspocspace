@@ -319,6 +319,12 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       </p>
     </div>
     <div class="ws-menu-week">
+      <!-- Week nav -->
+      <div class="ws-menu-nav">
+        <button class="ws-menu-nav-btn" id="wsMenuPrev"><i class="bi bi-chevron-left"></i></button>
+        <span class="ws-menu-nav-label" id="wsMenuWeekLabel"></span>
+        <button class="ws-menu-nav-btn" id="wsMenuNext"><i class="bi bi-chevron-right"></i></button>
+      </div>
       <!-- Carousel container -->
       <div class="ws-carousel-wrap">
         <button class="ws-carousel-arrow ws-carousel-arrow-left" id="wsCarouselLeft"><i class="bi bi-chevron-left"></i></button>
@@ -435,12 +441,13 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         menusByKey[m.date_jour + '_' + (m.repas || 'midi')] = m;
     });
 
-    // ── Date de départ du carousel (aujourd'hui) ──
-    const startDate = new Date('<?= $wsStartDate ?>T00:00:00');
-    // Limite : lundi de cette semaine → +27 jours
+    // ── 28 jours de données, carousel glissant ──
+    const TOTAL_DAYS = 28;
     const minDate = new Date('<?= $wsMonday->format('Y-m-d') ?>T00:00:00');
-    const maxDate = new Date('<?= $wsEnd->format('Y-m-d') ?>T00:00:00');
-    let currentStart = new Date(startDate);
+    // Position initiale = aujourd'hui - lundi de la semaine
+    let carouselPos = Math.floor((new Date() - minDate) / 86400000);
+    if (carouselPos < 0) carouselPos = 0;
+    if (carouselPos > TOTAL_DAYS - 3) carouselPos = TOTAL_DAYS - 3;
 
     function fmtDate(d) {
         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -456,30 +463,77 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         return res.json();
     }
 
-    // ── Carousel arrows = ±1 jour ──
-    document.getElementById('wsCarouselLeft')?.addEventListener('click', () => navigateDay(-1));
-    document.getElementById('wsCarouselRight')?.addEventListener('click', () => navigateDay(1));
+    // ── Week nav buttons = saut au lundi de la semaine ──
+    function updateWeekLabel() {
+        const label = document.getElementById('wsMenuWeekLabel');
+        if (!label) return;
+        // Quel lundi correspond à carouselPos ?
+        const currentDay = new Date(minDate);
+        currentDay.setDate(currentDay.getDate() + carouselPos);
+        const dow = currentDay.getDay();
+        const monday = new Date(currentDay);
+        monday.setDate(monday.getDate() - (dow === 0 ? 6 : dow - 1));
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
 
-    function navigateDay(dir) {
-        const next = new Date(currentStart);
-        next.setDate(next.getDate() + dir);
-        // Vérifier les limites (le 3e jour visible ne dépasse pas maxDate)
-        const lastVisible = new Date(next); lastVisible.setDate(lastVisible.getDate() + 2);
-        if (next < minDate || lastVisible > maxDate) return;
-        currentStart = next;
-        renderCards();
+        const weekNum = Math.floor((monday - minDate) / (7 * 86400000));
+        const weekText = weekNum === 0 ? 'Cette semaine' : weekNum === 1 ? 'Semaine prochaine' :
+            'Semaine du ' + fmtDateShort(monday);
+        label.textContent = weekText + ' — ' + fmtDateShort(monday) + ' au ' + fmtDateShort(sunday);
     }
 
-    // ── Rendu des 3 cartes visibles ──
-    function renderCards() {
+    function fmtDateShort(d) {
+        return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+    }
+
+    document.getElementById('wsMenuPrev')?.addEventListener('click', () => {
+        // Trouver le lundi de la semaine précédente
+        const currentDay = new Date(minDate);
+        currentDay.setDate(currentDay.getDate() + carouselPos);
+        const dow = currentDay.getDay();
+        const daysFromMon = dow === 0 ? 6 : dow - 1;
+        // Aller au lundi de la semaine précédente
+        const targetPos = carouselPos - daysFromMon - 7;
+        carouselPos = Math.max(0, targetPos);
+        updateCarouselPosition();
+        updateWeekLabel();
+    });
+    document.getElementById('wsMenuNext')?.addEventListener('click', () => {
+        // Trouver le lundi de la semaine suivante
+        const currentDay = new Date(minDate);
+        currentDay.setDate(currentDay.getDate() + carouselPos);
+        const dow = currentDay.getDay();
+        const daysFromMon = dow === 0 ? 6 : dow - 1;
+        const targetPos = carouselPos - daysFromMon + 7;
+        carouselPos = Math.min(TOTAL_DAYS - 3, targetPos);
+        updateCarouselPosition();
+        updateWeekLabel();
+    });
+
+    // ── Carousel arrows = glisse d'1 jour ──
+    document.getElementById('wsCarouselLeft')?.addEventListener('click', () => {
+        if (carouselPos > 0) { carouselPos--; updateCarouselPosition(); updateWeekLabel(); }
+    });
+    document.getElementById('wsCarouselRight')?.addEventListener('click', () => {
+        if (carouselPos < TOTAL_DAYS - 3) { carouselPos++; updateCarouselPosition(); updateWeekLabel(); }
+    });
+
+    function updateCarouselPosition() {
+        const track = document.getElementById('wsCarouselTrack');
+        if (!track) return;
+        track.style.transform = 'translateX(-' + (carouselPos * (100 / 3)) + '%)';
+    }
+
+    // ── Rendu des 28 cartes (une seule fois) ──
+    function renderAllCards() {
         const track = document.getElementById('wsCarouselTrack');
         if (!track) return;
         const today = fmtDate(new Date());
         const MEAL_PRICE = { midi: 'CHF 14.50', soir: 'CHF 11.00' };
 
         track.innerHTML = '';
-        for (let i = 0; i < 3; i++) {
-            const d = new Date(currentStart);
+        for (let i = 0; i < TOTAL_DAYS; i++) {
+            const d = new Date(minDate);
             d.setDate(d.getDate() + i);
             const dateStr = fmtDate(d);
             const isToday = dateStr === today;
@@ -521,8 +575,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
             if (maxH) inners.forEach(el => { el.style.height = maxH + 'px'; });
         });
 
-        // Plus besoin de translateX — on rend toujours exactement 3 cartes
-        track.style.transform = '';
+        updateCarouselPosition();
+        updateWeekLabel();
     }
 
     function buildMealBlock(repas, menu, prices) {
@@ -715,8 +769,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         setModalStep('success');
     });
 
-    // Init — rendu immédiat depuis données PHP
-    renderCards();
+    // Init — rendu des 28 cartes + position sur aujourd'hui
+    renderAllCards();
 })();
 </script>
 
