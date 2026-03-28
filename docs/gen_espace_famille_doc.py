@@ -111,10 +111,15 @@ toc_items = [
     '   4.3 Consulter les activités',
     '   4.4 Consulter le suivi médical',
     '   4.5 Galerie photos et lightbox',
-    '5. Gestion des résidents',
-    '6. Stockage et capacité',
-    '7. Sécurité détaillée',
-    '8. FAQ / Dépannage',
+    '5. Réservation restaurant (famille)',
+    '   5.1 Accès et fonctionnement',
+    '   5.2 Étapes de réservation',
+    '   5.3 Menu de la semaine (carousel)',
+    '   5.4 Administration des réservations',
+    '6. Gestion des résidents',
+    '7. Stockage et capacité',
+    '8. Sécurité détaillée',
+    '9. FAQ / Dépannage',
 ]
 for item in toc_items:
     p = doc.add_paragraph(item)
@@ -336,10 +341,122 @@ add_note('Les photos sont déchiffrées progressivement (lazy loading). Si beauc
 doc.add_page_break()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 5. GESTION DES RÉSIDENTS
+# 5. RÉSERVATION RESTAURANT
 # ═══════════════════════════════════════════════════════════════════════════════
 
-doc.add_heading('5. Gestion des résidents', level=1)
+doc.add_heading('5. Réservation restaurant (famille)', level=1)
+
+doc.add_paragraph(
+    'Le site web public de l\'EMS permet aux familles et correspondants de réserver un repas '
+    'pour accompagner leur proche résident. La réservation se fait directement depuis la page '
+    'du menu de la semaine.'
+)
+
+doc.add_heading('5.1 Accès et fonctionnement', level=2)
+
+doc.add_paragraph(
+    'Le module de réservation est accessible depuis le site web principal de l\'EMS :'
+)
+p = doc.add_paragraph()
+run = p.add_run('https://zkriva.com/zerdatime/website/')
+run.bold = True
+
+doc.add_paragraph(
+    'La section « Menu de la semaine » affiche un carousel de cartes jour par jour, '
+    'avec les menus midi et soir pour chaque journée. Chaque carte dispose d\'un bouton '
+    '« Réserver un repas » (désactivé pour les dates passées).'
+)
+
+doc.add_heading('5.2 Étapes de réservation', level=2)
+
+steps_resa = [
+    '1. Cliquez sur « Réserver un repas » sur la carte du jour souhaité',
+    '2. Un modal s\'ouvre — saisissez l\'email du correspondant et le code d\'accès (date de naissance JJMMAAAA)',
+    '3. Le système identifie le résident associé et affiche ses informations',
+    '4. Choisissez le repas : Midi ou Soir',
+    '5. Indiquez le nombre de personnes (1 à 5)',
+    '6. Ajoutez des remarques si nécessaire (allergies, régime...)',
+    '7. Cliquez sur « Confirmer la réservation »',
+    '8. Un ticket de confirmation s\'affiche avec les détails',
+]
+for s in steps_resa:
+    doc.add_paragraph(s)
+
+add_note('Une fois connecté, le correspondant reste identifié pour les réservations suivantes '
+         '(pas besoin de ressaisir email/code). La session est conservée dans le navigateur.')
+
+doc.add_heading('Tarifs', level=3)
+
+add_table(
+    ['Repas', 'Prix'],
+    [
+        ['Midi', 'CHF 14.50'],
+        ['Soir', 'CHF 11.00'],
+    ]
+)
+
+doc.add_heading('Règles de réservation', level=3)
+add_bullet('Impossible de réserver pour une date passée')
+add_bullet('Une seule réservation par résident, par repas, par date')
+add_bullet('Le correspondant ne voit que le résident qui lui est associé')
+
+doc.add_heading('5.3 Menu de la semaine (carousel)', level=2)
+
+doc.add_paragraph(
+    'Le carousel affiche les menus sur 4 semaines (28 jours) dans un défilement continu :'
+)
+add_bullet('3 cartes visibles simultanément (jours consécutifs)')
+add_bullet('Flèches gauche/droite : avancer ou reculer d\'1 jour')
+add_bullet('Passage automatique d\'une semaine à l\'autre en continuité')
+add_bullet('Boutons « semaine précédente / suivante » pour sauter de 7 jours')
+add_bullet('Le jour actuel est mis en surbrillance avec un badge « Aujourd\'hui »')
+
+doc.add_paragraph('Chaque carte affiche :')
+add_bullet('Le jour et la date')
+add_bullet('Menu du midi : entrée, plat, accompagnement, salade, dessert')
+add_bullet('Menu du soir : même structure')
+add_bullet('Prix par repas')
+add_bullet('Remarques éventuelles du chef')
+
+doc.add_heading('5.4 Administration des réservations', level=2)
+
+doc.add_paragraph(
+    'Les réservations famille sont gérées côté admin dans la page « Réservations repas » :'
+)
+add_bullet('Onglet « Collaborateurs » : réservations des employés de l\'EMS', 'Tab 1')
+add_bullet('Onglet « Famille / Visiteurs » : réservations des correspondants de résidents', 'Tab 2')
+
+doc.add_paragraph('Pour chaque réservation, l\'admin peut voir :')
+add_bullet('Le nom du résident et du visiteur')
+add_bullet('La chambre du résident')
+add_bullet('Le choix (menu ou salade)')
+add_bullet('Le nombre de personnes')
+add_bullet('Les remarques (allergies, régime)')
+add_bullet('Le créateur de la réservation')
+
+doc.add_paragraph(
+    'Un bouton « Imprimer » permet de générer une version imprimable des réservations du jour, '
+    'utile pour la cuisine.'
+)
+
+doc.add_heading('Administration des menus', level=3)
+doc.add_paragraph(
+    'Les menus sont gérés dans la page « Menus » du panel admin (section Cuisine). '
+    'Les animateurs cuisine créent les menus midi et soir pour chaque jour. '
+    'Les menus sont automatiquement affichés sur le site web public.'
+)
+
+add_note('Les menus du site web sont mis en cache côté serveur (SSR). '
+         'Ils sont chargés au rendu de la page, pas en AJAX, '
+         'pour un affichage instantané sans spinner.')
+
+doc.add_page_break()
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. GESTION DES RÉSIDENTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+doc.add_heading('6. Gestion des résidents', level=1)
 
 doc.add_paragraph(
     'La page « Résidents » dans le panel admin permet de gérer tous les résidents de l\'EMS.'
@@ -376,10 +493,10 @@ doc.add_paragraph(
 doc.add_page_break()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 6. STOCKAGE
+# 7. STOCKAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-doc.add_heading('6. Stockage et capacité', level=1)
+doc.add_heading('7. Stockage et capacité', level=1)
 
 doc.add_paragraph(
     'Les fichiers chiffrés sont stockés dans le dossier uploads/famille/ sur le serveur, '
@@ -412,10 +529,10 @@ add_note('Tous les fichiers sont stockés sous un nom UUID avec extension .enc. 
 doc.add_page_break()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 7. SÉCURITÉ
+# 8. SÉCURITÉ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-doc.add_heading('7. Sécurité détaillée', level=1)
+doc.add_heading('8. Sécurité détaillée', level=1)
 
 add_table(
     ['Mesure', 'Description'],
@@ -437,10 +554,10 @@ add_table(
 doc.add_page_break()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 8. FAQ
+# 9. FAQ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-doc.add_heading('8. FAQ / Dépannage', level=1)
+doc.add_heading('9. FAQ / Dépannage', level=1)
 
 faqs = [
     ('La famille ne peut pas se connecter',
