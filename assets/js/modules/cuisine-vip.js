@@ -8,7 +8,7 @@ let currentSession = null;
 let residentHandler = null;
 let newModal = null;
 
-export async function init() {
+export function init() {
     const newModalEl = document.getElementById('cvNewModal');
     if (newModalEl) newModal = new bootstrap.Modal(newModalEl);
 

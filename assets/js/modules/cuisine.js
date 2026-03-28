@@ -7,7 +7,7 @@ const DAYS_FR = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanch
 let menuMonday = null;
 let familleModal = null, vipModal = null;
 
-export async function init() {
+export function init() {
     const denied = window.__ZT__?.deniedPerms || [];
 
     // Hide tabs the user can't access

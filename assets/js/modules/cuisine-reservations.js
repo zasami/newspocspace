@@ -5,7 +5,7 @@ import { apiPost, toast, escapeHtml, debounce } from '../helpers.js';
 
 let modal = null;
 
-export async function init() {
+export function init() {
     const dateInput = document.getElementById('crDate');
     const repasSelect = document.getElementById('crRepas');
     if (dateInput) dateInput.value = todayStr();

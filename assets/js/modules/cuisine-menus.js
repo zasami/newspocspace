@@ -9,7 +9,7 @@ let menusCache = {};
 let modal = null;
 let canEdit = true;
 
-export async function init() {
+export function init() {
     const denied = window.__ZT__?.deniedPerms || [];
     canEdit = !denied.includes('cuisine_saisie_menu');
     menuMonday = getMonday(new Date());
