@@ -131,7 +131,7 @@
   </div>
 </div>
 
-<script>
+<script<?= nonce() ?>>
 let pvId = null;
 let pvData = null;
 

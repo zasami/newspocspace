@@ -35,7 +35,7 @@ $csrfToken = $_SESSION['zt_csrf_token'] ?? '';
 $cspNonce = base64_encode(random_bytes(16));
 define('CSP_NONCE', $cspNonce);
 function nonce(): string { return ' nonce="' . CSP_NONCE . '"'; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:59876 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:59876 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
 
 // Load EMS logo + name for sidebar
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -197,8 +197,8 @@ $activeSection = match($page) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/zerdatime/admin/">
 <title>Admin — zerdaTime</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
 <!-- Tailwind CSS is NOT loaded in admin: admin uses Bootstrap + admin.css only.
      The css_mode setting applies to the front-end app, not the admin panel. -->
@@ -285,7 +285,7 @@ $activeSection = match($page) {
     </div>
   </header>
 
-<script nonce="<?= $cspNonce ?>" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>

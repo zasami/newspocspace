@@ -226,7 +226,7 @@
 .d-block-visible { display: block; }
 </style>
 
-<script type="module">
+<script type="module"<?= nonce() ?>>
 import { createEditor, getHTML, setContent } from '/terrassiere/assets/js/rich-editor.js';
 
 let isRecording = false;

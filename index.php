@@ -11,7 +11,7 @@ $v = APP_VERSION;
 
 // CSP nonce
 $cspNonce = base64_encode(random_bytes(16));
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; worker-src 'self' blob:;");
 
 // Load EMS config for logo + name
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -116,10 +116,10 @@ if ($user && !empty($deniedPerms)) {
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/zerdatime.css?v=<?= $v ?>">
 <?php if ($cssMode === 'tailwind'): ?>
-<script nonce="<?= $cspNonce ?>" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script nonce="<?= $cspNonce ?>" src="/zerdatime/assets/js/vendor/tailwind-browser.min.js"></script>
 <style type="text/tailwindcss">
 @theme { --prefix: tw; }
 </style>

@@ -165,7 +165,7 @@
   </div>
 </div>
 
-<script>
+<script<?= nonce() ?>>
 document.addEventListener('DOMContentLoaded', async function() {
   const refs = await adminApiPost('admin_get_pv_refs', {});
   if (!refs.success) return;
