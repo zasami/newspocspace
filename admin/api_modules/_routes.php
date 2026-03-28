@@ -116,4 +116,13 @@ return [
         'admin_get_menu_reservations', 'admin_get_reservations_jour',
         'admin_get_reservations_famille',
     ],
+    'famille' => [
+        'admin_famille_setup_key', 'admin_famille_get_key', 'admin_famille_get_residents',
+        'admin_famille_get_activites', 'admin_famille_save_activite', 'admin_famille_delete_activite',
+        'admin_famille_upload_activite_photo', 'admin_famille_delete_photo',
+        'admin_famille_get_medical', 'admin_famille_save_medical', 'admin_famille_delete_medical',
+        'admin_famille_upload_medical_fichier',
+        'admin_famille_get_galerie', 'admin_famille_save_album', 'admin_famille_delete_album',
+        'admin_famille_upload_galerie_photo', 'admin_famille_set_cover',
+    ],
 ];
