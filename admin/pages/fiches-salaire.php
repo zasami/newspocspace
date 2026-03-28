@@ -1,3 +1,31 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$fsInitYear = (int) date('Y');
+$fsFiches = Db::fetchAll(
+    "SELECT fs.id, fs.user_id, fs.annee, fs.mois, fs.original_name, fs.size, fs.created_at,
+            u.prenom, u.nom, u.employee_id,
+            f.code AS fonction_code,
+            m.nom AS module_nom, m.code AS module_code,
+            up.prenom AS uploaded_by_prenom, up.nom AS uploaded_by_nom
+     FROM fiches_salaire fs
+     JOIN users u ON u.id = fs.user_id
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     LEFT JOIN users up ON up.id = fs.uploaded_by
+     WHERE fs.annee = ?
+     ORDER BY fs.annee DESC, fs.mois DESC, u.nom, u.prenom",
+    [$fsInitYear]
+);
+$fsUsers = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.employee_id, f.code AS fonction_code
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     WHERE u.is_active = 1
+     ORDER BY u.nom, u.prenom",
+    []
+);
+?>
 <!-- Title + buttons row -->
 <div class="d-flex justify-content-between align-items-center mb-2">
   <h5 class="mb-0"><i class="bi bi-receipt"></i> Fiches de salaire</h5>
@@ -159,11 +187,11 @@
 <script<?= nonce() ?>>
 const MOIS_NOMS = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const MOIS_OPTIONS = MOIS_NOMS.slice(1).map((m, i) => ({ value: String(i + 1), label: m }));
-let fsYear = new Date().getFullYear();
-let fsUsers = [];
-let fsFiches = [];
+let fsYear = <?= json_encode($fsInitYear) ?>;
+let fsUsers = <?= json_encode(array_values($fsUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+let fsFiches = <?= json_encode(array_values($fsFiches), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
-async function initFichesSalairePage() {
+function initFichesSalairePage() {
     document.getElementById('fsYear').textContent = fsYear;
 
     // Init month filter selects
@@ -236,7 +264,16 @@ async function initFichesSalairePage() {
     document.getElementById('fsUploadSubmit')?.addEventListener('click', uploadSingle);
     document.getElementById('fsBulkSubmit')?.addEventListener('click', uploadBulk);
 
-    await loadFiches();
+    // Init filters from injected data
+    const userOpts = fsUsers.map(u => ({
+        value: u.id,
+        label: `${u.nom} ${u.prenom}${u.fonction_code ? ' (' + u.fonction_code + ')' : ''}`
+    }));
+    zerdaSelect.init('#fsUserFilter', userOpts, { value: '', search: true, onSelect: renderTable });
+    const uploadUserOpts = fsUsers.map(u => ({ value: u.id, label: `${u.nom} ${u.prenom}` }));
+    zerdaSelect.init('#fsUploadUser', uploadUserOpts, { value: '', search: true });
+    renderTable();
+    updateStats();
 }
 
 async function loadFiches() {
