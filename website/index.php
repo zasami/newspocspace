@@ -487,7 +487,21 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     document.getElementById('wsCarouselRight')?.addEventListener('click', () => slideCarousel(1));
 
     function slideCarousel(dir) {
-        carouselPos = Math.max(0, Math.min(carouselPos + dir, 4)); // 7 days - 3 visible = 4 max
+        const newPos = carouselPos + dir;
+        // Passage à la semaine suivante/précédente quand on dépasse les bornes
+        if (newPos > 4 && currentWeekOffset < 3) {
+            currentWeekOffset++;
+            carouselPos = 0;
+            loadWeek();
+            return;
+        }
+        if (newPos < 0 && currentWeekOffset > 0) {
+            currentWeekOffset--;
+            carouselPos = 4;
+            loadWeek();
+            return;
+        }
+        carouselPos = Math.max(0, Math.min(newPos, 4));
         updateCarouselPosition();
     }
 
