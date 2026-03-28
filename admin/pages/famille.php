@@ -77,6 +77,7 @@ $famResidents = Db::fetchAll(
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-bold mb-0">Albums photo</h6>
         <button class="btn btn-sm btn-outline-dark" id="famNewAlbBtn"><i class="bi bi-plus-lg"></i> Nouvel album</button>
+        <button class="btn btn-sm btn-outline-secondary" id="famBatchImportBtn"><i class="bi bi-cloud-upload"></i> Import par lot</button>
       </div>
       <div id="famGalList"></div>
     </div>
@@ -236,34 +237,49 @@ $famResidents = Db::fetchAll(
         }
     }
 
-    // ── Encrypt and upload a file ──
-    async function encryptAndUpload(file, action, extraData) {
-        const key = await getAesKey();
-        if (!key) return null;
-
-        const buf = await file.arrayBuffer();
-        const encrypted = await FamilleCrypto.encryptFile(key, buf);
-
-        const blob = new Blob([encrypted.data]);
-        const fd = new FormData();
-        fd.append('file', blob, 'encrypted.enc');
-        fd.append('encrypted_iv', encrypted.iv);
-        fd.append('file_name', file.name);
-        Object.entries(extraData || {}).forEach(([k, v]) => fd.append(k, v));
-
-        const resp = await fetch('/zerdatime/admin/api.php', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-            body: fd
+    // ── Convert image to WebP (client-side, via canvas) ──
+    function convertToWebp(file, quality) {
+        quality = quality || 0.82;
+        return new Promise((resolve) => {
+            // If already webp or not an image, skip conversion
+            if (file.type === 'image/webp' || !file.type.startsWith('image/')) {
+                resolve(file);
+                return;
+            }
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                canvas.toBlob((blob) => {
+                    URL.revokeObjectURL(url);
+                    if (!blob) { resolve(file); return; }
+                    const baseName = file.name.replace(/\.[^.]+$/, '') + '.webp';
+                    resolve(new File([blob], baseName, { type: 'image/webp', lastModified: file.lastModified }));
+                }, 'image/webp', quality);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+            img.src = url;
         });
-
-        // Need to add action since FormData doesn't go in JSON
-        // Actually admin api.php expects action in POST
-        // Re-do with action in form data
-        return null; // will handle properly below
     }
 
-    // Better upload helper
+    // ── Extract date from EXIF or filename ──
+    function extractDateFromFile(file) {
+        const name = file.name || '';
+        // Try patterns: 2024-03-15, 20240315, IMG_20240315, etc.
+        const m = name.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/);
+        if (m) return m[1] + '-' + m[2] + '-' + m[3];
+        // Try lastModified
+        if (file.lastModified) {
+            const d = new Date(file.lastModified);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        return null;
+    }
+
+    // Upload encrypted file helper
     async function uploadEncryptedFile(file, action, extraFields) {
         const key = await getAesKey();
         if (!key) return null;
@@ -296,7 +312,10 @@ $famResidents = Db::fetchAll(
         renderActivites(res.activites || []);
     }
 
+    let activitesCache = [];
+
     function renderActivites(items) {
+        activitesCache = items;
         const el = document.getElementById('famActList');
         if (!items.length) { el.innerHTML = '<p class="text-muted text-center py-4">Aucune activité</p>'; return; }
         el.innerHTML = items.map(a => `
@@ -304,9 +323,9 @@ $famResidents = Db::fetchAll(
               <div class="fam-item-header">
                 <div><span class="fam-item-title">${escapeHtml(a.titre)}</span> <span class="fam-item-date">${escapeHtml(a.date_activite)}</span></div>
                 <div class="fam-item-actions">
-                  <button onclick="famEditAct('${a.id}','${escapeHtml(a.titre)}','${a.date_activite}','${escapeHtml(a.description||'')}')"><i class="bi bi-pencil"></i></button>
-                  <button onclick="famUploadActPhotos('${a.id}')"><i class="bi bi-images"></i> +Photos</button>
-                  <button onclick="famDeleteAct('${a.id}')"><i class="bi bi-trash3"></i></button>
+                  <button data-fam-edit-act="${a.id}"><i class="bi bi-pencil"></i></button>
+                  <button data-fam-upload-act="${a.id}"><i class="bi bi-images"></i> +Photos</button>
+                  <button data-fam-del-act="${a.id}"><i class="bi bi-trash3"></i></button>
                 </div>
               </div>
               ${a.description ? '<p class="text-muted small mb-1">' + escapeHtml(a.description) + '</p>' : ''}
@@ -314,6 +333,33 @@ $famResidents = Db::fetchAll(
             </div>
         `).join('');
     }
+
+    // Event delegation for activités
+    document.getElementById('famActList').addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-fam-edit-act]');
+        if (editBtn) {
+            const a = activitesCache.find(x => x.id === editBtn.dataset.famEditAct);
+            if (a) {
+                document.getElementById('famActEditId').value = a.id;
+                document.getElementById('famActTitre').value = a.titre;
+                document.getElementById('famActDate').value = a.date_activite;
+                document.getElementById('famActDesc').value = a.description || '';
+                document.getElementById('famActModalTitle').textContent = 'Modifier activité';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('famActModal')).show();
+            }
+            return;
+        }
+        const uploadBtn = e.target.closest('[data-fam-upload-act]');
+        if (uploadBtn) {
+            doUploadActPhotos(uploadBtn.dataset.famUploadAct);
+            return;
+        }
+        const delBtn = e.target.closest('[data-fam-del-act]');
+        if (delBtn) {
+            doDeleteAct(delBtn.dataset.famDelAct);
+            return;
+        }
+    });
 
     document.getElementById('famNewActBtn').addEventListener('click', () => {
         document.getElementById('famActEditId').value = '';
@@ -323,15 +369,6 @@ $famResidents = Db::fetchAll(
         document.getElementById('famActModalTitle').textContent = 'Nouvelle activité';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('famActModal')).show();
     });
-
-    window.famEditAct = (id, titre, date, desc) => {
-        document.getElementById('famActEditId').value = id;
-        document.getElementById('famActTitre').value = titre;
-        document.getElementById('famActDate').value = date;
-        document.getElementById('famActDesc').value = desc;
-        document.getElementById('famActModalTitle').textContent = 'Modifier activité';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('famActModal')).show();
-    };
 
     document.getElementById('famActSaveBtn').addEventListener('click', async () => {
         const res = await adminApiPost('admin_famille_save_activite', {
@@ -348,27 +385,28 @@ $famResidents = Db::fetchAll(
         } else { showToast(res.message || 'Erreur', 'error'); }
     });
 
-    window.famUploadActPhotos = async (actId) => {
+    async function doUploadActPhotos(actId) {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
         input.accept = 'image/*';
         input.addEventListener('change', async () => {
             for (const file of input.files) {
-                const res = await uploadEncryptedFile(file, 'admin_famille_upload_activite_photo', { activite_id: actId });
+                const webpFile = await convertToWebp(file);
+                const res = await uploadEncryptedFile(webpFile, 'admin_famille_upload_activite_photo', { activite_id: actId });
                 if (res?.success) showToast('Photo ajoutée', 'success');
                 else showToast(res?.message || 'Erreur upload', 'error');
             }
             loadActivites();
         });
         input.click();
-    };
+    }
 
-    window.famDeleteAct = async (id) => {
+    async function doDeleteAct(id) {
         if (!confirm('Supprimer cette activité et ses photos ?')) return;
         const res = await adminApiPost('admin_famille_delete_activite', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadActivites(); }
-    };
+    }
 
     // ═══ MÉDICAL ═════════════════════════════════════════════════════════════
 
@@ -378,7 +416,10 @@ $famResidents = Db::fetchAll(
         renderMedical(res.medical || []);
     }
 
+    let medicalCache = [];
+
     function renderMedical(items) {
+        medicalCache = items;
         const el = document.getElementById('famMedList');
         if (!items.length) { el.innerHTML = '<p class="text-muted text-center py-4">Aucun avis médical</p>'; return; }
         const typeBadge = t => `<span class="fam-med-type-badge fam-med-type-${t}">${t}</span>`;
@@ -387,15 +428,36 @@ $famResidents = Db::fetchAll(
               <div class="fam-item-header">
                 <div><span class="fam-item-title">${escapeHtml(m.titre)}</span> ${typeBadge(m.type)} <span class="fam-item-date">${escapeHtml(m.date_avis)}</span></div>
                 <div class="fam-item-actions">
-                  <button onclick="famEditMed('${m.id}','${escapeHtml(m.titre)}','${m.date_avis}','${m.type}')"><i class="bi bi-pencil"></i></button>
-                  <button onclick="famUploadMedFile('${m.id}')"><i class="bi bi-paperclip"></i> +Fichier</button>
-                  <button onclick="famDeleteMed('${m.id}')"><i class="bi bi-trash3"></i></button>
+                  <button data-fam-edit-med="${m.id}"><i class="bi bi-pencil"></i></button>
+                  <button data-fam-upload-med="${m.id}"><i class="bi bi-paperclip"></i> +Fichier</button>
+                  <button data-fam-del-med="${m.id}"><i class="bi bi-trash3"></i></button>
                 </div>
               </div>
               ${m.nb_fichiers > 0 ? '<small class="text-muted">' + m.nb_fichiers + ' fichier(s)</small>' : ''}
             </div>
         `).join('');
     }
+
+    document.getElementById('famMedList').addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-fam-edit-med]');
+        if (editBtn) {
+            const m = medicalCache.find(x => x.id === editBtn.dataset.famEditMed);
+            if (m) {
+                document.getElementById('famMedEditId').value = m.id;
+                document.getElementById('famMedTitre').value = m.titre;
+                document.getElementById('famMedDate').value = m.date_avis;
+                document.getElementById('famMedType').value = m.type;
+                document.getElementById('famMedContenu').value = '';
+                document.getElementById('famMedModalTitle').textContent = 'Modifier avis médical';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('famMedModal')).show();
+            }
+            return;
+        }
+        const uploadBtn = e.target.closest('[data-fam-upload-med]');
+        if (uploadBtn) { doUploadMedFile(uploadBtn.dataset.famUploadMed); return; }
+        const delBtn = e.target.closest('[data-fam-del-med]');
+        if (delBtn) { doDeleteMed(delBtn.dataset.famDelMed); return; }
+    });
 
     document.getElementById('famNewMedBtn').addEventListener('click', () => {
         document.getElementById('famMedEditId').value = '';
@@ -406,16 +468,6 @@ $famResidents = Db::fetchAll(
         document.getElementById('famMedModalTitle').textContent = 'Nouvel avis médical';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('famMedModal')).show();
     });
-
-    window.famEditMed = (id, titre, date, type) => {
-        document.getElementById('famMedEditId').value = id;
-        document.getElementById('famMedTitre').value = titre;
-        document.getElementById('famMedDate').value = date;
-        document.getElementById('famMedType').value = type;
-        document.getElementById('famMedContenu').value = '';
-        document.getElementById('famMedModalTitle').textContent = 'Modifier avis médical';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('famMedModal')).show();
-    };
 
     document.getElementById('famMedSaveBtn').addEventListener('click', async () => {
         const contenu = document.getElementById('famMedContenu').value.trim();
@@ -446,7 +498,7 @@ $famResidents = Db::fetchAll(
         } else { showToast(res.message || 'Erreur', 'error'); }
     });
 
-    window.famUploadMedFile = async (medId) => {
+    async function doUploadMedFile(medId) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
@@ -458,13 +510,13 @@ $famResidents = Db::fetchAll(
             else showToast(res?.message || 'Erreur upload', 'error');
         });
         input.click();
-    };
+    }
 
-    window.famDeleteMed = async (id) => {
+    async function doDeleteMed(id) {
         if (!confirm('Supprimer cet avis médical et ses fichiers ?')) return;
         const res = await adminApiPost('admin_famille_delete_medical', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadMedical(); }
-    };
+    }
 
     // ═══ GALERIE ═════════════════════════════════════════════════════════════
 
@@ -474,7 +526,10 @@ $famResidents = Db::fetchAll(
         renderGalerie(res.albums || []);
     }
 
+    let galerieCache = [];
+
     function renderGalerie(albums) {
+        galerieCache = albums;
         const el = document.getElementById('famGalList');
         if (!albums.length) { el.innerHTML = '<p class="text-muted text-center py-4">Aucun album</p>'; return; }
         el.innerHTML = albums.map(a => `
@@ -482,15 +537,35 @@ $famResidents = Db::fetchAll(
               <div class="fam-item-header">
                 <div><span class="fam-item-title">${escapeHtml(a.titre)}</span> <span class="fam-item-date">${a.annee} — ${escapeHtml(a.date_galerie)}</span></div>
                 <div class="fam-item-actions">
-                  <button onclick="famEditAlb('${a.id}','${escapeHtml(a.titre)}','${a.date_galerie}','${a.annee}')"><i class="bi bi-pencil"></i></button>
-                  <button onclick="famUploadGalPhotos('${a.id}')"><i class="bi bi-images"></i> +Photos</button>
-                  <button onclick="famDeleteAlb('${a.id}')"><i class="bi bi-trash3"></i></button>
+                  <button data-fam-edit-alb="${a.id}"><i class="bi bi-pencil"></i></button>
+                  <button data-fam-upload-gal="${a.id}"><i class="bi bi-images"></i> +Photos</button>
+                  <button data-fam-del-alb="${a.id}"><i class="bi bi-trash3"></i></button>
                 </div>
               </div>
               <small class="text-muted">${a.nb_photos || 0} photo(s) · Par ${escapeHtml((a.creator_prenom||'')+' '+(a.creator_nom||''))}</small>
             </div>
         `).join('');
     }
+
+    document.getElementById('famGalList').addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-fam-edit-alb]');
+        if (editBtn) {
+            const a = galerieCache.find(x => x.id === editBtn.dataset.famEditAlb);
+            if (a) {
+                document.getElementById('famAlbEditId').value = a.id;
+                document.getElementById('famAlbTitre').value = a.titre;
+                document.getElementById('famAlbDate').value = a.date_galerie;
+                document.getElementById('famAlbAnnee').value = a.annee;
+                document.getElementById('famAlbModalTitle').textContent = 'Modifier album';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('famAlbModal')).show();
+            }
+            return;
+        }
+        const uploadBtn = e.target.closest('[data-fam-upload-gal]');
+        if (uploadBtn) { doUploadGalPhotos(uploadBtn.dataset.famUploadGal); return; }
+        const delBtn = e.target.closest('[data-fam-del-alb]');
+        if (delBtn) { doDeleteAlb(delBtn.dataset.famDelAlb); return; }
+    });
 
     document.getElementById('famNewAlbBtn').addEventListener('click', () => {
         document.getElementById('famAlbEditId').value = '';
@@ -500,15 +575,6 @@ $famResidents = Db::fetchAll(
         document.getElementById('famAlbModalTitle').textContent = 'Nouvel album';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('famAlbModal')).show();
     });
-
-    window.famEditAlb = (id, titre, date, annee) => {
-        document.getElementById('famAlbEditId').value = id;
-        document.getElementById('famAlbTitre').value = titre;
-        document.getElementById('famAlbDate').value = date;
-        document.getElementById('famAlbAnnee').value = annee;
-        document.getElementById('famAlbModalTitle').textContent = 'Modifier album';
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('famAlbModal')).show();
-    };
 
     document.getElementById('famAlbSaveBtn').addEventListener('click', async () => {
         const res = await adminApiPost('admin_famille_save_album', {
@@ -525,32 +591,100 @@ $famResidents = Db::fetchAll(
         } else { showToast(res.message || 'Erreur', 'error'); }
     });
 
-    window.famUploadGalPhotos = async (albumId) => {
+    async function doUploadGalPhotos(albumId) {
         const input = document.createElement('input');
         input.type = 'file';
         input.multiple = true;
         input.accept = 'image/*';
         input.addEventListener('change', async () => {
             for (const file of input.files) {
-                const res = await uploadEncryptedFile(file, 'admin_famille_upload_galerie_photo', { galerie_id: albumId });
+                const webpFile = await convertToWebp(file);
+                const res = await uploadEncryptedFile(webpFile, 'admin_famille_upload_galerie_photo', { galerie_id: albumId });
                 if (res?.success) showToast('Photo ajoutée', 'success');
                 else showToast(res?.message || 'Erreur upload', 'error');
             }
             loadGalerie();
         });
         input.click();
-    };
+    }
 
-    window.famDeleteAlb = async (id) => {
+    async function doDeleteAlb(id) {
         if (!confirm('Supprimer cet album et toutes ses photos ?')) return;
         const res = await adminApiPost('admin_famille_delete_album', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadGalerie(); }
-    };
+    }
 
     // Reset on resident change
     document.querySelectorAll('#famTabs .nav-link').forEach(tab => {
         tab.addEventListener('shown.bs.tab', () => { aesKey = null; });
     });
+
+    // ═══ IMPORT PAR LOT ═══════════════════════════════════════════════════════
+    // Sélectionne N photos → extrait la date de chaque → regroupe par mois
+    // → crée un album par mois → upload les photos convertis en webp + chiffrées
+
+    document.getElementById('famBatchImportBtn').addEventListener('click', () => {
+        if (!selectedResident) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*';
+        input.addEventListener('change', () => doBatchImport(input.files));
+        input.click();
+    });
+
+    async function doBatchImport(files) {
+        if (!files.length) return;
+
+        const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+        // Group files by month
+        const byMonth = {};
+        for (const file of files) {
+            const dateStr = extractDateFromFile(file);
+            let monthKey, year, month;
+            if (dateStr) {
+                year = dateStr.slice(0, 4);
+                month = parseInt(dateStr.slice(5, 7));
+                monthKey = year + '-' + String(month).padStart(2, '0');
+            } else {
+                year = String(new Date().getFullYear());
+                month = new Date().getMonth() + 1;
+                monthKey = year + '-' + String(month).padStart(2, '0');
+            }
+            if (!byMonth[monthKey]) byMonth[monthKey] = { year, month, files: [] };
+            byMonth[monthKey].files.push(file);
+        }
+
+        const months = Object.keys(byMonth).sort();
+        showToast('Import de ' + files.length + ' photos dans ' + months.length + ' album(s)…', 'info');
+
+        for (const mk of months) {
+            const group = byMonth[mk];
+            const titre = MOIS_FR[group.month - 1] + ' ' + group.year;
+            const dateGalerie = mk + '-01';
+
+            // Create album
+            const albRes = await adminApiPost('admin_famille_save_album', {
+                resident_id: selectedResident.id,
+                titre: titre,
+                date_galerie: dateGalerie,
+                annee: group.year
+            });
+            if (!albRes.success) { showToast('Erreur création album ' + titre, 'error'); continue; }
+
+            const albumId = albRes.id;
+            let count = 0;
+            for (const file of group.files) {
+                const webpFile = await convertToWebp(file);
+                const res = await uploadEncryptedFile(webpFile, 'admin_famille_upload_galerie_photo', { galerie_id: albumId });
+                if (res?.success) count++;
+            }
+            showToast(titre + ' : ' + count + ' photo(s) importées', 'success');
+        }
+
+        loadGalerie();
+    }
 
     window.initFamillePage = () => {};
 })();
