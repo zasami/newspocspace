@@ -129,6 +129,21 @@ $pageLabels = [
     'reservations'  => 'Réservations repas',
 ];
 
+// ── AJAX page loading (SPA mode) ──
+if (!empty($_GET['_ajax'])) {
+    ob_start();
+    require $pageFile;
+    $html = ob_get_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'html' => $html,
+        'page' => $page,
+        'title' => ($pageLabels[$page] ?? 'Admin') . ' — zerdaTime',
+        'nonce' => $cspNonce,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Sidebar with categories
 $sidebarCategories = [
     'general' => [
@@ -207,18 +222,6 @@ $activeSection = match($page) {
 </head>
 <body>
 
-<!-- Immersive mode restore pill -->
-<button class="zt-immersive-pill" id="immersivePill" title="Afficher la sidebar"><i class="bi bi-layout-sidebar-inset"></i></button>
-
-<!-- Immersive mode — runs ASAP to avoid FOUC -->
-<script nonce="<?= $cspNonce ?>">
-(function() {
-    if (localStorage.getItem('zt_immersive') === '1') document.body.classList.add('zt-immersive');
-    // Clean old fullscreen flag
-    sessionStorage.removeItem('zt_fullscreen');
-})();
-</script>
-
 <!-- BACKDROP (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -279,7 +282,7 @@ $activeSection = match($page) {
         <i class="bi bi-envelope"></i>
         <span class="topbar-notif-badge" id="adminEmailBadge" style="display:none"></span>
       </a>
-      <button class="topbar-icon-btn" id="immersiveToggle" title="Mode immersif">
+      <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
 <?php
@@ -342,29 +345,115 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
 
 </script>
 
-<!-- Immersive mode toggle (separate script to avoid being blocked by page errors) -->
+<!-- Fullscreen + SPA router (separate script) -->
 <script nonce="<?= $cspNonce ?>">
 (function() {
-    var btn = document.getElementById('immersiveToggle');
-    var pill = document.getElementById('immersivePill');
+    // ── Fullscreen (browser API) ──
+    var fsBtn = document.getElementById('immersiveToggle');
 
-    function setImmersive(on) {
-        document.body.classList.toggle('zt-immersive', on);
-        localStorage.setItem('zt_immersive', on ? '1' : '0');
-        var icon = btn && btn.querySelector('i');
-        if (icon) icon.className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
-        if (btn) btn.title = on ? 'Quitter le mode immersif' : 'Mode immersif';
+    function updateFsIcon() {
+        var icon = fsBtn && fsBtn.querySelector('i');
+        if (icon) icon.className = document.fullscreenElement ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
     }
 
-    if (btn) btn.addEventListener('click', function() { setImmersive(!document.body.classList.contains('zt-immersive')); });
-    if (pill) pill.addEventListener('click', function() { setImmersive(false); });
+    if (fsBtn) fsBtn.addEventListener('click', function() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(function(){});
+            localStorage.removeItem('zt_fullscreen');
+        } else {
+            document.documentElement.requestFullscreen().catch(function(){});
+            localStorage.setItem('zt_fullscreen', '1');
+        }
+    });
 
-    // Sync icon state on load
-    if (document.body.classList.contains('zt-immersive')) {
-        var icon = btn && btn.querySelector('i');
-        if (icon) icon.className = 'bi bi-fullscreen-exit';
-        if (btn) btn.title = 'Quitter le mode immersif';
+    document.addEventListener('fullscreenchange', updateFsIcon);
+    updateFsIcon();
+
+    // ── SPA Router — navigation AJAX sans rechargement ──
+    var contentEl = document.getElementById('adminContent');
+    var titleEl = document.querySelector('.topbar-title');
+    var BASE = '/zerdatime/admin/';
+
+    function pageFromUrl(url) {
+        var u = new URL(url, location.origin);
+        // URL: /zerdatime/admin/planning or /zerdatime/admin/planning/id
+        var path = u.pathname.replace(/\/$/, '');
+        var parts = path.replace(BASE.replace(/\/$/, ''), '').replace(/^\//, '').split('/');
+        return parts[0] || 'dashboard';
     }
+
+    function navigateTo(url, pushState) {
+        var page = pageFromUrl(url);
+        // Build AJAX URL: append _ajax=1
+        var sep = url.includes('?') ? '&' : '?';
+        var ajaxUrl = url + sep + '_ajax=1';
+
+        // Update sidebar active state
+        document.querySelectorAll('.sidebar-link').forEach(function(l) {
+            var lHref = l.getAttribute('href') || '';
+            var lPage = pageFromUrl(lHref);
+            l.classList.toggle('active', lPage === page);
+        });
+
+        // Fetch page content
+        fetch(ajaxUrl, { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                // Inject HTML
+                contentEl.innerHTML = data.html;
+
+                // Execute scripts in the new content
+                contentEl.querySelectorAll('script').forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        if (attr.name === 'nonce') return;
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.nonce = data.nonce;
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                    }
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+
+                // Update title + topbar
+                document.title = data.title;
+                if (titleEl) titleEl.textContent = data.title.split(' — ')[0];
+
+                // Push state
+                if (pushState !== false) {
+                    history.pushState({ page: page }, '', url);
+                }
+
+                // Scroll to top
+                window.scrollTo(0, 0);
+            })
+            .catch(function(err) {
+                console.error('SPA nav error:', err);
+                location.href = url;
+            });
+    }
+
+    // Intercept sidebar + internal links
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a[href]');
+        if (!link) return;
+
+        var href = link.getAttribute('href');
+        if (!href || !href.startsWith(BASE) || href.includes('logout') || link.target === '_blank') return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+        e.preventDefault();
+        navigateTo(href);
+    });
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', function() {
+        navigateTo(location.href, false);
+    });
+
 })();
 </script>
 <!-- ═══ MODAL: Confirmation globale ═══ -->
