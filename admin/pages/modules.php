@@ -1,3 +1,33 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$modulesRaw = Db::fetchAll("SELECT * FROM modules ORDER BY ordre");
+foreach ($modulesRaw as &$m) {
+    $m['etages'] = Db::fetchAll("SELECT * FROM etages WHERE module_id = ? ORDER BY ordre", [$m['id']]);
+    foreach ($m['etages'] as &$e) {
+        $e['groupes'] = Db::fetchAll("SELECT * FROM groupes WHERE etage_id = ? ORDER BY ordre", [$e['id']]);
+    }
+}
+unset($m, $e);
+
+$configModulesRaw = Db::fetchAll(
+    "SELECT m.id, m.code, m.nom, m.ordre,
+            u.id AS responsable_id,
+            CONCAT(u.prenom, ' ', u.nom) AS responsable_nom
+     FROM modules m
+     LEFT JOIN user_modules um ON um.module_id = m.id AND um.is_principal = 1
+     LEFT JOIN users u ON u.id = um.user_id AND u.role IN ('responsable','admin','direction')
+     ORDER BY m.ordre"
+);
+
+$responsablesRaw = Db::fetchAll(
+    "SELECT id, prenom, nom, role FROM users
+     WHERE is_active = 1 AND role IN ('responsable','admin','direction')
+     ORDER BY nom, prenom"
+);
+
+$configNbEtages = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nb_etages'") ?: '6';
+$configNbModules = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nb_modules'") ?: '4';
+?>
 <style>
 .mod-input-sm { width: 100px; }
 .mod-input-code { width: 70px; }
@@ -70,11 +100,11 @@
     <div class="row g-3 align-items-end">
       <div class="col-auto">
         <label class="form-label fw-600">Nombre d'étages</label>
-        <input type="number" class="form-control" id="modGenNbEtages" min="1" max="50" value="6" class="mod-input-sm">
+        <input type="number" class="form-control" id="modGenNbEtages" min="1" max="50" value="<?= h($configNbEtages) ?>" class="mod-input-sm">
       </div>
       <div class="col-auto">
         <label class="form-label fw-600">Nombre de modules</label>
-        <input type="number" class="form-control" id="modGenNbModules" min="1" max="50" value="4" class="mod-input-sm">
+        <input type="number" class="form-control" id="modGenNbModules" min="1" max="50" value="<?= h($configNbModules) ?>" class="mod-input-sm">
       </div>
       <div class="col-auto">
         <button class="btn btn-success" id="btnModGenerate">
@@ -99,14 +129,20 @@
 
 <script<?= nonce() ?>>
 (function() {
-    let modulesData = [];
+    let modulesData = <?= json_encode(array_values($modulesRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let allEtages = [];
-    let configModules = [];
-    let responsables = [];
+    let configModules = <?= json_encode(array_values($configModulesRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let responsables = <?= json_encode(array_values($responsablesRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let editingModules = new Set();
 
-    async function initModulesPage() {
-        await refreshData();
+    // Build initial allEtages from injected data
+    modulesData.forEach(m => {
+        (m.etages || []).forEach(e => {
+            allEtages.push({ ...e, module_id: m.id });
+        });
+    });
+
+    function initModulesPage() {
         renderModuleCards();
 
         document.getElementById('btnModGenerate').addEventListener('click', generateStructure);

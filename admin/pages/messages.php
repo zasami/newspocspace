@@ -1,3 +1,21 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$emailContacts = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.email, u.fonction_nom,
+            COALESCE(m.nom, 'Sans module') AS module_nom,
+            COALESCE(m.ordre, 999) AS module_ordre
+     FROM users u
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     WHERE u.is_active = 1
+     ORDER BY module_ordre, m.nom, u.nom, u.prenom"
+);
+
+$emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0");
+$emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
+$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0");
+$emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachments");
+?>
 <!-- Admin Emails Page — Split-view email client -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
@@ -41,7 +59,7 @@
 <div class="email-page-header">
   <div>
     <h4 class="email-page-title"><i class="bi bi-envelope"></i> Emails</h4>
-    <div id="emailStatsLine" class="text-muted email-stats-line">Chargement...</div>
+    <div id="emailStatsLine" class="text-muted email-stats-line"><?= $emailStatsTotal ?> emails · <?= $emailStatsToday ?> aujourd'hui · <?= $emailStatsUnread ?> non lu(s) · <?= $emailStatsAttachments ?> pièce(s) jointe(s)</div>
   </div>
   <button class="btn btn-sm btn-primary" id="btnAdminCompose" title="Nouveau message">
     <i class="bi bi-pencil-square me-1"></i> Nouveau
@@ -55,7 +73,7 @@
     <div class="adm-email-left-header">
       <div class="email-tabs" id="emailTabs">
         <div class="email-tabs-slider" id="emailTabsSlider"></div>
-        <button class="email-tab active" data-tab="inbox">Boîte de réception <span class="email-unread-badge" id="badgeInbox"></span></button>
+        <button class="email-tab active" data-tab="inbox">Boîte de réception <span class="email-unread-badge" id="badgeInbox"><?= $emailStatsUnread > 0 ? $emailStatsUnread : '' ?></span></button>
         <button class="email-tab" data-tab="sent">Envoyés</button>
       </div>
     </div>
@@ -126,7 +144,7 @@
         if (!editorModule) editorModule = await import('/zerdatime/assets/js/rich-editor.js');
         return editorModule;
     };
-    let contacts = [];
+    let contacts = <?= json_encode(array_values($emailContacts), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let toSelected = [];
     let ccSelected = [];
     let currentPage = 1;
@@ -139,15 +157,10 @@
     let currentTab = 'inbox';
     let pendingFiles = [];
 
-    async function initMessagesPage() {
-        // Load contacts
-        const cRes = await adminApiPost('admin_get_email_contacts');
-        contacts = cRes.contacts || [];
-
+    function initMessagesPage() {
         // Events
         document.getElementById('btnAdminCompose')?.addEventListener('click', () => openCompose());
         document.getElementById('btnAdminSendEmail')?.addEventListener('click', sendEmail);
-        // To/Cc onSelect handled in populateSelect init
         document.getElementById('emailPrev')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; loadList(); } });
         document.getElementById('emailNext')?.addEventListener('click', () => { if (currentPage < totalPagesVal) { currentPage++; loadList(); } });
 
@@ -198,8 +211,6 @@
             topbarInput.addEventListener('input', onTopbarSearch);
         }
 
-        // Load stats + list
-        loadStats();
         loadList();
     }
 
@@ -575,8 +586,6 @@
             }
         });
     }
-
-    // addContact logic is now handled in populateSelect onSelect callback
 
     function renderTags(arr, containerId) {
         const container = document.getElementById(containerId);

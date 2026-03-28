@@ -1,3 +1,24 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$usersRaw = Db::fetchAll(
+    "SELECT u.*, f.nom AS fonction_nom, f.code AS fonction_code
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     ORDER BY u.nom, u.prenom"
+);
+foreach ($usersRaw as &$u) {
+    unset($u['password'], $u['reset_token'], $u['reset_expires']);
+    $u['modules'] = Db::fetchAll(
+        "SELECT m.id, m.nom, m.code, um.is_principal
+         FROM user_modules um JOIN modules m ON m.id = um.module_id
+         WHERE um.user_id = ?",
+        [$u['id']]
+    );
+}
+unset($u);
+
+$fonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
+?>
 <style>
 /* Shared action button base */
 .btn-user-edit,
@@ -183,7 +204,7 @@
 </div>
 
 <script<?= nonce() ?>>
-let allUsers = [];
+let allUsers = <?= json_encode(array_values($usersRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 let filteredUsers = [];
 let currentPage = 1;
 let PAGE_SIZE = 30;
@@ -192,7 +213,7 @@ function capitalizeOnBlur(e) {
     e.target.value = e.target.value.trim().replace(/\b\w/g, c => c.toUpperCase());
 }
 
-async function initUsersPage() {
+function initUsersPage() {
     document.querySelectorAll('#createUserForm input[name="prenom"], #createUserForm input[name="nom"]').forEach(
         el => el.addEventListener('blur', capitalizeOnBlur)
     );
@@ -232,9 +253,8 @@ async function initUsersPage() {
         { value: '0', label: 'Inactifs' },
     ], { value: '1', onSelect: applyFilters });
 
-    // Fonction & Module filters are populated after loadUsers
-    zerdaSelect.init('#filterFonction', [{ value: '', label: 'Toutes' }], { onSelect: applyFilters });
-    zerdaSelect.init('#filterModule', [{ value: '', label: 'Tous' }], { onSelect: applyFilters });
+    // Populate fonction + module filters from injected data
+    populateFilterOptions();
 
     // Page size selector
     zerdaSelect.init('#filterPageSize', [
@@ -264,10 +284,32 @@ async function initUsersPage() {
         applyFilters();
     });
 
-    await loadFonctions();
-    await loadUsers();
+    // Init modal fonctions select from injected data
+    const fonctionsData = <?= json_encode(array_values($fonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    zerdaSelect.init('#newUserFonction', [
+        { value: '', label: '— Aucune —' },
+        ...fonctionsData.map(f => ({ value: f.id, label: f.nom || f.code }))
+    ], { search: fonctionsData.length > 6 });
 
-    document.getElementById('topbarSearchInput')?.addEventListener('input', (e) => {
+    zerdaSelect.init('#newUserRole', [
+        { value: 'collaborateur', label: 'Collaborateur' },
+        { value: 'responsable', label: 'Responsable' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'direction', label: 'Direction' },
+    ], { value: 'collaborateur' });
+
+    zerdaSelect.init('#newUserContrat', [
+        { value: 'CDI', label: 'CDI' },
+        { value: 'CDD', label: 'CDD' },
+        { value: 'stagiaire', label: 'Stagiaire' },
+        { value: 'civiliste', label: 'Civiliste' },
+        { value: 'interim', label: 'Intérim' },
+    ], { value: 'CDI' });
+
+    // Apply initial filters (statut=1 par défaut)
+    applyFilters();
+
+    document.getElementById('topbarSearchInput')?.addEventListener('input', () => {
         applyFilters();
     });
 
@@ -275,7 +317,6 @@ async function initUsersPage() {
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd);
-        // Add zerdaSelect values
         data.fonction_id = zerdaSelect.getValue('#newUserFonction');
         data.role = zerdaSelect.getValue('#newUserRole') || 'collaborateur';
         data.type_contrat = zerdaSelect.getValue('#newUserContrat') || 'CDI';
@@ -293,40 +334,6 @@ async function initUsersPage() {
             showToast(res.message || 'Erreur', 'error');
         }
     });
-}
-
-async function loadFonctions() {
-    const refs = await adminApiPost('admin_get_planning_refs');
-    const fonctions = refs.fonctions || [];
-
-    zerdaSelect.init('#newUserFonction', [
-        { value: '', label: '— Aucune —' },
-        ...fonctions.map(f => ({ value: f.id, label: f.nom || f.code }))
-    ], { search: fonctions.length > 6 });
-
-    // Role select
-    zerdaSelect.init('#newUserRole', [
-        { value: 'collaborateur', label: 'Collaborateur' },
-        { value: 'responsable', label: 'Responsable' },
-        { value: 'admin', label: 'Admin' },
-        { value: 'direction', label: 'Direction' },
-    ], { value: 'collaborateur' });
-
-    // Contrat select
-    zerdaSelect.init('#newUserContrat', [
-        { value: 'CDI', label: 'CDI' },
-        { value: 'CDD', label: 'CDD' },
-        { value: 'stagiaire', label: 'Stagiaire' },
-        { value: 'civiliste', label: 'Civiliste' },
-        { value: 'interim', label: 'Intérim' },
-    ], { value: 'CDI' });
-}
-
-async function loadUsers() {
-    const res = await adminApiPost('admin_get_users');
-    allUsers = res.users || [];
-    populateFilterOptions();
-    applyFilters();
 }
 
 function populateFilterOptions() {
@@ -380,7 +387,6 @@ function renderPage() {
 
     renderUsers(pageUsers);
 
-    // Pagination info
     const infoEl = document.getElementById('paginationInfo');
     if (total === 0) {
         infoEl.textContent = '';
@@ -388,7 +394,6 @@ function renderPage() {
         infoEl.textContent = `${start + 1}–${Math.min(start + PAGE_SIZE, total)} sur ${total}`;
     }
 
-    // Pagination buttons
     const btns = document.getElementById('paginationBtns');
     if (totalPages <= 1) { btns.innerHTML = ''; return; }
 
@@ -468,6 +473,13 @@ function renderUsers(users) {
           </td>
         </tr>`;
     }).join('');
+}
+
+async function loadUsers() {
+    const res = await adminApiPost('admin_get_users');
+    allUsers = res.users || [];
+    populateFilterOptions();
+    applyFilters();
 }
 
 async function toggleUser(id) {
