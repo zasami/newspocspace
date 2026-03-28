@@ -36,7 +36,8 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 .ext-toolbar-spacer { flex: 1; }
 
 /* Detail content */
-.ext-detail-inner { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.ext-detail-inner { flex: 1; overflow-y: auto; padding: 20px 24px; background: var(--cl-bg); }
+.ext-detail-card { background: var(--cl-surface); border: 1px solid var(--cl-border-light, #f0ede8); border-radius: 10px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
 .ext-detail-subject { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; line-height: 1.3; }
 .ext-sender-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
 .ext-sender-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--cl-bg); display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; color: var(--cl-text-secondary); flex-shrink: 0; }
@@ -280,6 +281,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
             // Content
             + '<div class="ext-detail-inner">'
             + '<div class="ext-detail-subject">' + escapeHtml(e.subject || '(sans sujet)') + '</div>'
+            + '<div class="ext-detail-card">'
 
             // Sender row
             + '<div class="ext-sender-row">'
@@ -297,7 +299,8 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
             // Attachments
             + attHtml
-            + '</div>'
+            + '</div>' // close ext-detail-card
+            + '</div>' // close ext-detail-inner
 
             // Reply trigger at bottom
             + '<div class="ext-reply-box">'
@@ -314,7 +317,15 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
         // Delete
         detail.querySelector('#extDeleteBtn')?.addEventListener('click', async () => {
-            if (!confirm('Supprimer cet email ?')) return;
+            const confirmed = await adminConfirm({
+                title: 'Supprimer cet email ?',
+                text: '<strong>' + escapeHtml(e.subject || '(sans sujet)') + '</strong><br><small class="text-muted">De : ' + escapeHtml(e.from_name || e.from) + '</small>',
+                type: 'danger',
+                icon: 'bi-trash3',
+                okText: 'Supprimer',
+                cancelText: 'Annuler'
+            });
+            if (!confirmed) return;
             await adminApiPost('admin_email_ext_delete', { folder: currentFolder, uid });
             showToast('Email supprimé', 'success');
             detail.innerHTML = '<div class="ext-detail-empty"><i class="bi bi-envelope-open"></i><p>Sélectionnez un email</p></div>';
