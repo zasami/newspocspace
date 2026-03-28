@@ -35,7 +35,7 @@ $csrfToken = $_SESSION['zt_csrf_token'] ?? '';
 $cspNonce = base64_encode(random_bytes(16));
 define('CSP_NONCE', $cspNonce);
 function nonce(): string { return ' nonce="' . CSP_NONCE . '"'; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:59876 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:59876 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
 
 // Load EMS logo + name for sidebar
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -130,7 +130,7 @@ $pageLabels = [
 ];
 
 // ── AJAX page loading (SPA mode) ──
-if (!empty($_GET['_ajax'])) {
+if (!empty($_GET['_spa'])) {
     ob_start();
     require $pageFile;
     $html = ob_get_clean();
@@ -139,7 +139,6 @@ if (!empty($_GET['_ajax'])) {
         'html' => $html,
         'page' => $page,
         'title' => ($pageLabels[$page] ?? 'Admin') . ' — zerdaTime',
-        'nonce' => $cspNonce,
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -369,14 +368,14 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     document.addEventListener('fullscreenchange', updateFsIcon);
     updateFsIcon();
 
-    // ── SPA Router — navigation AJAX sans rechargement ──
+    // ── SPA Router — navigation AJAX, fullscreen persists ──
     var contentEl = document.getElementById('adminContent');
     var titleEl = document.querySelector('.topbar-title');
     var BASE = '/zerdatime/admin/';
+    var spaActive = false; // only SPA-navigate after first click (initial page loads normally)
 
     function pageFromUrl(url) {
         var u = new URL(url, location.origin);
-        // URL: /zerdatime/admin/planning or /zerdatime/admin/planning/id
         var path = u.pathname.replace(/\/$/, '');
         var parts = path.replace(BASE.replace(/\/$/, ''), '').replace(/^\//, '').split('/');
         return parts[0] || 'dashboard';
@@ -384,74 +383,84 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
 
     function navigateTo(url, pushState) {
         var page = pageFromUrl(url);
-        // Build AJAX URL: append _ajax=1
         var sep = url.includes('?') ? '&' : '?';
-        var ajaxUrl = url + sep + '_ajax=1';
+        var ajaxUrl = url + sep + '_spa=1';
 
-        // Update sidebar active state
+        // Update sidebar active
         document.querySelectorAll('.sidebar-link').forEach(function(l) {
-            var lHref = l.getAttribute('href') || '';
-            var lPage = pageFromUrl(lHref);
-            l.classList.toggle('active', lPage === page);
+            l.classList.toggle('active', pageFromUrl(l.getAttribute('href') || '') === page);
         });
 
-        // Fetch page content
         fetch(ajaxUrl, { credentials: 'same-origin' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                // Inject HTML
+                // Inject HTML (scripts in innerHTML don't execute — we'll activate them)
                 contentEl.innerHTML = data.html;
 
-                // Execute scripts in the new content
-                contentEl.querySelectorAll('script').forEach(function(oldScript) {
-                    var newScript = document.createElement('script');
-                    Array.from(oldScript.attributes).forEach(function(attr) {
-                        if (attr.name === 'nonce') return;
-                        newScript.setAttribute(attr.name, attr.value);
+                // Activate scripts: replace each <script> with a fresh createElement copy
+                // With 'strict-dynamic' CSP, scripts created by a trusted (nonce'd) script are allowed
+                var scripts = Array.from(contentEl.querySelectorAll('script'));
+                var chain = Promise.resolve();
+
+                scripts.forEach(function(oldScript) {
+                    chain = chain.then(function() {
+                        return new Promise(function(resolve) {
+                            var s = document.createElement('script');
+                            // Copy non-nonce attributes (type, etc.)
+                            Array.from(oldScript.attributes).forEach(function(a) {
+                                if (a.name !== 'nonce') s.setAttribute(a.name, a.value);
+                            });
+                            if (oldScript.src) {
+                                s.src = oldScript.src;
+                                s.onload = resolve;
+                                s.onerror = resolve;
+                            } else {
+                                s.textContent = oldScript.textContent;
+                            }
+                            oldScript.replaceWith(s);
+                            if (!oldScript.src) resolve(); // inline scripts execute synchronously
+                        });
                     });
-                    newScript.nonce = data.nonce;
-                    if (oldScript.src) {
-                        newScript.src = oldScript.src;
-                    } else {
-                        newScript.textContent = oldScript.textContent;
-                    }
-                    oldScript.parentNode.replaceChild(newScript, oldScript);
                 });
 
-                // Update title + topbar
+                chain.then(function() {
+                    // Fire DOMContentLoaded-like event for pages that listen to it
+                    document.dispatchEvent(new Event('DOMContentLoaded'));
+
+                    // Also try calling the page init function
+                    var initName = 'init' + page.replace(/(^|-)([a-z])/g, function(_, _2, c) { return c.toUpperCase(); }) + 'Page';
+                    if (typeof window[initName] === 'function') {
+                        try { window[initName](); } catch(e) { console.warn('Page init error:', e); }
+                    }
+                });
+
                 document.title = data.title;
                 if (titleEl) titleEl.textContent = data.title.split(' — ')[0];
-
-                // Push state
-                if (pushState !== false) {
-                    history.pushState({ page: page }, '', url);
-                }
-
-                // Scroll to top
+                if (pushState !== false) history.pushState({ page: page }, '', url);
                 window.scrollTo(0, 0);
             })
             .catch(function(err) {
                 console.error('SPA nav error:', err);
-                location.href = url;
+                location.href = url; // fallback
             });
     }
 
-    // Intercept sidebar + internal links
+    // Intercept internal admin links
     document.addEventListener('click', function(e) {
         var link = e.target.closest('a[href]');
         if (!link) return;
-
         var href = link.getAttribute('href');
         if (!href || !href.startsWith(BASE) || href.includes('logout') || link.target === '_blank') return;
         if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-
+        // Only SPA-navigate when in fullscreen (otherwise normal navigation is fine)
+        if (!document.fullscreenElement) return;
         e.preventDefault();
         navigateTo(href);
     });
 
-    // Handle browser back/forward
     window.addEventListener('popstate', function() {
-        navigateTo(location.href, false);
+        if (document.fullscreenElement) navigateTo(location.href, false);
+        else location.reload();
     });
 
 })();
