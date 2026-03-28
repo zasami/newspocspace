@@ -283,6 +283,9 @@ $activeSection = match($page) {
         <i class="bi bi-envelope"></i>
         <span class="topbar-notif-badge" id="adminEmailBadge" style="display:none"></span>
       </a>
+      <button class="topbar-icon-btn" id="shortcutsBtn" title="Raccourcis clavier (?)">
+        <i class="bi bi-keyboard"></i>
+      </button>
       <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
@@ -734,5 +737,317 @@ function adminPrompt(opts = {}) {
 </script>
 
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+
+<!-- ═══ MODAL: Raccourcis clavier ═══ -->
+<div class="modal fade" id="shortcutsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-keyboard"></i> Raccourcis clavier</h5>
+        <div class="d-flex gap-2 ms-auto">
+          <button class="btn btn-sm btn-outline-secondary" id="scResetBtn" title="Réinitialiser"><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+        <p class="text-muted small mb-3">Cliquez sur un raccourci pour le modifier. Appuyez sur la combinaison souhaitée (Ctrl/Alt/Shift + touche).</p>
+        <div id="scList"></div>
+      </div>
+      <div class="modal-footer">
+        <small class="text-muted me-auto">Appuyez sur <kbd>?</kbd> n'importe où pour afficher ce panneau</small>
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.sc-group-title { font-weight: 700; font-size: .85rem; color: var(--cl-text-secondary); text-transform: uppercase; letter-spacing: .5px; padding: 8px 0 4px; border-bottom: 1.5px solid var(--cl-border); margin-top: 16px; margin-bottom: 8px; }
+.sc-group-title:first-child { margin-top: 0; }
+.sc-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; transition: background .15s; }
+.sc-row:hover { background: var(--cl-bg); }
+.sc-label { flex: 1; font-size: .9rem; }
+.sc-key-wrap { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px 8px; border-radius: 6px; border: 1.5px solid transparent; transition: border-color .2s; }
+.sc-key-wrap:hover { border-color: var(--cl-accent); }
+.sc-key-wrap.recording { border-color: var(--cl-accent); background: rgba(25,25,24,.04); }
+.sc-key-wrap.recording::after { content: 'Appuyez...'; font-size: .75rem; color: var(--cl-accent); margin-left: 8px; }
+kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 4px; padding: 2px 7px; font-size: .8rem; font-family: inherit; color: var(--cl-text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.sc-key-none { font-size: .8rem; color: var(--cl-text-muted); font-style: italic; }
+</style>
+
+<script nonce="<?= $cspNonce ?>">
+// ═══════════════════════════════════════════════════════════════════════════════
+// Keyboard Shortcuts System
+// ═══════════════════════════════════════════════════════════════════════════════
+(function() {
+    const STORAGE_KEY = 'zt_shortcuts';
+
+    // ── Default shortcuts definition ──
+    const SHORTCUTS_DEF = [
+        { group: 'Navigation', items: [
+            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => location.href = '/zerdatime/admin/' },
+            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => location.href = '/zerdatime/admin/planning' },
+            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => location.href = '/zerdatime/admin/users' },
+            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => location.href = '/zerdatime/admin/residents' },
+            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => location.href = '/zerdatime/admin/absences' },
+            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => location.href = '/zerdatime/admin/desirs' },
+            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => location.href = '/zerdatime/admin/vacances' },
+            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => location.href = '/zerdatime/admin/messages' },
+            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => location.href = '/zerdatime/admin/famille' },
+            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => location.href = '/zerdatime/admin/documents' },
+        ]},
+        { group: 'Outils', items: [
+            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => location.href = '/zerdatime/admin/todos' },
+            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => location.href = '/zerdatime/admin/notes' },
+            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => location.href = '/zerdatime/admin/pv' },
+            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => location.href = '/zerdatime/admin/sondages' },
+            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => location.href = '/zerdatime/admin/stats' },
+        ]},
+        { group: 'Actions rapides', items: [
+            { id: 'act_email',        label: 'Nouveau message (email)', default: 'Ctrl+E', action: openComposeEmail },
+            { id: 'act_search',       label: 'Focus recherche',        default: 'Ctrl+K', action: focusSearch },
+            { id: 'act_fullscreen',   label: 'Plein écran',            default: 'F11',    action: toggleFullscreen },
+            { id: 'act_sidebar',      label: 'Replier/déplier sidebar', default: 'Ctrl+B', action: toggleSidebar },
+            { id: 'act_shortcuts',    label: 'Afficher raccourcis',     default: '?',      action: showShortcutsModal },
+        ]},
+    ];
+
+    // ── Action implementations ──
+    function openComposeEmail() {
+        // Navigate to messages page then trigger compose
+        if (!location.pathname.includes('/messages')) {
+            location.href = '/zerdatime/admin/messages';
+            sessionStorage.setItem('zt_auto_compose', '1');
+        } else {
+            document.getElementById('btnComposeEmail')?.click();
+        }
+    }
+
+    function focusSearch() {
+        const input = document.getElementById('topbarSearchInput');
+        if (input) { input.focus(); input.select(); }
+    }
+
+    function toggleFullscreen() {
+        document.getElementById('immersiveToggle')?.click();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebarToggleBtn')?.click();
+    }
+
+    function showShortcutsModal() {
+        var m = bootstrap.Modal.getOrCreateInstance(document.getElementById('shortcutsModal'));
+        m.show();
+    }
+
+    // ── Parse / format key combos ──
+    function parseCombo(str) {
+        if (!str) return null;
+        var parts = str.split('+').map(function(s) { return s.trim(); });
+        return {
+            ctrl: parts.includes('Ctrl'),
+            alt: parts.includes('Alt'),
+            shift: parts.includes('Shift'),
+            key: parts.filter(function(p) { return !['Ctrl','Alt','Shift'].includes(p); })[0] || ''
+        };
+    }
+
+    function formatCombo(combo) {
+        if (!combo || !combo.key) return '';
+        var parts = [];
+        if (combo.ctrl) parts.push('Ctrl');
+        if (combo.alt) parts.push('Alt');
+        if (combo.shift) parts.push('Shift');
+        parts.push(combo.key);
+        return parts.join('+');
+    }
+
+    function comboToKbd(str) {
+        if (!str) return '<span class="sc-key-none">Non défini</span>';
+        return str.split('+').map(function(p) { return '<kbd>' + p.trim() + '</kbd>'; }).join(' + ');
+    }
+
+    function matchEvent(e, combo) {
+        if (!combo || !combo.key) return false;
+        if (combo.ctrl !== (e.ctrlKey || e.metaKey)) return false;
+        if (combo.alt !== e.altKey) return false;
+        if (combo.shift !== e.shiftKey) return false;
+        var k = combo.key.toUpperCase();
+        if (k.length === 1) return e.key.toUpperCase() === k;
+        if (k === 'F11') return e.key === 'F11';
+        if (k === '?') return e.key === '?';
+        return e.key.toUpperCase() === k || e.code.toUpperCase() === ('KEY' + k);
+    }
+
+    // ── Load/save from localStorage ──
+    function loadCustom() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+    }
+
+    function saveCustom(map) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    }
+
+    function getComboForItem(item) {
+        var custom = loadCustom();
+        var str = custom[item.id] !== undefined ? custom[item.id] : item.default;
+        return parseCombo(str);
+    }
+
+    function getStrForItem(item) {
+        var custom = loadCustom();
+        return custom[item.id] !== undefined ? custom[item.id] : item.default;
+    }
+
+    // ── Render shortcuts modal ──
+    function renderShortcutsList() {
+        var container = document.getElementById('scList');
+        if (!container) return;
+        var html = '';
+
+        SHORTCUTS_DEF.forEach(function(group) {
+            html += '<div class="sc-group-title">' + group.group + '</div>';
+            group.items.forEach(function(item) {
+                var combo = getStrForItem(item);
+                html += '<div class="sc-row">'
+                    + '<span class="sc-label">' + item.label + '</span>'
+                    + '<div class="sc-key-wrap" data-sc-id="' + item.id + '">' + comboToKbd(combo) + '</div>'
+                    + '</div>';
+            });
+        });
+
+        container.innerHTML = html;
+
+        // Click to edit
+        container.querySelectorAll('.sc-key-wrap').forEach(function(el) {
+            el.addEventListener('click', function() { startRecording(el); });
+        });
+    }
+
+    // ── Recording mode ──
+    var recordingEl = null;
+    var recordingId = null;
+
+    function startRecording(el) {
+        if (recordingEl) recordingEl.classList.remove('recording');
+        recordingEl = el;
+        recordingId = el.dataset.scId;
+        el.classList.add('recording');
+        el.innerHTML = '';
+    }
+
+    function stopRecording(combo) {
+        if (!recordingEl) return;
+        var str = formatCombo(combo);
+        var custom = loadCustom();
+        custom[recordingId] = str;
+        saveCustom(custom);
+        recordingEl.classList.remove('recording');
+        recordingEl.innerHTML = comboToKbd(str);
+        recordingEl = null;
+        recordingId = null;
+    }
+
+    function cancelRecording() {
+        if (!recordingEl) return;
+        var item = findItem(recordingId);
+        recordingEl.classList.remove('recording');
+        recordingEl.innerHTML = comboToKbd(getStrForItem(item));
+        recordingEl = null;
+        recordingId = null;
+    }
+
+    function findItem(id) {
+        for (var g = 0; g < SHORTCUTS_DEF.length; g++) {
+            for (var i = 0; i < SHORTCUTS_DEF[g].items.length; i++) {
+                if (SHORTCUTS_DEF[g].items[i].id === id) return SHORTCUTS_DEF[g].items[i];
+            }
+        }
+        return null;
+    }
+
+    // ── Global key handler ──
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger shortcuts when typing in inputs
+        var tag = (e.target.tagName || '').toLowerCase();
+        var isInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+
+        // Recording mode
+        if (recordingEl) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.key === 'Escape') { cancelRecording(); return; }
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                // Clear shortcut
+                var custom = loadCustom();
+                custom[recordingId] = '';
+                saveCustom(custom);
+                recordingEl.classList.remove('recording');
+                recordingEl.innerHTML = '<span class="sc-key-none">Non défini</span>';
+                recordingEl = null;
+                recordingId = null;
+                return;
+            }
+            if (['Control','Alt','Shift','Meta'].includes(e.key)) return; // wait for actual key
+            stopRecording({ ctrl: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey, key: e.key.length === 1 ? e.key.toUpperCase() : e.key });
+            return;
+        }
+
+        // ? key to show shortcuts (only if not in input)
+        if (e.key === '?' && !isInput) {
+            e.preventDefault();
+            showShortcutsModal();
+            return;
+        }
+
+        // Match shortcuts
+        for (var g = 0; g < SHORTCUTS_DEF.length; g++) {
+            for (var i = 0; i < SHORTCUTS_DEF[g].items.length; i++) {
+                var item = SHORTCUTS_DEF[g].items[i];
+                var combo = getComboForItem(item);
+                if (!combo) continue;
+
+                // Allow search shortcut even in inputs
+                if (item.id === 'act_search' && matchEvent(e, combo)) {
+                    e.preventDefault();
+                    item.action();
+                    return;
+                }
+
+                // Skip other shortcuts when in inputs
+                if (isInput) continue;
+
+                if (matchEvent(e, combo)) {
+                    e.preventDefault();
+                    item.action();
+                    return;
+                }
+            }
+        }
+    });
+
+    // ── Button + reset ──
+    document.getElementById('shortcutsBtn')?.addEventListener('click', function() {
+        renderShortcutsList();
+        showShortcutsModal();
+    });
+
+    document.getElementById('scResetBtn')?.addEventListener('click', function() {
+        localStorage.removeItem(STORAGE_KEY);
+        renderShortcutsList();
+        showToast('Raccourcis réinitialisés', 'success');
+    });
+
+    // ── Auto-compose on messages page ──
+    if (sessionStorage.getItem('zt_auto_compose') === '1') {
+        sessionStorage.removeItem('zt_auto_compose');
+        setTimeout(function() { document.getElementById('btnComposeEmail')?.click(); }, 500);
+    }
+
+    // Init list
+    renderShortcutsList();
+})();
+</script>
 </body>
 </html>
