@@ -1,4 +1,17 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['zt_user']['id'];
+$emailContacts = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.email, u.fonction_nom,
+            COALESCE(m.nom, 'Sans module') AS module_nom,
+            COALESCE(m.ordre, 999) AS module_ordre
+     FROM users u
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     WHERE u.is_active = 1 AND u.id != ?
+     ORDER BY module_ordre, m.nom, u.nom, u.prenom",
+    [$uid]
+);
+?>
 <!-- Email Interne — Split-view email client -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 <style>
@@ -99,3 +112,4 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['contacts' => $emailContacts], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

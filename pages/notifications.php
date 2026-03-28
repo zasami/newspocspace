@@ -1,4 +1,14 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['zt_user']['id'];
+$initNotifs = Db::fetchAll(
+    "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 30",
+    [$uid]
+);
+$initUnread = (int) Db::getOne(
+    "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
+    [$uid]
+);
+?>
 <div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
   <h1><i class="bi bi-bell"></i> Notifications</h1>
   <button class="btn btn-sm btn-outline-secondary" id="markAllRead"><i class="bi bi-check2-all"></i> Tout marquer comme lu</button>
@@ -20,3 +30,4 @@
 .notif-msg{font-size:0.8rem;color:var(--zt-text-muted);line-height:1.3}
 .notif-time{font-size:0.72rem;color:var(--zt-text-muted);margin-top:3px}
 </style>
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['notifications' => $initNotifs, 'unread' => $initUnread], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

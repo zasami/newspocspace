@@ -1,4 +1,13 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['zt_user']['id'];
+$initFiches = Db::fetchAll(
+    "SELECT id, annee, mois, original_name, size, created_at
+     FROM fiches_salaire
+     WHERE user_id = ?
+     ORDER BY annee DESC, mois DESC",
+    [$uid]
+);
+?>
 <div class="page-header">
   <h1><i class="bi bi-receipt"></i> Fiches de salaire</h1>
 </div>
@@ -23,3 +32,4 @@
 .fiche-empty-month{border-radius:12px;padding:1rem;display:flex;align-items:center;gap:0.75rem;border:1px dashed var(--zt-border-light,#ddd);opacity:.5}
 .fiche-empty-month .fiche-icon{width:44px;height:44px;border-radius:10px;background:#f5f5f5;color:#bbb;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
 </style>
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['fiches' => $initFiches], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

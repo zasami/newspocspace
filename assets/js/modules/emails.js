@@ -18,9 +18,8 @@ let totalPages = 1;
 const PAGE_LIMIT = 30;
 
 export async function init() {
-    // Load contacts
-    const cRes = await apiPost('get_email_contacts');
-    contacts = cRes.contacts || [];
+    // Load contacts from SSR data
+    contacts = window.__ZT_PAGE_DATA__?.contacts || [];
 
     // Setup colleague search dropdowns
     setupColleagueSearch('composeToSearch', 'composeToDropdown', toSelected, 'composeToTags');

@@ -7,7 +7,7 @@ import { BASE } from '../app.js';
 const MOIS = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 let currentYear = new Date().getFullYear();
 
-export async function init() {
+export function init() {
     document.getElementById('fsYearLabel').textContent = currentYear;
 
     document.getElementById('fsPrevYear')?.addEventListener('click', () => {
@@ -21,20 +21,16 @@ export async function init() {
         loadFiches();
     });
 
-    await loadFiches();
+    // Render from SSR data synchronously
+    const ssrFiches = window.__ZT_PAGE_DATA__?.fiches || [];
+    renderFiches(ssrFiches);
 }
 
-async function loadFiches() {
+function renderFiches(allFiches) {
     const grid = document.getElementById('fsGrid');
-    grid.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span> Chargement...</div>';
+    if (!grid) return;
 
-    const res = await apiPost('get_mes_fiches_salaire');
-    if (!res.success) {
-        grid.innerHTML = '<div class="col-12 text-center py-5 text-muted"><i class="bi bi-exclamation-triangle" style="font-size:2rem;display:block;margin-bottom:0.5rem"></i>Erreur de chargement</div>';
-        return;
-    }
-
-    const fiches = (res.fiches || []).filter(f => f.annee == currentYear);
+    const fiches = allFiches.filter(f => f.annee == currentYear);
 
     // Build a map month -> fiche
     const byMonth = {};
@@ -84,6 +80,19 @@ async function loadFiches() {
             window.open(`${BASE}/api.php?action=serve_fiche_salaire&id=${id}`, '_blank');
         });
     });
+}
+
+async function loadFiches() {
+    const grid = document.getElementById('fsGrid');
+    grid.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span> Chargement...</div>';
+
+    const res = await apiPost('get_mes_fiches_salaire');
+    if (!res.success) {
+        grid.innerHTML = '<div class="col-12 text-center py-5 text-muted"><i class="bi bi-exclamation-triangle" style="font-size:2rem;display:block;margin-bottom:0.5rem"></i>Erreur de chargement</div>';
+        return;
+    }
+
+    renderFiches(res.fiches || []);
 }
 
 function formatSize(bytes) {

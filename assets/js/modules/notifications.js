@@ -23,8 +23,10 @@ const TYPE_CONFIG = {
     general:             { icon: 'bi-bell',              color: '#5A5550', bg: '#C8C4BE' },
 };
 
-export async function init() {
-    await loadNotifications();
+export function init() {
+    // Render from SSR data synchronously
+    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    renderNotifications(ssrData.notifications || []);
 
     document.getElementById('markAllRead')?.addEventListener('click', async () => {
         await apiPost('mark_all_notifications_read');
@@ -34,10 +36,9 @@ export async function init() {
     });
 }
 
-async function loadNotifications() {
-    const res = await apiPost('get_notifications', { limit: 50 });
-    const notifs = res.notifications || [];
+function renderNotifications(notifs) {
     const container = document.querySelector('#notifList .card-body');
+    if (!container) return;
 
     if (!notifs.length) {
         container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:0.5rem"></i>Aucune notification</div>';
@@ -75,6 +76,11 @@ async function loadNotifications() {
             if (link) loadPage(link);
         });
     });
+}
+
+async function loadNotifications() {
+    const res = await apiPost('get_notifications', { limit: 50 });
+    renderNotifications(res.notifications || []);
 }
 
 function formatTimeAgo(dateStr) {
