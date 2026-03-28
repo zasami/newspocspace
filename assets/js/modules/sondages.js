@@ -9,19 +9,17 @@ function on(el, ev, fn, o) { if (!el) return; el.addEventListener(ev, fn, o); _c
 let selectedId = null;
 
 export async function init() {
-    await loadList();
+    const ssrList = window.__ZT_PAGE_DATA__?.list || [];
+    renderList(ssrList);
+    if (!selectedId && ssrList.length > 0) {
+        selectSondage(ssrList[0].id);
+    }
 }
 
-async function loadList() {
+function renderList(list) {
     const container = document.getElementById('sondageListContainer');
-    const result = await apiPost('get_sondages_ouverts', {});
+    if (!container) return;
 
-    if (!result?.success) {
-        container.innerHTML = '<div class="split-view-loading text-danger">Erreur de chargement</div>';
-        return;
-    }
-
-    const list = result.list || [];
     if (list.length === 0) {
         container.innerHTML = '<div class="split-view-loading">Aucun sondage ouvert</div>';
         return;
@@ -47,11 +45,18 @@ async function loadList() {
     container.querySelectorAll('.split-list-item').forEach(item => {
         on(item, 'click', () => selectSondage(item.dataset.sid));
     });
+}
 
-    // Auto-select the latest sondage if none selected
-    if (!selectedId && list.length > 0) {
-        selectSondage(list[0].id);
+async function loadList() {
+    const result = await apiPost('get_sondages_ouverts', {});
+
+    if (!result?.success) {
+        const container = document.getElementById('sondageListContainer');
+        if (container) container.innerHTML = '<div class="split-view-loading text-danger">Erreur de chargement</div>';
+        return;
     }
+
+    renderList(result.list || []);
 }
 
 async function selectSondage(id) {

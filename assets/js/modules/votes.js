@@ -8,17 +8,16 @@ const joursShort = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 let proposals = [];
 
 export async function init() {
-    await loadProposals();
+    const ssrProposals = window.__ZT_PAGE_DATA__?.proposals || [];
+    proposals = ssrProposals;
+    renderProposals(proposals);
 }
 
-async function loadProposals() {
+function renderProposals(list) {
     const container = document.getElementById('votesContainer');
     if (!container) return;
 
-    const res = await apiPost('get_proposals_ouvertes');
-    proposals = res.proposals || [];
-
-    if (!proposals.length) {
+    if (!list.length) {
         container.innerHTML = `
             <div class="empty-state" style="padding:3rem;text-align:center">
                 <i class="bi bi-inbox" style="font-size:3rem;color:var(--text-muted,#999)"></i>
@@ -29,7 +28,7 @@ async function loadProposals() {
 
     // Group by month
     const byMonth = {};
-    proposals.forEach(p => {
+    list.forEach(p => {
         if (!byMonth[p.mois_annee]) byMonth[p.mois_annee] = [];
         byMonth[p.mois_annee].push(p);
     });
@@ -142,6 +141,12 @@ async function loadProposals() {
     container.querySelectorAll('[data-vote-contre]').forEach(btn => {
         btn.addEventListener('click', () => submitVote(btn.dataset.voteContre, 'contre'));
     });
+}
+
+async function loadProposals() {
+    const res = await apiPost('get_proposals_ouvertes');
+    proposals = res.proposals || [];
+    renderProposals(proposals);
 }
 
 async function submitVote(proposalId, vote) {

@@ -1,4 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, nom");
+?>
 <!-- PV Page - Split View (List + Detail) -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css">
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/emoji-picker.css">
@@ -207,4 +209,6 @@
   padding: 10px;
 }
 </style>
+
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['modules' => $pvRefModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
 

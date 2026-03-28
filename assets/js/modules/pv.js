@@ -12,12 +12,8 @@ let selectedPvId = null;
 let commentEditor = null;
 
 export async function init() {
-    // Load references
-    refs = await apiPost('get_pv_refs', {});
-    if (!refs?.success) {
-        toast('Erreur de chargement');
-        return;
-    }
+    // Load references from SSR data
+    refs = { success: true, modules: window.__ZT_PAGE_DATA__?.modules || [] };
 
     // Fill module filter
     const modFilter = document.getElementById('pvModuleFilter');

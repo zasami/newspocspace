@@ -1,4 +1,19 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['zt_user']['id'];
+$initSondages = Db::fetchAll(
+    "SELECT s.id, s.titre, s.description, s.is_anonymous, s.created_at,
+            u.prenom, u.nom,
+            (SELECT COUNT(*) FROM sondage_questions WHERE sondage_id = s.id) AS nb_questions,
+            (SELECT COUNT(DISTINCT sr.question_id) FROM sondage_reponses sr
+             INNER JOIN sondage_questions sq ON sq.id = sr.question_id AND sq.sondage_id = s.id
+             WHERE sr.user_id = ?) AS nb_repondu
+     FROM sondages s
+     LEFT JOIN users u ON u.id = s.created_by
+     WHERE s.statut = 'ouvert'
+     ORDER BY s.created_at DESC",
+    [$uid]
+);
+?>
 <!-- Sondages Page - Employee -->
 <div class="split-view">
 
@@ -27,3 +42,5 @@
   </div>
 
 </div>
+
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['list' => $initSondages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
