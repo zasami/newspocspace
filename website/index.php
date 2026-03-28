@@ -1227,6 +1227,10 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     <i class="bi bi-calendar-event"></i>
     <span class="ws-sw-label">Programme animation</span>
   </a>
+  <a href="/zerdatime/website/famille.php" class="ws-sw-btn" title="Espace Famille">
+    <i class="bi bi-house-heart-fill"></i>
+    <span class="ws-sw-label">Espace Famille</span>
+  </a>
   <!-- Cachés par défaut, à réactiver plus tard -->
   <a href="tel:+41220000000" class="ws-sw-btn ws-sw-hidden" title="Téléphone">
     <i class="bi bi-telephone-fill"></i>
