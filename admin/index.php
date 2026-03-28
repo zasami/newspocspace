@@ -210,6 +210,15 @@ $activeSection = match($page) {
 <!-- Immersive mode restore pill -->
 <button class="zt-immersive-pill" id="immersivePill" title="Afficher la sidebar"><i class="bi bi-layout-sidebar-inset"></i></button>
 
+<!-- Immersive mode — runs ASAP to avoid FOUC -->
+<script nonce="<?= $cspNonce ?>">
+(function() {
+    if (localStorage.getItem('zt_immersive') === '1') document.body.classList.add('zt-immersive');
+    // Clean old fullscreen flag
+    sessionStorage.removeItem('zt_fullscreen');
+})();
+</script>
+
 <!-- BACKDROP (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -330,25 +339,32 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     setInterval(updateCountdown, 30000);
 }
 
-// Mode immersif (CSS-only, persiste via localStorage)
+
+</script>
+
+<!-- Immersive mode toggle (separate script to avoid being blocked by page errors) -->
+<script nonce="<?= $cspNonce ?>">
 (function() {
-    const btn = document.getElementById('immersiveToggle');
-    const pill = document.getElementById('immersivePill');
-    const KEY = 'zt_immersive';
+    var btn = document.getElementById('immersiveToggle');
+    var pill = document.getElementById('immersivePill');
 
     function setImmersive(on) {
         document.body.classList.toggle('zt-immersive', on);
-        localStorage.setItem(KEY, on ? '1' : '0');
-        const icon = btn?.querySelector('i');
+        localStorage.setItem('zt_immersive', on ? '1' : '0');
+        var icon = btn && btn.querySelector('i');
         if (icon) icon.className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
         if (btn) btn.title = on ? 'Quitter le mode immersif' : 'Mode immersif';
     }
 
-    btn?.addEventListener('click', () => setImmersive(!document.body.classList.contains('zt-immersive')));
-    pill?.addEventListener('click', () => setImmersive(false));
+    if (btn) btn.addEventListener('click', function() { setImmersive(!document.body.classList.contains('zt-immersive')); });
+    if (pill) pill.addEventListener('click', function() { setImmersive(false); });
 
-    // Restore on page load
-    if (localStorage.getItem(KEY) === '1') setImmersive(true);
+    // Sync icon state on load
+    if (document.body.classList.contains('zt-immersive')) {
+        var icon = btn && btn.querySelector('i');
+        if (icon) icon.className = 'bi bi-fullscreen-exit';
+        if (btn) btn.title = 'Quitter le mode immersif';
+    }
 })();
 </script>
 <!-- ═══ MODAL: Confirmation globale ═══ -->

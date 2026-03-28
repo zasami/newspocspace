@@ -292,7 +292,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
-  transition: width var(--cl-transition);
+  transition: width var(--cl-transition), transform var(--cl-transition);
 }
 
 /* ── Sidebar header ── */
