@@ -207,6 +207,9 @@ $activeSection = match($page) {
 </head>
 <body>
 
+<!-- Immersive mode restore pill -->
+<button class="zt-immersive-pill" id="immersivePill" title="Afficher la sidebar"><i class="bi bi-layout-sidebar-inset"></i></button>
+
 <!-- BACKDROP (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -267,7 +270,7 @@ $activeSection = match($page) {
         <i class="bi bi-envelope"></i>
         <span class="topbar-notif-badge" id="adminEmailBadge" style="display:none"></span>
       </a>
-      <button class="topbar-icon-btn" id="fullscreenToggle" title="Plein écran">
+      <button class="topbar-icon-btn" id="immersiveToggle" title="Mode immersif">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
 <?php
@@ -327,66 +330,25 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     setInterval(updateCountdown, 30000);
 }
 
-// Fullscreen persistant
+// Mode immersif (CSS-only, persiste via localStorage)
 (function() {
-    const btn = document.getElementById('fullscreenToggle');
-    if (!btn) return;
+    const btn = document.getElementById('immersiveToggle');
+    const pill = document.getElementById('immersivePill');
+    const KEY = 'zt_immersive';
 
-    function updateIcon() {
-        const icon = btn.querySelector('i');
-        icon.className = document.fullscreenElement ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
-        btn.title = document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran';
+    function setImmersive(on) {
+        document.body.classList.toggle('zt-immersive', on);
+        localStorage.setItem(KEY, on ? '1' : '0');
+        const icon = btn?.querySelector('i');
+        if (icon) icon.className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+        if (btn) btn.title = on ? 'Quitter le mode immersif' : 'Mode immersif';
     }
 
-    btn.addEventListener('click', () => {
-        if (document.fullscreenElement) {
-            sessionStorage.removeItem('zt_fullscreen');
-            document.exitFullscreen().catch(() => {});
-            removeRestoreBanner();
-        } else {
-            sessionStorage.setItem('zt_fullscreen', '1');
-            document.documentElement.requestFullscreen().catch(() => {});
-        }
-    });
+    btn?.addEventListener('click', () => setImmersive(!document.body.classList.contains('zt-immersive')));
+    pill?.addEventListener('click', () => setImmersive(false));
 
-    document.addEventListener('fullscreenchange', () => {
-        updateIcon();
-        if (!document.fullscreenElement && !sessionStorage.getItem('zt_fullscreen')) {
-            removeRestoreBanner();
-        }
-    });
-
-    // Si fullscreen était actif mais perdu (rechargement de page), afficher un bandeau
-    function showRestoreBanner() {
-        if (document.getElementById('fsRestoreBanner')) return;
-        const banner = document.createElement('div');
-        banner.id = 'fsRestoreBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:var(--cl-accent,#1B2A4A);color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 16px;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-        banner.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> Cliquez ici pour rester en plein écran <button style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:2px 10px;font-size:0.8rem;cursor:pointer;margin-left:8px" id="fsRestoreCancel">✕ Annuler</button>';
-        document.body.appendChild(banner);
-
-        banner.addEventListener('click', (e) => {
-            if (e.target.id === 'fsRestoreCancel') {
-                sessionStorage.removeItem('zt_fullscreen');
-                removeRestoreBanner();
-                updateIcon();
-                return;
-            }
-            document.documentElement.requestFullscreen().then(() => {
-                removeRestoreBanner();
-                updateIcon();
-            }).catch(() => {});
-        });
-    }
-
-    function removeRestoreBanner() {
-        document.getElementById('fsRestoreBanner')?.remove();
-    }
-
-    if (sessionStorage.getItem('zt_fullscreen') === '1' && !document.fullscreenElement) {
-        showRestoreBanner();
-    }
-    updateIcon();
+    // Restore on page load
+    if (localStorage.getItem(KEY) === '1') setImmersive(true);
 })();
 </script>
 <!-- ═══ MODAL: Confirmation globale ═══ -->

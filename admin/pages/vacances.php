@@ -315,12 +315,14 @@ function initVacancesPage() {
     });
 
     el('vacFullscreen')?.addEventListener('click', () => {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else document.exitFullscreen();
-    });
-    document.addEventListener('fullscreenchange', () => {
+        const on = !document.body.classList.contains('zt-immersive');
+        document.body.classList.toggle('zt-immersive', on);
+        localStorage.setItem('zt_immersive', on ? '1' : '0');
         const icon = document.querySelector('#vacFullscreen i');
-        if (icon) icon.className = document.fullscreenElement ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+        if (icon) icon.className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+        // Also update topbar button
+        const tbIcon = document.querySelector('#immersiveToggle i');
+        if (tbIcon) tbIcon.className = on ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
     });
 
     el('vacAddBlocked')?.addEventListener('click', () => {

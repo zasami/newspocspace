@@ -1166,6 +1166,51 @@ body:has(.fullscreen-active) > .modal-backdrop {
 }
 
 /* ══════════════════════════════════════
+   IMMERSIVE MODE (CSS-only, persists across pages)
+   Hides sidebar + topbar shrinks, content takes full width
+   ══════════════════════════════════════ */
+body.zt-immersive .admin-sidebar {
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+body.zt-immersive .admin-main {
+  margin-left: 0 !important;
+}
+body.zt-immersive .admin-topbar {
+  padding-left: 52px;
+}
+body.zt-immersive .sidebar-overlay { display: none !important; }
+
+/* Restore pill — small icon fixed top-left */
+.zt-immersive-pill {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1090;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--cl-accent, #191918);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  transition: transform .2s, opacity .2s;
+  opacity: .5;
+}
+.zt-immersive-pill:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+body.zt-immersive .zt-immersive-pill {
+  display: flex;
+}
+
+/* ══════════════════════════════════════
    MODULE CAROUSEL / SWITCH
    ══════════════════════════════════════ */
 .module-switch {
