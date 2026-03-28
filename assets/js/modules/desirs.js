@@ -15,15 +15,16 @@ let existingDesirs = [];
 let editingDesirId = null;
 let editingPermanentId = null;
 
-export async function init() {
+export function init() {
+    const ssrData = window.__ZT_PAGE_DATA__ || {};
+
     // Compute target month (next month)
     const now = new Date();
     const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     targetMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
 
-    // Load horaires
-    const hRes = await apiPost('get_horaires_types');
-    horaires = hRes.horaires || [];
+    // Use SSR horaires directly
+    horaires = ssrData.horaires || [];
     buildHorairesPicker();
 
     // Mode toggle
@@ -50,9 +51,10 @@ export async function init() {
     // Submit
     document.getElementById('desirSubmitBtn')?.addEventListener('click', submitDesirs);
 
-    // Build calendar + load data
+    // Build calendar + initial render from SSR data
     buildCalendar();
-    await Promise.all([loadDesirs(), loadPermanents()]);
+    renderDesirs(ssrData.desirs || [], ssrData.max_desirs || 4);
+    renderPermanents(ssrData.permanents || []);
 }
 
 // ── Calendar ──
@@ -114,7 +116,8 @@ function updateCountInfo() {
     const el = document.getElementById('calCountInfo');
     if (!el) return;
     const n = selectedDates.size;
-    const remaining = 4 - (existingDesirs.filter(d => !d.permanent_id && d.statut !== 'refuse').length);
+    const maxDesirs = renderDesirs._maxDesirs || 4;
+    const remaining = maxDesirs - (existingDesirs.filter(d => !d.permanent_id && d.statut !== 'refuse').length);
     if (n === 0) {
         el.innerHTML = `<span class="text-muted">${Math.max(0, remaining)} restant(s)</span>`;
     } else {
@@ -320,7 +323,15 @@ async function submitDesirs() {
 // ── Load desires ──
 async function loadDesirs() {
     const res = await apiPost('get_mes_desirs', { mois: targetMonth });
-    existingDesirs = res.desirs || [];
+    renderDesirs(res.desirs || []);
+}
+
+function renderDesirs(desirs, maxDesirs) {
+    if (maxDesirs !== undefined) {
+        // Store max for updateCountInfo to use (use existing constant of 4 if not provided)
+        renderDesirs._maxDesirs = maxDesirs;
+    }
+    existingDesirs = desirs;
     const tbody = document.getElementById('desirsTableBody');
     if (!tbody) return;
 
@@ -447,10 +458,13 @@ async function loadDesirs() {
 // ── Permanents ──
 async function loadPermanents() {
     const res = await apiPost('get_mes_permanents');
+    renderPermanents(res.permanents || []);
+}
+
+function renderPermanents(perms) {
     const tbody = document.getElementById('permanentsTableBody');
     if (!tbody) return;
 
-    const perms = res.permanents || [];
     if (!perms.length) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:1.5rem">Aucun désir permanent</td></tr>';
         return;

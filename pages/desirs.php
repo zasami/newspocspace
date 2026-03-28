@@ -1,4 +1,43 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$desirsInitMois = date('Y-m');
+$desirsInitData = Db::fetchAll(
+    "SELECT d.*, u2.prenom AS valide_par_prenom, u2.nom AS valide_par_nom,
+            ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur AS horaire_couleur
+     FROM desirs d
+     LEFT JOIN users u2 ON u2.id = d.valide_par
+     LEFT JOIN horaires_types ht ON ht.id = d.horaire_type_id
+     WHERE d.user_id = ? AND d.mois_cible = ?
+     ORDER BY d.date_souhaitee DESC",
+    [$uid, $desirsInitMois]
+);
+$desirsHoraires = Db::fetchAll(
+    "SELECT id, code, nom, heure_debut, heure_fin, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code"
+);
+$desirsMaxMois = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: 4);
+$_desirsPermanentsRaw = Db::fetchAll(
+    "SELECT dp.*, ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur AS horaire_couleur,
+            dp2.jour_semaine AS ancien_jour_semaine, dp2.type AS ancien_type,
+            dp2.horaire_type_id AS ancien_horaire_type_id, dp2.detail AS ancien_detail,
+            ht2.code AS ancien_horaire_code, ht2.nom AS ancien_horaire_nom, ht2.couleur AS ancien_horaire_couleur
+     FROM desirs_permanents dp
+     LEFT JOIN horaires_types ht ON ht.id = dp.horaire_type_id
+     LEFT JOIN desirs_permanents dp2 ON dp2.id = dp.replaces_id
+     LEFT JOIN horaires_types ht2 ON ht2.id = dp2.horaire_type_id
+     WHERE dp.user_id = ?
+     ORDER BY dp.jour_semaine",
+    [$uid]
+);
+$_desirsPendingIds = array_column(
+    Db::fetchAll("SELECT replaces_id FROM desirs_permanents WHERE user_id = ? AND replaces_id IS NOT NULL AND statut = 'en_attente'", [$uid]),
+    'replaces_id'
+);
+$desirsPermanents = array_map(function($p) use ($_desirsPendingIds) {
+    $p['has_pending_modification'] = in_array($p['id'], $_desirsPendingIds) ? 1 : 0;
+    return $p;
+}, $_desirsPermanentsRaw);
+?>
 <style>
 .desir-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 0.75rem; }
 .desir-cal-header { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-muted, #888); padding: 4px 0; text-transform: uppercase; }
@@ -171,3 +210,10 @@
     </div>
   </div>
 </div>
+<script type="application/json" id="__zt_ssr__"><?= json_encode([
+    'desirs' => $desirsInitData,
+    'permanents' => $desirsPermanents,
+    'horaires' => $desirsHoraires,
+    'max_desirs' => $desirsMaxMois,
+    'mois' => $desirsInitMois,
+], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

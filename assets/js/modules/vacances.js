@@ -16,7 +16,7 @@ let cellSize = 0; // -1 = small, 0 = medium (default), 1 = large
 const _c = [];
 function on(el, ev, fn, o) { if (!el) return; el.addEventListener(ev, fn, o); _c.push(() => el.removeEventListener(ev, fn, o)); }
 
-export async function init() {
+export function init() {
     const now = new Date();
     year = now.getFullYear();
     month = now.getMonth();
@@ -54,12 +54,17 @@ export async function init() {
     on(document.getElementById('vacSize-0'), 'click', () => setSizeAndRender(0));
     on(document.getElementById('vacSize-1'), 'click', () => setSizeAndRender(1));
 
-    await load();
+    // Initial render from SSR data
+    const ssrData = window.__ZT_PAGE_DATA__;
+    if (ssrData?.success) {
+        data = ssrData;
+        renderFromData();
+    } else {
+        load();
+    }
 }
 
 async function load() {
-    updateHeader();
-
     const myG = document.getElementById('vacMyGrid');
     const teamG = document.getElementById('vacTeamGrid');
     if (myG) myG.innerHTML = '<div class="vac-empty"><span class="spinner-border spinner-border-sm"></span></div>';
@@ -71,6 +76,12 @@ async function load() {
         if (teamG) teamG.innerHTML = '';
         return;
     }
+
+    renderFromData();
+}
+
+function renderFromData() {
+    updateHeader();
 
     // Module filter
     const sel = document.getElementById('vacModuleFilter');

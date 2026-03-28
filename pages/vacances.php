@@ -1,4 +1,49 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$uid = $_SESSION['zt_user']['id'];
+$vacYear = (int) date('Y');
+$vacDebut = "$vacYear-01-01";
+$vacFin = "$vacYear-12-31";
+
+$vacUsers = Db::fetchAll(
+    "SELECT u.id, u.prenom, u.nom, u.taux, u.solde_vacances,
+            f.code AS fonction_code, f.nom AS fonction_nom,
+            m.id AS module_id, m.code AS module_code, m.nom AS module_nom, m.ordre AS module_ordre
+     FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
+     LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
+     LEFT JOIN modules m ON m.id = um.module_id
+     WHERE u.is_active = 1
+     ORDER BY m.ordre, f.ordre, u.nom"
+);
+$vacAbsences = Db::fetchAll(
+    "SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.type, a.statut,
+            u.prenom, u.nom
+     FROM absences a
+     JOIN users u ON u.id = a.user_id
+     WHERE a.type = 'vacances'
+       AND a.date_debut <= ? AND a.date_fin >= ?
+       AND a.statut IN ('valide', 'en_attente')
+     ORDER BY a.date_debut",
+    [$vacFin, $vacDebut]
+);
+$vacBloquees = Db::fetchAll(
+    "SELECT id, date_debut, date_fin, motif FROM periodes_bloquees
+     WHERE date_debut <= ? AND date_fin >= ?
+     ORDER BY date_debut",
+    [$vacFin, $vacDebut]
+);
+$vacModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+$vacMoi = Db::fetch("SELECT solde_vacances FROM users WHERE id = ?", [$uid]);
+$vacMonSolde = floatval($vacMoi['solde_vacances'] ?? 27);
+$vacJoursUtilises = (int) Db::getOne(
+    "SELECT COALESCE(SUM(DATEDIFF(LEAST(date_fin, ?), GREATEST(date_debut, ?)) + 1), 0)
+     FROM absences
+     WHERE user_id = ? AND type = 'vacances' AND statut IN ('valide', 'en_attente')
+       AND date_debut <= ? AND date_fin >= ?",
+    [$vacFin, $vacDebut, $uid, $vacFin, $vacDebut]
+);
+?>
 <!-- Header -->
 <div class="vac-header">
   <div class="vac-header-left">
@@ -237,3 +282,13 @@
   .vac-team-table .col-user{min-width:100px;max-width:120px}
 }
 </style>
+<script type="application/json" id="__zt_ssr__"><?= json_encode([
+    'success'        => true,
+    'annee'          => $vacYear,
+    'users'          => $vacUsers,
+    'absences'       => $vacAbsences,
+    'bloquees'       => $vacBloquees,
+    'modules'        => $vacModules,
+    'mon_solde'      => $vacMonSolde,
+    'jours_utilises' => $vacJoursUtilises,
+], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
