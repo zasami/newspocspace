@@ -3,7 +3,8 @@
  */
 import { apiPost, escapeHtml, formatDateShort, formatDayName } from '../helpers.js';
 
-let currentMonday = null;
+let currentDate = null;   // selected day (drives the week view)
+let currentMonday = null; // derived from currentDate
 let menuMonday = null;
 let menusCache = [];
 let myReservationsCache = {};
@@ -20,11 +21,12 @@ export async function init() {
     const nameEl = document.getElementById('homeUserName');
     if (nameEl && user) nameEl.textContent = user.prenom || '';
 
-    currentMonday = getMonday(new Date());
+    currentDate = new Date();
+    currentMonday = getMonday(currentDate);
     menuMonday = getMonday(new Date());
 
-    document.getElementById('homePrevWeek')?.addEventListener('click', () => moveWeek(-1));
-    document.getElementById('homeNextWeek')?.addEventListener('click', () => moveWeek(1));
+    document.getElementById('homePrevWeek')?.addEventListener('click', () => moveNav(-1));
+    document.getElementById('homeNextWeek')?.addEventListener('click', () => moveNav(1));
     document.getElementById('menuPrevWeek')?.addEventListener('click', () => moveMenuWeek(-1));
     document.getElementById('menuNextWeek')?.addEventListener('click', () => moveMenuWeek(1));
 
@@ -102,11 +104,26 @@ async function loadWeek() {
     const months = getMonthsForWeek(currentMonday);
     const sunday = new Date(currentMonday);
     sunday.setDate(currentMonday.getDate() + 6);
+
+    const todayMonday = getMonday(new Date());
+    const isCurrentWeek = currentMonday.getTime() === todayMonday.getTime();
     const label = document.getElementById('homeWeekLabel');
-    if (label) label.textContent = `S${weekNum(currentMonday)} · ${formatDateShort(fmtISO(currentMonday))} — ${formatDateShort(fmtISO(sunday))}`;
+    const prevBtn = document.getElementById('homePrevWeek');
+    const nextBtn = document.getElementById('homeNextWeek');
+
+    if (isCurrentWeek) {
+        const dayIdx = (currentDate.getDay() + 6) % 7;
+        if (label) label.textContent = `${DAYS_FR[dayIdx]} · ${formatDateShort(fmtISO(currentDate))}`;
+        if (prevBtn) prevBtn.title = 'Jour précédent';
+        if (nextBtn) nextBtn.title = 'Jour suivant';
+    } else {
+        if (label) label.textContent = `S${weekNum(currentMonday)} · ${formatDateShort(fmtISO(currentMonday))} — ${formatDateShort(fmtISO(sunday))}`;
+        if (prevBtn) prevBtn.title = 'Semaine précédente';
+        if (nextBtn) nextBtn.title = 'Semaine suivante';
+    }
 
     const results = await Promise.all(months.map(m => apiPost('get_mon_planning', { mois: m })));
-    renderWeekPlanning(results.flatMap(r => r.assignations || []), weekDates);
+    renderWeekPlanning(results.flatMap(r => r.assignations || []), weekDates, isCurrentWeek);
 }
 
 async function loadNextShift() {
@@ -122,26 +139,42 @@ async function loadNextShift() {
     }
 }
 
-function moveWeek(dir) {
-    currentMonday = new Date(currentMonday);
-    currentMonday.setDate(currentMonday.getDate() + dir * 7);
+function moveNav(dir) {
+    const todayMonday = getMonday(new Date());
+    const isCurrentWeek = currentMonday.getTime() === todayMonday.getTime();
+
+    currentDate = new Date(currentDate);
+    if (isCurrentWeek) {
+        // Day-by-day on current week
+        currentDate.setDate(currentDate.getDate() + dir);
+    } else {
+        // Week-by-week on other weeks
+        currentDate.setDate(currentDate.getDate() + dir * 7);
+    }
+    currentMonday = getMonday(currentDate);
     loadWeek();
 }
 
-function renderWeekPlanning(assignations, weekDates) {
+function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
     const container = document.getElementById('homeWeekPlanning');
     const today = fmtISO(new Date());
+    const selectedDay = isCurrentWeek ? fmtISO(currentDate) : null;
     let html = '<div style="display:flex;flex-direction:column;gap:0">';
     for (const dateStr of weekDates) {
         const a = assignations.find(x => x.date_jour === dateStr);
         const isToday = dateStr === today;
+        const isSelected = selectedDay === dateStr;
+        const isDimmed = isCurrentWeek && !isSelected;
         const isWeekend = (() => { const d = new Date(dateStr + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; })();
-        const todayStyle = isToday ? 'background:var(--zt-accent-bg, rgba(0,180,160,0.06));border-left:3px solid var(--zt-teal)' : '';
+        const todayStyle = isSelected
+            ? 'background:var(--zt-accent-bg, rgba(0,180,160,0.06));border-left:3px solid var(--zt-teal)'
+            : (isToday ? 'background:var(--zt-accent-bg, rgba(0,180,160,0.03));border-left:3px solid #ccc' : '');
+        const dimStyle = isDimmed ? 'opacity:0.38;' : '';
 
         if (a) {
             const color = a.couleur || '#1a1a1a';
             html += `
-              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}">
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}${dimStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -156,7 +189,7 @@ function renderWeekPlanning(assignations, weekDates) {
               </div>`;
         } else {
             html += `
-              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}">
+              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}${dimStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -473,6 +506,7 @@ function closeModal() { if (resModal) resModal.hide(); }
 export function destroy() {
     if (menuRefreshInterval) { clearInterval(menuRefreshInterval); menuRefreshInterval = null; }
     resModal = null;
+    currentDate = null;
     currentMonday = null;
     menuMonday = null;
     menusCache = [];
