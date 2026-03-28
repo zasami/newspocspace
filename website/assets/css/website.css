@@ -1210,7 +1210,6 @@ a:hover { color: var(--ws-green-hover); }
   .ws-carousel-track > .ws-menu-card { width: 50%; min-width: 50%; }
 }
 @media (max-width: 576px) {
-  .ws-carousel-track > .ws-menu-card { width: 100%; min-width: 100%; }
   .ws-carousel-arrow { display: none; }
   .ws-carousel-viewport { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
   .ws-carousel-track { transition: none; }

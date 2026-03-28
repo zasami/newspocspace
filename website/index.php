@@ -488,13 +488,14 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 
     function slideCarousel(dir) {
         const newPos = carouselPos + dir;
-        // Passage à la semaine suivante/précédente quand on dépasse les bornes
+        // Passage à la semaine suivante quand on dépasse la fin
         if (newPos > 4 && currentWeekOffset < 3) {
             currentWeekOffset++;
             carouselPos = 0;
             loadWeek();
             return;
         }
+        // Passage à la semaine précédente quand on dépasse le début
         if (newPos < 0 && currentWeekOffset > 0) {
             currentWeekOffset--;
             carouselPos = 4;
@@ -508,7 +509,6 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     function updateCarouselPosition() {
         const track = document.getElementById('wsCarouselTrack');
         if (!track) return;
-        // Each card = 33.33% width, slide by 33.33% per step
         track.style.transform = 'translateX(-' + (carouselPos * (100/3)) + '%)';
     }
 
