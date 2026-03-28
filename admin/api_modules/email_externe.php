@@ -227,13 +227,19 @@ function admin_email_ext_send()
     if (!is_array($to)) $to = [$to];
     if (!is_array($cc)) $cc = [$cc];
 
-    // Get signature
+    // Wrap body in proper HTML envelope for email clients
+    $htmlBody = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333">'
+        . ($body ?: '<p>&nbsp;</p>');
+
+    // Append signature
     $config = Db::fetch("SELECT signature FROM email_externe_config WHERE user_id = ?", [$user['id']]);
     if ($config && $config['signature']) {
-        $body .= '<br><br>' . $config['signature'];
+        $htmlBody .= '<br><br>' . $config['signature'];
     }
 
-    $mailer->sendEmail($to, $cc, $subject, $body, [], $replyTo);
+    $htmlBody .= '</body></html>';
+
+    $mailer->sendEmail($to, $cc, $subject, $htmlBody, [], $replyTo);
     respond(['success' => true, 'message' => 'Email envoyé']);
 }
 

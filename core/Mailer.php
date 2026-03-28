@@ -367,13 +367,13 @@ class Mailer
         if (empty($attachments)) {
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
             $headers .= "Content-Transfer-Encoding: base64\r\n";
-            $body = base64_encode($htmlBody);
+            $body = chunk_split(base64_encode($htmlBody));
         } else {
             $headers .= "Content-Type: multipart/mixed; boundary=\"$boundary\"\r\n";
             $body = "--$boundary\r\n";
             $body .= "Content-Type: text/html; charset=UTF-8\r\n";
             $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
-            $body .= base64_encode($htmlBody) . "\r\n";
+            $body .= chunk_split(base64_encode($htmlBody)) . "\r\n";
             foreach ($attachments as $att) {
                 $body .= "--$boundary\r\n";
                 $body .= "Content-Type: " . ($att['mime'] ?? 'application/octet-stream') . "; name=\"" . $att['filename'] . "\"\r\n";
@@ -393,7 +393,18 @@ class Mailer
             $this->smtpCommand($smtp, "RCPT TO:<$email>\r\n", 250);
         }
         $this->smtpCommand($smtp, "DATA\r\n", 354);
-        fwrite($smtp, $headers . "\r\n" . $body . "\r\n.\r\n");
+        $message = $headers . "\r\n" . $body;
+        // SMTP dot-stuffing: lines starting with . must be doubled
+        $message = str_replace("\r\n.", "\r\n..", $message);
+        $message .= "\r\n.\r\n";
+        // fwrite may not send all data at once — loop until complete
+        $len = strlen($message);
+        $written = 0;
+        while ($written < $len) {
+            $w = fwrite($smtp, substr($message, $written, 8192));
+            if ($w === false) throw new \RuntimeException('Erreur écriture SMTP');
+            $written += $w;
+        }
         $this->smtpRead($smtp, 250);
         $this->smtpCommand($smtp, "QUIT\r\n", 221);
         fclose($smtp);
@@ -463,45 +474,76 @@ class Mailer
 
     private function getBody(int $msgno, $structure): string
     {
-        // Simple message
+        // Simple message (no parts)
         if (!isset($structure->parts) || empty($structure->parts)) {
             $body = imap_fetchbody($this->imap, $msgno, '1');
             $body = $this->decodePart($body, $structure->encoding ?? 0);
-            if (($structure->subtype ?? '') === 'HTML') return $body;
+            if (strtoupper($structure->subtype ?? '') === 'HTML') return $body;
             return nl2br(htmlspecialchars($body));
         }
 
-        // Multipart — find HTML or plain text
+        // Multipart — find HTML or plain text + collect inline images
         $htmlBody = '';
         $textBody = '';
-        $this->walkParts($msgno, $structure->parts, '1', $htmlBody, $textBody);
+        $inlineImages = []; // cid => data URI
+        $this->walkParts($msgno, $structure->parts, '', $htmlBody, $textBody, $inlineImages);
+
+        // Replace cid: references with base64 data URIs
+        if ($htmlBody && $inlineImages) {
+            foreach ($inlineImages as $cid => $dataUri) {
+                $htmlBody = str_replace('cid:' . $cid, $dataUri, $htmlBody);
+            }
+        }
+
         return $htmlBody ?: ($textBody ? nl2br(htmlspecialchars($textBody)) : '');
     }
 
-    private function walkParts(int $msgno, array $parts, string $prefix, string &$html, string &$text): void
+    private function walkParts(int $msgno, array $parts, string $prefix, string &$html, string &$text, array &$inlineImages): void
     {
         foreach ($parts as $i => $part) {
-            $section = $prefix ? ($prefix . '.' . ($i + 1)) : (string)($i + 1);
-            if ($prefix === '1') $section = (string)($i + 1);
+            $section = $prefix === '' ? (string)($i + 1) : ($prefix . '.' . ($i + 1));
 
-            $mime = strtolower(($part->subtype ?? ''));
+            $mime = strtolower($part->subtype ?? '');
             $isAttachment = false;
-            if (isset($part->disposition) && strtolower($part->disposition) === 'attachment') $isAttachment = true;
+            $isInline = false;
+            $contentId = '';
+
+            if (isset($part->disposition)) {
+                $disp = strtolower($part->disposition);
+                if ($disp === 'attachment') $isAttachment = true;
+                elseif ($disp === 'inline') $isInline = true;
+            }
+
+            // Get Content-ID for inline images
+            if (isset($part->id)) {
+                $contentId = trim($part->id, '<>');
+            }
+
             if (isset($part->parameters)) {
                 foreach ($part->parameters as $p) {
-                    if (strtolower($p->attribute) === 'name') $isAttachment = true;
+                    if (strtolower($p->attribute) === 'name' && !$isInline) $isAttachment = true;
                 }
             }
 
-            if (!$isAttachment && $part->type === 0) { // TEXT
-                $body = imap_fetchbody($this->imap, $msgno, (string)($i + 1));
+            // Inline image with Content-ID → convert to data URI
+            if ($contentId && $part->type === 5) { // type 5 = IMAGE
+                $data = imap_fetchbody($this->imap, $msgno, $section);
+                $data = $this->decodePart($data, $part->encoding ?? 0);
+                $types = ['text','multipart','message','application','audio','image','video','model','other'];
+                $mimeType = ($types[$part->type] ?? 'image') . '/' . strtolower($part->subtype ?? 'jpeg');
+                $inlineImages[$contentId] = 'data:' . $mimeType . ';base64,' . base64_encode($data);
+            }
+            // Text part (not attachment)
+            elseif (!$isAttachment && $part->type === 0) { // type 0 = TEXT
+                $body = imap_fetchbody($this->imap, $msgno, $section);
                 $body = $this->decodePart($body, $part->encoding ?? 0);
-                if ($mime === 'html') $html = $body;
+                if ($mime === 'html' && !$html) $html = $body;
                 elseif ($mime === 'plain' && !$text) $text = $body;
             }
 
+            // Recurse into sub-parts
             if (isset($part->parts) && !empty($part->parts)) {
-                $this->walkParts($msgno, $part->parts, (string)($i + 1), $html, $text);
+                $this->walkParts($msgno, $part->parts, $section, $html, $text, $inlineImages);
             }
         }
     }
