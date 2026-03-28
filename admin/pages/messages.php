@@ -59,8 +59,8 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
 <!-- Grand titre stats + bouton nouveau -->
 <div class="email-page-header">
   <div>
-    <h4 class="email-page-title"><i class="bi bi-envelope"></i> Emails</h4>
-    <div id="emailStatsLine" class="text-muted email-stats-line"><?= $emailStatsTotal ?> emails · <?= $emailStatsToday ?> aujourd'hui · <?= $emailStatsUnread ?> non lu(s) · <?= $emailStatsAttachments ?> pièce(s) jointe(s)</div>
+    <h4 class="email-page-title"><i class="bi bi-envelope"></i> Messages</h4>
+    <div id="emailStatsLine" class="text-muted email-stats-line"><?= $emailStatsTotal ?> messages · <?= $emailStatsToday ?> aujourd'hui · <?= $emailStatsUnread ?> non lu(s) · <?= $emailStatsAttachments ?> pièce(s) jointe(s)</div>
   </div>
   <button class="btn btn-sm btn-primary" id="btnAdminCompose" title="Nouveau message">
     <i class="bi bi-pencil-square me-1"></i> Nouveau
@@ -95,7 +95,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
     <div id="emailDetailCard" class="adm-email-detail">
       <div class="adm-email-empty email-empty-padded">
         <i class="bi bi-envelope-open email-empty-icon"></i>
-        <p class="mb-0 email-empty-text">Sélectionnez un email pour le lire</p>
+        <p class="mb-0 email-empty-text">Sélectionnez un message pour le lire</p>
       </div>
     </div>
   </div>
@@ -207,7 +207,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         const topbarInput = document.getElementById('topbarSearchInput');
         if (topbarInput) {
             topbarInput.dataset.origPlaceholder = topbarInput.placeholder;
-            topbarInput.placeholder = 'Rechercher un email...';
+            topbarInput.placeholder = 'Rechercher un message...';
             topbarInput.value = '';
             topbarInput.addEventListener('input', onTopbarSearch);
         }
@@ -240,7 +240,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         if (!res.success) return;
         const s = res.stats;
         document.getElementById('emailStatsLine').textContent =
-            `${s.total} emails · ${s.today} aujourd'hui · ${s.unread} non lu(s) · ${s.attachments} pièce(s) jointe(s)`;
+            `${s.total} messages · ${s.today} aujourd'hui · ${s.unread} non lu(s) · ${s.attachments} pièce(s) jointe(s)`;
         const badge = document.getElementById('badgeInbox');
         if (badge) badge.textContent = parseInt(s.unread) > 0 ? s.unread : '';
     }
@@ -275,7 +275,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         renderAdminPagination();
 
         if (!emails.length) {
-            container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-envelope-open email-empty-icon--sm"></i><p class="mt-1 mb-0">Aucun email</p></div>';
+            container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-envelope-open email-empty-icon--sm"></i><p class="mt-1 mb-0">Aucun message</p></div>';
             return;
         }
 
@@ -443,12 +443,12 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
             openForward(e);
         });
         card.querySelector('#btnDetailDelete')?.addEventListener('click', async () => {
-            if (!confirm('Supprimer définitivement cet email ?')) return;
+            if (!confirm('Supprimer définitivement ce message ?')) return;
             const r = await adminApiPost('admin_delete_email', { id: e.id });
             if (r.success) {
-                showToast('Email supprimé', 'success');
+                showToast('Message supprimé', 'success');
                 selectedId = null;
-                document.getElementById('emailDetailCard').innerHTML = '<div class="adm-email-empty email-empty-padded"><i class="bi bi-envelope-open email-empty-icon"></i><p class="mb-0 email-empty-text">Sélectionnez un email</p></div>';
+                document.getElementById('emailDetailCard').innerHTML = '<div class="adm-email-empty email-empty-padded"><i class="bi bi-envelope-open email-empty-icon"></i><p class="mb-0 email-empty-text">Sélectionnez un message</p></div>';
                 loadList();
                 loadStats();
             } else {
@@ -556,7 +556,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
             if (pendingFiles.length && res.id) {
                 await uploadAttachments(res.id);
             }
-            showToast('Email envoyé', 'success');
+            showToast('Message envoyé', 'success');
             hideComposePanel();
             loadList();
             loadStats();
