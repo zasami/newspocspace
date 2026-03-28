@@ -518,39 +518,17 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
 
 <script<?= nonce() ?>>
 (function() {
-    let config = {};
-    let geoPays = [];
-    let geoRegions = [];
-    let modulesData = []; // modules with etages
-    let configModules = []; // from admin_get_config (with responsable)
+    let config = <?= json_encode($etabConfig, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let geoPays = <?= json_encode(array_values($etabGeoPays), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let geoRegions = <?= json_encode(array_values($etabGeoRegions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    let modulesData = <?= json_encode(array_values($etabModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>; // modules with etages
+    let configModules = <?= json_encode(array_values($etabConfigModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>; // from admin_get_config (with responsable)
     let allEtages = [];
-    let responsables = [];
+    let responsables = <?= json_encode(array_values($etabResponsables), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let dirty = false;
     let editingModules = new Set(); // modules en mode édition
 
-    async function initEtablissementPage() {
-        // Load config + modules structure in parallel
-        const [configRes, modulesRes, refsRes] = await Promise.all([
-            adminApiPost('admin_get_config'),
-            adminApiPost('admin_get_modules'),
-            adminApiPost('admin_get_planning_refs'),
-        ]);
-
-        if (configRes.success) {
-            config = configRes.config || {};
-            configModules = configRes.modules || [];
-            geoPays = configRes.geo_pays || [];
-            geoRegions = configRes.geo_regions || [];
-        }
-        if (modulesRes.success) {
-            modulesData = modulesRes.modules || [];
-        }
-        if (refsRes.success) {
-            responsables = (refsRes.users || []).filter(
-                u => ['admin', 'direction', 'responsable'].includes(u.role)
-            );
-        }
-
+    function initEtablissementPage() {
         // Build allEtages flat list
         allEtages = [];
         modulesData.forEach(m => {
