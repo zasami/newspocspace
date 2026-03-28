@@ -466,6 +466,9 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
         else location.reload();
     });
 
+    // Expose for shortcuts
+    window.__ztNavigateTo = navigateTo;
+
 })();
 </script>
 <!-- ═══ MODAL: Confirmation globale ═══ -->
@@ -780,26 +783,35 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 (function() {
     const STORAGE_KEY = 'zt_shortcuts';
 
+    // Navigate: use SPA router in fullscreen, normal otherwise
+    function goTo(url) {
+        if (document.fullscreenElement && window.__ztNavigateTo) {
+            window.__ztNavigateTo(url);
+        } else {
+            location.href = url;
+        }
+    }
+
     // ── Default shortcuts definition ──
     const SHORTCUTS_DEF = [
         { group: 'Navigation', items: [
-            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => location.href = '/zerdatime/admin/' },
-            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => location.href = '/zerdatime/admin/planning' },
-            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => location.href = '/zerdatime/admin/users' },
-            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => location.href = '/zerdatime/admin/residents' },
-            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => location.href = '/zerdatime/admin/absences' },
-            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => location.href = '/zerdatime/admin/desirs' },
-            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => location.href = '/zerdatime/admin/vacances' },
-            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => location.href = '/zerdatime/admin/messages' },
-            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => location.href = '/zerdatime/admin/famille' },
-            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => location.href = '/zerdatime/admin/documents' },
+            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/zerdatime/admin/') },
+            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/zerdatime/admin/planning') },
+            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/zerdatime/admin/users') },
+            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => goTo('/zerdatime/admin/residents') },
+            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => goTo('/zerdatime/admin/absences') },
+            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => goTo('/zerdatime/admin/desirs') },
+            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => goTo('/zerdatime/admin/vacances') },
+            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/zerdatime/admin/messages') },
+            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/zerdatime/admin/famille') },
+            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/zerdatime/admin/documents') },
         ]},
         { group: 'Outils', items: [
-            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => location.href = '/zerdatime/admin/todos' },
-            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => location.href = '/zerdatime/admin/notes' },
-            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => location.href = '/zerdatime/admin/pv' },
-            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => location.href = '/zerdatime/admin/sondages' },
-            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => location.href = '/zerdatime/admin/stats' },
+            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/zerdatime/admin/todos') },
+            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/zerdatime/admin/notes') },
+            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/zerdatime/admin/pv') },
+            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/zerdatime/admin/sondages') },
+            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/zerdatime/admin/stats') },
         ]},
         { group: 'Actions rapides', items: [
             { id: 'act_email',        label: 'Nouveau message (email)', default: 'Ctrl+E', action: openComposeEmail },
@@ -812,10 +824,9 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // ── Action implementations ──
     function openComposeEmail() {
-        // Navigate to messages page then trigger compose
         if (!location.pathname.includes('/messages')) {
-            location.href = '/zerdatime/admin/messages';
             sessionStorage.setItem('zt_auto_compose', '1');
+            goTo('/zerdatime/admin/messages');
         } else {
             document.getElementById('btnComposeEmail')?.click();
         }
