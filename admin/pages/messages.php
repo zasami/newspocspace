@@ -1,10 +1,11 @@
 <?php
 // ─── Données serveur ──────────────────────────────────────────────────────────
 $emailContacts = Db::fetchAll(
-    "SELECT u.id, u.prenom, u.nom, u.email, u.fonction_nom,
+    "SELECT u.id, u.prenom, u.nom, u.email, f.nom AS fonction_nom,
             COALESCE(m.nom, 'Sans module') AS module_nom,
             COALESCE(m.ordre, 999) AS module_ordre
      FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
      LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
      LEFT JOIN modules m ON m.id = um.module_id
      WHERE u.is_active = 1
