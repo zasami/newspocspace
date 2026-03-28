@@ -3,7 +3,11 @@
  */
 import { apiPost, toast, escapeHtml } from '../helpers.js';
 
-export async function init() {
+export function init() {
+    // Render initial data from SSR
+    const ssrMessages = window.__ZT_PAGE_DATA__?.messages || [];
+    renderMessages(ssrMessages);
+
     // Submit message
     document.getElementById('messageForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -21,16 +25,12 @@ export async function init() {
             toast(res.message || 'Erreur');
         }
     });
-
-    await loadMessages();
 }
 
-async function loadMessages() {
-    const res = await apiPost('get_mes_messages');
+function renderMessages(messages) {
     const container = document.getElementById('messagesListBody');
     if (!container) return;
 
-    const messages = res.messages || [];
     if (!messages.length) {
         container.innerHTML = '<div class="empty-state"><i class="bi bi-envelope-open"></i><p>Aucun message</p></div>';
         return;
@@ -58,6 +58,11 @@ async function loadMessages() {
           </div>
         `;
     }).join('');
+}
+
+async function loadMessages() {
+    const res = await apiPost('get_mes_messages');
+    renderMessages(res.messages || []);
 }
 
 export function destroy() {}

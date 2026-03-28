@@ -1,4 +1,17 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['zt_user']['id'];
+$initMessages = Db::fetchAll(
+    "SELECT m.*, uf.prenom AS from_prenom, uf.nom AS from_nom,
+            ut.prenom AS to_prenom, ut.nom AS to_nom
+     FROM messages m
+     JOIN users uf ON uf.id = m.from_user_id
+     LEFT JOIN users ut ON ut.id = m.to_user_id
+     WHERE m.from_user_id = ? OR m.to_user_id = ?
+     ORDER BY m.created_at DESC
+     LIMIT 50",
+    [$uid, $uid]
+);
+?>
 <div class="page-header">
   <h1><i class="bi bi-envelope"></i> Messages</h1>
   <p>Communication avec la direction et vos collègues</p>
@@ -37,3 +50,5 @@
     </div>
   </div>
 </div>
+
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['messages' => $initMessages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

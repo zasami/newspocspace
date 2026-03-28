@@ -52,8 +52,7 @@ export async function init() {
     document.getElementById('planEmailSend')?.addEventListener('click', sendEmail);
     document.getElementById('planRowsFilter')?.addEventListener('change', () => renderGrid());
 
-    const modRes = await apiPost('get_modules_list');
-    allModules = modRes.modules || [];
+    allModules = window.__ZT_PAGE_DATA__?.modules || [];
 
     setupContextMenu();
     await loadData();

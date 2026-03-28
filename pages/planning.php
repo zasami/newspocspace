@@ -1,4 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+$planModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+?>
 <!-- Planning Toolbar -->
 <div class="planning-toolbar">
   <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -650,3 +652,5 @@
   .pg .c-tot  { width: 48px; min-width: 48px; max-width: 48px; }
 }
 </style>
+
+<script type="application/json" id="__zt_ssr__"><?= json_encode(['modules' => $planModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
