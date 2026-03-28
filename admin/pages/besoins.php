@@ -1,3 +1,15 @@
+<?php
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$besoinsRows = Db::fetchAll(
+    "SELECT bc.*, m.code AS module_code, m.nom AS module_nom, f.code AS fonction_code, f.nom AS fonction_nom
+     FROM besoins_couverture bc
+     JOIN modules m ON m.id = bc.module_id
+     JOIN fonctions f ON f.id = bc.fonction_id
+     ORDER BY m.ordre, f.ordre, bc.jour_semaine"
+);
+$besoinsModules   = Db::fetchAll("SELECT id, code, nom FROM modules ORDER BY ordre");
+$besoinsFonctions = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY ordre");
+?>
 <style>
 /* Besoins page classes */
 .b-hidden { display: none; }
@@ -77,12 +89,12 @@
   </div>
 </div>
 
-<div id="besoins-loading" class="text-center py-5">
+<div id="besoins-loading" class="text-center py-5 b-hidden">
   <div class="admin-spinner b-spinner"></div>
   <p class="text-muted mt-2 small">Chargement...</p>
 </div>
 
-<div id="besoins-grid-wrap" class="tr-grid-wrap b-hidden b-grid-wrap">
+<div id="besoins-grid-wrap" class="tr-grid-wrap b-grid-wrap">
   <table class="tr-grid" id="besoins-table">
     <thead id="besoins-thead"></thead>
     <tbody id="besoins-tbody"></tbody>
@@ -130,11 +142,23 @@
 <script<?= nonce() ?>>
 function initBesoinsPage() {
   const JOURS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  let modules = [], fonctions = [], besoinsMap = {};
+  let modules = <?= json_encode(array_values($besoinsModules), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+  let fonctions = <?= json_encode(array_values($besoinsFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+  let besoinsMap = {};
   let collapsedModules = new Set();
   let copyModal = null;
 
-  loadBesoins();
+  // Build initial besoinsMap from injected data
+  const initBesoins = <?= json_encode(array_values($besoinsRows), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+  initBesoins.forEach(b => {
+    besoinsMap[b.module_id + '_' + b.fonction_id + '_' + b.jour_semaine] = parseInt(b.nb_requis) || 0;
+  });
+  if (modules.length && fonctions.length) {
+    document.getElementById('besoins-grid-wrap').classList.remove('b-hidden');
+    renderGrid();
+  } else {
+    document.getElementById('besoins-empty').classList.remove('b-hidden');
+  }
 
   document.getElementById('besoins-collapse-all').addEventListener('click', () => {
     modules.forEach(m => collapsedModules.add(m.id));
@@ -164,7 +188,6 @@ function initBesoinsPage() {
       document.getElementById('besoins-empty').classList.remove('b-hidden');
       return;
     }
-    // Build lookup: key = moduleId_fonctionId_jour => nb_requis
     besoinsMap = {};
     (res.besoins || []).forEach(b => {
       besoinsMap[b.module_id + '_' + b.fonction_id + '_' + b.jour_semaine] = parseInt(b.nb_requis) || 0;

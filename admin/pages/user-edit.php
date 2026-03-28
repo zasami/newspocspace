@@ -4,6 +4,22 @@ if (!$userId) {
     echo '<div class="alert alert-danger">ID utilisateur manquant</div>';
     return;
 }
+
+$editUser = Db::fetch(
+    "SELECT u.*, f.nom AS fonction_nom FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id WHERE u.id = ?",
+    [$userId]
+);
+if (!$editUser) {
+    echo '<div class="alert alert-danger">Utilisateur non trouvé</div>';
+    return;
+}
+unset($editUser['password'], $editUser['reset_token'], $editUser['reset_expires']);
+$editUser['modules'] = Db::fetchAll(
+    "SELECT m.id, m.nom, m.code, um.is_principal FROM user_modules um JOIN modules m ON m.id = um.module_id WHERE um.user_id = ?",
+    [$userId]
+);
+
+$editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
 ?>
 <a href="<?= admin_url('users') ?>" class="btn btn-outline-secondary btn-sm mb-3">
   <i class="bi bi-arrow-left"></i> Retour
@@ -19,16 +35,16 @@ if (!$userId) {
           <div class="row g-2 mb-2">
             <div class="col-md-6">
               <label class="form-label">Prénom</label>
-              <input type="text" class="form-control" id="editPrenom" required>
+              <input type="text" class="form-control" id="editPrenom" required value="<?= h($editUser['prenom'] ?? '') ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Nom</label>
-              <input type="text" class="form-control" id="editNom" required>
+              <input type="text" class="form-control" id="editNom" required value="<?= h($editUser['nom'] ?? '') ?>">
             </div>
           </div>
           <div class="mb-2">
             <label class="form-label">Email</label>
-            <input type="email" class="form-control" id="editEmail" required>
+            <input type="email" class="form-control" id="editEmail" required value="<?= h($editUser['email'] ?? '') ?>">
           </div>
           <div class="row g-2 mb-2">
             <div class="col-md-6">
@@ -37,7 +53,7 @@ if (!$userId) {
             </div>
             <div class="col-md-6">
               <label class="form-label">Taux %</label>
-              <input type="number" class="form-control" id="editTaux" min="20" max="100" step="5">
+              <input type="number" class="form-control" id="editTaux" min="20" max="100" step="5" value="<?= h($editUser['taux'] ?? 100) ?>">
             </div>
           </div>
           <div class="row g-2 mb-2">
@@ -54,19 +70,19 @@ if (!$userId) {
               <div class="zs-select" id="editTypeEmploye" data-placeholder="Interne"></div>
             </div>
           </div>
-          <div class="card card-body bg-light p-2 mb-2" id="editExterneOverrides" style="display:none">
+          <div class="card card-body bg-light p-2 mb-2" id="editExterneOverrides" style="display:<?= ($editUser['type_employe'] ?? '') === 'externe' ? 'block' : 'none' ?>">
             <small class="fw-semibold text-muted mb-1 d-block"><i class="bi bi-gear"></i> Overrides externe</small>
             <div class="d-flex flex-wrap gap-3">
               <div class="form-check form-switch">
-                <input type="checkbox" class="form-check-input" id="editInclPlanning">
+                <input type="checkbox" class="form-check-input" id="editInclPlanning" <?= ($editUser['include_planning'] ?? 0) == 1 ? 'checked' : '' ?>>
                 <label class="form-check-label small" for="editInclPlanning">Inclure dans le planning</label>
               </div>
               <div class="form-check form-switch">
-                <input type="checkbox" class="form-check-input" id="editInclVacances">
+                <input type="checkbox" class="form-check-input" id="editInclVacances" <?= ($editUser['include_vacances'] ?? 0) == 1 ? 'checked' : '' ?>>
                 <label class="form-check-label small" for="editInclVacances">Inclure dans les vacances</label>
               </div>
               <div class="form-check form-switch">
-                <input type="checkbox" class="form-check-input" id="editInclDesirs">
+                <input type="checkbox" class="form-check-input" id="editInclDesirs" <?= ($editUser['include_desirs'] ?? 0) == 1 ? 'checked' : '' ?>>
                 <label class="form-check-label small" for="editInclDesirs">Inclure dans les désirs</label>
               </div>
             </div>
@@ -74,25 +90,25 @@ if (!$userId) {
           <div class="row g-2 mb-2">
             <div class="col-md-6">
               <label class="form-label">Téléphone</label>
-              <input type="tel" class="form-control" id="editTelephone">
+              <input type="tel" class="form-control" id="editTelephone" value="<?= h($editUser['telephone'] ?? '') ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">N° Employé</label>
-              <input type="text" class="form-control" id="editEmployeeId">
+              <input type="text" class="form-control" id="editEmployeeId" value="<?= h($editUser['employee_id'] ?? '') ?>">
             </div>
           </div>
           <div class="row g-2 mb-2">
             <div class="col-md-4">
               <label class="form-label">Date d'entrée</label>
-              <input type="date" class="form-control" id="editDateEntree">
+              <input type="date" class="form-control" id="editDateEntree" value="<?= h($editUser['date_entree'] ?? '') ?>">
             </div>
             <div class="col-md-4">
               <label class="form-label">Fin contrat</label>
-              <input type="date" class="form-control" id="editDateFin">
+              <input type="date" class="form-control" id="editDateFin" value="<?= h($editUser['date_fin_contrat'] ?? '') ?>">
             </div>
             <div class="col-md-4">
               <label class="form-label">Solde vacances</label>
-              <input type="number" class="form-control" id="editVacances" step="0.5">
+              <input type="number" class="form-control" id="editVacances" step="0.5" value="<?= h($editUser['solde_vacances'] ?? 0) ?>">
             </div>
           </div>
           <button type="submit" class="btn btn-primary mt-2">
@@ -154,7 +170,7 @@ if (!$userId) {
 </div>
 
 <script<?= nonce() ?>>
-async function initUsereditPage() {
+function initUsereditPage() {
     document.querySelectorAll('#editPrenom, #editNom').forEach(
         el => el.addEventListener('blur', (e) => { e.target.value = e.target.value.trim().replace(/\b\w/g, c => c.toUpperCase()); })
     );
@@ -162,24 +178,10 @@ async function initUsereditPage() {
     const id = document.getElementById('editUserId').value;
     if (!id) return;
 
-    const res = await adminApiPost('admin_get_user', { id });
-    if (!res.success || !res.user) return;
+    const u = <?= json_encode($editUser, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const fonctions = <?= json_encode(array_values($editFonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
-    const u = res.user;
-    document.getElementById('editPrenom').value = u.prenom || '';
-    document.getElementById('editNom').value = u.nom || '';
-    document.getElementById('editEmail').value = u.email || '';
-    document.getElementById('editTaux').value = u.taux || 100;
-    document.getElementById('editTelephone').value = u.telephone || '';
-    document.getElementById('editEmployeeId').value = u.employee_id || '';
-    document.getElementById('editDateEntree').value = u.date_entree || '';
-    document.getElementById('editDateFin').value = u.date_fin_contrat || '';
-    document.getElementById('editVacances').value = u.solde_vacances || 0;
-
-    // Load fonctions from DB and init zerdaSelects
-    const refs = await adminApiPost('admin_get_planning_refs');
-    const fonctions = refs.fonctions || [];
-
+    // Form fields are pre-filled by PHP; init selects from injected data
     zerdaSelect.init('#editFonction', [
         { value: '', label: '— Aucune —' },
         ...fonctions.map(f => ({ value: f.id, label: f.nom || f.code }))
