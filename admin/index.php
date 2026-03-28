@@ -258,8 +258,9 @@ $activeSection = match($page) {
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
     </a>
-    <div class="sidebar-version" style="padding:6px 16px;font-size:0.7rem;color:var(--zt-text-muted,#999);opacity:.7">
+    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--zt-text-muted,#999);opacity:.7;display:flex;align-items:center;justify-content:space-between">
       <span class="nav-label">zerdaTime v<?= APP_SEMVER ?></span>
+      <button class="sidebar-shortcuts-btn" id="sidebarShortcutsBtn" title="Raccourcis clavier"><i class="bi bi-keyboard"></i></button>
     </div>
   </div>
 </aside>
@@ -1029,6 +1030,10 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // ── Button + reset ──
     document.getElementById('shortcutsBtn')?.addEventListener('click', function() {
+        renderShortcutsList();
+        showShortcutsModal();
+    });
+    document.getElementById('sidebarShortcutsBtn')?.addEventListener('click', function() {
         renderShortcutsList();
         showShortcutsModal();
     });
