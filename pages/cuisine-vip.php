@@ -16,7 +16,7 @@
 </div>
 
 <!-- Modal planifier repas VIP -->
-<div class="modal fade" id="cvNewModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="cvNewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
     <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
       <div class="modal-header" style="flex-shrink:0">
