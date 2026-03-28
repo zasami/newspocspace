@@ -284,9 +284,6 @@ $activeSection = match($page) {
         <i class="bi bi-envelope"></i>
         <span class="topbar-notif-badge" id="adminEmailBadge" style="display:none"></span>
       </a>
-      <button class="topbar-icon-btn" id="shortcutsBtn" title="Raccourcis clavier (?)">
-        <i class="bi bi-keyboard"></i>
-      </button>
       <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
