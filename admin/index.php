@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -94,6 +94,7 @@ $topbarPlaceholders = [
     'reservations' => 'Rechercher une réservation...',
     'residents'    => 'Rechercher un résident...',
     'famille'      => 'Rechercher un résident...',
+    'email-externe' => 'Rechercher un email...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher un collaborateur...';
 
@@ -136,6 +137,8 @@ $pageLabels = [
     'famille'       => 'Espace Famille',
     'cuisine'       => 'Cuisine — Menus',
     'reservations'  => 'Réservations repas',
+    'email-externe' => 'Email',
+    'email-config'  => 'Configuration Email',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -202,6 +205,8 @@ $sidebarCategories = [
             'documents' => ['label' => 'Documents',             'icon' => 'folder2'],
             'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
             'messages' => ['label' => 'Messagerie',            'icon' => 'envelope'],
+            'email-externe' => ['label' => 'Email',              'icon' => 'mailbox'],
+            'email-config'  => ['label' => 'Config Email',       'icon' => 'gear'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
