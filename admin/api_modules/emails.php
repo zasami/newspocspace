@@ -43,13 +43,14 @@ function admin_get_all_emails()
                  FROM email_recipients er2 JOIN users u2 ON u2.id = er2.user_id
                  WHERE er2.email_id = e.id AND er2.type = 'to') AS to_names,
                 (SELECT COUNT(*) FROM email_attachments ea WHERE ea.email_id = e.id) AS nb_attachments,
-                (SELECT COUNT(*) FROM email_recipients er3 WHERE er3.email_id = e.id AND er3.lu = 0) AS nb_unread
+                (SELECT COUNT(*) FROM email_recipients er3 WHERE er3.email_id = e.id AND er3.lu = 0) AS nb_unread,
+                COALESCE((SELECT er4.lu FROM email_recipients er4 WHERE er4.email_id = e.id AND er4.user_id = ? LIMIT 1), 1) AS my_read
          FROM emails e
          JOIN users uf ON uf.id = e.from_user_id
          WHERE $where
          ORDER BY e.created_at DESC
          LIMIT ? OFFSET ?",
-        array_merge($binds, [$limit, $offset])
+        array_merge([$adminId], $binds, [$limit, $offset])
     );
 
     respond(['success' => true, 'emails' => $emails, 'total' => $total, 'page' => $page]);

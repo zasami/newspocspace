@@ -190,6 +190,93 @@ class Mailer
     }
 
     /**
+     * Extract unique contacts from email headers (From/To/Cc) across folders
+     */
+    public function extractContacts(int $maxEmails = 500): array
+    {
+        $contacts = []; // email => ['email' => ..., 'name' => ..., 'count' => N]
+        $myEmail = strtolower($this->emailAddress);
+
+        $folders = $this->getFolders();
+        // Scan only INBOX + Sent — skip Spam, Junk, Trash, Drafts
+        $scanFolders = ['INBOX'];
+        foreach ($folders as $f) {
+            $fl = strtolower($f);
+            // Skip spam, junk, trash, drafts, archive
+            if (str_contains($fl, 'spam') || str_contains($fl, 'junk') || str_contains($fl, 'trash') || str_contains($fl, 'drafts') || str_contains($fl, 'corbeille')) continue;
+            if (str_contains($fl, 'sent') || str_contains($fl, 'envoy')) {
+                $scanFolders[] = $f;
+                break;
+            }
+        }
+
+        $remaining = $maxEmails;
+        foreach ($scanFolders as $folder) {
+            if ($remaining <= 0) break;
+            try {
+                $this->connectImap($folder);
+                $check = imap_check($this->imap);
+                $total = $check->Nmsgs;
+                if ($total === 0) { $this->disconnectImap(); continue; }
+
+                $from = max(1, $total - min($remaining, $total) + 1);
+                $overview = imap_fetch_overview($this->imap, "$from:$total", 0);
+
+                foreach ($overview as $msg) {
+                    // Parse From
+                    $this->addContactFromField($contacts, $msg->from ?? '', $myEmail);
+                    // Parse To (if available)
+                    if (isset($msg->to)) $this->addContactFromField($contacts, $msg->to, $myEmail);
+                }
+
+                $remaining -= count($overview);
+                $this->disconnectImap();
+            } catch (\Throwable $e) {
+                // Skip folder on error
+                try { $this->disconnectImap(); } catch (\Throwable $_) {}
+            }
+        }
+
+        // Sort by frequency
+        $result = array_values($contacts);
+        usort($result, fn($a, $b) => $b['count'] - $a['count']);
+        return $result;
+    }
+
+    private function addContactFromField(array &$contacts, string $field, string $myEmail): void
+    {
+        if (!$field) return;
+        // Could be "Name <email>" or just "email" or multiple comma-separated
+        $decoded = $this->decodeMime($field);
+        // Split multiple addresses
+        $parts = preg_split('/\s*,\s*/', $decoded);
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if (!$part) continue;
+            $email = '';
+            $name = '';
+            if (preg_match('/<([^>]+)>/', $part, $m)) {
+                $email = strtolower(trim($m[1]));
+                $name = trim(preg_replace('/<[^>]+>/', '', $part));
+                $name = trim($name, ' "\'');
+            } else {
+                $email = strtolower(trim($part));
+            }
+            if (!$email || !str_contains($email, '@')) return;
+            if ($email === $myEmail) return; // Skip own email
+            // Skip noreply, mailer-daemon, etc.
+            if (preg_match('/^(noreply|no-reply|mailer-daemon|postmaster|bounce)/i', $email)) return;
+
+            if (isset($contacts[$email])) {
+                $contacts[$email]['count']++;
+                if ($name && !$contacts[$email]['name']) $contacts[$email]['name'] = $name;
+            } else {
+                $contacts[$email] = ['email' => $email, 'name' => $name, 'count' => 1];
+            }
+        }
+    }
+
+    /**
      * Fetch email headers from a folder (for cache sync)
      */
     public function fetchHeaders(string $folder = 'INBOX', int $limit = 50, int $offset = 0): array

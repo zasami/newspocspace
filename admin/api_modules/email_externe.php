@@ -299,6 +299,13 @@ function admin_email_ext_delete_contact()
     respond(['success' => true, 'message' => 'Contact supprimé']);
 }
 
+function admin_email_ext_extract_contacts()
+{
+    $mailer = _getMailer();
+    $contacts = $mailer->extractContacts(500);
+    respond(['success' => true, 'contacts' => $contacts, 'total' => count($contacts)]);
+}
+
 function admin_email_ext_import_contacts()
 {
     global $params;

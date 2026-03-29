@@ -287,7 +287,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         container.innerHTML = emails.map(e => {
             const date = formatEmailDate(e.created_at);
             const preview = stripHtml(e.contenu).substring(0, 80);
-            const hasUnread = parseInt(e.nb_unread) > 0;
+            const hasUnread = parseInt(e.my_read) === 0;
             const fromName = (e.from_prenom || '') + ' ' + (e.from_nom || '');
             const toName = e.to_names || '—';
             return `

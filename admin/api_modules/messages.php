@@ -23,15 +23,9 @@ function admin_get_unread_counts()
     $user = require_auth();
     $userId = $user['id'];
 
-    // Internal messages (email_recipients table)
+    // Internal messages (email_recipients table — current messaging system)
     $unreadMessages = (int) Db::getOne(
         "SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
-        [$userId]
-    );
-
-    // Old messages table (direct messages to direction)
-    $unreadOldMessages = (int) Db::getOne(
-        "SELECT COUNT(*) FROM messages WHERE (to_user_id = ? OR to_user_id IS NULL) AND lu = 0",
         [$userId]
     );
 
@@ -64,7 +58,7 @@ function admin_get_unread_counts()
 
     respond([
         'success' => true,
-        'unread_messages' => $unreadMessages + $unreadOldMessages,
+        'unread_messages' => $unreadMessages,
         'unread_email' => $unreadEmail,
     ]);
 }

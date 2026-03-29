@@ -70,23 +70,16 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 .ext-no-config { text-align: center; padding: 60px 20px; }
 .ext-no-config i { font-size: 4rem; opacity: .15; display: block; margin-bottom: 16px; }
 
-/* Contacts modal */
-.ct-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1050; display: flex; align-items: center; justify-content: center; animation: ctFadeIn .2s ease; }
-.ct-overlay.hidden { display: none !important; }
-.ct-modal { background: var(--cl-surface, #fff); border-radius: 16px; width: 680px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
-.ct-header { padding: 16px 20px; border-bottom: 1px solid var(--cl-border, #E8E5E0); display: flex; align-items: center; gap: 12px; }
-.ct-header h6 { font-weight: 700; margin: 0; flex: 1; }
-.ct-header-btn { background: none; border: none; cursor: pointer; color: var(--cl-text-secondary); font-size: 1.1rem; padding: 4px; border-radius: 6px; transition: background .15s; }
-.ct-header-btn:hover { background: var(--cl-bg, #F7F5F2); }
-.ct-search { padding: 10px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+/* Contacts modal — inner components */
+#contactsModal .modal-body { padding: 0; max-height: 65vh; overflow-y: auto; }
+#contactsModal .modal-footer { display: flex; gap: 8px; align-items: center; }
+.ct-search { padding: 10px 16px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
 .ct-search input { width: 100%; border: 1px solid var(--cl-border); border-radius: 8px; padding: 7px 12px 7px 32px; font-size: .85rem; background: var(--cl-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239B9B9B' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") 10px center no-repeat; }
 .ct-search input:focus { outline: none; border-color: var(--cl-accent); }
-.ct-body { flex: 1; overflow-y: auto; min-height: 200px; }
 .ct-empty { text-align: center; padding: 40px 20px; color: var(--cl-text-muted); }
 .ct-empty i { font-size: 2.5rem; opacity: .2; display: block; margin-bottom: 8px; }
-.ct-row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); cursor: pointer; transition: background .12s; }
+.ct-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); cursor: pointer; transition: background .12s; }
 .ct-row:hover { background: var(--cl-bg, #F7F5F2); }
-.ct-row.selected { background: rgba(25,25,24,.06); }
 .ct-avatar { width: 36px; height: 36px; border-radius: 50%; background: #E2B8AE; color: #7B3B2C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .75rem; flex-shrink: 0; }
 .ct-info { flex: 1; min-width: 0; }
 .ct-name { font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -96,36 +89,47 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 .ct-actions button { background: none; border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; color: var(--cl-text-muted); font-size: .9rem; transition: all .15s; display: flex; align-items: center; justify-content: center; }
 .ct-actions button:hover { background: var(--cl-bg); color: var(--cl-text); }
 .ct-actions button.danger:hover { background: #E2B8AE; color: #7B3B2C; }
-.ct-footer { padding: 12px 20px; border-top: 1px solid var(--cl-border); display: flex; gap: 8px; align-items: center; }
 .ct-footer-info { flex: 1; font-size: .78rem; color: var(--cl-text-muted); }
-.ct-btn { padding: 6px 14px; border: none; border-radius: 8px; font-weight: 600; font-size: .82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all .15s; }
-.ct-btn-primary { background: var(--cl-accent, #191918); color: #fff; }
-.ct-btn-primary:hover { background: #000; }
-.ct-btn-outline { background: var(--cl-bg); border: 1px solid var(--cl-border); color: var(--cl-text); }
-.ct-btn-outline:hover { background: var(--cl-surface); border-color: var(--cl-accent); }
 
 /* Context menu */
-.ct-ctx { position: fixed; z-index: 1060; background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); min-width: 180px; animation: ctFadeIn .12s ease; }
+.ct-ctx { position: fixed; z-index: 1060; background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); min-width: 180px; }
 .ct-ctx-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: .84rem; cursor: pointer; color: var(--cl-text); transition: background .1s; border: none; background: none; width: 100%; text-align: left; }
 .ct-ctx-item:hover { background: var(--cl-bg); }
 .ct-ctx-item.danger { color: #7B3B2C; }
 .ct-ctx-item.danger:hover { background: #E2B8AE; }
 .ct-ctx-sep { height: 1px; background: var(--cl-border-light); margin: 4px 0; }
 
-/* Contact form (inline in modal) */
-.ct-form { padding: 20px; }
+/* Contact form */
+.ct-form { padding: 16px; }
 .ct-form-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .ct-form-row > * { flex: 1; }
 .ct-form label { display: block; font-size: .78rem; font-weight: 600; color: var(--cl-text-secondary); margin-bottom: 3px; }
 .ct-form input, .ct-form textarea { width: 100%; border: 1px solid var(--cl-border); border-radius: 8px; padding: 7px 10px; font-size: .85rem; font-family: inherit; }
 .ct-form input:focus, .ct-form textarea:focus { outline: none; border-color: var(--cl-accent); }
 .ct-form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.ct-shared-label { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: .85rem; }
 
-/* Import area */
+/* Import / Extract views */
 .ct-import-zone { border: 2px dashed var(--cl-border); border-radius: 12px; padding: 30px 20px; text-align: center; color: var(--cl-text-muted); cursor: pointer; transition: all .2s; }
 .ct-import-zone:hover { border-color: var(--cl-accent); background: rgba(25,25,24,.02); }
 .ct-import-zone i { font-size: 2rem; opacity: .3; display: block; margin-bottom: 8px; }
-@keyframes ctFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.ct-extract-body { padding: 20px; text-align: center; }
+.ct-extract-icon { width: 56px; height: 56px; border-radius: 50%; background: #bcd2cb; color: #2d4a43; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 12px; }
+.ct-extract-title { font-size: .92rem; margin-bottom: 4px; }
+.ct-extract-desc { font-size: .82rem; color: var(--cl-text-muted); margin-bottom: 16px; }
+.ct-extract-result { margin-top: 16px; }
+.ct-extract-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; text-align: left; }
+.ct-extract-count { font-size: .85rem; font-weight: 600; }
+.ct-extract-selectall { font-size: .78rem; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.ct-extract-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--cl-border); border-radius: 8px; }
+.ct-extract-list .ct-row { cursor: pointer; margin: 0; }
+.ct-extract-freq { color: var(--cl-text-muted); font-size: .7rem; }
+.ct-extract-actions { margin-top: 12px; text-align: right; }
+.ct-alert-ok { background: #bcd2cb; color: #2d4a43; padding: 10px 14px; border-radius: 8px; font-size: .85rem; }
+.ct-alert-err { background: #E2B8AE; color: #7B3B2C; padding: 10px 14px; border-radius: 8px; font-size: .85rem; }
+.ct-csv-hint { margin-top: 16px; font-size: .82rem; color: var(--cl-text-muted); }
+.ct-csv-code { display: block; background: var(--cl-bg); padding: 8px 12px; border-radius: 6px; margin-top: 6px; font-size: .78rem; }
+.ct-import-result { margin-top: 12px; }
 
 /* Lightbox */
 .ext-lb { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: extLbIn .25s ease; }
@@ -208,6 +212,21 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
     <button type="button" class="adm-email-btn" id="extComposeSendBtn"><i class="bi bi-send"></i> Envoyer</button>
     <div class="compose-panel-footer-right">
       <button type="button" class="compose-panel-footer-btn compose-panel-delete" id="extComposeDiscard"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Contacts Modal (Bootstrap) -->
+<div class="modal fade" id="contactsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" id="ctModalHeader">
+        <h5 class="modal-title" id="ctModalTitle"><i class="bi bi-person-rolodex"></i> Carnet d'adresses</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div id="ctModalSearch"></div>
+      <div class="modal-body" id="ctModalBody"></div>
+      <div class="modal-footer" id="ctModalFooter"></div>
     </div>
   </div>
 </div>
@@ -549,16 +568,18 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
     // ══════════════════════════════════════════════════════════════════════
     let ctContacts = [];
     let ctSearch = '';
-    let ctView = 'list'; // 'list' | 'form' | 'import'
+    let ctView = 'list'; // 'list' | 'form' | 'import' | 'extract'
     let ctEditId = null;
     let ctContextMenu = null;
 
+    const ctModal = new bootstrap.Modal(document.getElementById('contactsModal'));
     document.getElementById('extContactsBtn')?.addEventListener('click', openContacts);
 
     async function openContacts() {
         ctView = 'list'; ctEditId = null; ctSearch = '';
         await loadContacts();
         renderContactsModal();
+        ctModal.show();
     }
 
     async function loadContacts() {
@@ -584,20 +605,20 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
     function renderContactsModal() {
         closeContextMenu();
-        let overlay = document.getElementById('ctOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'ctOverlay';
-            overlay.className = 'ct-overlay';
-            document.body.appendChild(overlay);
-        }
-        overlay.classList.remove('hidden');
+        const titleEl = document.getElementById('ctModalTitle');
+        const searchEl = document.getElementById('ctModalSearch');
+        const bodyEl = document.getElementById('ctModalBody');
+        const footerEl = document.getElementById('ctModalFooter');
 
         if (ctView === 'form') { renderContactForm(); return; }
         if (ctView === 'import') { renderImportView(); return; }
+        if (ctView === 'extract') { renderExtractView(); return; }
+
+        titleEl.innerHTML = '<i class="bi bi-person-rolodex"></i> Carnet d\'adresses';
+        searchEl.innerHTML = '<div class="ct-search"><input type="text" id="ctSearchInput" placeholder="Rechercher un contact..." value="' + escapeHtml(ctSearch) + '"></div>';
 
         const list = filteredContacts();
-        const listHtml = list.length
+        bodyEl.innerHTML = list.length
             ? list.map(c => {
                 const initials = getInitials(c).toUpperCase();
                 const name = [c.prenom, c.nom].filter(Boolean).join(' ') || c.email;
@@ -616,123 +637,216 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
                     + '</div>';
             }).join('')
             : (ctContacts.length === 0
-                ? '<div class="ct-empty"><i class="bi bi-person-rolodex"></i><p>Aucun contact</p><button class="ct-btn ct-btn-outline" id="ctEmptyImport"><i class="bi bi-upload"></i> Importer des contacts</button></div>'
+                ? '<div class="ct-empty"><i class="bi bi-person-rolodex"></i><p>Aucun contact</p><div class="d-flex gap-2 justify-content-center mt-2"><button class="btn btn-sm btn-primary" id="ctEmptyExtract"><i class="bi bi-envelope-arrow-down"></i> Importer depuis mes emails</button><button class="btn btn-sm btn-outline-secondary" id="ctEmptyImport"><i class="bi bi-upload"></i> CSV</button></div></div>'
                 : '<div class="ct-empty"><i class="bi bi-search"></i><p>Aucun résultat pour «' + escapeHtml(ctSearch) + '»</p></div>');
 
-        overlay.innerHTML =
-            '<div class="ct-modal">'
-            + '<div class="ct-header">'
-            + '<i class="bi bi-person-rolodex" style="font-size:1.2rem"></i>'
-            + '<h6>Carnet d\'adresses</h6>'
-            + '<button class="ct-header-btn" id="ctCloseBtn" title="Fermer"><i class="bi bi-x-lg"></i></button>'
-            + '</div>'
-            + '<div class="ct-search"><input type="text" id="ctSearchInput" placeholder="Rechercher un contact..." value="' + escapeHtml(ctSearch) + '"></div>'
-            + '<div class="ct-body" id="ctBody">' + listHtml + '</div>'
-            + '<div class="ct-footer">'
-            + '<span class="ct-footer-info">' + ctContacts.length + ' contact(s)</span>'
-            + '<button class="ct-btn ct-btn-outline" id="ctImportBtn"><i class="bi bi-upload"></i> Importer</button>'
-            + '<button class="ct-btn ct-btn-primary" id="ctAddBtn"><i class="bi bi-plus-lg"></i> Ajouter</button>'
-            + '</div>'
-            + '</div>';
+        footerEl.innerHTML =
+            '<span class="ct-footer-info">' + ctContacts.length + ' contact(s)</span>'
+            + '<button class="btn btn-sm btn-outline-secondary" id="ctExtractBtn"><i class="bi bi-envelope-arrow-down"></i> Depuis emails</button>'
+            + '<button class="btn btn-sm btn-outline-secondary" id="ctImportBtn"><i class="bi bi-upload"></i> CSV</button>'
+            + '<button class="btn btn-sm btn-primary" id="ctAddBtn"><i class="bi bi-plus-lg"></i> Ajouter</button>';
 
         // Events
-        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeContacts(); });
-        overlay.querySelector('#ctSearchInput').addEventListener('input', (e) => { ctSearch = e.target.value; renderContactsModal(); });
-        overlay.querySelector('#ctSearchInput').focus();
-        overlay.querySelector('#ctAddBtn').addEventListener('click', () => { ctView = 'form'; ctEditId = null; renderContactsModal(); });
-        overlay.querySelector('#ctImportBtn')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
-        overlay.querySelector('#ctEmptyImport')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
+        searchEl.querySelector('#ctSearchInput').addEventListener('input', (e) => { ctSearch = e.target.value; renderContactsModal(); });
+        setTimeout(() => searchEl.querySelector('#ctSearchInput')?.focus(), 100);
+        footerEl.querySelector('#ctAddBtn').addEventListener('click', () => { ctView = 'form'; ctEditId = null; renderContactsModal(); });
+        footerEl.querySelector('#ctImportBtn')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
+        footerEl.querySelector('#ctExtractBtn')?.addEventListener('click', () => { ctView = 'extract'; renderContactsModal(); });
+        bodyEl.querySelector('#ctEmptyImport')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
+        bodyEl.querySelector('#ctEmptyExtract')?.addEventListener('click', () => { ctView = 'extract'; renderContactsModal(); });
 
         // Row actions
-        overlay.querySelectorAll('.ct-row').forEach(row => {
+        bodyEl.querySelectorAll('.ct-row').forEach(row => {
             const id = row.dataset.id;
             row.querySelector('.ct-send')?.addEventListener('click', (e) => { e.stopPropagation(); sendToContact(id); });
             row.querySelector('.ct-edit')?.addEventListener('click', (e) => { e.stopPropagation(); ctEditId = id; ctView = 'form'; renderContactsModal(); });
             row.querySelector('.ct-del')?.addEventListener('click', (e) => { e.stopPropagation(); deleteContact(id); });
-
-            // Right-click context menu
             row.addEventListener('contextmenu', (e) => { e.preventDefault(); showContextMenu(e, id); });
         });
     }
 
     function renderContactForm() {
-        const overlay = document.getElementById('ctOverlay');
         const c = ctEditId ? ctContacts.find(x => x.id === ctEditId) : {};
         const isEdit = !!ctEditId;
+        const titleEl = document.getElementById('ctModalTitle');
+        const searchEl = document.getElementById('ctModalSearch');
+        const bodyEl = document.getElementById('ctModalBody');
+        const footerEl = document.getElementById('ctModalFooter');
 
-        overlay.innerHTML =
-            '<div class="ct-modal">'
-            + '<div class="ct-header">'
-            + '<button class="ct-header-btn" id="ctBackBtn" title="Retour"><i class="bi bi-arrow-left"></i></button>'
-            + '<h6>' + (isEdit ? 'Modifier le contact' : 'Nouveau contact') + '</h6>'
-            + '<button class="ct-header-btn" id="ctCloseBtn" title="Fermer"><i class="bi bi-x-lg"></i></button>'
-            + '</div>'
-            + '<div class="ct-form">'
+        titleEl.innerHTML = '<button class="btn btn-sm btn-link p-0 me-2" id="ctBackBtn"><i class="bi bi-arrow-left"></i></button> ' + (isEdit ? 'Modifier le contact' : 'Nouveau contact');
+        searchEl.innerHTML = '';
+        bodyEl.innerHTML =
+            '<div class="ct-form">'
             + '<div class="ct-form-row">'
-            + '<div><label>Prénom</label><input id="ctPrenom" value="' + escapeHtml(c.prenom || '') + '"></div>'
-            + '<div><label>Nom</label><input id="ctNom" value="' + escapeHtml(c.nom || '') + '"></div>'
+            + '<div><label>Prénom</label><input id="ctPrenom" class="form-control form-control-sm" value="' + escapeHtml(c.prenom || '') + '"></div>'
+            + '<div><label>Nom</label><input id="ctNom" class="form-control form-control-sm" value="' + escapeHtml(c.nom || '') + '"></div>'
             + '</div>'
             + '<div class="ct-form-row">'
-            + '<div><label>Email *</label><input id="ctEmail" type="email" value="' + escapeHtml(c.email || '') + '"></div>'
+            + '<div><label>Email *</label><input id="ctEmail" type="email" class="form-control form-control-sm" value="' + escapeHtml(c.email || '') + '"></div>'
             + '</div>'
             + '<div class="ct-form-row">'
-            + '<div><label>Entreprise</label><input id="ctEntreprise" value="' + escapeHtml(c.entreprise || '') + '"></div>'
-            + '<div><label>Téléphone</label><input id="ctTel" value="' + escapeHtml(c.telephone || '') + '"></div>'
+            + '<div><label>Entreprise</label><input id="ctEntreprise" class="form-control form-control-sm" value="' + escapeHtml(c.entreprise || '') + '"></div>'
+            + '<div><label>Téléphone</label><input id="ctTel" class="form-control form-control-sm" value="' + escapeHtml(c.telephone || '') + '"></div>'
             + '</div>'
-            + '<div><label>Notes</label><textarea id="ctNotes" rows="2">' + escapeHtml(c.notes || '') + '</textarea></div>'
-            + '<div style="margin-top:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="ctShared" ' + (c.is_shared ? 'checked' : '') + '> Partagé avec toute l\'équipe</label></div>'
-            + '<div class="ct-form-actions">'
-            + '<button class="ct-btn ct-btn-outline" id="ctCancelForm">Annuler</button>'
-            + '<button class="ct-btn ct-btn-primary" id="ctSaveForm"><i class="bi bi-check-lg"></i> ' + (isEdit ? 'Modifier' : 'Ajouter') + '</button>'
-            + '</div>'
-            + '</div>'
+            + '<div><label>Notes</label><textarea id="ctNotes" class="form-control form-control-sm" rows="2">' + escapeHtml(c.notes || '') + '</textarea></div>'
+            + '<div><label class="ct-shared-label"><input type="checkbox" class="form-check-input" id="ctShared" ' + (c.is_shared ? 'checked' : '') + '> Partagé avec toute l\'équipe</label></div>'
             + '</div>';
+        footerEl.innerHTML =
+            '<button class="btn btn-sm btn-outline-secondary" id="ctCancelForm">Annuler</button>'
+            + '<button class="btn btn-sm btn-primary" id="ctSaveForm"><i class="bi bi-check-lg"></i> ' + (isEdit ? 'Modifier' : 'Ajouter') + '</button>';
 
-        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
-        overlay.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
-        overlay.querySelector('#ctCancelForm').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
-        overlay.querySelector('#ctSaveForm').addEventListener('click', saveContact);
-        overlay.querySelector('#ctPrenom').focus();
+        titleEl.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        footerEl.querySelector('#ctCancelForm').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        footerEl.querySelector('#ctSaveForm').addEventListener('click', saveContact);
+        setTimeout(() => document.getElementById('ctPrenom')?.focus(), 100);
     }
 
     function renderImportView() {
-        const overlay = document.getElementById('ctOverlay');
-        overlay.innerHTML =
-            '<div class="ct-modal">'
-            + '<div class="ct-header">'
-            + '<button class="ct-header-btn" id="ctBackBtn"><i class="bi bi-arrow-left"></i></button>'
-            + '<h6>Importer des contacts</h6>'
-            + '<button class="ct-header-btn" id="ctCloseBtn"><i class="bi bi-x-lg"></i></button>'
-            + '</div>'
-            + '<div style="padding:20px">'
+        const titleEl = document.getElementById('ctModalTitle');
+        const searchEl = document.getElementById('ctModalSearch');
+        const bodyEl = document.getElementById('ctModalBody');
+        const footerEl = document.getElementById('ctModalFooter');
+
+        titleEl.innerHTML = '<button class="btn btn-sm btn-link p-0 me-2" id="ctBackBtn"><i class="bi bi-arrow-left"></i></button> Importer des contacts (CSV)';
+        searchEl.innerHTML = '';
+        footerEl.innerHTML = '<button class="btn btn-sm btn-outline-secondary" id="ctBackBtn2">Retour</button>';
+        bodyEl.innerHTML =
+            '<div class="ct-extract-body">'
             + '<div class="ct-import-zone" id="ctImportZone">'
             + '<i class="bi bi-file-earmark-arrow-up"></i>'
-            + '<p style="font-size:.88rem;margin-bottom:4px"><strong>Glissez un fichier CSV ici</strong></p>'
-            + '<p style="font-size:.78rem">ou cliquez pour sélectionner</p>'
+            + '<p class="ct-extract-title"><strong>Glissez un fichier CSV ici</strong></p>'
+            + '<p class="ct-extract-desc">ou cliquez pour sélectionner</p>'
             + '<input type="file" id="ctImportFile" accept=".csv,.txt,.vcf" hidden>'
             + '</div>'
-            + '<div style="margin-top:16px;font-size:.82rem;color:var(--cl-text-muted)">'
+            + '<div class="ct-csv-hint">'
             + '<p><strong>Format CSV attendu :</strong></p>'
-            + '<code style="display:block;background:var(--cl-bg);padding:8px 12px;border-radius:6px;margin-top:6px;font-size:.78rem">'
+            + '<code class="ct-csv-code">'
             + 'prenom,nom,email,entreprise,telephone<br>'
             + 'Jean,Dupont,jean@example.com,Entreprise SA,+41 22 123 45 67'
             + '</code>'
             + '</div>'
-            + '<div id="ctImportResult" style="margin-top:12px"></div>'
-            + '</div>'
+            + '<div class="ct-import-result" id="ctImportResult"></div>'
             + '</div>';
 
-        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
-        overlay.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        titleEl.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        footerEl.querySelector('#ctBackBtn2').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
 
-        const zone = overlay.querySelector('#ctImportZone');
-        const fileInput = overlay.querySelector('#ctImportFile');
+        const zone = bodyEl.querySelector('#ctImportZone');
+        const fileInput = bodyEl.querySelector('#ctImportFile');
         zone.addEventListener('click', () => fileInput.click());
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--cl-accent)'; });
         zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
         zone.addEventListener('drop', (e) => { e.preventDefault(); zone.style.borderColor = ''; if (e.dataTransfer.files[0]) processImportFile(e.dataTransfer.files[0]); });
         fileInput.addEventListener('change', (e) => { if (e.target.files[0]) processImportFile(e.target.files[0]); });
+    }
+
+    async function renderExtractView() {
+        const titleEl = document.getElementById('ctModalTitle');
+        const searchEl = document.getElementById('ctModalSearch');
+        const bodyEl = document.getElementById('ctModalBody');
+        const footerEl = document.getElementById('ctModalFooter');
+
+        titleEl.innerHTML = '<button class="btn btn-sm btn-link p-0 me-2" id="ctBackBtn"><i class="bi bi-arrow-left"></i></button> Importer depuis mes emails';
+        searchEl.innerHTML = '';
+        footerEl.innerHTML = '<button class="btn btn-sm btn-outline-secondary" id="ctBackBtn2">Retour</button>';
+        bodyEl.innerHTML =
+            '<div class="ct-extract-body">'
+            + '<div class="ct-extract-icon"><i class="bi bi-envelope-arrow-down"></i></div>'
+            + '<p class="ct-extract-title"><strong>Scanner ma boîte email</strong></p>'
+            + '<p class="ct-extract-desc">Analyse les 500 derniers emails (Boîte de réception + Envoyés) pour extraire les adresses.<br>Les dossiers Spam, Corbeille et Brouillons sont ignorés.</p>'
+            + '<button class="btn btn-primary" id="ctStartExtract"><i class="bi bi-search"></i> Lancer le scan</button>'
+            + '<div class="ct-extract-result" id="ctExtractResult"></div>'
+            + '</div>';
+
+        titleEl.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        footerEl.querySelector('#ctBackBtn2').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        bodyEl.querySelector('#ctStartExtract').addEventListener('click', doExtract);
+    }
+
+    async function doExtract() {
+        const btn = document.getElementById('ctStartExtract');
+        const resultEl = document.getElementById('ctExtractResult');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Scan en cours...';
+        resultEl.innerHTML = '<p class="ct-extract-desc">Connexion IMAP et analyse des headers... Cela peut prendre quelques secondes.</p>';
+
+        const res = await adminApiPost('admin_email_ext_extract_contacts', {});
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-search"></i> Lancer le scan';
+
+        if (!res.success) {
+            resultEl.innerHTML = '<div class="ct-alert-err">' + escapeHtml(res.message || 'Erreur') + '</div>';
+            return;
+        }
+
+        const found = res.contacts || [];
+        if (!found.length) {
+            resultEl.innerHTML = '<div class="ct-alert-ok">Aucune nouvelle adresse trouvée.</div>';
+            return;
+        }
+
+        // Show found contacts with checkboxes
+        const existingEmails = new Set(ctContacts.map(c => c.email.toLowerCase()));
+        const newContacts = found.filter(c => !existingEmails.has(c.email.toLowerCase()));
+
+        if (!newContacts.length) {
+            resultEl.innerHTML = '<div class="ct-alert-ok"><i class="bi bi-check-circle"></i> ' + found.length + ' adresse(s) trouvée(s), mais toutes existent déjà dans votre carnet.</div>';
+            return;
+        }
+
+        resultEl.innerHTML =
+            '<div>'
+            + '<div class="ct-extract-header">'
+            + '<span class="ct-extract-count">' + newContacts.length + ' nouveau(x) contact(s) trouvé(s)</span>'
+            + '<label class="ct-extract-selectall"><input type="checkbox" id="ctExtSelectAll" checked> Tout sélectionner</label>'
+            + '</div>'
+            + '<div class="ct-extract-list">'
+            + newContacts.map((c, i) => {
+                const name = c.name || c.email.split('@')[0];
+                return '<label class="ct-row">'
+                    + '<input type="checkbox" class="ct-ext-check" data-idx="' + i + '" checked>'
+                    + '<div class="ct-info">'
+                    + '<div class="ct-name">' + escapeHtml(name) + '</div>'
+                    + '<div class="ct-email">' + escapeHtml(c.email) + ' <span class="ct-extract-freq">(' + c.count + ' email' + (c.count > 1 ? 's' : '') + ')</span></div>'
+                    + '</div>'
+                    + '</label>';
+            }).join('')
+            + '</div>'
+            + '<div class="ct-extract-actions"><button class="ct-btn ct-btn-primary" id="ctDoImportExtracted"><i class="bi bi-download"></i> Importer la sélection</button></div>'
+            + '</div>';
+
+        // Store for import
+        resultEl._newContacts = newContacts;
+
+        document.getElementById('ctExtSelectAll')?.addEventListener('change', (e) => {
+            resultEl.querySelectorAll('.ct-ext-check').forEach(cb => cb.checked = e.target.checked);
+        });
+
+        document.getElementById('ctDoImportExtracted')?.addEventListener('click', async () => {
+            const checks = resultEl.querySelectorAll('.ct-ext-check:checked');
+            const toImport = [];
+            checks.forEach(cb => {
+                const c = newContacts[parseInt(cb.dataset.idx)];
+                if (c) {
+                    const parts = (c.name || '').split(/\s+/);
+                    toImport.push({
+                        email: c.email,
+                        prenom: parts[0] || '',
+                        nom: parts.slice(1).join(' ') || '',
+                    });
+                }
+            });
+            if (!toImport.length) { showToast('Aucun contact sélectionné', 'error'); return; }
+
+            const importRes = await adminApiPost('admin_email_ext_import_contacts', { contacts: toImport });
+            if (importRes.success) {
+                showToast(importRes.message, 'success');
+                await loadContacts();
+                setTimeout(() => { ctView = 'list'; renderContactsModal(); }, 800);
+            } else {
+                showToast(importRes.message || 'Erreur', 'error');
+            }
+        });
     }
 
     async function processImportFile(file) {
@@ -824,7 +938,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
     function sendToContact(id) {
         closeContextMenu();
-        closeContacts();
+        ctModal.hide();
         const c = ctContacts.find(x => x.id === id);
         if (!c) return;
         openExtCompose({ to: c.email, subject: '' });
@@ -832,8 +946,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
     function closeContacts() {
         closeContextMenu();
-        const overlay = document.getElementById('ctOverlay');
-        if (overlay) overlay.classList.add('hidden');
+        ctModal.hide();
     }
 
     function showContextMenu(e, id) {
