@@ -192,7 +192,7 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
 <script<?= nonce() ?>>
 async function initUsereditPage() {
     document.querySelectorAll('#editPrenom, #editNom').forEach(
-        el => el.addEventListener('blur', (e) => { e.target.value = e.target.value.trim().replace(/\b\w/g, c => c.toUpperCase()); })
+        el => el.addEventListener('blur', (e) => { e.target.value = e.target.value.trim().replace(/(^|\s|-)\S/g, c => c.toUpperCase()); })
     );
 
     const id = document.getElementById('editUserId').value;

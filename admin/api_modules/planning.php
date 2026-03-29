@@ -521,24 +521,23 @@ function admin_generate_planning()
         $besoinsIdx[$b['module_id']][(int)$b['jour_semaine']][$b['fonction_id']] = (int) $b['nb_requis'];
     }
 
-    // ── Override besoins with zerdaTime rules ──
-    // AS: 2 per étage per module, 7j/7
-    // INF: 1 per module, 7j/7
-    // ASSC: 1 per module, 7j/7
+    // ── Ensure minimum besoins (fallback if besoins_couverture is empty) ──
     $fonctionAS   = $fonctionByCode['AS']   ?? null;
     $fonctionINF  = $fonctionByCode['INF']  ?? null;
     $fonctionASSC = $fonctionByCode['ASSC'] ?? null;
 
     $dayModules = Db::fetchAll("SELECT id, code FROM modules WHERE code NOT IN ('NUIT','POOL') ORDER BY ordre");
+    $hasBesoins = !empty($besoins);
+
     foreach ($dayModules as $mod) {
         $nbEtages = $etagesPerModule[$mod['id']] ?? 1;
         for ($dow = 1; $dow <= 7; $dow++) {
-            // AS: 2 per étage (minimum), 7j/7
-            if ($fonctionAS)   $besoinsIdx[$mod['id']][$dow][$fonctionAS]   = 2 * $nbEtages;
-            // INF: 1 per module, 7j/7
-            if ($fonctionINF)  $besoinsIdx[$mod['id']][$dow][$fonctionINF]  = 1;
-            // ASSC: 1 per module, 7j/7
-            if ($fonctionASSC) $besoinsIdx[$mod['id']][$dow][$fonctionASSC] = 1;
+            // Use DB besoins if they exist, otherwise apply defaults
+            if (!$hasBesoins || empty($besoinsIdx[$mod['id']][$dow])) {
+                if ($fonctionAS)   $besoinsIdx[$mod['id']][$dow][$fonctionAS]   = max($besoinsIdx[$mod['id']][$dow][$fonctionAS] ?? 0, 2 * $nbEtages);
+                if ($fonctionINF)  $besoinsIdx[$mod['id']][$dow][$fonctionINF]  = max($besoinsIdx[$mod['id']][$dow][$fonctionINF] ?? 0, 1);
+                if ($fonctionASSC) $besoinsIdx[$mod['id']][$dow][$fonctionASSC] = max($besoinsIdx[$mod['id']][$dow][$fonctionASSC] ?? 0, 1);
+            }
         }
     }
 
@@ -592,7 +591,7 @@ function admin_generate_planning()
     $daysInMonth = (int) date('t', strtotime($firstDay));
     $pdo = Db::connect();
     $stmtInsert = $pdo->prepare(
-        "INSERT INTO planning_assignations
+        "INSERT IGNORE INTO planning_assignations
             (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, statut, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
@@ -735,6 +734,31 @@ function admin_generate_planning()
         return true;
     };
 
+    // ── Helper: get forced shift codes for a user (from shift_only rules) ──
+    $getForcedShifts = function ($u) use (&$structuredRules, &$ruleUserMap) {
+        foreach ($structuredRules as $rule) {
+            if ($rule['rule_type'] !== 'shift_only') continue;
+            if ($rule['target_mode'] === 'all') { /* applies */ }
+            elseif ($rule['target_mode'] === 'fonction' && ($u['fonction_code'] ?? '') === $rule['target_fonction_code']) { /* applies */ }
+            elseif ($rule['target_mode'] === 'users' && isset($ruleUserMap[$rule['id']][$u['id']])) { /* applies */ }
+            else continue;
+            return $rule['params']['shift_codes'] ?? [];
+        }
+        return [];
+    };
+
+    // ── Helper: resolve shift for user respecting shift_only rules ──
+    $resolveShift = function ($u, $shift, $modId, $date) use (&$horaireByCode, $getForcedShifts) {
+        $forced = $getForcedShifts($u);
+        if (empty($forced)) return $shift; // no constraint
+        if ($shift && in_array($shift['code'], $forced)) return $shift; // already ok
+        // Shift was rejected — use the forced shift instead
+        foreach ($forced as $code) {
+            if (isset($horaireByCode[$code])) return $horaireByCode[$code];
+        }
+        return null; // no valid forced shift found
+    };
+
     // ── Helper: check structured rules ──
     // $shiftCode can be null for early module-only checks (before shift is picked)
     $checkRules = function ($u, $shiftCode, $modId, $date) use (&$structuredRules, &$ruleUserMap, &$userDays) {
@@ -794,12 +818,26 @@ function admin_generate_planning()
         return true;
     };
 
+    // ── Pre-compute target days per week for each user (for even distribution) ──
+    $getUserWeeklyDaysTarget = function ($u) use ($iaJoursOuvres, $daysInMonth) {
+        $monthlyDays = round($iaJoursOuvres * ($u['taux'] / 100));
+        $nbWeeks = $daysInMonth / 7;
+        return round($monthlyDays / $nbWeeks, 1);
+    };
+    $userWeekDays = []; // [userId][weekNum] = count of days worked
+
     // ── PASS 1: Fill besoins_couverture (required positions) ──
     for ($d = 1; $d <= $daysInMonth; $d++) {
         $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
         $dow = (int) date('N', strtotime($date)); // 1=Mon 7=Sun
 
-        foreach ($besoinsIdx as $modId => $dows) {
+        // Shuffle module order each day to avoid first-module bias
+        $moduleKeys = array_keys($besoinsIdx);
+        shuffle($moduleKeys);
+        $besoinsShuffled = [];
+        foreach ($moduleKeys as $mk) $besoinsShuffled[$mk] = $besoinsIdx[$mk];
+
+        foreach ($besoinsShuffled as $modId => $dows) {
             if ($moduleFilter && $modId !== $moduleFilter) continue;
             if (!isset($dows[$dow])) continue;
 
@@ -848,6 +886,12 @@ function admin_generate_planning()
                     $maxConsec = ($u['fonction_code'] === 'AS') ? $iaConsecutifMaxAS : $iaConsecutifMaxBes;
                     if ($getConsecutive($u['id'], $date) >= $maxConsec) continue;
 
+                    // Even weekly distribution: limit days/week based on taux
+                    // (relaxed: +2 days tolerance for coverage pass)
+                    $weeklyDaysTarget = $getUserWeeklyDaysTarget($u);
+                    $currentWeekDays = $userWeekDays[$u['id']][$getWeekNum($date)] ?? 0;
+                    if ($currentWeekDays >= $weeklyDaysTarget + 2) continue;
+
                     // AS weekly hours cap: don't exceed weekly target (+5h tolerance)
                     if ($u['fonction_code'] === 'AS') {
                         $wk = $getWeekNum($date);
@@ -859,7 +903,11 @@ function admin_generate_planning()
                     // Pick shift based on coverage pattern + fonction
                     $shift = $pickShift($modId, $assignedForSlot, $nbReqd, $d, $u, $u['fonction_code']);
                     if (!$shift) continue;
-                    if (!$checkRules($u, $shift['code'], $modId, $date)) continue; // shift-level rule check
+                    // If shift is rejected by rules, try to resolve with forced shifts
+                    if (!$checkRules($u, $shift['code'], $modId, $date)) {
+                        $shift = $resolveShift($u, $shift, $modId, $date);
+                        if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                    }
 
                     // AS weekly hours: check if this shift would exceed weekly target
                     if ($u['fonction_code'] === 'AS') {
@@ -890,6 +938,7 @@ function admin_generate_planning()
                     $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                     $userDays[$u['id']][$date] = true;
                     $userShifts[$u['id']][$date] = $shift['code'];
+                    $userWeekDays[$u['id']][$wk] = ($userWeekDays[$u['id']][$wk] ?? 0) + 1;
                     $assigned++;
                     $assignedForSlot++;
                 }
@@ -963,7 +1012,10 @@ function admin_generate_planning()
                 $slotIdx = $c['assigne'] + $filled;
                 $shift = $pickShift($modId, $slotIdx, $c['requis'], (int) substr($date, -2), $u, 'AS');
                 if (!$shift) continue;
-                if (!$checkRules($u, $shift['code'], $modId, $date)) continue; // shift-level rule check
+                if (!$checkRules($u, $shift['code'], $modId, $date)) {
+                    $shift = $resolveShift($u, $shift, $modId, $date);
+                    if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                }
 
                 // Final weekly check with shift duration
                 $wk = $getWeekNum($date);
@@ -1006,7 +1058,17 @@ function admin_generate_planning()
             $dow = (int) date('N', strtotime($date));
             $wk = $getWeekNum($date);
 
-            foreach ($users as $u) {
+            // Sort users by hours deficit (most underworked first) for fair distribution
+            $usersPass2 = $users;
+            usort($usersPass2, function ($a, $b) use (&$userHours, $iaJoursOuvres, $iaHeuresJour) {
+                $targetA = round($iaJoursOuvres * $iaHeuresJour * ($a['taux'] / 100));
+                $targetB = round($iaJoursOuvres * $iaHeuresJour * ($b['taux'] / 100));
+                $deficitA = $targetA - ($userHours[$a['id']] ?? 0);
+                $deficitB = $targetB - ($userHours[$b['id']] ?? 0);
+                return $deficitB <=> $deficitA; // most deficit first
+            });
+
+            foreach ($usersPass2 as $u) {
                 if (isset($userDays[$u['id']][$date])) continue;
                 if (!$isEligible($u, $date)) continue;
 
@@ -1019,6 +1081,12 @@ function admin_generate_planning()
                 $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
                 $currentHours = $userHours[$u['id']] ?? 0;
                 if ($currentHours >= $targetMonthHours) continue;
+
+                // ── Even distribution: limit days per week based on taux ──
+                $weeklyDaysTarget = $getUserWeeklyDaysTarget($u);
+                $currentWeekDays = $userWeekDays[$u['id']][$wk] ?? 0;
+                // Allow +1 day tolerance for flexibility
+                if ($currentWeekDays >= $weeklyDaysTarget + 1) continue;
 
                 // Consecutive check: AS max 3, others max iaConsecutifMax
                 $maxConsec = $isAS ? $iaConsecutifMaxAS : $iaConsecutifMax;
@@ -1095,8 +1163,11 @@ function admin_generate_planning()
                     }
                 }
 
-                // Structured rules: shift-level check
-                if (!$checkRules($u, $shift['code'], $principalMod, $date)) continue;
+                // Structured rules: shift-level check — resolve forced shifts if needed
+                if (!$checkRules($u, $shift['code'], $principalMod, $date)) {
+                    $shift = $resolveShift($u, $shift, $principalMod, $date);
+                    if (!$shift || !$checkRules($u, $shift['code'], $principalMod, $date)) continue;
+                }
 
                 $groupeIdP2 = null;
                 if ($isAS) {
@@ -1114,6 +1185,7 @@ function admin_generate_planning()
                 $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                 $userDays[$u['id']][$date] = true;
                 $userShifts[$u['id']][$date] = $shift['code'];
+                $userWeekDays[$u['id']][$wk] = ($userWeekDays[$u['id']][$wk] ?? 0) + 1;
                 $assigned++;
             }
         }
@@ -1443,13 +1515,33 @@ function admin_generate_planning()
     Db::exec(
         "INSERT INTO ia_usage_log (id, planning_id, mois_annee, provider, model, tokens_in, tokens_out, cost_usd, nb_assignations, nb_conflicts, duration_ms, admin_id, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-        [Uuid::v4(), $planningId, $mois, $iaProviderUsed, $iaModelUsed, $iaTokensIn, $iaTokensOut, $iaCostUsd, $assigned, count($conflicts), $durationMs, $_SESSION['admin']['id'] ?? null]
+        [Uuid::v4(), $planningId, $mois, $iaProviderUsed, $iaModelUsed, $iaTokensIn, $iaTokensOut, $iaCostUsd, $assigned, count($conflicts), $durationMs, $_SESSION['zt_user']['id'] ?? null]
     );
 
     $message = "$assigned assignations générées";
     if ($mode !== 'local') {
         $message .= " · IA: $iaOptimizations optimisations";
         if ($iaError ?? null) $message .= " (⚠ $iaError)";
+    }
+
+    // Compute per-user stats for debugging
+    $userStats = [];
+    foreach ($users as $u) {
+        $target = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+        $actual = $userHours[$u['id']] ?? 0;
+        $days = count($userDays[$u['id']] ?? []);
+        $diff = round($actual - $target, 1);
+        if (abs($diff) > 5 || $days === 0) {
+            $userStats[] = [
+                'nom' => $u['prenom'] . ' ' . $u['nom'],
+                'fonction' => $u['fonction_code'] ?? '?',
+                'taux' => $u['taux'],
+                'target' => $target,
+                'actual' => round($actual, 1),
+                'diff' => $diff,
+                'days' => $days,
+            ];
+        }
     }
 
     respond([
@@ -1463,6 +1555,8 @@ function admin_generate_planning()
         'ia_cost' => round($iaCostUsd, 6),
         'ia_summary' => $iaResponse['summary'] ?? null,
         'ia_prompt' => $prompt ?? null,
+        'duration_ms' => $durationMs,
+        'user_warnings' => $userStats,
     ]);
 }
 

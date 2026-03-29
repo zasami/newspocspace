@@ -9,10 +9,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
 .ct-page-title { font-weight: 700; margin: 0; flex: 1; }
 .ct-page-stats { font-size: .82rem; color: var(--cl-text-muted); }
 
-/* Search + filters bar */
-.ct-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-.ct-search-input { flex: 1; min-width: 200px; border: 1px solid var(--cl-border); border-radius: 8px; padding: 8px 12px 8px 34px; font-size: .88rem; background: var(--cl-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239B9B9B' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") 10px center no-repeat; }
-.ct-search-input:focus { outline: none; border-color: var(--cl-accent); background-color: var(--cl-surface); }
+/* Search uses global topbar input */
 
 /* Table */
 .ct-table { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -79,11 +76,6 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
     <button class="btn btn-sm btn-outline-secondary" id="ctImportBtn"><i class="bi bi-upload"></i> CSV</button>
     <button class="btn btn-sm btn-primary" id="ctAddBtn"><i class="bi bi-plus-lg"></i> Ajouter</button>
   </div>
-</div>
-
-<!-- Search -->
-<div class="ct-toolbar">
-  <input type="text" class="ct-search-input" id="ctSearchInput" placeholder="Rechercher par nom, email, entreprise, téléphone...">
 </div>
 
 <!-- Table -->
@@ -208,7 +200,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
     }
 
     function render() {
-        const q = (document.getElementById('ctSearchInput')?.value || '').toLowerCase();
+        const q = (document.getElementById('topbarSearchInput')?.value || '').toLowerCase();
         const filtered = q
             ? contacts.filter(c => [c.prenom,c.nom,c.email,c.entreprise,c.telephone].join(' ').toLowerCase().includes(q))
             : contacts;
@@ -261,8 +253,11 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
         });
     }
 
-    // ── Search ──
-    document.getElementById('ctSearchInput')?.addEventListener('input', render);
+    // ── Search via global topbar ──
+    const topbarInput = document.getElementById('topbarSearchInput');
+    if (topbarInput) {
+        topbarInput.addEventListener('input', render);
+    }
 
     // ── Add / Edit ──
     document.getElementById('ctAddBtn')?.addEventListener('click', () => openForm(null));

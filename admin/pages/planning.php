@@ -23,7 +23,22 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 <!-- Planning Admin — Toolbar -->
 <div class="planning-toolbar" id="planningToolbar">
   <div class="d-flex gap-2 align-items-center flex-wrap">
-    <input type="month" class="form-control form-control-sm w-input-month" id="planningMois">
+    <input type="hidden" id="planningMois">
+    <div class="pm-picker" id="pmPicker">
+      <button type="button" class="pm-picker-btn" id="pmPickerBtn">
+        <span class="pm-picker-icon" id="pmPickerIcon"></span>
+        <span class="pm-picker-label" id="pmPickerLabel">Chargement...</span>
+        <i class="bi bi-chevron-down pm-picker-chevron"></i>
+      </button>
+      <div class="pm-picker-dropdown" id="pmDropdown">
+        <div class="pm-picker-nav">
+          <button type="button" class="pm-nav-btn" id="pmPrevYear"><i class="bi bi-chevron-left"></i></button>
+          <span class="pm-nav-year" id="pmYear"></span>
+          <button type="button" class="pm-nav-btn" id="pmNextYear"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div class="pm-picker-grid" id="pmGrid"></div>
+      </div>
+    </div>
     <div class="zs-select w-input-view" id="planningViewMode" data-placeholder="Vue mois"></div>
     <span id="planningStatus" class="ms-2"></span>
   </div>
@@ -37,6 +52,9 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
       </button>
       <button class="btn btn-outline-secondary" id="btnStatsPlanning" title="Statistiques">
         <i class="bi bi-graph-up"></i>
+      </button>
+      <button class="btn btn-outline-secondary" id="btnSettingsPlanning" title="Paramètres de génération">
+        <i class="bi bi-sliders"></i>
       </button>
       <button class="btn btn-outline-secondary" id="btnClearPlanning" title="Vider le planning">
         <i class="bi bi-trash"></i>
@@ -103,13 +121,16 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
 <!-- Stats modal -->
 <div class="modal fade" id="statsModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-info">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-info">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-graph-up"></i> Statistiques du planning</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" id="statsContent"></div>
+      <div class="modal-body" id="statsContent" style="max-height:70vh;overflow-y:auto"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
     </div>
   </div>
 </div>
@@ -240,10 +261,63 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 <style>
 /* ── Reusable utility classes ── */
 .d-hidden { display: none; }
-.w-input-month { width: 160px; }
+/* .w-input-month replaced by pm-picker */
 .w-input-view { width: 140px; }
-.btn-outline-purple-custom { border-color: #9B51E0; color: #9B51E0; }
-.btn-outline-purple-custom:hover { background: #9B51E0; color: #fff; border-color: #9B51E0; }
+
+/* Month picker */
+.pm-picker { position: relative; }
+.pm-picker-btn {
+  display: flex; align-items: center; gap: 8px; padding: 5px 12px;
+  border: 1px solid var(--cl-border); border-radius: 10px; background: var(--cl-surface);
+  cursor: pointer; font-size: .88rem; font-family: inherit; transition: all .15s;
+  min-width: 180px;
+}
+.pm-picker-btn:hover { border-color: var(--cl-border-hover); background: var(--cl-bg); }
+.pm-picker-icon {
+  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; flex-shrink: 0;
+}
+.pm-picker-label { font-weight: 600; flex: 1; text-align: left; }
+.pm-picker-chevron { font-size: .7rem; color: var(--cl-text-muted); transition: transform .2s; }
+.pm-picker.open .pm-picker-chevron { transform: rotate(180deg); }
+.pm-picker-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 100;
+  background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.1); padding: 12px; width: 280px;
+  display: none;
+}
+.pm-picker.open .pm-picker-dropdown { display: block; }
+.pm-picker-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.pm-nav-btn { background: none; border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--cl-text-secondary); transition: background .12s; }
+.pm-nav-btn:hover { background: var(--cl-bg); }
+.pm-nav-year { font-weight: 700; font-size: .95rem; }
+.pm-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pm-month-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; border: 1.5px solid transparent; border-radius: 10px;
+  background: var(--cl-bg); cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.pm-month-btn:hover { border-color: var(--cl-border-hover); background: var(--cl-surface); }
+.pm-month-btn.active { border-color: var(--cl-accent); background: var(--cl-surface); box-shadow: 0 0 0 1px var(--cl-accent); }
+.pm-month-btn.today { position: relative; }
+.pm-month-btn.today::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--cl-accent); }
+.pm-month-icon { font-size: .9rem; }
+.pm-month-label { font-size: .72rem; font-weight: 600; color: var(--cl-text-secondary); }
+
+/* IA Rule cards */
+.gs-rule-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-radius: 10px; margin-bottom: 8px;
+  background: var(--cl-bg, #F7F5F2); border: 1px solid var(--cl-border-light, #F0EDE8);
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.gs-rule-card:hover {
+  background: var(--cl-surface, #fff);
+  border-color: var(--cl-border-hover, #D4D0CA);
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.btn-outline-purple-custom { border-color: #D0C4D8; color: #5B4B6B; }
+.btn-outline-purple-custom:hover { background: #D0C4D8; color: #5B4B6B; border-color: #D0C4D8; }
 .modal-close-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; }
 .modal-close-btn-themed { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--cl-border, #e5e7eb); }
 .icon-close-sm { font-size: .85rem; }
@@ -313,8 +387,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 .print-heading { text-align: center; margin-bottom: 10px; }
 
 /* ── Purple button (dynamic inject replacement) ── */
-.btn-purple { background: #9B51E0; border-color: #9B51E0; color: #fff; }
-.btn-purple:hover { background: #8340c4; border-color: #8340c4; color: #fff; }
+.btn-purple { background: #D0C4D8; border-color: #D0C4D8; color: #5B4B6B; }
+.btn-purple:hover { background: #C0B0CC; border-color: #C0B0CC; color: #5B4B6B; }
 
 /* ── Gen mode card selected states ── */
 .gen-mode-card-selected { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
@@ -591,10 +665,30 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-outline-secondary btn-sm me-auto" id="genSettingsBtn"><i class="bi bi-sliders"></i> Paramètres</button>
         <button class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
         <button class="btn btn-dark btn-sm" id="genConfirmBtn" disabled>
           <i class="bi bi-play-fill"></i> <span id="genConfirmLabel">Sélectionnez un mode</span>
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Paramètres Génération (Règles IA) -->
+<div class="modal fade" id="genSettingsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="gsModalTitle"><i class="bi bi-sliders"></i> Règles de génération</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" id="genSettingsBody" style="max-height:65vh;overflow-y:auto">
+        <p class="text-muted small">Chargement...</p>
+      </div>
+      <div class="modal-footer" id="gsModalFooter">
+        <a href="<?= admin_url('config-ia') ?>" class="btn btn-sm btn-outline-secondary me-auto"><i class="bi bi-gear"></i> Config IA avancée</a>
+        <button class="btn btn-sm btn-primary" id="gsAddRuleBtn"><i class="bi bi-plus-lg"></i> Ajouter une règle</button>
       </div>
     </div>
   </div>
@@ -648,18 +742,85 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     let isFullscreen = false;
 
     // ── Init ──
+    // ── Month Picker ──
+    const pmMonthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const pmMonthIcons = ['❄️','💧','🌱','🌸','🌿','☀️','🌻','🏖️','🍂','🎃','🍁','🎄'];
+    const pmMonthColors = [
+        '#B8C9D4','#B8C9D4','#bcd2cb','#D0C4D8','#bcd2cb','#D4C4A8',
+        '#D4C4A8','#E2B8AE','#D4C4A8','#E2B8AE','#D4C4A8','#B8C9D4'
+    ];
+    const pmMonthTextColors = [
+        '#3B4F6B','#3B4F6B','#2d4a43','#5B4B6B','#2d4a43','#6B5B3E',
+        '#6B5B3E','#7B3B2C','#6B5B3E','#7B3B2C','#6B5B3E','#3B4F6B'
+    ];
+    let pmYear = new Date().getFullYear();
+    let pmOpen = false;
+
+    function pmSetValue(yyyy, mm) {
+        const val = `${yyyy}-${String(mm).padStart(2,'0')}`;
+        document.getElementById('planningMois').value = val;
+        const idx = mm - 1;
+        document.getElementById('pmPickerIcon').textContent = pmMonthIcons[idx];
+        document.getElementById('pmPickerIcon').style.background = pmMonthColors[idx];
+        document.getElementById('pmPickerIcon').style.color = pmMonthTextColors[idx];
+        document.getElementById('pmPickerLabel').textContent = pmMonthNames[idx] + ' ' + yyyy;
+        pmRenderGrid();
+    }
+
+    function pmRenderGrid() {
+        const curVal = document.getElementById('planningMois').value;
+        const now = new Date();
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        document.getElementById('pmYear').textContent = pmYear;
+        const grid = document.getElementById('pmGrid');
+        grid.innerHTML = '';
+        for (let m = 1; m <= 12; m++) {
+            const key = `${pmYear}-${String(m).padStart(2,'0')}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pm-month-btn' + (key === curVal ? ' active' : '') + (key === todayKey ? ' today' : '');
+            btn.innerHTML = '<span class="pm-month-icon" style="background:' + pmMonthColors[m-1] + ';color:' + pmMonthTextColors[m-1] + ';width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem">' + pmMonthIcons[m-1] + '</span>'
+                + '<span class="pm-month-label">' + pmMonthNames[m-1].substring(0,3) + '</span>';
+            btn.addEventListener('click', () => {
+                pmSetValue(pmYear, m);
+                pmClose();
+                reload();
+            });
+            grid.appendChild(btn);
+        }
+    }
+
+    function pmToggle() { pmOpen ? pmClose() : pmOpenFn(); }
+    function pmOpenFn() {
+        pmOpen = true;
+        document.getElementById('pmPicker').classList.add('open');
+        pmRenderGrid();
+        setTimeout(() => document.addEventListener('click', pmOutsideClick), 10);
+    }
+    function pmClose() {
+        pmOpen = false;
+        document.getElementById('pmPicker').classList.remove('open');
+        document.removeEventListener('click', pmOutsideClick);
+    }
+    function pmOutsideClick(e) {
+        if (!document.getElementById('pmPicker').contains(e.target)) pmClose();
+    }
+
+    document.getElementById('pmPickerBtn').addEventListener('click', pmToggle);
+    document.getElementById('pmPrevYear').addEventListener('click', (e) => { e.stopPropagation(); pmYear--; pmRenderGrid(); });
+    document.getElementById('pmNextYear').addEventListener('click', (e) => { e.stopPropagation(); pmYear++; pmRenderGrid(); });
+
     async function initPlanningPage() {
         const now = new Date();
         const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        document.getElementById('planningMois').value =
-            `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+        pmYear = nextMonth.getFullYear();
+        pmSetValue(nextMonth.getFullYear(), nextMonth.getMonth() + 1);
 
         cellModal = new bootstrap.Modal(document.getElementById('cellModal'));
         statsModal = new bootstrap.Modal(document.getElementById('statsModal'));
         proposalLabelModal = new bootstrap.Modal(document.getElementById('proposalLabelModal'));
 
-        // Event listeners
-        document.getElementById('planningMois').addEventListener('change', reload);
+        // Event listeners (planningMois change is triggered by pmSetValue + reload)
         zerdaSelect.init(document.getElementById('planningModuleFilter'), [{value:'', label:'Tous les modules'}], { value: '', onSelect: renderGrid });
         zerdaSelect.init(document.getElementById('planningViewMode'), [{value:'week', label:'Vue semaine'},{value:'month', label:'Vue mois'}], { value: 'month', onSelect: renderGrid });
         document.getElementById('btnCreatePlanning').addEventListener('click', createPlanning);
@@ -1312,6 +1473,323 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         confirmBtn.addEventListener('click', handler);
     }
 
+    // ── Generation Settings Modal (IA Rules) ──
+    let gsRules = [];
+    let gsView = 'list'; // 'list' | 'form'
+    let gsEditId = null;
+    const gsModal = () => bootstrap.Modal.getOrCreateInstance(document.getElementById('genSettingsModal'));
+
+    async function openSettingsModal() {
+        gsView = 'list'; gsEditId = null;
+        gsModal().show();
+        await gsLoadRules();
+    }
+
+    async function gsLoadRules() {
+        const body = document.getElementById('genSettingsBody');
+        body.innerHTML = '<p class="text-muted small text-center py-3"><span class="spinner-border spinner-border-sm"></span> Chargement...</p>';
+
+        const res = await adminApiPost('admin_get_ia_rules');
+        if (!res.success) { body.innerHTML = '<p class="text-danger small">Erreur</p>'; return; }
+        gsRules = res.rules || [];
+        gsRenderList();
+    }
+
+    const gsRuleTypeLabels = {
+        shift_only: 'Horaires autorisés',
+        shift_exclude: 'Horaires exclus',
+        module_only: 'Modules autorisés',
+        module_exclude: 'Modules exclus',
+        no_weekend: 'Pas de weekend',
+        max_days_week: 'Max jours/semaine',
+    };
+    const gsImportanceColors = {
+        important: 'danger', moyen: 'warning', faible: 'secondary',
+    };
+
+    function gsRenderList() {
+        const body = document.getElementById('genSettingsBody');
+        const title = document.getElementById('gsModalTitle');
+        const footer = document.getElementById('gsModalFooter');
+        title.innerHTML = '<i class="bi bi-sliders"></i> Règles de génération';
+        footer.innerHTML = '<a href="<?= admin_url('config-ia') ?>" class="btn btn-sm btn-outline-secondary me-auto"><i class="bi bi-gear"></i> Config IA avancée</a>'
+            + '<button class="btn btn-sm btn-primary" id="gsAddRuleBtn"><i class="bi bi-plus-lg"></i> Ajouter une règle</button>';
+        footer.querySelector('#gsAddRuleBtn').addEventListener('click', () => { gsView = 'form'; gsEditId = null; gsRenderForm(); });
+
+        if (!gsRules.length) {
+            body.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-sliders" style="font-size:2rem;opacity:.2;display:block;margin-bottom:8px"></i>Aucune règle configurée<br><small>Ajoutez des règles pour personnaliser la génération</small></div>';
+            return;
+        }
+
+        body.innerHTML = gsRules.map(r => {
+            const typeLabel = gsRuleTypeLabels[r.rule_type] || r.rule_type || 'Texte libre';
+            const impColor = gsImportanceColors[r.importance] || 'secondary';
+            const targetLabel = r.target_mode === 'all' ? 'Tout le monde' : r.target_mode === 'fonction' ? ('Fonction: ' + (r.target_fonction_code || '?')) : (r.targeted_users || []).map(u => u.name).join(', ') || 'Utilisateurs ciblés';
+            const params = r.rule_params || {};
+            let detail = '';
+            if (params.shift_codes) detail = params.shift_codes.join(', ');
+            else if (params.max_days) detail = params.max_days + ' jours max';
+
+            return '<div class="gs-rule-card">'
+                + '<div class="form-check form-switch mb-0"><input type="checkbox" class="form-check-input gs-toggle" data-id="' + r.id + '"' + (r.actif ? ' checked' : '') + '></div>'
+                + '<div style="flex:1;min-width:0">'
+                + '<div class="d-flex align-items-center gap-2 mb-1">'
+                + '<strong class="small">' + escapeHtml(r.titre) + '</strong>'
+                + '<span class="badge bg-' + impColor + '" style="font-size:.65rem">' + escapeHtml(r.importance) + '</span>'
+                + '<span class="badge bg-light text-dark border" style="font-size:.65rem">' + typeLabel + '</span>'
+                + (detail ? '<code style="font-size:.7rem">' + escapeHtml(detail) + '</code>' : '')
+                + '</div>'
+                + '<div style="font-size:.75rem;color:var(--cl-text-muted)">' + escapeHtml(targetLabel) + (r.description ? ' — ' + escapeHtml(r.description.substring(0, 80)) : '') + '</div>'
+                + '</div>'
+                + '<div class="d-flex gap-1">'
+                + '<button class="btn btn-sm btn-outline-secondary gs-edit" data-id="' + r.id + '" title="Modifier"><i class="bi bi-pencil"></i></button>'
+                + '<button class="btn btn-sm btn-outline-danger gs-del" data-id="' + r.id + '" title="Supprimer"><i class="bi bi-trash3"></i></button>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+
+        // Events
+        body.querySelectorAll('.gs-toggle').forEach(el => {
+            el.addEventListener('change', async () => {
+                await adminApiPost('admin_toggle_ia_rule', { id: el.dataset.id });
+            });
+        });
+        body.querySelectorAll('.gs-edit').forEach(el => {
+            el.addEventListener('click', () => { gsEditId = el.dataset.id; gsView = 'form'; gsRenderForm(); });
+        });
+        body.querySelectorAll('.gs-del').forEach(el => {
+            el.addEventListener('click', async () => {
+                const r = gsRules.find(x => x.id === el.dataset.id);
+                const ok = await adminConfirm({ title: 'Supprimer cette règle ?', text: escapeHtml(r?.titre || ''), type: 'danger', icon: 'bi-trash3', okText: 'Supprimer' });
+                if (!ok) return;
+                const res = await adminApiPost('admin_delete_ia_rule', { id: el.dataset.id });
+                if (res.success) { showToast('Règle supprimée', 'success'); gsLoadRules(); }
+            });
+        });
+    }
+
+    function gsRenderForm() {
+        const body = document.getElementById('genSettingsBody');
+        const title = document.getElementById('gsModalTitle');
+        const footer = document.getElementById('gsModalFooter');
+        const r = gsEditId ? gsRules.find(x => x.id === gsEditId) : null;
+        const isEdit = !!r;
+        const params = r?.rule_params || {};
+
+        title.innerHTML = '<button class="btn btn-sm btn-link p-0 me-2" id="gsBackBtn"><i class="bi bi-arrow-left"></i></button> ' + (isEdit ? 'Modifier la règle' : 'Nouvelle règle');
+        title.querySelector('#gsBackBtn').addEventListener('click', () => { gsView = 'list'; gsRenderList(); });
+
+        body.innerHTML =
+            '<div class="mb-3"><label class="form-label small fw-bold">Titre *</label><input class="form-control form-control-sm" id="gsrTitre" value="' + escapeHtml(r?.titre || '') + '"></div>'
+            + '<div class="row g-2 mb-3">'
+            + '<div class="col-md-4"><label class="form-label small fw-bold">Type de règle</label><div class="zs-select" id="gsrType" data-placeholder="Choisir..."></div></div>'
+            + '<div class="col-md-4"><label class="form-label small fw-bold">Importance</label><div class="zs-select" id="gsrImportance" data-placeholder="Moyen"></div></div>'
+            + '<div class="col-md-4"><label class="form-label small fw-bold">Cible</label><div class="zs-select" id="gsrTarget" data-placeholder="Tout le monde"></div></div>'
+            + '</div>'
+            + '<div id="gsrTargetDetail" class="mb-3"></div>'
+            + '<div id="gsrParamsDetail" class="mb-3"></div>'
+            + '<div class="mb-3"><label class="form-label small fw-bold">Description / règle en texte libre</label>'
+            + '<textarea class="form-control form-control-sm" id="gsrDesc" rows="3" placeholder="Décrivez la règle en langage naturel. Ex: «Marie ne doit jamais travailler le mercredi» ou «Les AS du module M1 ne font pas de D3 le weekend»">' + escapeHtml(r?.description || '') + '</textarea>'
+            + '<small class="text-muted">Cette description est transmise à l\'IA pour les modes hybride et IA directe</small></div>';
+
+        // Init zerda-selects
+        const typeOpts = [
+            { value: '', label: 'Texte libre (IA)' },
+            ...Object.entries(gsRuleTypeLabels).map(([k, v]) => ({ value: k, label: v })),
+        ];
+        zerdaSelect.init('#gsrType', typeOpts, {
+            value: r?.rule_type || '',
+            onSelect: updateParamsDetail,
+        });
+
+        zerdaSelect.init('#gsrImportance', [
+            { value: 'important', label: 'Important' },
+            { value: 'moyen', label: 'Moyen' },
+            { value: 'faible', label: 'Faible' },
+        ], { value: r?.importance || 'moyen' });
+
+        zerdaSelect.init('#gsrTarget', [
+            { value: 'all', label: 'Tout le monde' },
+            { value: 'fonction', label: 'Par fonction' },
+            { value: 'users', label: 'Utilisateurs spécifiques' },
+        ], {
+            value: r?.target_mode || 'all',
+            onSelect: updateTargetDetail,
+        });
+
+        // Build function options from refs
+        const fonctionOpts = (refs.users || []).reduce((acc, u) => {
+            if (u.fonction_code && !acc.find(o => o.value === u.fonction_code)) {
+                acc.push({ value: u.fonction_code, label: u.fonction_code + ' — ' + (u.fonction_nom || '') });
+            }
+            return acc;
+        }, []);
+
+        function updateTargetDetail() {
+            const target = zerdaSelect.getValue('#gsrTarget');
+            const det = document.getElementById('gsrTargetDetail');
+            det.innerHTML = '';
+            if (target === 'fonction') {
+                det.innerHTML = '<label class="form-label small fw-bold">Fonction</label><div class="zs-select" id="gsrFonctionCode" data-placeholder="Choisir une fonction"></div>';
+                zerdaSelect.init('#gsrFonctionCode', fonctionOpts, { value: r?.target_fonction_code || '', search: true });
+            } else if (target === 'users') {
+                const userOpts = (refs.users || []).map(u => ({
+                    value: u.id,
+                    label: u.prenom + ' ' + u.nom + (u.fonction_code ? ' (' + u.fonction_code + ')' : ''),
+                    searchText: u.prenom + ' ' + u.nom + ' ' + (u.fonction_code || ''),
+                }));
+                det.innerHTML = '<label class="form-label small fw-bold">Utilisateurs</label><div class="zs-select" id="gsrUserSelect" data-placeholder="Choisir un utilisateur"></div>'
+                    + '<div id="gsrUserTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
+                // Multi-select via tags
+                window._gsSelectedUsers = (r?.targeted_users || []).map(u => u.id);
+                zerdaSelect.init('#gsrUserSelect', userOpts, {
+                    search: true,
+                    onSelect: (val) => {
+                        if (val && !window._gsSelectedUsers.includes(val)) {
+                            window._gsSelectedUsers.push(val);
+                            gsRenderUserTags();
+                        }
+                        zerdaSelect.setValue('#gsrUserSelect', '');
+                    }
+                });
+                gsRenderUserTags();
+            }
+        }
+        updateTargetDetail();
+
+        function gsRenderUserTags() {
+            const container = document.getElementById('gsrUserTags');
+            if (!container) return;
+            container.innerHTML = window._gsSelectedUsers.map(uid => {
+                const u = (refs.users || []).find(x => x.id === uid);
+                if (!u) return '';
+                return '<span class="badge bg-light text-dark border" style="font-size:.78rem">' + escapeHtml(u.prenom + ' ' + u.nom)
+                    + ' <button type="button" style="background:none;border:none;cursor:pointer;padding:0 2px;font-size:.9rem;color:var(--cl-text-muted)" data-rm="' + uid + '">&times;</button></span>';
+            }).join('');
+            container.querySelectorAll('[data-rm]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    window._gsSelectedUsers = window._gsSelectedUsers.filter(x => x !== btn.dataset.rm);
+                    gsRenderUserTags();
+                });
+            });
+        }
+
+        // Horaires & modules options for zerda-select
+        const horaireOpts = (refs.horaires || []).map(h => ({ value: h.code, label: h.code + ' (' + h.heure_debut?.substring(0,5) + '-' + h.heure_fin?.substring(0,5) + ')' }));
+        const moduleOpts = (refs.modules || []).map(m => ({ value: m.id, label: m.code + ' — ' + m.nom }));
+
+        function updateParamsDetail() {
+            const type = zerdaSelect.getValue('#gsrType');
+            const det = document.getElementById('gsrParamsDetail');
+            det.innerHTML = '';
+
+            if (type === 'shift_only' || type === 'shift_exclude') {
+                det.innerHTML = '<label class="form-label small fw-bold">Horaires</label><div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
+                    + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
+                window._gsSelectedShifts = (params.shift_codes || []).slice();
+                zerdaSelect.init('#gsrShiftSelect', horaireOpts, {
+                    search: true,
+                    onSelect: (val) => {
+                        if (val && !window._gsSelectedShifts.includes(val)) {
+                            window._gsSelectedShifts.push(val);
+                            gsRenderShiftTags();
+                        }
+                        zerdaSelect.setValue('#gsrShiftSelect', '');
+                    }
+                });
+                gsRenderShiftTags();
+            } else if (type === 'max_days_week') {
+                det.innerHTML = '<label class="form-label small fw-bold">Max jours par semaine</label><input type="number" class="form-control form-control-sm" id="gsrMaxDays" min="1" max="7" value="' + (params.max_days || 5) + '">';
+            } else if (type === 'module_only' || type === 'module_exclude') {
+                det.innerHTML = '<label class="form-label small fw-bold">Modules</label><div class="zs-select" id="gsrModuleSelect" data-placeholder="Ajouter un module"></div>'
+                    + '<div id="gsrModuleTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
+                window._gsSelectedModules = (params.module_ids || []).slice();
+                zerdaSelect.init('#gsrModuleSelect', moduleOpts, {
+                    search: true,
+                    onSelect: (val) => {
+                        if (val && !window._gsSelectedModules.includes(val)) {
+                            window._gsSelectedModules.push(val);
+                            gsRenderModuleTags();
+                        }
+                        zerdaSelect.setValue('#gsrModuleSelect', '');
+                    }
+                });
+                gsRenderModuleTags();
+            }
+            // Texte libre: no extra params — description field is always visible
+        }
+        updateParamsDetail();
+
+        function gsRenderShiftTags() {
+            const c = document.getElementById('gsrShiftTags');
+            if (!c) return;
+            c.innerHTML = window._gsSelectedShifts.map(code => {
+                const h = (refs.horaires || []).find(x => x.code === code);
+                return '<span class="badge" style="background:' + escapeHtml(h?.couleur || '#666') + ';color:#fff;font-size:.78rem">' + escapeHtml(code)
+                    + ' <button type="button" style="background:none;border:none;cursor:pointer;padding:0 2px;color:#fff;font-size:.9rem" data-rm="' + code + '">&times;</button></span>';
+            }).join('');
+            c.querySelectorAll('[data-rm]').forEach(btn => {
+                btn.addEventListener('click', () => { window._gsSelectedShifts = window._gsSelectedShifts.filter(x => x !== btn.dataset.rm); gsRenderShiftTags(); });
+            });
+        }
+
+        function gsRenderModuleTags() {
+            const c = document.getElementById('gsrModuleTags');
+            if (!c) return;
+            c.innerHTML = window._gsSelectedModules.map(id => {
+                const m = (refs.modules || []).find(x => x.id === id);
+                return '<span class="badge bg-light text-dark border" style="font-size:.78rem">' + escapeHtml(m?.code || id)
+                    + ' <button type="button" style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--cl-text-muted);font-size:.9rem" data-rm="' + id + '">&times;</button></span>';
+            }).join('');
+            c.querySelectorAll('[data-rm]').forEach(btn => {
+                btn.addEventListener('click', () => { window._gsSelectedModules = window._gsSelectedModules.filter(x => x !== btn.dataset.rm); gsRenderModuleTags(); });
+            });
+        }
+
+        footer.innerHTML = '<button class="btn btn-sm btn-outline-secondary" id="gsCancelForm">Annuler</button>'
+            + '<button class="btn btn-sm btn-primary" id="gsSaveForm"><i class="bi bi-check-lg"></i> ' + (isEdit ? 'Modifier' : 'Créer') + '</button>';
+        footer.querySelector('#gsCancelForm').addEventListener('click', () => { gsView = 'list'; gsRenderList(); });
+        footer.querySelector('#gsSaveForm').addEventListener('click', gsSaveRule);
+    }
+
+    async function gsSaveRule() {
+        const titre = document.getElementById('gsrTitre')?.value.trim();
+        if (!titre) { showToast('Titre requis', 'error'); return; }
+
+        const ruleType = zerdaSelect.getValue('#gsrType') || null;
+        const importance = zerdaSelect.getValue('#gsrImportance') || 'moyen';
+        const targetMode = zerdaSelect.getValue('#gsrTarget') || 'all';
+        const description = document.getElementById('gsrDesc')?.value.trim() || '';
+        const targetFonctionCode = zerdaSelect.getValue('#gsrFonctionCode') || document.getElementById('gsrFonctionCode')?.value?.trim() || '';
+        const userIds = window._gsSelectedUsers || [];
+
+        let ruleParams = {};
+        if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
+            ruleParams.shift_codes = window._gsSelectedShifts || [];
+        } else if (ruleType === 'max_days_week') {
+            ruleParams.max_days = parseInt(document.getElementById('gsrMaxDays')?.value || 5);
+        } else if (ruleType === 'module_only' || ruleType === 'module_exclude') {
+            ruleParams.module_ids = window._gsSelectedModules || [];
+        }
+
+        const data = { titre, description, importance, rule_type: ruleType, rule_params: JSON.stringify(ruleParams), target_mode: targetMode, target_fonction_code: targetFonctionCode, user_ids: userIds };
+
+        const action = gsEditId ? 'admin_update_ia_rule' : 'admin_create_ia_rule';
+        if (gsEditId) data.id = gsEditId;
+
+        const res = await adminApiPost(action, data);
+        if (res.success) {
+            showToast(gsEditId ? 'Règle modifiée' : 'Règle créée', 'success');
+            gsView = 'list'; gsEditId = null;
+            gsLoadRules();
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
+    }
+
+    document.getElementById('genSettingsBtn')?.addEventListener('click', openSettingsModal);
+    document.getElementById('btnSettingsPlanning')?.addEventListener('click', openSettingsModal);
+
     async function clearPlanning() {
         if (!planning) return;
         // DEV MODE: autoriser vider même un planning finalisé
@@ -1478,7 +1956,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
     // ── Fullscreen toggle ──
     // Modal IDs to move in/out of the fullscreen container
-    const _fsModalIds = ['statsModal','cellModal','emailPlanningModal','proposalsModal','generateModal','promptModal'];
+    const _fsModalIds = ['statsModal','cellModal','emailPlanningModal','proposalsModal','generateModal','promptModal','genSettingsModal','confirmModal'];
     let _fsBackdropObserver = null;
 
     function toggleFullscreen() {

@@ -37,6 +37,18 @@ if ($userId) {
 .ud-plan-label { font-size: 0.8rem; }
 .ud-plan-cell { font-size: 0.75rem; }
 .ud-plan-corner { min-width: 40px; }
+
+/* Desir modal */
+.ud-desir-header-attente { background: #FEF3C7; border-bottom: 2px solid #F59E0B; }
+.ud-desir-header-valide { background: #D1FAE5; border-bottom: 2px solid #10B981; }
+.ud-desir-header-refuse { background: #FEE2E2; border-bottom: 2px solid #EF4444; }
+.ud-desir-row { cursor: pointer; transition: background .12s; }
+.ud-desir-row:hover { background: var(--cl-bg, #F7F5F2) !important; }
+.ud-desir-hidden { display: none; }
+.btn-desir-valider { background: var(--cl-bg); border: 1px solid var(--cl-border); color: #2d4a43; }
+.btn-desir-valider:hover { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
+.btn-desir-refuser { background: var(--cl-bg); border: 1px solid var(--cl-border); color: #7B3B2C; }
+.btn-desir-refuser:hover { background: #E2B8AE; color: #7B3B2C; border-color: #E2B8AE; }
 </style>
 <div id="userDetailPage">
   <div class="mb-3">
@@ -66,6 +78,25 @@ if ($userId) {
         <div class="modal-footer d-flex">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
           <button type="button" class="btn btn-sm btn-primary ms-auto" id="udPermSaveBtn"><i class="bi bi-check-lg"></i> Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Désir -->
+  <div class="modal fade" id="udDesirModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" id="udDesirHeader">
+          <div>
+            <h6 class="modal-title mb-0" id="udDesirTitle"></h6>
+            <small class="text-muted" id="udDesirSubtitle"></small>
+          </div>
+          <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body" id="udDesirBody"></div>
+        <div class="modal-footer d-flex" id="udDesirFooter">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
         </div>
       </div>
     </div>
@@ -228,18 +259,21 @@ if ($userId) {
         Promise.all([loadDesirs(), loadPermanents(), loadAbsences(), loadPlanning()]);
     }
 
+    let udDesirsData = [];
+    const udDesirModal = new bootstrap.Modal(document.getElementById('udDesirModal'));
+
     async function loadDesirs() {
         const mois = zerdaSelect.getValue('#udDesirMois');
         const res = await adminApiPost('admin_get_desirs', { statut: '', mois, user_id: userId });
-        const desirs = res.desirs || [];
+        udDesirsData = res.desirs || [];
         const tbody = document.getElementById('udDesirsBody');
 
-        if (!desirs.length) {
+        if (!udDesirsData.length) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Aucun désir</td></tr>';
             return;
         }
 
-        tbody.innerHTML = desirs.map(d => {
+        tbody.innerHTML = udDesirsData.map((d, i) => {
             const stCls = d.statut === 'valide' ? 'success' : d.statut === 'refuse' ? 'danger' : 'warning';
             const stLabel = d.statut === 'valide' ? 'Validé' : d.statut === 'refuse' ? 'Refusé' : 'En attente';
             const isPerm = !!d.permanent_id;
@@ -251,7 +285,7 @@ if ($userId) {
             }
             const date = new Date(d.date_souhaitee + 'T00:00:00');
             const dateFmt = `${joursSemaine[date.getDay()]} ${date.getDate()}/${date.getMonth()+1}`;
-            return `<tr>
+            return `<tr class="ud-desir-row" data-desir-idx="${i}">
                 <td>${dateFmt}</td>
                 <td>${typeBadge}${permIcon}</td>
                 <td>${horaire}</td>
@@ -259,6 +293,102 @@ if ($userId) {
                 <td><span class="badge bg-${stCls}">${stLabel}</span></td>
             </tr>`;
         }).join('');
+
+        // Click handlers
+        tbody.querySelectorAll('.ud-desir-row').forEach(row => {
+            row.addEventListener('click', () => openDesirDetail(parseInt(row.dataset.desirIdx)));
+        });
+    }
+
+    function formatDateDesir(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr + 'T00:00:00');
+        return `${joursSemaine[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    }
+
+    function openDesirDetail(idx) {
+        const d = udDesirsData[idx];
+        if (!d) return;
+
+        const header = document.getElementById('udDesirHeader');
+        header.className = 'modal-header ' + (d.statut === 'en_attente' ? 'ud-desir-header-attente' : d.statut === 'valide' ? 'ud-desir-header-valide' : 'ud-desir-header-refuse');
+
+        const isPerm = !!d.permanent_id;
+        const permLabel = isPerm ? ' <span class="badge ud-badge-permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span>' : '';
+        document.getElementById('udDesirTitle').innerHTML = escapeHtml((d.prenom || '') + ' ' + (d.nom || '')) + permLabel;
+        document.getElementById('udDesirSubtitle').textContent = (d.fonction_code || '') + ' — Désir pour le ' + formatDateDesir(d.date_souhaitee);
+
+        const typeBadge = d.type === 'jour_off'
+            ? '<span class="badge bg-info"><i class="bi bi-moon"></i> Jour off</span>'
+            : '<span class="badge text-white ud-badge-horaire-special"><i class="bi bi-clock"></i> Horaire spécial</span>';
+
+        let horaireBlock = '';
+        if (d.type === 'horaire_special' && d.horaire_code) {
+            const couleur = d.horaire_couleur || '#9B51E0';
+            horaireBlock = `
+            <div class="d-flex align-items-center gap-3 p-3 rounded mb-3" style="background:var(--cl-bg);border-left:4px solid ${escapeHtml(couleur)}">
+              <span class="fw-bold" style="font-size:1.5rem;color:${escapeHtml(couleur)}">${escapeHtml(d.horaire_code)}</span>
+              <div>
+                <div class="fw-semibold">${escapeHtml(d.horaire_nom || '')}</div>
+                <small class="text-muted">${escapeHtml(d.horaire_debut || '')} — ${escapeHtml(d.horaire_fin || '')}</small>
+                ${d.horaire_duree ? `<small class="text-muted ms-2">(${d.horaire_duree}h)</small>` : ''}
+              </div>
+            </div>`;
+        }
+
+        let detailBlock = d.detail ? `<div class="p-2 rounded mb-3" style="background:var(--cl-bg)"><small class="text-muted"><i class="bi bi-pencil"></i> Détail</small><div>${escapeHtml(d.detail)}</div></div>` : '';
+
+        const stCls = d.statut === 'valide' ? 'success' : d.statut === 'refuse' ? 'danger' : 'warning';
+        const stLabel = d.statut === 'valide' ? 'Validé' : d.statut === 'refuse' ? 'Refusé' : 'En attente';
+        let statusBlock = `<div class="d-flex align-items-center gap-2 mb-3"><span class="badge bg-${stCls}">${stLabel}</span>${d.valide_at ? `<small class="text-muted">le ${formatDateDesir(d.valide_at?.substring(0,10))}</small>` : ''}</div>`;
+
+        let commentBlock = d.commentaire_chef ? `<div class="p-3 rounded" style="background:var(--cl-bg)"><small class="text-muted d-block mb-1"><i class="bi bi-chat-dots"></i> Commentaire</small><span>${escapeHtml(d.commentaire_chef)}</span></div>` : '';
+
+        let refusHtml = d.statut === 'en_attente'
+            ? `<div id="udRefusBlock" class="mt-3 ud-desir-hidden"><label class="form-label fw-semibold small"><i class="bi bi-chat-dots"></i> Motif du refus (optionnel)</label><textarea class="form-control form-control-sm" id="udRefusComment" rows="2" placeholder="Raison du refus..."></textarea></div>`
+            : '';
+
+        document.getElementById('udDesirBody').innerHTML = `
+            <div class="mb-3 d-flex align-items-center justify-content-between">${typeBadge}${d.created_at ? `<small class="text-muted"><i class="bi bi-clock-history"></i> ${formatDateDesir(d.created_at?.substring(0,10))}</small>` : ''}</div>
+            ${horaireBlock}${detailBlock}${statusBlock}${commentBlock}${refusHtml}`;
+
+        const footer = document.getElementById('udDesirFooter');
+        if (d.statut === 'en_attente') {
+            footer.innerHTML = `
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+              <div class="ms-auto d-flex gap-2">
+                <button type="button" class="btn btn-desir-refuser btn-sm" id="udBtnRefuser"><i class="bi bi-x-circle"></i> Refuser</button>
+                <button type="button" class="btn btn-desir-valider btn-sm" id="udBtnValider"><i class="bi bi-check-circle"></i> Valider</button>
+              </div>`;
+
+            footer.querySelector('#udBtnValider').addEventListener('click', () => udValidateDesir(d.id, 'valide'));
+            footer.querySelector('#udBtnRefuser').addEventListener('click', () => {
+                const block = document.getElementById('udRefusBlock');
+                if (block.classList.contains('ud-desir-hidden')) {
+                    block.classList.remove('ud-desir-hidden');
+                    document.getElementById('udRefusComment').focus();
+                    footer.querySelector('#udBtnRefuser').innerHTML = '<i class="bi bi-x-circle"></i> Confirmer le refus';
+                    footer.querySelector('#udBtnRefuser').classList.replace('btn-desir-refuser', 'btn-danger');
+                } else {
+                    udValidateDesir(d.id, 'refuse', document.getElementById('udRefusComment').value.trim());
+                }
+            });
+        } else {
+            footer.innerHTML = `<button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-bs-dismiss="modal">Fermer</button>`;
+        }
+
+        udDesirModal.show();
+    }
+
+    async function udValidateDesir(id, statut, commentaire) {
+        const res = await adminApiPost('admin_validate_desir', { id, statut, commentaire: commentaire || '' });
+        if (res.success) {
+            udDesirModal.hide();
+            showToast(statut === 'valide' ? 'Désir validé' : 'Désir refusé', 'success');
+            loadDesirs();
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
     }
 
     async function loadPermanents() {
