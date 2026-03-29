@@ -165,6 +165,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
   <div class="ext-sidebar" id="extFolders">
     <div class="ext-folder active" data-folder="INBOX"><i class="bi bi-inbox"></i> Boîte de réception <span class="ext-folder-badge" id="extInboxCount"></span></div>
     <div id="extFoldersDynamic"></div>
+    <div class="ext-folder" id="extEmptyTrashBtn" style="display:none;color:#7B3B2C"><i class="bi bi-trash3"></i> Vider la corbeille</div>
     <hr style="margin:8px 0;opacity:.2">
     <div class="ext-folder" id="extComposeBtn"><i class="bi bi-plus-circle"></i> <strong>Nouveau</strong></div>
     <div class="ext-folder" id="extContactsBtn"><i class="bi bi-person-rolodex"></i> Contacts</div>
@@ -250,7 +251,31 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
             currentFolder = folder.dataset.folder;
             currentOffset = 0;
             loadList();
+            updateEmptyTrashBtn();
             return;
+        }
+    });
+
+    function updateEmptyTrashBtn() {
+        const btn = document.getElementById('extEmptyTrashBtn');
+        if (!btn) return;
+        const activeFolder = document.querySelector('.ext-folder.active[data-is-trash="1"]');
+        btn.style.display = activeFolder ? '' : 'none';
+    }
+
+    document.getElementById('extEmptyTrashBtn')?.addEventListener('click', async () => {
+        const ok = await adminConfirm({
+            title: 'Vider la corbeille ?',
+            text: 'Tous les emails de la corbeille seront <strong>supprimés définitivement</strong>. Cette action est irréversible.',
+            type: 'danger', icon: 'bi-trash3', okText: 'Vider la corbeille'
+        });
+        if (!ok) return;
+        const res = await adminApiPost('admin_email_ext_empty_trash', {});
+        if (res.success) {
+            showToast(res.message, 'success');
+            loadList();
+        } else {
+            showToast(res.message || 'Erreur', 'error');
         }
     });
 
@@ -1012,8 +1037,12 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
         container.innerHTML = folders.map(f => {
             const key = f.replace(/^INBOX\.?/i, '').toLowerCase();
             const info = folderMap[key] || { icon: 'bi-folder', label: f };
-            return '<div class="ext-folder" data-folder="' + escapeHtml(f) + '"><i class="bi ' + info.icon + '"></i> ' + escapeHtml(info.label) + '</div>';
+            const isTrash = key === 'trash' || key.includes('trash') || key.includes('corbeille');
+            return '<div class="ext-folder" data-folder="' + escapeHtml(f) + '"' + (isTrash ? ' data-is-trash="1"' : '') + '><i class="bi ' + info.icon + '"></i> ' + escapeHtml(info.label) + '</div>';
         }).join('');
+
+        // Show/hide empty trash button
+        updateEmptyTrashBtn();
     }
 
     // ── Init ──

@@ -149,29 +149,68 @@ function admin_create_user()
         );
     }
 
-    // Send welcome email
+    // Send welcome message via internal messaging
+    $adminId = $_SESSION['zt_user']['id'] ?? '';
     $loginUrl = APP_URL . '/login';
-    $subject = 'Bienvenue sur zerdaTime — Vos identifiants';
-    $body = "Bonjour $prenom,\n\n"
-          . "Votre compte zerdaTime a été créé.\n\n"
-          . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-          . "N° Employé : $employeeId\n"
-          . "Email : $email\n"
-          . "Mot de passe temporaire : $tempPassword\n"
-          . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-          . "⚠ Ce mot de passe expire dans 24 heures.\n"
-          . "Connectez-vous et changez-le immédiatement depuis votre profil.\n\n"
-          . "Lien de connexion : $loginUrl\n\n"
-          . "Cordialement,\n"
-          . "L'équipe zerdaTime";
-    $headers = "From: noreply@terrassiere.ch\r\nContent-Type: text/plain; charset=UTF-8";
-    @mail($email, $subject, $body, $headers);
+    $sujet = 'Bienvenue sur zerdaTime — Vos identifiants';
+    $contenu = "<p>Bonjour <strong>$prenom</strong>,</p>"
+        . "<p>Votre compte zerdaTime a été créé.</p>"
+        . "<div style='background:#F7F5F2;border-radius:10px;padding:16px;margin:12px 0'>"
+        . "<p style='margin:4px 0'><strong>N° Employé :</strong> $employeeId</p>"
+        . "<p style='margin:4px 0'><strong>Email :</strong> $email</p>"
+        . "<p style='margin:4px 0'><strong>Mot de passe temporaire :</strong> <code style='background:#E2B8AE;padding:2px 8px;border-radius:4px'>$tempPassword</code></p>"
+        . "</div>"
+        . "<p>⚠ Ce mot de passe expire dans <strong>24 heures</strong>. Connectez-vous et changez-le immédiatement depuis votre profil.</p>"
+        . "<p><a href='$loginUrl'>Se connecter à zerdaTime</a></p>";
+
+    try {
+        $msgId = Uuid::v4();
+        Db::exec(
+            "INSERT INTO messages (id, thread_id, from_user_id, sujet, contenu) VALUES (?, ?, ?, ?, ?)",
+            [$msgId, $msgId, $adminId, $sujet, $contenu]
+        );
+        Db::exec(
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
+            [Uuid::v4(), $msgId, $id]
+        );
+    } catch (\Throwable $e) {
+        // Non-critical — user is created even if message fails
+    }
+
+    // Also try sending via SMTP if admin has email config
+    try {
+        require_once __DIR__ . '/../../core/Mailer.php';
+        $emailConfig = Db::fetch(
+            "SELECT * FROM email_externe_config WHERE user_id = ? AND is_active = 1",
+            [$adminId]
+        );
+        if ($emailConfig) {
+            $password = Mailer::decryptPassword($emailConfig['encrypted_password'], $emailConfig['password_iv']);
+            $mailer = new Mailer([
+                'imap_host' => $emailConfig['imap_host'],
+                'imap_port' => $emailConfig['imap_port'],
+                'imap_encryption' => $emailConfig['imap_encryption'],
+                'smtp_host' => $emailConfig['smtp_host'],
+                'smtp_port' => $emailConfig['smtp_port'],
+                'smtp_encryption' => $emailConfig['smtp_encryption'],
+                'username' => $emailConfig['username'],
+                'password' => $password,
+                'email_address' => $emailConfig['email_address'],
+                'display_name' => $emailConfig['display_name'] ?? '',
+            ]);
+            $htmlBody = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;font-size:14px;color:#333">' . $contenu . '</body></html>';
+            $mailer->sendEmail([$email], [], $sujet, $htmlBody);
+        }
+    } catch (\Throwable $e) {
+        // Non-critical
+    }
 
     respond([
         'success' => true,
-        'message' => "Collaborateur créé ($employeeId). Email de bienvenue envoyé.",
+        'message' => "Collaborateur créé ($employeeId). Mot de passe temporaire : $tempPassword (expire dans 24h)",
         'id' => $id,
         'employee_id' => $employeeId,
+        'temp_password' => $tempPassword,
     ]);
 }
 

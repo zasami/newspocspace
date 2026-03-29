@@ -211,6 +211,13 @@ function admin_email_ext_delete()
     respond(['success' => true, 'message' => 'Email supprimé']);
 }
 
+function admin_email_ext_empty_trash()
+{
+    $mailer = _getMailer();
+    $deleted = $mailer->emptyTrash();
+    respond(['success' => true, 'deleted' => $deleted, 'message' => $deleted . ' email(s) supprimé(s) définitivement']);
+}
+
 function admin_email_ext_send()
 {
     global $params;

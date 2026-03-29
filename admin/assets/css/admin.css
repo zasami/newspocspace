@@ -648,7 +648,8 @@ body {
 .topbar-search.expanded { width: 450px; }
 .topbar-search input {
   font-size: 0.85rem;
-  padding: 0.45rem 2rem 0.45rem 2.2rem;
+  height: 38px;
+  padding: 0 2rem 0 2.2rem;
   border-radius: 20px;
   border: 1px solid var(--cl-border);
   background: var(--cl-bg);

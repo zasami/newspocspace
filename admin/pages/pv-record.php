@@ -927,7 +927,7 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h6 class="modal-title fw-bold"><i class="bi bi-envelope me-2"></i>Envoyer par email interne</h6>
+        <h6 class="modal-title fw-bold"><i class="bi bi-chat-dots me-2"></i>Envoyer par message interne</h6>
         <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center pv-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg pv-modal-close-icon"></i></button>
       </div>
       <div class="modal-body">

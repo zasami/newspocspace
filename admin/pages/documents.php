@@ -6,665 +6,496 @@ $docServices = Db::fetchAll(
 );
 ?>
 <style>
-/* ─── Documents Admin ─── */
-.doc-toolbar { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; }
-.doc-toolbar-filter { width:auto; min-width:180px; }
-
-.doc-services-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1rem; margin-bottom:2rem; }
-.doc-service-card {
-    border:1px solid #e2e0d5; border-radius:1rem; padding:1.5rem; cursor:pointer;
-    transition:all .2s; background:#fff; position:relative; overflow:hidden;
-    display:flex; flex-direction:column; min-height:160px;
+/* ── Service cards ── */
+.doc-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.doc-svc-card {
+  position: relative; border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 12px; padding: 14px 16px;
+  cursor: pointer; transition: all .18s; background: var(--cl-bg); display: flex; align-items: center; gap: 12px;
 }
-.doc-services-grid.has-active .doc-service-card:not(.active) { background:var(--cl-bg, #F7F5F2); }
-.doc-services-grid:hover .doc-service-card { background:var(--cl-bg, #F7F5F2); }
-.doc-services-grid:hover .doc-service-card:hover { background:#fff; }
-.doc-service-card.active { background:#fff; border-color:#c5c3b8; }
-.doc-service-card .service-icon {
-    width:48px; height:48px; border-radius:.5rem; display:flex; align-items:center; justify-content:center;
-    font-size:1.4rem; margin-bottom:.75rem; background:#e8e6dc; color:#d6d4cb;
+.doc-svc-card:hover { background: var(--cl-surface); border-color: var(--cl-border-hover); }
+.doc-svc-card.active { background: var(--cl-surface); border-color: var(--svc-color); box-shadow: 0 0 0 1px var(--svc-color); }
+.doc-svc-check {
+  position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--svc-color); color: #fff; font-size: .55rem; display: none;
+  align-items: center; justify-content: center;
 }
-.doc-service-card .service-name { font-weight:600; font-size:1.05rem; color:#2c2c2c; line-height:1.35; margin-bottom:auto; }
-.doc-service-card .service-count { font-size:.82rem; color:#6c757d; margin-top:1rem; }
+.doc-svc-card.active .doc-svc-check { display: flex; }
+.doc-svc-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); transition: all .18s; }
+.doc-svc-card.active .doc-svc-icon { background: var(--svc-bg); color: var(--svc-color); }
+.doc-svc-name { font-weight: 600; font-size: .88rem; line-height: 1.2; }
+.doc-svc-count { font-size: .72rem; color: var(--cl-text-muted); }
 
-.doc-list-table { width:100%; }
-.doc-list-table th { font-size:.75rem; text-transform:uppercase; color:#6c757d; font-weight:600; padding:.5rem .75rem; border-bottom:2px solid #e2e8f0; }
-.doc-list-table td { padding:.65rem .75rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
-.doc-list-table tr:hover { background:rgba(13,110,253,.02); }
-.doc-list-table .col-actions { width:140px; }
+/* ── Table ── */
+.doc-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.doc-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border); text-align: left; }
+.doc-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
+.doc-table tr:hover td { background: var(--cl-bg); }
 
-.doc-file-icon { width:40px; height:40px; border-radius:.5rem; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
-.doc-file-icon.pdf { background:rgba(220,53,69,.1); color:#dc3545; }
-.doc-file-icon.word { background:rgba(13,110,253,.1); color:#0d6efd; }
-.doc-file-icon.excel { background:rgba(25,135,84,.1); color:#198754; }
-.doc-file-icon.image { background:rgba(111,66,193,.1); color:#6f42c1; }
-.doc-file-icon.ppt { background:rgba(253,126,20,.1); color:#fd7e14; }
-.doc-file-icon.other { background:rgba(108,117,125,.1); color:#6c757d; }
+.doc-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.doc-icon-pdf  { background: #E2B8AE; color: #7B3B2C; }
+.doc-icon-word { background: #B8C9D4; color: #3B4F6B; }
+.doc-icon-xls  { background: #bcd2cb; color: #2d4a43; }
+.doc-icon-ppt  { background: #D4C4A8; color: #6B5B3E; }
+.doc-icon-img  { background: #D0C4D8; color: #5B4B6B; }
+.doc-icon-other { background: var(--cl-bg); color: var(--cl-text-muted); }
 
-.doc-title-cell { display:flex; align-items:center; gap:.75rem; }
-.doc-title-cell .doc-info .doc-name { font-weight:500; font-size:.9rem; }
-.doc-title-cell .doc-info .doc-desc { font-size:.78rem; color:#6c757d; max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.doc-name-cell { display: flex; align-items: center; gap: 12px; }
+.doc-name { font-weight: 600; font-size: .88rem; }
+.doc-desc { font-size: .75rem; color: var(--cl-text-muted); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-badge-svc { font-size: .72rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+.doc-badge-visible   { background: #bcd2cb; color: #2d4a43; }
+.doc-badge-hidden    { background: #E2B8AE; color: #7B3B2C; }
+.doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
+.doc-row-actions { display: flex; gap: 2px; }
+.doc-row-btn { background: none; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; color: var(--cl-text-muted); font-size: .88rem; transition: all .12s; display: flex; align-items: center; justify-content: center; }
+.doc-row-btn:hover { background: var(--cl-bg); color: var(--cl-text); }
+.doc-row-btn.danger:hover { background: #E2B8AE; color: #7B3B2C; }
 
-.badge-service { font-size:.72rem; padding:.25rem .5rem; border-radius:.35rem; font-weight:500; }
-.badge-visible { background:rgba(25,135,84,.1); color:#198754; }
-.badge-hidden { background:rgba(220,53,69,.1); color:#dc3545; }
-.badge-restricted { background:rgba(253,126,20,.1); color:#fd7e14; }
+/* ── Upload area ── */
+.doc-upload-zone { border: 2px dashed var(--cl-border); border-radius: 12px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all .2s; color: var(--cl-text-muted); }
+.doc-upload-zone:hover, .doc-upload-zone.dragover { border-color: var(--cl-accent); background: rgba(25,25,24,.02); }
+.doc-upload-zone i { font-size: 2rem; opacity: .3; display: block; margin-bottom: 6px; }
 
-.doc-actions .btn { padding:.25rem .5rem; font-size:.8rem; }
+/* ── Services list in modal ── */
+.doc-svc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+.doc-svc-row:last-child { border: none; }
+.doc-color-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
 
-.doc-file-size-label { font-size:.75rem; }
+/* ── Clickable name ── */
+.doc-name-link { cursor: pointer; }
+.doc-name-link:hover .doc-name { color: var(--cl-accent); text-decoration: underline; }
 
-.doc-color-input { width:40px; padding:2px; }
+/* ── Empty ── */
+.doc-empty { text-align: center; padding: 50px 20px; color: var(--cl-text-muted); }
+.doc-empty i { font-size: 2.5rem; opacity: .15; display: block; margin-bottom: 8px; }
 
-.doc-color-swatch { width:16px; height:16px; border-radius:4px; display:inline-block; flex-shrink:0; }
-
-/* Upload modal */
-#uploadArea { border:2px dashed #dee2e6; border-radius:.75rem; padding:2rem; text-align:center; cursor:pointer; transition:all .2s; }
-#uploadArea:hover, #uploadArea.dragover { border-color:var(--bs-primary); background:rgba(13,110,253,.03); }
-#uploadArea .upload-icon { font-size:2.5rem; color:#adb5bd; margin-bottom:.5rem; }
-#uploadArea p { color:#6c757d; margin:0; font-size:.9rem; }
-#uploadFilePreview { margin-top:1rem; }
-
-/* Access modal */
-.access-rule-row { display:flex; align-items:center; gap:.5rem; padding:.5rem 0; border-bottom:1px solid #f1f5f9; }
-.access-rule-row:last-child { border:none; }
+/* ── Lightbox ── */
+.doc-lb { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: docLbIn .2s ease; }
+.doc-lb-hidden { display: none !important; }
+.doc-lb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
+.doc-lb-stage { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.doc-lb-stage img { max-width: 90vw; max-height: calc(100vh - 100px); object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.doc-lb-stage iframe { width: 85vw; height: calc(100vh - 100px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
+.doc-lb-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; z-index: 10; backdrop-filter: blur(8px); transition: background .2s; }
+.doc-lb-close:hover { background: rgba(255,255,255,.22); }
+.doc-lb-title { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.12); color: #fff; padding: 8px 20px; border-radius: 20px; font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); z-index: 10; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-lb-dl, .doc-lb-fs { position: absolute; top: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; z-index: 10; backdrop-filter: blur(8px); text-decoration: none; transition: background .2s; }
+.doc-lb-dl { right: 70px; }
+.doc-lb-fs { right: 120px; }
+.doc-lb-dl:hover, .doc-lb-fs:hover { background: rgba(255,255,255,.22); color: #fff; }
+.doc-lb-fs.d-none { display: none !important; }
+@keyframes docLbIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
-<!-- Toolbar -->
-<div class="doc-toolbar">
-    <div class="zs-select doc-toolbar-filter" id="docServiceFilter" data-placeholder="Tous les services"></div>
-    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#serviceModal">
-        <i class="bi bi-gear"></i> Gérer services
-    </button>
-    <div class="ms-auto"></div>
-    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-        <i class="bi bi-cloud-upload"></i> Téléverser
-    </button>
+<!-- Header -->
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <button class="btn btn-sm btn-outline-secondary" id="btnManageServices"><i class="bi bi-palette"></i> Services</button>
+  <div class="ms-auto"></div>
+  <button class="btn btn-sm btn-primary" id="btnUploadDoc"><i class="bi bi-cloud-upload"></i> Téléverser</button>
 </div>
 
 <!-- Service cards -->
-<div class="doc-services-grid" id="servicesGrid"></div>
+<div class="doc-services" id="svcGrid"></div>
 
-<!-- Documents table -->
+<!-- Table -->
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0" id="docListTitle"><i class="bi bi-folder2-open"></i> Tous les documents</h6>
-        <small class="text-muted" id="docCount"></small>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="doc-list-table">
-                <thead>
-                    <tr>
-                        <th>Document</th>
-                        <th>Service</th>
-                        <th>Taille</th>
-                        <th>Date</th>
-                        <th>Statut</th>
-                        <th class="col-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="docTableBody">
-                    <tr><td colspan="6" class="text-center py-4 text-muted">Chargement...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+  <div class="card-header d-flex justify-content-between align-items-center py-2">
+    <h6 class="mb-0" id="docListTitle"><i class="bi bi-folder2-open"></i> Tous les documents</h6>
+    <small class="text-muted" id="docCount"></small>
+  </div>
+  <div class="card-body p-0">
+    <table class="doc-table">
+      <thead><tr><th>Document</th><th>Service</th><th>Taille</th><th>Date</th><th>Statut</th><th></th></tr></thead>
+      <tbody id="docBody"><tr><td colspan="6" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></td></tr></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Upload Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-cloud-upload text-primary"></i> Téléverser un document</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">Titre <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="uploadTitre" required maxlength="255">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Service <span class="text-danger">*</span></label>
-                        <div class="zs-select" id="uploadService" data-placeholder="Choisir un service..."></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" id="uploadDescription" rows="2" maxlength="2000"></textarea>
-                    </div>
-                    <div id="uploadArea">
-                        <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
-                        <p><strong>Cliquez ou glissez</strong> un fichier ici</p>
-                        <small class="text-muted">PDF, Word, Excel, PowerPoint, images — max 20 Mo</small>
-                        <input type="file" id="uploadFile" class="d-none"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.svg,.txt,.csv">
-                    </div>
-                    <div id="uploadFilePreview" class="d-none">
-                        <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
-                            <i class="bi bi-file-earmark fs-4 text-primary"></i>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold small" id="uploadFileName"></div>
-                                <div class="text-muted doc-file-size-label" id="uploadFileSize"></div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-danger" id="uploadFileClear"><i class="bi bi-x"></i></button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-sm btn-primary" id="uploadSubmitBtn" disabled>
-                    <i class="bi bi-upload"></i> Téléverser
-                </button>
-            </div>
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-cloud-upload"></i> Téléverser un document</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+        <div class="mb-3"><label class="form-label small fw-bold">Titre *</label><input class="form-control form-control-sm" id="upTitre" maxlength="255"></div>
+        <div class="mb-3"><label class="form-label small fw-bold">Service *</label><div class="zs-select" id="upService" data-placeholder="Choisir..."></div></div>
+        <div class="mb-3"><label class="form-label small fw-bold">Description</label><textarea class="form-control form-control-sm" id="upDesc" rows="2" maxlength="2000"></textarea></div>
+        <div class="doc-upload-zone" id="upZone">
+          <i class="bi bi-cloud-arrow-up"></i>
+          <p class="mb-0"><strong>Cliquez ou glissez</strong> un fichier ici</p>
+          <small>PDF, Word, Excel, images — max 20 Mo</small>
+          <input type="file" id="upFile" class="d-none" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.svg,.txt,.csv">
         </div>
-    </div>
-</div>
-
-<!-- Service Management Modal -->
-<div class="modal fade" id="serviceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-gear text-secondary"></i> Gérer les services</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="servicesList" class="mb-3"></div>
-                <hr>
-                <h6>Ajouter un service</h6>
-                <div class="d-flex gap-2">
-                    <input type="text" class="form-control form-control-sm" id="newServiceName" placeholder="Nom du service" maxlength="100">
-                    <input type="color" class="form-control form-control-sm form-control-color doc-color-input" id="newServiceColor" value="#6c757d">
-                    <button class="btn btn-sm btn-primary" id="addServiceBtn"><i class="bi bi-plus"></i></button>
-                </div>
-            </div>
+        <div id="upPreview" class="d-none mt-2">
+          <div class="d-flex align-items-center gap-2 p-2 rounded" style="background:var(--cl-bg)">
+            <i class="bi bi-file-earmark" style="font-size:1.3rem"></i>
+            <div style="flex:1;min-width:0"><div class="small fw-semibold" id="upFileName"></div><div class="text-muted" style="font-size:.72rem" id="upFileSize"></div></div>
+            <button type="button" class="doc-row-btn danger" id="upFileClear"><i class="bi bi-x-lg"></i></button>
+          </div>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm btn-primary" id="upSubmit" disabled><i class="bi bi-upload"></i> Téléverser</button>
+      </div>
     </div>
-</div>
-
-<!-- Access Control Modal -->
-<div class="modal fade" id="accessModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-shield-lock text-warning"></i> Contrôle d'accès</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small">Définissez qui peut voir ce document. Par défaut, tous les collaborateurs y ont accès.</p>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Bloquer l'accès par rôle</label>
-                    <div id="accessRolesSection"></div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Bloquer l'accès par service</label>
-                    <div id="accessServicesSection"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-sm btn-primary" id="saveAccessBtn"><i class="bi bi-check-lg"></i> Enregistrer</button>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pencil text-primary"></i> Modifier le document</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="editDocId">
-                <div class="mb-3">
-                    <label class="form-label">Titre</label>
-                    <input type="text" class="form-control" id="editTitre" maxlength="255">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Service</label>
-                    <div class="zs-select" id="editService" data-placeholder="Service"></div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" id="editDescription" rows="2" maxlength="2000"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-sm btn-primary" id="editSaveBtn"><i class="bi bi-check-lg"></i> Enregistrer</button>
-            </div>
-        </div>
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Modifier le document</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+        <input type="hidden" id="editDocId">
+        <div class="mb-3"><label class="form-label small fw-bold">Titre</label><input class="form-control form-control-sm" id="editTitre" maxlength="255"></div>
+        <div class="mb-3"><label class="form-label small fw-bold">Service</label><div class="zs-select" id="editService" data-placeholder="Service"></div></div>
+        <div class="mb-3"><label class="form-label small fw-bold">Description</label><textarea class="form-control form-control-sm" id="editDesc" rows="2" maxlength="2000"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm btn-primary" id="editSave"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Services Modal -->
+<div class="modal fade" id="svcModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-palette"></i> Gérer les services</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+        <div id="svcList" class="mb-3"></div>
+        <hr>
+        <label class="form-label small fw-bold">Ajouter un service</label>
+        <div class="d-flex gap-2">
+          <input class="form-control form-control-sm" id="newSvcName" placeholder="Nom du service" maxlength="100">
+          <input type="color" class="form-control form-control-sm form-control-color" id="newSvcColor" value="#6B5B3E" style="width:40px;padding:2px">
+          <button class="btn btn-sm btn-primary" id="addSvcBtn"><i class="bi bi-plus"></i></button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Access Modal -->
+<div class="modal fade" id="accessModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-shield-lock"></i> Contrôle d'accès</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
+        <p class="text-muted small">Bloquez l'accès par rôle ou service. Par défaut, tout le monde y a accès.</p>
+        <label class="form-label small fw-bold">Bloquer par rôle</label>
+        <div id="accessRoles" class="mb-3"></div>
+        <label class="form-label small fw-bold">Bloquer par service</label>
+        <div id="accessSvcs"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm btn-primary" id="saveAccess"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script<?= nonce() ?>>
 (function(){
     const ssrServices = <?= json_encode(array_values($docServices), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
-    let services = [];
+    let services = ssrServices;
     let currentFilter = '';
-    let searchTimeout = null;
     let currentAccessDocId = null;
+    let searchTimeout = null;
 
-    // ═══ Helpers ═══
-    function fileIcon(mime) {
-        if (mime?.includes('pdf')) return { cls: 'pdf', icon: 'bi-file-earmark-pdf-fill' };
-        if (mime?.includes('word') || mime?.includes('document')) return { cls: 'word', icon: 'bi-file-earmark-word-fill' };
-        if (mime?.includes('excel') || mime?.includes('sheet') || mime?.includes('csv')) return { cls: 'excel', icon: 'bi-file-earmark-excel-fill' };
-        if (mime?.includes('presentation') || mime?.includes('powerpoint')) return { cls: 'ppt', icon: 'bi-file-earmark-ppt-fill' };
-        if (mime?.includes('image')) return { cls: 'image', icon: 'bi-file-earmark-image-fill' };
-        return { cls: 'other', icon: 'bi-file-earmark-fill' };
+    // ── Helpers ──
+    function fIcon(mime) {
+        if (mime?.includes('pdf')) return { cls: 'doc-icon-pdf', icon: 'bi-file-earmark-pdf-fill' };
+        if (mime?.includes('word') || mime?.includes('document')) return { cls: 'doc-icon-word', icon: 'bi-file-earmark-word-fill' };
+        if (mime?.includes('excel') || mime?.includes('sheet') || mime?.includes('csv')) return { cls: 'doc-icon-xls', icon: 'bi-file-earmark-excel-fill' };
+        if (mime?.includes('presentation') || mime?.includes('powerpoint')) return { cls: 'doc-icon-ppt', icon: 'bi-file-earmark-ppt-fill' };
+        if (mime?.includes('image')) return { cls: 'doc-icon-img', icon: 'bi-file-earmark-image-fill' };
+        return { cls: 'doc-icon-other', icon: 'bi-file-earmark-fill' };
+    }
+    function fmtSize(b) { if (b<1024) return b+' o'; if (b<1048576) return (b/1024).toFixed(1)+' Ko'; return (b/1048576).toFixed(1)+' Mo'; }
+    function fmtDate(d) { return new Date(d).toLocaleDateString('fr-CH',{day:'numeric',month:'short',year:'numeric'}); }
+
+    // ── Services ──
+    async function loadSvcs() {
+        const r = await adminApiPost('admin_get_document_services');
+        if (r.success) services = r.services || [];
+        renderSvcCards();
+        initSelects();
     }
 
-    function formatSize(bytes) {
-        if (bytes < 1024) return bytes + ' o';
-        if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' Ko';
-        return (bytes/(1024*1024)).toFixed(1) + ' Mo';
-    }
+    // Warm color palette (cycles like stats page)
+    const warmPalette = [
+        { bg: '#bcd2cb', color: '#2d4a43' }, // teal
+        { bg: '#B8C9D4', color: '#3B4F6B' }, // blue
+        { bg: '#D4C4A8', color: '#6B5B3E' }, // orange
+        { bg: '#E2B8AE', color: '#7B3B2C' }, // red
+        { bg: '#D0C4D8', color: '#5B4B6B' }, // purple
+    ];
 
-    function formatDate(d) {
-        return new Date(d).toLocaleDateString('fr-CH', { day:'numeric', month:'short', year:'numeric' });
-    }
-
-    // ═══ Load services ═══
-    async function loadServices() {
-        const res = await adminApiPost('admin_get_document_services');
-        if (!res.success) return;
-        services = res.services || [];
-        renderServiceCards();
-        populateServiceSelects();
-    }
-
-    function renderServiceCards() {
-        const grid = document.getElementById('servicesGrid');
-        if (!grid) return;
-
-        // "All" card
-        let html = `
-            <div class="doc-service-card ${!currentFilter ? 'active' : ''}" data-service="">
-                <div class="service-icon">
-                    <i class="bi bi-grid-fill"></i>
-                </div>
-                <div class="service-name">Tous les documents</div>
-                <div class="service-count">${services.reduce((s,c) => s + parseInt(c.doc_count||0), 0)} documents</div>
-            </div>`;
-
-        services.filter(s => s.actif != 0).forEach(s => {
-            html += `
-                <div class="doc-service-card ${currentFilter === s.id ? 'active' : ''}" data-service="${escapeHtml(s.id)}">
-                    <div class="service-icon">
-                        <i class="bi bi-${escapeHtml(s.icone)}"></i>
-                    </div>
-                    <div class="service-name">${escapeHtml(s.nom)}</div>
-                    <div class="service-count">${s.doc_count || 0} documents</div>
-                </div>`;
+    function renderSvcCards() {
+        const g = document.getElementById('svcGrid');
+        const total = services.reduce((s,c) => s + parseInt(c.doc_count||0), 0);
+        const allPalette = warmPalette[0]; // teal for "Tous"
+        let h = '<div class="doc-svc-card' + (!currentFilter ? ' active' : '') + '" data-svc="" style="--svc-bg:' + allPalette.bg + ';--svc-color:' + allPalette.color + '">'
+            + '<div class="doc-svc-check"><i class="bi bi-check-lg"></i></div>'
+            + '<div class="doc-svc-icon"><i class="bi bi-grid-fill"></i></div>'
+            + '<div><div class="doc-svc-name">Tous</div><div class="doc-svc-count">' + total + ' docs</div></div></div>';
+        services.filter(s => s.actif != 0).forEach((s, i) => {
+            const pal = warmPalette[(i + 1) % warmPalette.length];
+            h += '<div class="doc-svc-card' + (currentFilter === s.id ? ' active' : '') + '" data-svc="' + s.id + '" style="--svc-bg:' + pal.bg + ';--svc-color:' + pal.color + '">'
+                + '<div class="doc-svc-check"><i class="bi bi-check-lg"></i></div>'
+                + '<div class="doc-svc-icon"><i class="bi bi-' + escapeHtml(s.icone) + '"></i></div>'
+                + '<div><div class="doc-svc-name">' + escapeHtml(s.nom) + '</div><div class="doc-svc-count">' + (s.doc_count||0) + ' docs</div></div></div>';
         });
-
-        grid.innerHTML = html;
-        grid.classList.toggle('has-active', !!currentFilter);
-
-        grid.querySelectorAll('.doc-service-card').forEach(card => {
-            card.addEventListener('click', () => {
-                currentFilter = card.dataset.service || '';
-                zerdaSelect.setValue('#docServiceFilter', currentFilter);
-                loadDocuments();
-                renderServiceCards();
-            });
-        });
-    }
-
-    function populateServiceSelects() {
-        const opts = services.filter(s => s.actif != 0).map(s => ({
-            value: s.id, label: s.nom
+        g.innerHTML = h;
+        g.querySelectorAll('.doc-svc-card').forEach(c => c.addEventListener('click', () => {
+            currentFilter = c.dataset.svc || '';
+            renderSvcCards();
+            loadDocs();
         }));
+    }
 
-        ['docServiceFilter', 'uploadService', 'editService'].forEach(id => {
+    function initSelects() {
+        const opts = services.filter(s => s.actif != 0).map(s => ({ value: s.id, label: s.nom }));
+        ['upService','editService'].forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
             zerdaSelect.destroy(el);
-            const placeholder = el.dataset.placeholder || '';
-            const callbacks = {};
-            if (id === 'docServiceFilter') {
-                callbacks.onSelect = (val) => { currentFilter = val; renderServiceCards(); loadDocuments(); };
-            } else if (id === 'uploadService') {
-                callbacks.onSelect = () => checkUploadReady();
-            }
-            zerdaSelect.init(el, opts, { value: '', search: opts.length > 6, ...callbacks });
+            zerdaSelect.init(el, opts, { search: opts.length > 5 });
         });
-
-        // Restore filter
-        if (currentFilter) zerdaSelect.setValue('#docServiceFilter', currentFilter);
     }
 
-    // ═══ Load documents ═══
-    async function loadDocuments() {
-        const search = document.getElementById('topbarSearchInput')?.value?.trim() || '';
-        const res = await adminApiPost('admin_get_documents', { service_id: currentFilter, search });
-        if (!res.success) return;
-
-        const docs = res.documents || [];
-        const tbody = document.getElementById('docTableBody');
+    // ── Documents ──
+    async function loadDocs() {
+        const q = document.getElementById('topbarSearchInput')?.value?.trim() || '';
+        const r = await adminApiPost('admin_get_documents', { service_id: currentFilter, search: q });
+        if (!r.success) return;
+        const docs = r.documents || [];
+        const tbody = document.getElementById('docBody');
         const title = document.getElementById('docListTitle');
-        const count = document.getElementById('docCount');
+        document.getElementById('docCount').textContent = (r.total||0) + ' document(s)';
 
         if (currentFilter) {
             const svc = services.find(s => s.id === currentFilter);
-            if (svc) title.innerHTML = `<i class="bi bi-${escapeHtml(svc.icone)}" style="color:${escapeHtml(svc.couleur)}"></i> ${escapeHtml(svc.nom)}`;
+            title.innerHTML = svc ? '<i class="bi bi-' + escapeHtml(svc.icone) + '" style="color:' + escapeHtml(svc.couleur) + '"></i> ' + escapeHtml(svc.nom) : 'Documents';
         } else {
             title.innerHTML = '<i class="bi bi-folder2-open"></i> Tous les documents';
         }
-        count.textContent = `${res.total || 0} document(s)`;
 
-        if (!docs.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-folder2-open fs-2 d-block mb-2"></i>Aucun document</td></tr>';
+        if (!docs.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="doc-empty"><i class="bi bi-folder2-open"></i><p>Aucun document</p></div></td></tr>'; return; }
+
+        tbody.innerHTML = docs.map(d => {
+            const fi = fIcon(d.mime_type);
+            const st = d.visible == 1
+                ? (d.restrictions > 0 ? '<span class="doc-badge-svc doc-badge-restricted"><i class="bi bi-shield-exclamation"></i> Restreint</span>' : '<span class="doc-badge-svc doc-badge-visible"><i class="bi bi-eye"></i> Visible</span>')
+                : '<span class="doc-badge-svc doc-badge-hidden"><i class="bi bi-eye-slash"></i> Masqué</span>';
+            const url = '/zerdatime/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(d.id);
+            return '<tr>'
+                + '<td><div class="doc-name-cell doc-name-link" data-act="view" data-url="' + url + '" data-mime="' + escapeHtml(d.mime_type||'') + '" data-titre="' + escapeHtml(d.titre) + '"><div class="doc-icon ' + fi.cls + '"><i class="bi ' + fi.icon + '"></i></div>'
+                + '<div><div class="doc-name">' + escapeHtml(d.titre) + '</div><div class="doc-desc">' + escapeHtml(d.original_name) + (d.description ? ' — ' + escapeHtml(d.description) : '') + '</div></div></div></td>'
+                + '<td><span class="doc-badge-svc" style="background:' + escapeHtml(d.service_couleur) + '15;color:' + escapeHtml(d.service_couleur) + '">' + escapeHtml(d.service_nom) + '</span></td>'
+                + '<td class="text-muted small">' + fmtSize(d.size) + '</td>'
+                + '<td class="text-muted small">' + fmtDate(d.created_at) + '</td>'
+                + '<td>' + st + '</td>'
+                + '<td><div class="doc-row-actions">'
+                + '<button class="doc-row-btn" title="Voir" data-act="view" data-url="' + url + '" data-mime="' + escapeHtml(d.mime_type||'') + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-eye"></i></button>'
+                + '<button class="doc-row-btn" title="Modifier" data-act="edit" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '" data-svc="' + d.service_id + '" data-desc="' + escapeHtml(d.description||'') + '"><i class="bi bi-pencil"></i></button>'
+                + '<button class="doc-row-btn" title="Accès" data-act="access" data-id="' + d.id + '"><i class="bi bi-shield-lock"></i></button>'
+                + '<button class="doc-row-btn" title="' + (d.visible==1?'Masquer':'Afficher') + '" data-act="toggle" data-id="' + d.id + '"><i class="bi bi-' + (d.visible==1?'eye-slash':'eye') + '"></i></button>'
+                + '<button class="doc-row-btn danger" title="Supprimer" data-act="del" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-trash3"></i></button>'
+                + '</div></td></tr>';
+        }).join('');
+    }
+
+    // ── Table actions ──
+    document.getElementById('docBody')?.addEventListener('click', e => {
+        const b = e.target.closest('[data-act]');
+        if (!b) return;
+        e.stopPropagation();
+        if (b.dataset.act === 'view') { e.preventDefault(); viewDoc(b.dataset.url, b.dataset.mime, b.dataset.titre); }
+        else if (b.dataset.act === 'edit') { document.getElementById('editDocId').value = b.dataset.id; document.getElementById('editTitre').value = b.dataset.titre; zerdaSelect.setValue('#editService', b.dataset.svc); document.getElementById('editDesc').value = b.dataset.desc; new bootstrap.Modal(document.getElementById('editModal')).show(); }
+        else if (b.dataset.act === 'access') openAccess(b.dataset.id);
+        else if (b.dataset.act === 'toggle') toggleVis(b.dataset.id);
+        else if (b.dataset.act === 'del') delDoc(b.dataset.id, b.dataset.titre);
+    });
+
+    // ── Lightbox ──
+    function viewDoc(url, mime, titre) {
+        const isImage = mime && mime.startsWith('image/');
+        const isPdf = mime && mime.includes('pdf');
+
+        if (!isImage && !isPdf) {
+            // Download
+            window.open(url, '_blank');
             return;
         }
 
-        tbody.innerHTML = docs.map(d => {
-            const fi = fileIcon(d.mime_type);
-            const statusBadge = d.visible == 1
-                ? (d.restrictions > 0 ? '<span class="badge badge-restricted"><i class="bi bi-shield-exclamation"></i> Restreint</span>' : '<span class="badge badge-visible"><i class="bi bi-eye"></i> Visible</span>')
-                : '<span class="badge badge-hidden"><i class="bi bi-eye-slash"></i> Masqu\u00e9</span>';
-
-            return `<tr>
-                <td>
-                    <div class="doc-title-cell">
-                        <div class="doc-file-icon ${fi.cls}"><i class="bi ${fi.icon}"></i></div>
-                        <div class="doc-info">
-                            <div class="doc-name">${escapeHtml(d.titre)}</div>
-                            <div class="doc-desc">${escapeHtml(d.original_name)}${d.description ? ' \u2014 ' + escapeHtml(d.description) : ''}</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="badge-service" style="background:${escapeHtml(d.service_couleur)}15;color:${escapeHtml(d.service_couleur)}">${escapeHtml(d.service_nom)}</span></td>
-                <td class="text-muted small">${formatSize(d.size)}</td>
-                <td class="text-muted small">${formatDate(d.created_at)}</td>
-                <td>${statusBadge}</td>
-                <td class="doc-actions">
-                    <div class="d-flex gap-1">
-                        <a href="/zerdatime/admin/api.php?action=admin_serve_document&id=${encodeURIComponent(d.id)}" target="_blank" class="btn btn-outline-primary" title="Voir"><i class="bi bi-eye"></i></a>
-                        <button class="btn btn-outline-secondary" title="Modifier" data-action="edit" data-id="${escapeHtml(d.id)}" data-titre="${escapeHtml(d.titre)}" data-service-id="${escapeHtml(d.service_id)}" data-description="${escapeHtml(d.description||'')}"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-outline-warning" title="Acc\u00e8s" data-action="access" data-id="${escapeHtml(d.id)}"><i class="bi bi-shield-lock"></i></button>
-                        <button class="btn btn-outline-${d.visible == 1 ? 'secondary' : 'success'}" title="${d.visible == 1 ? 'Masquer' : 'Rendre visible'}" data-action="toggle-vis" data-id="${escapeHtml(d.id)}"><i class="bi bi-${d.visible == 1 ? 'eye-slash' : 'eye'}"></i></button>
-                        <button class="btn btn-outline-danger" title="Supprimer" data-action="delete" data-id="${escapeHtml(d.id)}" data-titre="${escapeHtml(d.titre)}"><i class="bi bi-trash"></i></button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-    }
-
-    // ═══ Document table event delegation ═══
-    document.getElementById('docTableBody')?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-
-        if (action === 'edit') {
-            document.getElementById('editDocId').value = id;
-            document.getElementById('editTitre').value = btn.dataset.titre;
-            zerdaSelect.setValue('#editService', btn.dataset.serviceId);
-            document.getElementById('editDescription').value = btn.dataset.description;
-            new bootstrap.Modal(document.getElementById('editModal')).show();
-        } else if (action === 'access') {
-            openAccess(id);
-        } else if (action === 'toggle-vis') {
-            toggleVis(id);
-        } else if (action === 'delete') {
-            deletDoc(id, btn.dataset.titre);
+        let lb = document.getElementById('docLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'docLightbox';
+            lb.className = 'doc-lb';
+            lb.innerHTML = '<div class="doc-lb-overlay"></div>'
+                + '<button class="doc-lb-close"><i class="bi bi-x-lg"></i></button>'
+                + '<div class="doc-lb-title" id="docLbTitle"></div>'
+                + '<button class="doc-lb-fs d-none" id="docLbFs" title="Plein écran"><i class="bi bi-arrows-fullscreen"></i></button>'
+                + '<a class="doc-lb-dl" id="docLbDl" title="Télécharger"><i class="bi bi-download"></i></a>'
+                + '<div class="doc-lb-stage" id="docLbStage"></div>';
+            document.body.appendChild(lb);
         }
-    });
 
-    // ═══ Search (via topbar input) ═══
-    const topbarInput = document.getElementById('topbarSearchInput');
-    if (topbarInput) {
-        topbarInput.placeholder = 'Rechercher un document...';
-        topbarInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadDocuments, 300);
-        });
-    }
+        document.getElementById('docLbTitle').textContent = titre;
+        document.getElementById('docLbDl').href = url;
+        document.getElementById('docLbDl').setAttribute('target', '_blank');
+        const stage = document.getElementById('docLbStage');
 
-    // docServiceFilter change is handled by onSelect in populateServiceSelects
+        const fsBtn = document.getElementById('docLbFs');
 
-    // ═══ File upload ═══
-    const uploadArea = document.getElementById('uploadArea');
-    const uploadFile = document.getElementById('uploadFile');
-    const uploadPreview = document.getElementById('uploadFilePreview');
-
-    uploadArea?.addEventListener('click', () => uploadFile?.click());
-    uploadArea?.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-    uploadArea?.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-    uploadArea?.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-            uploadFile.files = e.dataTransfer.files;
-            showFilePreview(e.dataTransfer.files[0]);
-        }
-    });
-
-    uploadFile?.addEventListener('change', () => {
-        if (uploadFile.files.length) showFilePreview(uploadFile.files[0]);
-    });
-
-    function showFilePreview(file) {
-        document.getElementById('uploadFileName').textContent = file.name;
-        document.getElementById('uploadFileSize').textContent = formatSize(file.size);
-        uploadArea?.classList.add('d-none');
-        uploadPreview?.classList.remove('d-none');
-        checkUploadReady();
-    }
-
-    document.getElementById('uploadFileClear')?.addEventListener('click', () => {
-        uploadFile.value = '';
-        uploadArea?.classList.remove('d-none');
-        uploadPreview?.classList.add('d-none');
-        checkUploadReady();
-    });
-
-    function checkUploadReady() {
-        const btn = document.getElementById('uploadSubmitBtn');
-        const ready = document.getElementById('uploadTitre')?.value.trim() &&
-                      zerdaSelect.getValue('#uploadService') &&
-                      uploadFile?.files?.length;
-        if (btn) btn.disabled = !ready;
-    }
-
-    document.getElementById('uploadTitre')?.addEventListener('input', checkUploadReady);
-    // uploadService change is handled by onSelect in populateServiceSelects
-
-    document.getElementById('uploadSubmitBtn')?.addEventListener('click', async () => {
-        const btn = document.getElementById('uploadSubmitBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
-
-        const fd = new FormData();
-        fd.append('action', 'admin_upload_document');
-        fd.append('titre', document.getElementById('uploadTitre').value.trim());
-        fd.append('description', document.getElementById('uploadDescription').value.trim());
-        fd.append('service_id', zerdaSelect.getValue('#uploadService'));
-        fd.append('file', uploadFile.files[0]);
-
-        try {
-            const res = await fetch('/zerdatime/admin/api.php', {
-                method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
-                body: fd,
-            });
-            const json = await res.json();
-            if (json.csrf) window.__ZT_ADMIN__.csrfToken = json.csrf;
-
-            if (json.success) {
-                toast('Document t\u00e9l\u00e9vers\u00e9 !', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('uploadModal'))?.hide();
-                document.getElementById('uploadForm').reset();
-                uploadArea?.classList.remove('d-none');
-                uploadPreview?.classList.add('d-none');
-                loadServices();
-                loadDocuments();
-            } else {
-                toast(json.message || 'Erreur', 'error');
-            }
-        } catch (e) {
-            toast('Erreur r\u00e9seau', 'error');
-        }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-upload"></i> T\u00e9l\u00e9verser';
-    });
-
-    // ═══ Edit ═══
-    document.getElementById('editSaveBtn')?.addEventListener('click', async () => {
-        const id = document.getElementById('editDocId').value;
-        const res = await adminApiPost('admin_update_document', {
-            id,
-            titre: document.getElementById('editTitre').value.trim(),
-            service_id: zerdaSelect.getValue('#editService'),
-            description: document.getElementById('editDescription').value.trim(),
-        });
-        if (res.success) {
-            toast('Document mis \u00e0 jour');
-            bootstrap.Modal.getInstance(document.getElementById('editModal'))?.hide();
-            loadDocuments();
+        if (isImage) {
+            stage.innerHTML = '<img src="' + url + '" alt="' + escapeHtml(titre) + '" draggable="false">';
+            fsBtn.classList.add('d-none');
         } else {
-            toast(res.message || 'Erreur', 'error');
+            stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=0&navpanes=0&view=FitH" sandbox="allow-same-origin" allowfullscreen></iframe>';
+            fsBtn.classList.remove('d-none');
         }
+
+        lb.classList.remove('doc-lb-hidden');
+        document.body.style.overflow = 'hidden';
+
+        const ac = new AbortController();
+        const sig = { signal: ac.signal };
+        function closeLb() { lb.classList.add('doc-lb-hidden'); document.body.style.overflow = ''; ac.abort(); }
+        lb.querySelector('.doc-lb-close').addEventListener('click', closeLb, sig);
+        lb.querySelector('.doc-lb-overlay').addEventListener('click', closeLb, sig);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); }, sig);
+        fsBtn.addEventListener('click', () => {
+            const iframe = document.getElementById('docLbIframe');
+            if (iframe) {
+                if (iframe.requestFullscreen) iframe.requestFullscreen();
+                else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+            }
+        }, sig);
+    }
+
+    // ── Topbar search ──
+    document.getElementById('topbarSearchInput')?.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(loadDocs, 300); });
+
+    // ── Upload ──
+    const upZone = document.getElementById('upZone');
+    const upFile = document.getElementById('upFile');
+    const upPreview = document.getElementById('upPreview');
+    document.getElementById('btnUploadDoc')?.addEventListener('click', () => new bootstrap.Modal(document.getElementById('uploadModal')).show());
+    upZone?.addEventListener('click', () => upFile?.click());
+    upZone?.addEventListener('dragover', e => { e.preventDefault(); upZone.classList.add('dragover'); });
+    upZone?.addEventListener('dragleave', () => upZone.classList.remove('dragover'));
+    upZone?.addEventListener('drop', e => { e.preventDefault(); upZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) { upFile.files = e.dataTransfer.files; showPrev(e.dataTransfer.files[0]); } });
+    upFile?.addEventListener('change', () => { if (upFile.files[0]) showPrev(upFile.files[0]); });
+    document.getElementById('upFileClear')?.addEventListener('click', () => { upFile.value=''; upZone?.classList.remove('d-none'); upPreview?.classList.add('d-none'); chkReady(); });
+    document.getElementById('upTitre')?.addEventListener('input', chkReady);
+
+    function showPrev(f) { document.getElementById('upFileName').textContent=f.name; document.getElementById('upFileSize').textContent=fmtSize(f.size); upZone?.classList.add('d-none'); upPreview?.classList.remove('d-none'); chkReady(); }
+    function chkReady() { document.getElementById('upSubmit').disabled = !(document.getElementById('upTitre')?.value.trim() && zerdaSelect.getValue('#upService') && upFile?.files?.length); }
+
+    document.getElementById('upSubmit')?.addEventListener('click', async () => {
+        const btn = document.getElementById('upSubmit');
+        btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm"></span> Envoi...';
+        const fd = new FormData();
+        fd.append('action','admin_upload_document'); fd.append('titre',document.getElementById('upTitre').value.trim());
+        fd.append('description',document.getElementById('upDesc').value.trim()); fd.append('service_id',zerdaSelect.getValue('#upService'));
+        fd.append('file',upFile.files[0]);
+        try {
+            const res = await fetch('/zerdatime/admin/api.php',{method:'POST',headers:{'X-CSRF-Token':window.__ZT_ADMIN__?.csrfToken||''},body:fd});
+            const j = await res.json(); if (j.csrf) window.__ZT_ADMIN__.csrfToken=j.csrf;
+            if (j.success) { showToast('Document téléversé','success'); bootstrap.Modal.getInstance(document.getElementById('uploadModal'))?.hide(); document.getElementById('upTitre').value=''; document.getElementById('upDesc').value=''; upFile.value=''; upZone?.classList.remove('d-none'); upPreview?.classList.add('d-none'); loadSvcs(); loadDocs(); }
+            else showToast(j.message||'Erreur','error');
+        } catch(e) { showToast('Erreur réseau','error'); }
+        btn.disabled=false; btn.innerHTML='<i class="bi bi-upload"></i> Téléverser';
     });
 
-    // ═══ Toggle visibility ═══
-    async function toggleVis(id) {
-        const res = await adminApiPost('admin_toggle_document_visibility', { id });
-        if (res.success) {
-            toast(res.message);
-            loadDocuments();
-        }
+    // ── Edit ──
+    document.getElementById('editSave')?.addEventListener('click', async () => {
+        const r = await adminApiPost('admin_update_document',{id:document.getElementById('editDocId').value,titre:document.getElementById('editTitre').value.trim(),service_id:zerdaSelect.getValue('#editService'),description:document.getElementById('editDesc').value.trim()});
+        if (r.success) { showToast('Modifié','success'); bootstrap.Modal.getInstance(document.getElementById('editModal'))?.hide(); loadDocs(); }
+        else showToast(r.message||'Erreur','error');
+    });
+
+    // ── Toggle / Delete ──
+    async function toggleVis(id) { const r = await adminApiPost('admin_toggle_document_visibility',{id}); if (r.success) { showToast(r.message,'success'); loadDocs(); } }
+    async function delDoc(id,titre) {
+        if (!await adminConfirm({title:'Supprimer',text:'Supprimer <strong>'+escapeHtml(titre)+'</strong> ?',icon:'bi-trash3',type:'danger',okText:'Supprimer'})) return;
+        const r = await adminApiPost('admin_delete_document',{id}); if (r.success) { showToast('Supprimé','success'); loadSvcs(); loadDocs(); }
     }
 
-    // ═══ Delete ═══
-    async function deletDoc(id, titre) {
-        const ok = await adminConfirm({
-            title: 'Supprimer le document',
-            text: `Voulez-vous vraiment supprimer <strong>${escapeHtml(titre)}</strong> ? Cette action est irr\u00e9versible.`,
-            icon: 'bi-trash', type: 'danger', okText: 'Supprimer',
-        });
-        if (!ok) return;
-        const res = await adminApiPost('admin_delete_document', { id });
-        if (res.success) {
-            toast('Document supprim\u00e9');
-            loadServices();
-            loadDocuments();
-        }
-    }
-
-    // ═══ Access control ═══
+    // ── Access ──
     async function openAccess(docId) {
         currentAccessDocId = docId;
-        const res = await adminApiPost('admin_get_document_access', { document_id: docId });
-        const rules = res.rules || [];
-
-        const roles = ['collaborateur', 'responsable'];
-        const rolesHtml = roles.map(r => {
-            const blocked = rules.some(ru => ru.role === r && ru.acces === 'bloque');
-            return `<div class="form-check">
-                <input class="form-check-input access-role-check" type="checkbox" value="${r}" id="accessRole_${r}" ${blocked ? 'checked' : ''}>
-                <label class="form-check-label" for="accessRole_${r}">Bloquer : <strong>${r === 'collaborateur' ? 'Collaborateurs' : 'Responsables'}</strong></label>
-            </div>`;
+        const r = await adminApiPost('admin_get_document_access',{document_id:docId});
+        const rules = r.rules||[];
+        document.getElementById('accessRoles').innerHTML = ['collaborateur','responsable'].map(role => {
+            const blocked = rules.some(ru => ru.role===role && ru.acces==='bloque');
+            return '<div class="form-check form-switch"><input class="form-check-input ac-role" type="checkbox" value="'+role+'" '+(blocked?'checked':'')+'><label class="form-check-label small">'+(role==='collaborateur'?'Collaborateurs':'Responsables')+'</label></div>';
         }).join('');
-        document.getElementById('accessRolesSection').innerHTML = rolesHtml;
-
-        const servicesHtml = services.filter(s => s.actif != 0).map(s => {
-            const blocked = rules.some(ru => ru.service_id === s.id && ru.acces === 'bloque');
-            return `<div class="form-check">
-                <input class="form-check-input access-service-check" type="checkbox" value="${s.id}" id="accessSvc_${s.id}" ${blocked ? 'checked' : ''}>
-                <label class="form-check-label" for="accessSvc_${s.id}"><i class="bi bi-${escapeHtml(s.icone)}" style="color:${escapeHtml(s.couleur)}"></i> ${escapeHtml(s.nom)}</label>
-            </div>`;
+        document.getElementById('accessSvcs').innerHTML = services.filter(s=>s.actif!=0).map(s => {
+            const blocked = rules.some(ru => ru.service_id===s.id && ru.acces==='bloque');
+            return '<div class="form-check form-switch"><input class="form-check-input ac-svc" type="checkbox" value="'+s.id+'" '+(blocked?'checked':'')+'><label class="form-check-label small"><i class="bi bi-'+escapeHtml(s.icone)+'" style="color:'+escapeHtml(s.couleur)+'"></i> '+escapeHtml(s.nom)+'</label></div>';
         }).join('');
-        document.getElementById('accessServicesSection').innerHTML = servicesHtml;
-
         new bootstrap.Modal(document.getElementById('accessModal')).show();
     }
-
-    document.getElementById('saveAccessBtn')?.addEventListener('click', async () => {
-        const rules = [];
-        document.querySelectorAll('.access-role-check:checked').forEach(cb => {
-            rules.push({ role: cb.value, acces: 'bloque' });
-        });
-        document.querySelectorAll('.access-service-check:checked').forEach(cb => {
-            rules.push({ service_id: cb.value, acces: 'bloque' });
-        });
-
-        const res = await adminApiPost('admin_set_document_access', { document_id: currentAccessDocId, rules });
-        if (res.success) {
-            toast('Acc\u00e8s mis \u00e0 jour');
-            bootstrap.Modal.getInstance(document.getElementById('accessModal'))?.hide();
-            loadDocuments();
-        }
+    document.getElementById('saveAccess')?.addEventListener('click', async () => {
+        const rules=[];
+        document.querySelectorAll('.ac-role:checked').forEach(c => rules.push({role:c.value,acces:'bloque'}));
+        document.querySelectorAll('.ac-svc:checked').forEach(c => rules.push({service_id:c.value,acces:'bloque'}));
+        const r = await adminApiPost('admin_set_document_access',{document_id:currentAccessDocId,rules});
+        if (r.success) { showToast('Accès mis à jour','success'); bootstrap.Modal.getInstance(document.getElementById('accessModal'))?.hide(); loadDocs(); }
     });
 
-    // ═══ Services management ═══
-    function renderServicesList() {
-        const container = document.getElementById('servicesList');
-        if (!container) return;
-        if (!services.length) { container.innerHTML = '<p class="text-muted">Aucun service</p>'; return; }
-
-        container.innerHTML = services.map(s => `
-            <div class="d-flex align-items-center gap-2 py-2 border-bottom">
-                <span class="doc-color-swatch" style="background:${escapeHtml(s.couleur)}"></span>
-                <i class="bi bi-${escapeHtml(s.icone)}" style="color:${escapeHtml(s.couleur)}"></i>
-                <span class="flex-grow-1 small fw-semibold">${escapeHtml(s.nom)}</span>
-                <span class="text-muted small">${s.doc_count || 0} docs</span>
-                <button class="btn btn-sm btn-outline-${s.actif == 1 ? 'warning' : 'success'}" title="${s.actif == 1 ? 'D\u00e9sactiver' : 'Activer'}"
-                    data-action="toggle-service" data-id="${escapeHtml(s.id)}" data-actif="${s.actif == 1 ? 0 : 1}">
-                    <i class="bi bi-${s.actif == 1 ? 'eye-slash' : 'eye'}"></i>
-                </button>
-            </div>
-        `).join('');
+    // ── Services management ──
+    document.getElementById('btnManageServices')?.addEventListener('click', () => { renderSvcList(); new bootstrap.Modal(document.getElementById('svcModal')).show(); });
+    function renderSvcList() {
+        const c = document.getElementById('svcList');
+        if (!services.length) { c.innerHTML='<p class="text-muted small">Aucun service</p>'; return; }
+        c.innerHTML = services.map(s => '<div class="doc-svc-row">'
+            + '<span class="doc-color-dot" style="background:'+escapeHtml(s.couleur)+'"></span>'
+            + '<i class="bi bi-'+escapeHtml(s.icone)+'" style="color:'+escapeHtml(s.couleur)+'"></i>'
+            + '<span class="small fw-semibold" style="flex:1">'+escapeHtml(s.nom)+'</span>'
+            + '<span class="text-muted small">'+(s.doc_count||0)+' docs</span>'
+            + '<button class="doc-row-btn" data-toggle-svc="'+s.id+'" data-actif="'+(s.actif==1?0:1)+'" title="'+(s.actif==1?'Désactiver':'Activer')+'"><i class="bi bi-'+(s.actif==1?'eye-slash':'eye')+'"></i></button>'
+            + '</div>').join('');
+        c.querySelectorAll('[data-toggle-svc]').forEach(b => b.addEventListener('click', async () => {
+            await adminApiPost('admin_update_service',{id:b.dataset.toggleSvc,actif:parseInt(b.dataset.actif)});
+            await loadSvcs(); renderSvcList();
+        }));
     }
-
-    // Services list event delegation
-    document.getElementById('servicesList')?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action="toggle-service"]');
-        if (!btn) return;
-        toggleService(btn.dataset.id, parseInt(btn.dataset.actif));
+    document.getElementById('addSvcBtn')?.addEventListener('click', async () => {
+        const nom = document.getElementById('newSvcName')?.value.trim();
+        if (!nom) { showToast('Nom requis','error'); return; }
+        const r = await adminApiPost('admin_create_service',{nom,couleur:document.getElementById('newSvcColor')?.value||'#6B5B3E'});
+        if (r.success) { showToast('Service créé','success'); document.getElementById('newSvcName').value=''; await loadSvcs(); renderSvcList(); }
     });
 
-    // Watch for service modal show
-    document.getElementById('serviceModal')?.addEventListener('show.bs.modal', renderServicesList);
-
-    async function toggleService(id, actif) {
-        const res = await adminApiPost('admin_update_service', { id, actif });
-        if (res.success) {
-            toast(res.message);
-            await loadServices();
-            renderServicesList();
-        }
-    }
-
-    document.getElementById('addServiceBtn')?.addEventListener('click', async () => {
-        const nom = document.getElementById('newServiceName')?.value.trim();
-        const couleur = document.getElementById('newServiceColor')?.value || '#6c757d';
-        if (!nom) return toast('Nom requis', 'error');
-
-        const res = await adminApiPost('admin_create_service', { nom, couleur });
-        if (res.success) {
-            toast('Service cr\u00e9\u00e9');
-            document.getElementById('newServiceName').value = '';
-            await loadServices();
-            renderServicesList();
-        } else {
-            toast(res.message || 'Erreur', 'error');
-        }
-    });
-
-    // ═══ Init ═══
-    services = ssrServices;
-    renderServiceCards();
-    populateServiceSelects();
-    loadDocuments();
+    // ── Init ──
+    renderSvcCards();
+    initSelects();
+    loadDocs();
 })();
 </script>

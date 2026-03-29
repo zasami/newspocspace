@@ -121,13 +121,13 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
 <!-- Stats modal -->
 <div class="modal fade" id="statsModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-info">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-graph-up"></i> Statistiques du planning</h5>
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" id="statsContent" style="max-height:70vh;overflow-y:auto"></div>
+      <div class="modal-body" id="statsContent" style="max-height:68vh;overflow-y:auto;padding:16px"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
       </div>
@@ -560,16 +560,41 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
   50% { transform: scale(1.15); opacity: 1; }
 }
 
-/* Stats modal tables */
-#statsContent .table { font-size: 0.82rem; }
-#statsContent .stat-summary { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-#statsContent .stat-box {
-  flex: 1; min-width: 140px; padding: 0.75rem;
-  border-radius: var(--cl-radius-sm); border: 1px solid var(--cl-border); text-align: center;
-  background: var(--cl-surface);
+/* Stats modal */
+.st-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.st-card {
+  padding: 10px 12px; border-radius: 10px; text-align: center;
 }
-#statsContent .stat-box .val { font-size: 1.5rem; font-weight: 700; color: var(--cl-accent); }
-#statsContent .stat-box .lbl { font-size: 0.75rem; color: var(--cl-text-muted); }
+.st-card .st-val { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+.st-card .st-lbl { font-size: .68rem; color: inherit; opacity: .7; margin-top: 2px; }
+.st-card-teal   { background: #bcd2cb; color: #2d4a43; }
+.st-card-blue   { background: #B8C9D4; color: #3B4F6B; }
+.st-card-orange { background: #D4C4A8; color: #6B5B3E; }
+.st-card-red    { background: #E2B8AE; color: #7B3B2C; }
+.st-card-green  { background: #bcd2cb; color: #2d4a43; }
+
+.st-section { margin-bottom: 14px; }
+.st-section-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.st-scroll { max-height: 280px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--cl-border); border-radius: 14px; background: var(--cl-surface); }
+.st-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
+.st-table thead th {
+  padding: 9px 12px; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+  background: var(--cl-bg, #F7F5F2); color: var(--cl-text-muted); border-bottom: 1.5px solid var(--cl-border);
+  position: sticky; top: 0; z-index: 1;
+}
+.st-table thead th:first-child { border-top-left-radius: 14px; }
+.st-table thead th:last-child { border-top-right-radius: 14px; }
+.st-table tbody td { padding: 7px 12px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+.st-table tbody tr:last-child td { border-bottom: none; }
+.st-table tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+.st-table tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
+.st-table tbody tr:hover td { background: rgba(25,25,24,.02); }
+.st-table .st-name { font-weight: 600; }
+.st-ecart-over  { color: #7B3B2C; font-weight: 600; }
+.st-ecart-under { color: #3B4F6B; font-weight: 600; }
+.st-ecart-ok    { color: #2d4a43; }
+.st-gap-row td { background: #FEF3C7; }
+.st-gap-val { color: #7B3B2C; font-weight: 700; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -1524,7 +1549,13 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         body.innerHTML = gsRules.map(r => {
             const typeLabel = gsRuleTypeLabels[r.rule_type] || r.rule_type || 'Texte libre';
             const impColor = gsImportanceColors[r.importance] || 'secondary';
-            const targetLabel = r.target_mode === 'all' ? 'Tout le monde' : r.target_mode === 'fonction' ? ('Fonction: ' + (r.target_fonction_code || '?')) : (r.targeted_users || []).map(u => u.name).join(', ') || 'Utilisateurs ciblés';
+            let targetLabel = 'Tout le monde';
+            if (r.target_mode === 'fonction') targetLabel = 'Fonction: ' + (r.target_fonction_code || '?');
+            else if (r.target_mode === 'module') {
+                const mIds = r.rule_params?.target_module_ids || [];
+                targetLabel = 'Module: ' + mIds.map(id => { const m = (refs.modules||[]).find(x => x.id === id); return m ? m.code : id.substring(0,8); }).join(', ');
+            }
+            else if (r.target_mode === 'users') targetLabel = (r.targeted_users || []).map(u => u.name).join(', ') || 'Utilisateurs ciblés';
             const params = r.rule_params || {};
             let detail = '';
             if (params.shift_codes) detail = params.shift_codes.join(', ');
@@ -1610,6 +1641,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
         zerdaSelect.init('#gsrTarget', [
             { value: 'all', label: 'Tout le monde' },
+            { value: 'module', label: 'Par module' },
             { value: 'fonction', label: 'Par fonction' },
             { value: 'users', label: 'Utilisateurs spécifiques' },
         ], {
@@ -1617,19 +1649,36 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             onSelect: updateTargetDetail,
         });
 
-        // Build function options from refs
+        // Build options from refs (must be before updateTargetDetail which uses them)
         const fonctionOpts = (refs.users || []).reduce((acc, u) => {
             if (u.fonction_code && !acc.find(o => o.value === u.fonction_code)) {
                 acc.push({ value: u.fonction_code, label: u.fonction_code + ' — ' + (u.fonction_nom || '') });
             }
             return acc;
         }, []);
+        const horaireOpts = (refs.horaires || []).map(h => ({ value: h.code, label: h.code + ' (' + h.heure_debut?.substring(0,5) + '-' + h.heure_fin?.substring(0,5) + ')' }));
+        const moduleOpts = (refs.modules || []).map(m => ({ value: m.id, label: m.code + ' — ' + m.nom }));
 
         function updateTargetDetail() {
             const target = zerdaSelect.getValue('#gsrTarget');
             const det = document.getElementById('gsrTargetDetail');
             det.innerHTML = '';
-            if (target === 'fonction') {
+            if (target === 'module') {
+                det.innerHTML = '<label class="form-label small fw-bold">Modules</label><div class="zs-select" id="gsrModuleTarget" data-placeholder="Ajouter un module"></div>'
+                    + '<div id="gsrModuleTargetTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
+                window._gsSelectedTargetModules = (r?.rule_params?.target_module_ids || []).slice();
+                zerdaSelect.init('#gsrModuleTarget', moduleOpts, {
+                    search: true,
+                    onSelect: (val) => {
+                        if (val && !window._gsSelectedTargetModules.includes(val)) {
+                            window._gsSelectedTargetModules.push(val);
+                            gsRenderTargetModuleTags();
+                        }
+                        zerdaSelect.setValue('#gsrModuleTarget', '');
+                    }
+                });
+                gsRenderTargetModuleTags();
+            } else if (target === 'fonction') {
                 det.innerHTML = '<label class="form-label small fw-bold">Fonction</label><div class="zs-select" id="gsrFonctionCode" data-placeholder="Choisir une fonction"></div>';
                 zerdaSelect.init('#gsrFonctionCode', fonctionOpts, { value: r?.target_fonction_code || '', search: true });
             } else if (target === 'users') {
@@ -1674,9 +1723,18 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             });
         }
 
-        // Horaires & modules options for zerda-select
-        const horaireOpts = (refs.horaires || []).map(h => ({ value: h.code, label: h.code + ' (' + h.heure_debut?.substring(0,5) + '-' + h.heure_fin?.substring(0,5) + ')' }));
-        const moduleOpts = (refs.modules || []).map(m => ({ value: m.id, label: m.code + ' — ' + m.nom }));
+        function gsRenderTargetModuleTags() {
+            const c = document.getElementById('gsrModuleTargetTags');
+            if (!c) return;
+            c.innerHTML = (window._gsSelectedTargetModules || []).map(id => {
+                const m = (refs.modules || []).find(x => x.id === id);
+                return '<span class="badge bg-light text-dark border" style="font-size:.78rem">' + escapeHtml(m?.code || id) + ' — ' + escapeHtml(m?.nom || '')
+                    + ' <button type="button" style="background:none;border:none;cursor:pointer;padding:0 2px;font-size:.9rem;color:var(--cl-text-muted)" data-rm="' + id + '">&times;</button></span>';
+            }).join('');
+            c.querySelectorAll('[data-rm]').forEach(btn => {
+                btn.addEventListener('click', () => { window._gsSelectedTargetModules = window._gsSelectedTargetModules.filter(x => x !== btn.dataset.rm); gsRenderTargetModuleTags(); });
+            });
+        }
 
         function updateParamsDetail() {
             const type = zerdaSelect.getValue('#gsrType');
@@ -1772,7 +1830,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             ruleParams.module_ids = window._gsSelectedModules || [];
         }
 
-        const data = { titre, description, importance, rule_type: ruleType, rule_params: JSON.stringify(ruleParams), target_mode: targetMode, target_fonction_code: targetFonctionCode, user_ids: userIds };
+        const targetModuleIds = window._gsSelectedTargetModules || [];
+        const data = { titre, description, importance, rule_type: ruleType, rule_params: JSON.stringify(ruleParams), target_mode: targetMode, target_fonction_code: targetFonctionCode, user_ids: userIds, target_module_ids: targetModuleIds };
 
         const action = gsEditId ? 'admin_update_ia_rule' : 'admin_create_ia_rule';
         if (gsEditId) data.id = gsEditId;
@@ -1840,50 +1899,52 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         const t = s.totals;
         let html = '';
 
-        // Summary boxes
-        html += '<div class="stat-summary">';
-        html += `<div class="stat-box"><div class="val">${t.nb_employes}</div><div class="lbl">Employés planifiés</div></div>`;
-        html += `<div class="stat-box"><div class="val">${t.nb_assignations}</div><div class="lbl">Assignations</div></div>`;
-        html += `<div class="stat-box"><div class="val">${Math.round(t.total_heures)}h</div><div class="lbl">Heures totales</div></div>`;
-        html += `<div class="stat-box"><div class="val ${s.nb_gaps > 0 ? 'text-danger' : 'text-success'}">${s.nb_gaps}</div><div class="lbl">Manques couverture</div></div>`;
+        // Summary cards
+        html += '<div class="st-cards">';
+        html += '<div class="st-card st-card-teal"><div class="st-val">' + t.nb_employes + '</div><div class="st-lbl">Employés</div></div>';
+        html += '<div class="st-card st-card-blue"><div class="st-val">' + t.nb_assignations + '</div><div class="st-lbl">Assignations</div></div>';
+        html += '<div class="st-card st-card-orange"><div class="st-val">' + Math.round(t.total_heures) + 'h</div><div class="st-lbl">Heures totales</div></div>';
+        html += '<div class="st-card ' + (s.nb_gaps > 0 ? 'st-card-red' : 'st-card-green') + '"><div class="st-val">' + s.nb_gaps + '</div><div class="st-lbl">Manques</div></div>';
         html += '</div>';
 
         // Hours per user table
-        html += '<h6 class="mt-3">Heures par collaborateur</h6>';
-        html += '<div class="table-responsive stats-scroll-300">';
-        html += '<table class="table table-sm table-hover mb-0"><thead><tr>';
+        html += '<div class="st-section">';
+        html += '<div class="st-section-title"><i class="bi bi-people"></i> Heures par collaborateur</div>';
+        html += '<div class="st-scroll">';
+        html += '<table class="st-table"><thead><tr>';
         html += '<th>Collaborateur</th><th>Fonction</th><th>Taux</th><th>Jours</th><th>Heures</th><th>Cible</th><th>Écart</th>';
         html += '</tr></thead><tbody>';
         (s.heures_par_user || []).forEach(u => {
-            const ecartCls = u.ecart > 5 ? 'hours-over' : u.ecart < -5 ? 'hours-under' : 'hours-ok';
-            html += `<tr>
-                <td><strong>${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</strong></td>
-                <td>${escapeHtml(u.fonction_code || '')}</td>
-                <td>${Math.round(u.taux)}%</td>
-                <td>${u.jours_presents}P / ${u.jours_absents}A / ${u.jours_repos}R</td>
-                <td><strong>${Math.round(u.total_heures)}h</strong></td>
-                <td>${u.heures_cibles}h</td>
-                <td class="${ecartCls}">${u.ecart > 0 ? '+' : ''}${u.ecart}h</td>
-            </tr>`;
+            const ecartCls = u.ecart > 5 ? 'st-ecart-over' : u.ecart < -5 ? 'st-ecart-under' : 'st-ecart-ok';
+            html += '<tr>'
+                + '<td class="st-name">' + escapeHtml(u.prenom) + ' ' + escapeHtml(u.nom) + '</td>'
+                + '<td>' + escapeHtml(u.fonction_code || '') + '</td>'
+                + '<td>' + Math.round(u.taux) + '%</td>'
+                + '<td><span style="color:#2d4a43">' + u.jours_presents + 'P</span> <span style="color:#7B3B2C">' + u.jours_absents + 'A</span> <span style="color:#6B5B3E">' + u.jours_repos + 'R</span></td>'
+                + '<td><strong>' + Math.round(u.total_heures) + 'h</strong></td>'
+                + '<td>' + u.heures_cibles + 'h</td>'
+                + '<td class="' + ecartCls + '">' + (u.ecart > 0 ? '+' : '') + u.ecart + 'h</td>'
+                + '</tr>';
         });
-        html += '</tbody></table></div>';
+        html += '</tbody></table></div></div>';
 
         // Gaps
         if (s.gaps && s.gaps.length > 0) {
-            html += '<h6 class="mt-3 text-danger"><i class="bi bi-exclamation-triangle"></i> Manques de couverture</h6>';
-            html += '<div class="table-responsive stats-scroll-200">';
-            html += '<table class="table table-sm mb-0"><thead><tr>';
+            html += '<div class="st-section">';
+            html += '<div class="st-section-title" style="color:#7B3B2C"><i class="bi bi-exclamation-triangle"></i> Manques de couverture</div>';
+            html += '<div class="st-scroll" style="max-height:180px">';
+            html += '<table class="st-table"><thead><tr>';
             html += '<th>Date</th><th>Module</th><th>Fonction</th><th>Requis</th><th>Présent</th><th>Manque</th>';
             html += '</tr></thead><tbody>';
             s.gaps.forEach(g => {
-                html += `<tr class="table-warning">
-                    <td>${g.date}</td><td>${escapeHtml(g.module_code)}</td>
-                    <td>${escapeHtml(g.fonction_code)}</td>
-                    <td>${g.requis}</td><td>${g.present}</td>
-                    <td class="text-danger fw-bold">-${g.manque}</td>
-                </tr>`;
+                html += '<tr class="st-gap-row">'
+                    + '<td>' + g.date + '</td><td>' + escapeHtml(g.module_code) + '</td>'
+                    + '<td>' + escapeHtml(g.fonction_code) + '</td>'
+                    + '<td>' + g.requis + '</td><td>' + g.present + '</td>'
+                    + '<td class="st-gap-val">-' + g.manque + '</td>'
+                    + '</tr>';
             });
-            html += '</tbody></table></div>';
+            html += '</tbody></table></div></div>';
         }
 
         document.getElementById('statsContent').innerHTML = html;

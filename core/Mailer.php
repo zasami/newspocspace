@@ -414,6 +414,41 @@ class Mailer
         return true;
     }
 
+    /**
+     * Empty trash folder — delete all emails permanently
+     */
+    public function emptyTrash(): int
+    {
+        // Find the trash folder
+        $this->connectImap('INBOX');
+        $base = $this->getImapBase();
+        $list = imap_list($this->imap, $base, '*') ?: [];
+        $trashFolder = null;
+        foreach ($list as $f) {
+            $name = str_replace($base, '', $f);
+            $fl = strtolower($name);
+            if ($fl === 'trash' || str_contains($fl, 'trash') || str_contains($fl, 'corbeille')) {
+                $trashFolder = $name;
+                break;
+            }
+        }
+        $this->disconnectImap();
+
+        if (!$trashFolder) return 0;
+
+        $this->connectImap($trashFolder);
+        $check = imap_check($this->imap);
+        $total = $check->Nmsgs;
+        if ($total === 0) { $this->disconnectImap(); return 0; }
+
+        // Mark all as deleted then expunge
+        imap_delete($this->imap, '1:*');
+        imap_expunge($this->imap);
+        $this->disconnectImap();
+
+        return $total;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // SMTP — Send
     // ═══════════════════════════════════════════════════════════════════════════

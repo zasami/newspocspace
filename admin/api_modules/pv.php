@@ -2,6 +2,28 @@
 require_once __DIR__ . '/../../core/Notification.php';
 
 /**
+ * Extract clean HTML from AI response (removes markdown fences, preamble, postamble)
+ */
+function extractHtmlFromAI(string $text): string
+{
+    // Extract content between ```html ... ``` if present
+    if (preg_match('/```html?\s*(.*?)```/si', $text, $m)) {
+        $text = $m[1];
+    }
+    // Remove any remaining ``` fences
+    $text = preg_replace('/```\w*\s*/i', '', $text);
+    // If it contains a full HTML document, extract just the body
+    if (preg_match('/<body[^>]*>(.*?)<\/body>/si', $text, $m)) {
+        $text = $m[1];
+    }
+    // Remove <!DOCTYPE>, <html>, <head>...<style> blocks
+    $text = preg_replace('/<!(DOCTYPE|html)[^>]*>/i', '', $text);
+    $text = preg_replace('/<\/?(html|head|body|meta|title)[^>]*>/i', '', $text);
+    $text = preg_replace('/<style[^>]*>.*?<\/style>/si', '', $text);
+    return trim($text);
+}
+
+/**
  * Admin PV API actions
  */
 
@@ -788,9 +810,7 @@ function admin_structure_pv_external()
             else { $priceIn = 0; $priceOut = 0; }
             $iaCostUsd = $iaTokensIn * $priceIn + $iaTokensOut * $priceOut;
 
-            $html = preg_replace('/^```html?\s*/i', '', $text);
-            $html = preg_replace('/```\s*$/', '', $html);
-            $html = trim($html);
+            $html = extractHtmlFromAI($text);
         } else {
             error_log("Gemini PV structuration error: HTTP $httpCode — " . substr($raw ?: '', 0, 500));
             bad_request('Erreur API Gemini (HTTP ' . $httpCode . ')');
@@ -834,9 +854,7 @@ function admin_structure_pv_external()
             else { $priceIn = 0; $priceOut = 0; }
             $iaCostUsd = $iaTokensIn * $priceIn + $iaTokensOut * $priceOut;
 
-            $html = preg_replace('/^```html?\s*/i', '', $text);
-            $html = preg_replace('/```\s*$/', '', $html);
-            $html = trim($html);
+            $html = extractHtmlFromAI($text);
         } else {
             error_log("Claude PV structuration error: HTTP $httpCode — " . substr($raw ?: '', 0, 500));
             bad_request('Erreur API Claude (HTTP ' . $httpCode . ')');
@@ -848,12 +866,12 @@ function admin_structure_pv_external()
     // Log usage
     try {
         Db::exec(
-            "INSERT INTO ia_usage_log (id, user_id, action_type, ai_provider, ai_model, tokens_in, tokens_out, cost_usd, created_at)
-             VALUES (?, ?, 'pv_structure', ?, ?, ?, ?, ?, NOW())",
+            "INSERT INTO ia_usage_log (id, admin_id, mois_annee, provider, model, tokens_in, tokens_out, cost_usd, nb_assignations, nb_conflicts, duration_ms, created_at)
+             VALUES (?, ?, 'pv', ?, ?, ?, ?, ?, 0, 0, 0, NOW())",
             [Uuid::v4(), $_SESSION['zt_user']['id'], $aiProvider, $aiModel, $iaTokensIn, $iaTokensOut, $iaCostUsd]
         );
     } catch (\Exception $e) {
-        error_log("IA usage log error: " . $e->getMessage());
+        // Non-critical
     }
 
     respond([

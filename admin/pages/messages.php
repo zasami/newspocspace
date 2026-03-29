@@ -14,7 +14,7 @@ $emailContacts = Db::fetchAll(
 
 $emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
 $emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
-$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE lu = 0");
+$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['zt_user']['id'] ?? '']);
 $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
 ?>
 <!-- Admin Emails Page — Split-view email client -->

@@ -550,11 +550,20 @@ function admin_create_ia_rule()
     }
 
     $targetMode = $params['target_mode'] ?? 'all';
-    if (!in_array($targetMode, ['all', 'users', 'fonction'])) $targetMode = 'all';
+    if (!in_array($targetMode, ['all', 'users', 'fonction', 'module'])) $targetMode = 'all';
 
     $targetFonctionCode = null;
     if ($targetMode === 'fonction') {
         $targetFonctionCode = Sanitize::text($params['target_fonction_code'] ?? '', 10);
+    }
+
+    // For module targeting, store module IDs in rule_params
+    if ($targetMode === 'module') {
+        $targetModuleIds = $params['target_module_ids'] ?? [];
+        if (!is_array($targetModuleIds)) $targetModuleIds = [];
+        $decoded = json_decode($ruleParams, true) ?: [];
+        $decoded['target_module_ids'] = $targetModuleIds;
+        $ruleParams = json_encode($decoded);
     }
 
     $userIds = $params['user_ids'] ?? [];
@@ -628,13 +637,20 @@ function admin_update_ia_rule()
     }
 
     $targetMode = $params['target_mode'] ?? $rule['target_mode'];
-    if (!in_array($targetMode, ['all', 'users', 'fonction'])) $targetMode = $rule['target_mode'];
+    if (!in_array($targetMode, ['all', 'users', 'fonction', 'module'])) $targetMode = $rule['target_mode'];
 
     $targetFonctionCode = $rule['target_fonction_code'];
     if ($targetMode === 'fonction' && isset($params['target_fonction_code'])) {
         $targetFonctionCode = Sanitize::text($params['target_fonction_code'], 10);
     } elseif ($targetMode !== 'fonction') {
         $targetFonctionCode = null;
+    }
+
+    // For module targeting, store module IDs in rule_params
+    if ($targetMode === 'module' && isset($params['target_module_ids'])) {
+        $decoded = json_decode($ruleParams, true) ?: [];
+        $decoded['target_module_ids'] = is_array($params['target_module_ids']) ? $params['target_module_ids'] : [];
+        $ruleParams = json_encode($decoded);
     }
 
     Db::exec(

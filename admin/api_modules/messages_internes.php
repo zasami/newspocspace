@@ -220,7 +220,8 @@ function admin_get_message_stats()
     $total = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
     $today = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
     $week = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-    $unread = (int)Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE lu = 0");
+    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $unread = (int)Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
     $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
 
     respond(['success' => true, 'stats' => compact('total', 'today', 'week', 'unread', 'attachments')]);

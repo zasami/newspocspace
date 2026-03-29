@@ -370,6 +370,7 @@ function admin_generate_planning()
     $iaWeekendSkipProb   = (int)   ($cfg['ia_weekend_skip_prob'] ?? 66);
     $iaAdminShiftCode    = $cfg['ia_admin_shift_code'] ?? 'A6';
     $iaConsecutifMaxAS   = (int)   ($cfg['ia_consecutif_max_as'] ?? 3); // AS: max 3 jours consécutifs
+    $iaConsecutifMaxNuit = (int)   ($cfg['ia_consecutif_max_nuit'] ?? 5); // Nuit: max 5 (LTr Suisse art. 17a)
 
     // Load reference data
     $users = Db::fetchAll(
@@ -735,10 +736,14 @@ function admin_generate_planning()
     };
 
     // ── Helper: get forced shift codes for a user (from shift_only rules) ──
-    $getForcedShifts = function ($u) use (&$structuredRules, &$ruleUserMap) {
+    $getForcedShifts = function ($u, $modId = null) use (&$structuredRules, &$ruleUserMap) {
         foreach ($structuredRules as $rule) {
             if ($rule['rule_type'] !== 'shift_only') continue;
             if ($rule['target_mode'] === 'all') { /* applies */ }
+            elseif ($rule['target_mode'] === 'module') {
+                $targetModIds = $rule['params']['target_module_ids'] ?? [];
+                if (empty($targetModIds) || ($modId && !in_array($modId, $targetModIds))) continue;
+            }
             elseif ($rule['target_mode'] === 'fonction' && ($u['fonction_code'] ?? '') === $rule['target_fonction_code']) { /* applies */ }
             elseif ($rule['target_mode'] === 'users' && isset($ruleUserMap[$rule['id']][$u['id']])) { /* applies */ }
             else continue;
@@ -748,12 +753,19 @@ function admin_generate_planning()
     };
 
     // ── Helper: resolve shift for user respecting shift_only rules ──
-    $resolveShift = function ($u, $shift, $modId, $date) use (&$horaireByCode, $getForcedShifts) {
-        $forced = $getForcedShifts($u);
+    $resolveShift = function ($u, $shift, $modId, $date) use (&$horaireByCode, $getForcedShifts, $nightModuleId, &$nightShifts) {
+        $forced = $getForcedShifts($u, $modId);
         if (empty($forced)) return $shift; // no constraint
         if ($shift && in_array($shift['code'], $forced)) return $shift; // already ok
+
+        // Safety: never assign night shifts to non-night module employees
+        $isNightModule = ($modId === $nightModuleId);
+        $nightCodes = array_map(fn($h) => $h['code'], $nightShifts);
+
         // Shift was rejected — use the forced shift instead
         foreach ($forced as $code) {
+            // Block night shifts for non-night employees
+            if (!$isNightModule && in_array($code, $nightCodes)) continue;
             if (isset($horaireByCode[$code])) return $horaireByCode[$code];
         }
         return null; // no valid forced shift found
@@ -761,13 +773,19 @@ function admin_generate_planning()
 
     // ── Helper: check structured rules ──
     // $shiftCode can be null for early module-only checks (before shift is picked)
-    $checkRules = function ($u, $shiftCode, $modId, $date) use (&$structuredRules, &$ruleUserMap, &$userDays) {
+    $checkRules = function ($u, $shiftCode, $modId, $date) use (&$structuredRules, &$ruleUserMap, &$userDays, $nightModuleId, &$nightShifts) {
+        $isNightModule = ($modId === $nightModuleId);
+        $nightCodes = array_map(fn($h) => $h['code'], $nightShifts);
         $dow = (int) date('N', strtotime($date));
 
         foreach ($structuredRules as $rule) {
-            // Check if rule applies to this user
+            // Check if rule applies to this user/context
             if ($rule['target_mode'] === 'all') {
                 // applies to everyone
+            } elseif ($rule['target_mode'] === 'module') {
+                // Only applies if current module is in the rule's target_module_ids
+                $targetModIds = $rule['params']['target_module_ids'] ?? [];
+                if (empty($targetModIds) || !in_array($modId, $targetModIds)) continue;
             } elseif ($rule['target_mode'] === 'fonction') {
                 if (($u['fonction_code'] ?? '') !== $rule['target_fonction_code']) continue;
             } elseif ($rule['target_mode'] === 'users') {
@@ -780,8 +798,13 @@ function admin_generate_planning()
 
             switch ($rule['rule_type']) {
                 case 'shift_only':
-                    if ($shiftCode !== null && !empty($p['shift_codes']) && !in_array($shiftCode, $p['shift_codes'])) {
-                        return false;
+                    if ($shiftCode !== null && !empty($p['shift_codes'])) {
+                        // If rule only contains night shifts but employee is not in night module, skip this rule
+                        if (!$isNightModule) {
+                            $onlyNight = !array_diff($p['shift_codes'], $nightCodes);
+                            if ($onlyNight) break; // ignore this rule for day modules
+                        }
+                        if (!in_array($shiftCode, $p['shift_codes'])) return false;
                     }
                     break;
                 case 'shift_exclude':
@@ -851,9 +874,12 @@ function admin_generate_planning()
                     if (!$isEligible($u, $date)) continue;
                     if (!$checkRules($u, null, $modId, $date)) continue; // early module/weekend/max_days check
 
-                    // Score: hours deficit + module preference + randomness
+                    // Skip if already over monthly target (+10% tolerance for coverage)
                     $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
                     $currentHours = $userHours[$u['id']] ?? 0;
+                    if ($currentHours >= $targetMonthHours * 1.1) continue;
+
+                    // Score: hours deficit + module preference + randomness
                     $deficit = $targetMonthHours - $currentHours;
                     $isPrincipal = ($u['principal_module_id'] === $modId) ? $iaBonusPrincipal : 0;
 
@@ -882,8 +908,9 @@ function admin_generate_planning()
                     if ($assignedForSlot >= $nbReqd) break;
                     $u = $c['user'];
 
-                    // Consecutive days check: AS max 3, others max iaConsecutifMaxBes
-                    $maxConsec = ($u['fonction_code'] === 'AS') ? $iaConsecutifMaxAS : $iaConsecutifMaxBes;
+                    // Consecutive days check: AS max 3, Night max 5 (LTr), others max iaConsecutifMaxBes
+                    $isNightModule = ($modId === $nightModuleId);
+                    $maxConsec = ($u['fonction_code'] === 'AS') ? $iaConsecutifMaxAS : ($isNightModule ? $iaConsecutifMaxNuit : $iaConsecutifMaxBes);
                     if ($getConsecutive($u['id'], $date) >= $maxConsec) continue;
 
                     // Even weekly distribution: limit days/week based on taux
@@ -1088,8 +1115,9 @@ function admin_generate_planning()
                 // Allow +1 day tolerance for flexibility
                 if ($currentWeekDays >= $weeklyDaysTarget + 1) continue;
 
-                // Consecutive check: AS max 3, others max iaConsecutifMax
-                $maxConsec = $isAS ? $iaConsecutifMaxAS : $iaConsecutifMax;
+                // Consecutive check: AS max 3, Night max 5 (LTr), others max iaConsecutifMax
+                $isNight = ($principalMod === $nightModuleId);
+                $maxConsec = $isAS ? $iaConsecutifMaxAS : ($isNight ? $iaConsecutifMaxNuit : $iaConsecutifMax);
                 if ($getConsecutive($u['id'], $date) >= $maxConsec) continue;
 
                 // AS: weekly hours cap — don't exceed weekly target
