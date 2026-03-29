@@ -69,6 +69,25 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
 .ext-no-config { text-align: center; padding: 60px 20px; }
 .ext-no-config i { font-size: 4rem; opacity: .15; display: block; margin-bottom: 16px; }
+
+/* Lightbox */
+.ext-lb { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: extLbIn .25s ease; }
+.ext-lb-hidden { display: none !important; }
+.ext-lb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
+.ext-lb-stage { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.ext-lb-stage img { max-width: 90vw; max-height: calc(100vh - 100px); object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); cursor: zoom-in; }
+.ext-lb-stage.zoomed img { cursor: grab; max-width: none; max-height: none; }
+.ext-lb-stage.dragging img { cursor: grabbing !important; }
+.ext-lb-stage iframe { width: 85vw; height: calc(100vh - 100px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
+.ext-lb-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; z-index: 10; transition: background .2s; backdrop-filter: blur(8px); }
+.ext-lb-close:hover { background: rgba(255,255,255,.22); }
+.ext-lb-title { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.12); color: #fff; padding: 8px 20px; border-radius: 20px; font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); z-index: 10; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+.ext-lb-toolbar { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: rgba(30,30,30,.85); backdrop-filter: blur(10px); border-radius: 999px; padding: 6px 14px; z-index: 10; }
+.ext-lb-btn { width: 36px; height: 36px; border: none; background: transparent; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; transition: background .2s; }
+.ext-lb-btn:hover { background: rgba(255,255,255,.15); }
+.ext-lb-zoom { color: #fff; font-size: .8rem; font-weight: 600; min-width: 44px; text-align: center; }
+.ext-lb-dl { text-decoration: none; color: #fff; }
+@keyframes extLbIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
 <?php if (!$hasConfig): ?>
@@ -391,12 +410,20 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
             showToast('Marqué comme non lu', 'success');
         });
 
-        // Attachments
+        // Attachments — lightbox for images/PDF, download for others
         detail.querySelectorAll('.ext-att-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 const url = '/zerdatime/admin/api.php?action=admin_email_ext_download_attachment&folder=' + encodeURIComponent(currentFolder)
                     + '&uid=' + chip.dataset.uid + '&part_index=' + chip.dataset.part;
-                window.open(url, '_blank');
+                const filename = chip.querySelector('div div')?.textContent || '';
+                const ext = filename.split('.').pop().toLowerCase();
+                if (['jpg','jpeg','png','gif','webp','bmp','svg'].includes(ext)) {
+                    openExtLightbox(url, filename, 'image');
+                } else if (ext === 'pdf') {
+                    openExtLightbox(url, filename, 'pdf');
+                } else {
+                    window.open(url, '_blank');
+                }
             });
         });
     }
@@ -494,6 +521,124 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
     // ── Init ──
     loadFolders();
     loadList();
+
+    // ── Lightbox for attachments ──
+    function openExtLightbox(url, filename, type) {
+        let lb = document.getElementById('extLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'extLightbox';
+            lb.className = 'ext-lb';
+            lb.innerHTML =
+                '<div class="ext-lb-overlay"></div>'
+                + '<button class="ext-lb-close" type="button"><i class="bi bi-x-lg"></i></button>'
+                + '<div class="ext-lb-title" id="extLbTitle"></div>'
+                + '<div class="ext-lb-stage" id="extLbStage"></div>'
+                + '<div class="ext-lb-toolbar" id="extLbToolbar">'
+                + '  <button type="button" class="ext-lb-btn" id="extLbZoomOut"><i class="bi bi-zoom-out"></i></button>'
+                + '  <span class="ext-lb-zoom" id="extLbZoomLvl">100%</span>'
+                + '  <button type="button" class="ext-lb-btn" id="extLbZoomIn"><i class="bi bi-zoom-in"></i></button>'
+                + '  <button type="button" class="ext-lb-btn" id="extLbReset"><i class="bi bi-arrows-angle-contract"></i></button>'
+                + '  <span style="width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 6px"></span>'
+                + '  <a class="ext-lb-btn ext-lb-dl" id="extLbDownload" title="Télécharger"><i class="bi bi-download"></i></a>'
+                + '</div>';
+            document.body.appendChild(lb);
+        }
+
+        const stage = document.getElementById('extLbStage');
+        const toolbar = document.getElementById('extLbToolbar');
+        const title = document.getElementById('extLbTitle');
+        const zoomLvl = document.getElementById('extLbZoomLvl');
+        const dlBtn = document.getElementById('extLbDownload');
+
+        title.textContent = filename;
+        dlBtn.href = url;
+        dlBtn.setAttribute('download', filename);
+
+        let scale = 1, tx = 0, ty = 0, imgEl = null;
+
+        if (type === 'image') {
+            stage.innerHTML = '<img src="' + url + '" alt="' + escapeHtml(filename) + '" draggable="false">';
+            imgEl = stage.querySelector('img');
+            toolbar.style.display = '';
+        } else if (type === 'pdf') {
+            stage.innerHTML = '<iframe src="' + url + '#toolbar=1"></iframe>';
+            toolbar.style.display = 'none';
+        }
+
+        function apply() {
+            if (!imgEl) return;
+            imgEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+            zoomLvl.textContent = Math.round(scale * 100) + '%';
+            stage.classList.toggle('zoomed', scale > 1);
+        }
+
+        function zoomAt(cx, cy, ns) {
+            ns = Math.max(0.25, Math.min(5, ns));
+            if (imgEl) {
+                const r = imgEl.getBoundingClientRect();
+                const ox = cx - r.left - r.width / 2;
+                const oy = cy - r.top - r.height / 2;
+                tx += ox * (1 - ns / scale);
+                ty += oy * (1 - ns / scale);
+            }
+            scale = ns;
+            if (scale <= 1) { tx = 0; ty = 0; scale = 1; }
+            apply();
+        }
+
+        function closeLb() {
+            lb.classList.add('ext-lb-hidden');
+            document.body.style.overflow = '';
+            stage.classList.remove('zoomed', 'dragging');
+        }
+
+        lb.classList.remove('ext-lb-hidden');
+        document.body.style.overflow = 'hidden';
+        scale = 1; tx = 0; ty = 0;
+        apply();
+
+        // Events — use AbortController for clean cleanup
+        const ac = new AbortController();
+        const sig = { signal: ac.signal };
+
+        lb.querySelector('.ext-lb-close').addEventListener('click', () => { closeLb(); ac.abort(); }, sig);
+        lb.querySelector('.ext-lb-overlay').addEventListener('click', () => { closeLb(); ac.abort(); }, sig);
+        document.getElementById('extLbZoomIn')?.addEventListener('click', () => zoomAt(innerWidth / 2, innerHeight / 2, scale + .25), sig);
+        document.getElementById('extLbZoomOut')?.addEventListener('click', () => zoomAt(innerWidth / 2, innerHeight / 2, scale - .25), sig);
+        document.getElementById('extLbReset')?.addEventListener('click', () => { scale = 1; tx = 0; ty = 0; apply(); }, sig);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closeLb(); ac.abort(); }
+            else if (e.key === '+' || e.key === '=') zoomAt(innerWidth / 2, innerHeight / 2, scale + .25);
+            else if (e.key === '-') zoomAt(innerWidth / 2, innerHeight / 2, scale - .25);
+            else if (e.key === '0') { scale = 1; tx = 0; ty = 0; apply(); }
+        }, sig);
+
+        // Mouse wheel zoom
+        stage.addEventListener('wheel', (e) => {
+            if (!imgEl) return;
+            e.preventDefault();
+            zoomAt(e.clientX, e.clientY, scale + (e.deltaY < 0 ? .15 : -.15));
+        }, { ...sig, passive: false });
+
+        // Drag when zoomed
+        let dragging = false, sx = 0, sy = 0;
+        stage.addEventListener('mousedown', (e) => {
+            if (scale <= 1 || !imgEl) return;
+            dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+            stage.classList.add('dragging');
+        }, sig);
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            tx = e.clientX - sx; ty = e.clientY - sy;
+            apply();
+        }, sig);
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+            stage.classList.remove('dragging');
+        }, sig);
+    }
 
     window.initEmailexternePage = () => {};
 })();
