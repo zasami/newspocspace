@@ -4,6 +4,17 @@
 import { apiPost, toast } from '../helpers.js';
 
 export async function init() {
+    // Eye toggle for password field
+    document.querySelectorAll('.pwd-toggle-eye').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    });
+
     const form = document.getElementById('loginForm');
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();

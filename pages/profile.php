@@ -50,17 +50,27 @@ if ($profUser) {
         <form id="passwordForm">
           <div class="form-group">
             <label class="form-label">Mot de passe actuel</label>
-            <input type="password" class="form-control" id="currentPassword" required autocomplete="current-password">
+            <div style="position:relative">
+              <input type="password" class="form-control" id="currentPassword" required autocomplete="current-password" style="padding-right:40px">
+              <button type="button" class="pwd-toggle-eye" data-target="currentPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Nouveau mot de passe</label>
-            <input type="password" class="form-control" id="newPassword" required minlength="8" autocomplete="new-password">
+            <div style="position:relative">
+              <input type="password" class="form-control" id="newPassword" required minlength="8" autocomplete="new-password" style="padding-right:40px">
+              <button type="button" class="pwd-toggle-eye" data-target="newPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            </div>
+            <div id="pwdStrength" style="margin-top:6px;font-size:.78rem;color:var(--zt-text-muted)"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Confirmer</label>
-            <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password">
+            <div style="position:relative">
+              <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password" style="padding-right:40px">
+              <button type="button" class="pwd-toggle-eye" data-target="confirmPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100 mt-2">
+          <button type="submit" class="btn btn-primary w-100 mt-2" id="btnSavePassword">
             <i class="bi bi-lock"></i> Modifier le mot de passe
           </button>
         </form>

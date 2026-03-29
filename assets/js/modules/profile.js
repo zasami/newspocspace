@@ -11,6 +11,35 @@ export function init() {
         renderProfile(user);
     }
 
+    // Eye toggle for all password fields
+    document.querySelectorAll('.pwd-toggle-eye').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    });
+
+    // Live password strength indicator
+    const newPassInput = document.getElementById('newPassword');
+    const strengthEl = document.getElementById('pwdStrength');
+    if (newPassInput && strengthEl) {
+        newPassInput.addEventListener('input', () => {
+            const v = newPassInput.value;
+            const checks = [
+                { ok: v.length >= 8, label: '8+ caractères' },
+                { ok: /[A-Z]/.test(v), label: '1 majuscule' },
+                { ok: /[0-9]/.test(v), label: '1 chiffre' },
+                { ok: /[^A-Za-z0-9]/.test(v), label: '1 spécial (!@#...)' },
+            ];
+            strengthEl.innerHTML = checks.map(c =>
+                `<span style="color:${c.ok ? '#198754' : '#dc3545'};margin-right:8px">${c.ok ? '✓' : '✗'} ${c.label}</span>`
+            ).join('');
+        });
+    }
+
     // Password form
     document.getElementById('passwordForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -19,13 +48,28 @@ export function init() {
         const confirm = document.getElementById('confirmPassword').value;
 
         if (newPass !== confirm) {
-            toast('Les mots de passe ne correspondent pas');
+            toast('Les mots de passe ne correspondent pas', 'error');
             return;
         }
         if (newPass.length < 8) {
-            toast('Minimum 8 caractères');
+            toast('Minimum 8 caractères', 'error');
             return;
         }
+        if (!/[A-Z]/.test(newPass)) {
+            toast('Le mot de passe doit contenir au moins une majuscule', 'error');
+            return;
+        }
+        if (!/[0-9]/.test(newPass)) {
+            toast('Le mot de passe doit contenir au moins un chiffre', 'error');
+            return;
+        }
+        if (!/[^A-Za-z0-9]/.test(newPass)) {
+            toast('Le mot de passe doit contenir au moins un caractère spécial', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnSavePassword');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Enregistrement...'; }
 
         const res = await apiPost('update_password', {
             current_password: current,
@@ -33,8 +77,9 @@ export function init() {
         });
 
         if (res.success) {
-            toast('Mot de passe mis à jour');
+            toast('Mot de passe mis à jour avec succès !', 'success');
             document.getElementById('passwordForm').reset();
+            if (strengthEl) strengthEl.innerHTML = '';
             // Remove temp password banner if present
             const banner = document.getElementById('tempPwdBanner');
             if (banner) {
@@ -43,8 +88,10 @@ export function init() {
                 window.__ZT__.mustChangePassword = false;
             }
         } else {
-            toast(res.message || 'Erreur');
+            toast(res.message || 'Erreur lors de la sauvegarde', 'error');
         }
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-lock"></i> Modifier le mot de passe'; }
     });
 }
 

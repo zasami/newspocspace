@@ -13,7 +13,10 @@
       </div>
       <div class="login-field">
         <label for="loginPassword">Mot de passe</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+        <div style="position:relative">
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" style="padding-right:40px">
+          <button type="button" class="pwd-toggle-eye" data-target="loginPassword" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9B9690;padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+        </div>
       </div>
       <button type="submit" class="login-submit" id="loginBtn">
         Continuer
