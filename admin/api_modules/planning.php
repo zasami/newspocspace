@@ -798,16 +798,21 @@ function admin_generate_planning()
 
             switch ($rule['rule_type']) {
                 case 'user_schedule':
-                    // Combined: restrict days AND shifts
+                    // Days restriction
                     if (!empty($p['days']) && !in_array($dow, $p['days'])) {
                         return false;
                     }
+                    // Shift allowed (if specified)
                     if ($shiftCode !== null && !empty($p['shift_codes'])) {
                         if (!$isNightModule) {
                             $onlyNight = !array_diff($p['shift_codes'], $nightCodes);
                             if ($onlyNight) break;
                         }
                         if (!in_array($shiftCode, $p['shift_codes'])) return false;
+                    }
+                    // Shift excluded
+                    if ($shiftCode !== null && !empty($p['exclude_shift_codes'])) {
+                        if (in_array($shiftCode, $p['exclude_shift_codes'])) return false;
                     }
                     break;
                 case 'shift_only':

@@ -1,12 +1,15 @@
 <?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
 $uid = $_SESSION['zt_user']['id'];
 $initMessages = Db::fetchAll(
-    "SELECT m.*, uf.prenom AS from_prenom, uf.nom AS from_nom,
-            ut.prenom AS to_prenom, ut.nom AS to_nom
+    "SELECT m.id, m.sujet, m.contenu, m.from_user_id, m.created_at,
+            uf.prenom AS from_prenom, uf.nom AS from_nom,
+            (SELECT GROUP_CONCAT(CONCAT(u2.prenom, ' ', u2.nom) SEPARATOR ', ')
+             FROM message_recipients mr JOIN users u2 ON u2.id = mr.user_id
+             WHERE mr.email_id = m.id AND mr.type = 'to') AS to_names
      FROM messages m
      JOIN users uf ON uf.id = m.from_user_id
-     LEFT JOIN users ut ON ut.id = m.to_user_id
-     WHERE m.from_user_id = ? OR m.to_user_id = ?
+     WHERE m.is_draft = 0
+       AND (m.from_user_id = ? OR EXISTS (SELECT 1 FROM message_recipients mr2 WHERE mr2.email_id = m.id AND mr2.user_id = ? AND mr2.deleted = 0))
      ORDER BY m.created_at DESC
      LIMIT 50",
     [$uid, $uid]

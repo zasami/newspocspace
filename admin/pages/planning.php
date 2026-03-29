@@ -316,6 +316,20 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
   border-color: var(--cl-border-hover, #D4D0CA);
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
+/* User schedule sections */
+.us-section { margin-bottom: 14px; padding: 12px; border-radius: 10px; background: var(--cl-bg, #F7F5F2); border: 1px solid var(--cl-border-light, #F0EDE8); }
+.us-section-title { font-size: .82rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: var(--cl-text, #333); }
+.us-section-title i { font-size: .9rem; }
+.us-day-label {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 52px; height: 38px; border-radius: 10px; cursor: pointer; user-select: none;
+    border: 1.5px solid var(--cl-border, #E8E5E0); font-size: .78rem; font-weight: 600;
+    color: var(--cl-text-secondary, #888); transition: all .15s; background: var(--cl-surface, #fff);
+}
+.us-day-label input { display: none; }
+.us-day-label:hover { border-color: var(--cl-primary, #1a1a1a); }
+.us-day-active { background: var(--cl-primary, #1a1a1a) !important; color: #fff !important; border-color: var(--cl-primary, #1a1a1a) !important; }
+
 .btn-outline-purple-custom { border-color: #D0C4D8; color: #5B4B6B; }
 .btn-outline-purple-custom:hover { background: #D0C4D8; color: #5B4B6B; border-color: #D0C4D8; }
 .modal-close-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; }
@@ -1632,7 +1646,14 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         ];
         zerdaSelect.init('#gsrType', typeOpts, {
             value: r?.rule_type || '',
-            onSelect: updateParamsDetail,
+            onSelect: (val) => {
+                updateParamsDetail();
+                // Auto-set target to "users" for user_schedule
+                if (val === 'user_schedule' && zerdaSelect.getValue('#gsrTarget') !== 'users') {
+                    zerdaSelect.setValue('#gsrTarget', 'users');
+                    updateTargetDetail();
+                }
+            },
         });
 
         zerdaSelect.init('#gsrImportance', [
@@ -1744,36 +1765,59 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             det.innerHTML = '';
 
             if (type === 'user_schedule') {
-                // Combined: shifts + days
-                const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+                const dayNames = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+                const dayFull = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
                 const selectedDays = params.days || [];
-                det.innerHTML = '<label class="form-label small fw-bold">Horaire(s) autorisé(s)</label>'
-                    + '<div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
-                    + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1 mb-3"></div>'
-                    + '<label class="form-label small fw-bold">Jours de travail</label>'
+                const excludedShifts = params.exclude_shift_codes || [];
+
+                det.innerHTML =
+                    // Section 1: Jours
+                    '<div class="us-section">'
+                    + '<div class="us-section-title"><i class="bi bi-calendar-week"></i> Jours de travail</div>'
                     + '<div class="d-flex flex-wrap gap-2" id="gsrDaysWrap">'
-                    + dayNames.map((name, i) => {
-                        const dow = i + 1;
-                        const checked = selectedDays.includes(dow);
-                        return '<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1.5px solid ' + (checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)') + ';cursor:pointer;font-size:.82rem;font-weight:500;background:' + (checked ? 'var(--cl-primary-light,#f0f0f0)' : '') + ';transition:all .15s">'
-                            + '<input type="checkbox" class="gsr-day-cb" value="' + dow + '"' + (checked ? ' checked' : '') + ' style="accent-color:var(--cl-primary,#1a1a1a)">' + name + '</label>';
-                    }).join('') + '</div>';
-                window._gsSelectedShifts = (params.shift_codes || []).slice();
-                zerdaSelect.init('#gsrShiftSelect', horaireOpts, {
-                    search: true,
-                    onSelect: (val) => {
-                        if (val && !window._gsSelectedShifts.includes(val)) { window._gsSelectedShifts.push(val); gsRenderShiftTags(); }
-                        zerdaSelect.setValue('#gsrShiftSelect', '');
-                    }
-                });
-                gsRenderShiftTags();
+                    + dayFull.map((name, i) => {
+                        const dow = i + 1; const checked = selectedDays.includes(dow);
+                        return '<label class="us-day-label' + (checked ? ' us-day-active' : '') + '">'
+                            + '<input type="checkbox" class="gsr-day-cb" value="' + dow + '"' + (checked ? ' checked' : '') + '>'
+                            + '<span class="us-day-short">' + dayNames[i] + '</span></label>';
+                    }).join('') + '</div>'
+                    + '</div>'
+
+                    // Section 2: Horaires autorisés
+                    + '<div class="us-section">'
+                    + '<div class="us-section-title"><i class="bi bi-check-circle"></i> Horaires autorisés <small class="text-muted fw-normal">(laisser vide = tous)</small></div>'
+                    + '<div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
+                    + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1"></div>'
+                    + '</div>'
+
+                    // Section 3: Horaires exclus
+                    + '<div class="us-section">'
+                    + '<div class="us-section-title"><i class="bi bi-x-circle"></i> Horaires interdits <small class="text-muted fw-normal">(optionnel)</small></div>'
+                    + '<div class="zs-select" id="gsrExcludeShiftSelect" data-placeholder="Exclure un horaire"></div>'
+                    + '<div id="gsrExcludeShiftTags" class="d-flex flex-wrap gap-1 mt-1"></div>'
+                    + '</div>';
+
+                // Day checkboxes
                 det.querySelectorAll('.gsr-day-cb').forEach(cb => {
-                    cb.addEventListener('change', () => {
-                        const label = cb.closest('label');
-                        label.style.borderColor = cb.checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)';
-                        label.style.background = cb.checked ? 'var(--cl-primary-light,#f0f0f0)' : '';
-                    });
+                    cb.addEventListener('change', () => { cb.closest('.us-day-label').classList.toggle('us-day-active', cb.checked); });
                 });
+
+                // Shift allowed
+                window._gsSelectedShifts = (params.shift_codes || []).slice();
+                zerdaSelect.init('#gsrShiftSelect', horaireOpts, { search: true, onSelect: (val) => {
+                    if (val && !window._gsSelectedShifts.includes(val)) { window._gsSelectedShifts.push(val); gsRenderShiftTags(); }
+                    zerdaSelect.setValue('#gsrShiftSelect', '');
+                }});
+                gsRenderShiftTags();
+
+                // Shift excluded
+                window._gsExcludedShifts = excludedShifts.slice();
+                zerdaSelect.init('#gsrExcludeShiftSelect', horaireOpts, { search: true, onSelect: (val) => {
+                    if (val && !window._gsExcludedShifts.includes(val)) { window._gsExcludedShifts.push(val); gsRenderExcludeShiftTags(); }
+                    zerdaSelect.setValue('#gsrExcludeShiftSelect', '');
+                }});
+                gsRenderExcludeShiftTags();
+
             } else if (type === 'shift_only' || type === 'shift_exclude') {
                 det.innerHTML = '<label class="form-label small fw-bold">Horaires</label><div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
                     + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
@@ -1843,6 +1887,19 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             });
         }
 
+        function gsRenderExcludeShiftTags() {
+            const c = document.getElementById('gsrExcludeShiftTags');
+            if (!c) return;
+            c.innerHTML = (window._gsExcludedShifts || []).map(code => {
+                const h = (refs.horaires || []).find(x => x.code === code);
+                return '<span class="badge" style="background:#dc3545;color:#fff;font-size:.78rem"><i class="bi bi-x-circle me-1"></i>' + escapeHtml(code)
+                    + ' <button type="button" style="background:none;border:none;cursor:pointer;padding:0 2px;color:#fff;font-size:.9rem" data-rm="' + code + '">&times;</button></span>';
+            }).join('');
+            c.querySelectorAll('[data-rm]').forEach(btn => {
+                btn.addEventListener('click', () => { window._gsExcludedShifts = window._gsExcludedShifts.filter(x => x !== btn.dataset.rm); gsRenderExcludeShiftTags(); });
+            });
+        }
+
         function gsRenderModuleTags() {
             const c = document.getElementById('gsrModuleTags');
             if (!c) return;
@@ -1876,6 +1933,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         let ruleParams = {};
         if (ruleType === 'user_schedule') {
             ruleParams.shift_codes = window._gsSelectedShifts || [];
+            ruleParams.exclude_shift_codes = window._gsExcludedShifts || [];
             ruleParams.days = [...document.querySelectorAll('.gsr-day-cb:checked')].map(cb => parseInt(cb.value));
         } else if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
             ruleParams.shift_codes = window._gsSelectedShifts || [];

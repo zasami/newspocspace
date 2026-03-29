@@ -51,7 +51,7 @@ function renderMessages(messages) {
               <small class="text-muted">${escapeHtml(date)}</small>
             </div>
             <div style="font-size:0.85rem;color:var(--zt-text-secondary);margin-bottom:0.25rem">
-              ${isMine ? `<span class="text-muted">Envoyé à :</span> ${m.to_prenom ? escapeHtml(m.to_prenom + ' ' + m.to_nom) : 'Direction'}` :
+              ${isMine ? `<span class="text-muted">Envoyé à :</span> ${m.to_names ? escapeHtml(m.to_names) : 'Direction'}` :
                 `<span class="text-muted">De :</span> ${escapeHtml(m.from_prenom + ' ' + m.from_nom)}`}
             </div>
             <div style="font-size:0.88rem">${escapeHtml(m.contenu)}</div>
