@@ -228,6 +228,11 @@ $activeSection = match($page) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1A1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/zerdatime/manifest.json">
+<link rel="apple-touch-icon" href="/zerdatime/assets/icons/icon-192x192.png">
 <base href="/zerdatime/admin/">
 <title>Admin — zerdaTime</title>
 <link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
@@ -307,6 +312,9 @@ $activeSection = match($page) {
       <a href="<?= admin_url('contacts') ?>" class="topbar-icon-btn" id="topbarContactsBtn" title="Contacts">
         <i class="bi bi-person-rolodex"></i>
       </a>
+      <button class="topbar-icon-btn" id="ztInstallBtn" title="Installer l'application" style="display:none">
+        <i class="bi bi-download"></i>
+      </button>
       <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
@@ -1367,6 +1375,109 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // Init list
     renderShortcutsList();
+})();
+</script>
+
+<!-- ═══ PWA: Service Worker + Offline banner ═══ -->
+<div id="ztOfflineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#fff;padding:8px 20px;font-size:.82rem;text-align:center">
+  <i class="bi bi-wifi-off"></i> Mode hors ligne — les données en cache sont affichées
+  <span id="ztSyncPending"></span>
+</div>
+<script nonce="<?= $cspNonce ?>">
+(function() {
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/zerdatime/sw.js', { scope: '/zerdatime/' })
+            .then(reg => {
+                console.log('[PWA] SW registered:', reg.scope);
+                // Check for updates
+                reg.addEventListener('updatefound', () => {
+                    const newSW = reg.installing;
+                    newSW.addEventListener('statechange', () => {
+                        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            if (confirm('Nouvelle version disponible. Mettre à jour ?')) {
+                                newSW.postMessage({ type: 'SKIP_WAITING' });
+                                location.reload();
+                            }
+                        }
+                    });
+                });
+            })
+            .catch(err => console.warn('[PWA] SW registration failed:', err));
+
+        // Listen for sync messages
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data?.type === 'SYNC_COMPLETE') {
+                showToast(event.data.processed + ' action(s) synchronisée(s)', 'success');
+                if (window.__ztRefreshUnread) window.__ztRefreshUnread();
+            }
+        });
+    }
+
+    // ── PWA Install Prompt ──
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById('ztInstallBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (installBtn) installBtn.style.display = '';
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) {
+                // Fallback: show instructions
+                await adminConfirm({
+                    title: 'Installer zerdaTime',
+                    text: '<div style="text-align:left;font-size:.88rem">'
+                        + '<p><strong>Chrome / Edge :</strong></p>'
+                        + '<ol style="margin:8px 0 16px 20px"><li>Cliquez sur le menu <kbd>⋮</kbd> en haut à droite</li><li>Sélectionnez <strong>"Installer zerdaTime"</strong></li></ol>'
+                        + '<p><strong>Safari (Mac) :</strong></p>'
+                        + '<ol style="margin:8px 0 16px 20px"><li>Menu <strong>Fichier → Ajouter au Dock</strong></li></ol>'
+                        + '<p><strong>iPhone / iPad :</strong></p>'
+                        + '<ol style="margin:8px 0 0 20px"><li>Appuyez sur <strong>Partager</strong> (⬆)</li><li>Sélectionnez <strong>"Sur l\'écran d\'accueil"</strong></li></ol>'
+                        + '</div>',
+                    type: 'info',
+                    icon: 'bi-download',
+                    okText: 'Compris',
+                    cancelText: ''
+                });
+                return;
+            }
+            deferredInstallPrompt.prompt();
+            const result = await deferredInstallPrompt.userChoice;
+            if (result.outcome === 'accepted') {
+                showToast('Application installée', 'success');
+                installBtn.style.display = 'none';
+            }
+            deferredInstallPrompt = null;
+        });
+    }
+
+    // Hide install button if already installed as PWA
+    window.addEventListener('appinstalled', () => {
+        if (installBtn) installBtn.style.display = 'none';
+        deferredInstallPrompt = null;
+    });
+
+    // Always show button if not in standalone mode (as fallback instructions)
+    if (!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) {
+        if (installBtn) installBtn.style.display = '';
+    }
+
+    // Offline/online banner
+    const banner = document.getElementById('ztOfflineBanner');
+    function updateOnlineStatus() {
+        banner.style.display = navigator.onLine ? 'none' : 'block';
+        if (navigator.onLine && navigator.serviceWorker?.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'PROCESS_QUEUE' });
+        }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
 })();
 </script>
 </body>

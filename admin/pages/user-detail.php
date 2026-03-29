@@ -375,8 +375,8 @@ if ($userId) {
         presetRow.className = 'mb-3 d-flex gap-1 flex-wrap';
         const presets = [
             { label: 'Standard (tout)', fn: () => setAll(true) },
-            { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_emails']) },
-            { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_emails']) },
+            { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_messages']) },
+            { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_messages']) },
             { label: 'Aucun accès', fn: () => setAll(false) },
         ];
         presets.forEach(p => {

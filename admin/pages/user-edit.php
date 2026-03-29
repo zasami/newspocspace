@@ -151,8 +151,28 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
     <!-- Accès zerdaTime -->
     <div class="card mb-3">
       <div class="card-header"><h6 class="mb-0"><i class="bi bi-shield-check"></i> Accès zerdaTime</h6></div>
-      <div class="card-body" id="permissionsPanel">
-        <p class="text-muted small">Chargement...</p>
+      <div class="card-body">
+        <p class="small text-muted mb-2">Gérez les pages et fonctionnalités accessibles par ce collaborateur.</p>
+        <button class="btn btn-outline-primary btn-sm" id="openPermBtn"><i class="bi bi-sliders"></i> Configurer les accès</button>
+      </div>
+    </div>
+
+    <!-- Modal Permissions -->
+    <div class="modal fade" id="uePermModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width:620px">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès zerdaTime</h5>
+            <button type="button" class="confirm-close-btn" data-bs-dismiss="modal" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body" id="uePermBody">
+            <p class="text-muted small">Chargement...</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+            <button type="button" class="btn btn-sm btn-primary" id="uePermSaveBtn"><i class="bi bi-check-lg"></i> Sauvegarder</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -170,7 +190,7 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
 </div>
 
 <script<?= nonce() ?>>
-function initUsereditPage() {
+async function initUsereditPage() {
     document.querySelectorAll('#editPrenom, #editNom').forEach(
         el => el.addEventListener('blur', (e) => { e.target.value = e.target.value.trim().replace(/\b\w/g, c => c.toUpperCase()); })
     );
@@ -291,7 +311,7 @@ function initUsereditPage() {
     });
 
     // ── Permissions ──
-    await loadPermissions(id);
+    document.getElementById('openPermBtn')?.addEventListener('click', () => loadPermissionsModal(id));
 
     // ── Avatar ──
     const avatarPreview = document.getElementById('avatarPreview');
@@ -366,9 +386,14 @@ function initUsereditPage() {
     });
 }
 
-async function loadPermissions(userId) {
-    const panel = document.getElementById('permissionsPanel');
-    if (!panel) return;
+async function loadPermissionsModal(userId) {
+    const panel = document.getElementById('uePermBody');
+    const modalEl = document.getElementById('uePermModal');
+    if (!panel || !modalEl) return;
+
+    const permModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    panel.innerHTML = '<p class="text-muted small">Chargement...</p>';
+    permModal.show();
 
     const res = await adminApiPost('admin_get_user_permissions', { user_id: userId });
     if (!res.success || !res.permissions) {
@@ -377,84 +402,128 @@ async function loadPermissions(userId) {
     }
 
     const perms = res.permissions;
-    const groups = {
-        'Pages': Object.entries(perms).filter(([k]) => k.startsWith('page_')),
-        'Cuisine': Object.entries(perms).filter(([k]) => k.startsWith('cuisine_')),
-    };
+    const pageEntries = Object.entries(perms).filter(([k]) => k.startsWith('page_'));
+    const cuisineEntries = Object.entries(perms).filter(([k]) => k.startsWith('cuisine_'));
 
-    panel.innerHTML = '';
-
-    // Presets
-    const presetRow = document.createElement('div');
-    presetRow.className = 'mb-3 d-flex gap-1 flex-wrap';
+    // Presets definition
     const presets = [
-        { label: 'Standard (tout)', fn: () => setAll(true) },
-        { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_emails']) },
-        { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_emails']) },
+        { id: 'standard', label: 'Standard', desc: 'Accès complet à toutes les pages', icon: 'bi-person-check',
+          keys: null },
+        { id: 'cuisine', label: 'Cuisine complet', desc: 'Cuisine + menus + réservations', icon: 'bi-egg-fried',
+          keys: ['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_messages'] },
+        { id: 'hotellerie', label: 'Hôtellerie', desc: 'Cuisine + réservations famille', icon: 'bi-building',
+          keys: ['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_messages'] },
+        { id: 'none', label: 'Aucun accès', desc: 'Tout désactivé', icon: 'bi-slash-circle',
+          keys: [] },
     ];
-    presets.forEach(p => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-outline-secondary btn-sm';
-        btn.textContent = p.label;
-        btn.addEventListener('click', p.fn);
-        presetRow.appendChild(btn);
-    });
-    panel.appendChild(presetRow);
 
-    // Groups
-    for (const [groupName, entries] of Object.entries(groups)) {
-        const h = document.createElement('div');
-        h.className = 'fw-semibold small mb-1 mt-2';
-        h.textContent = groupName;
-        panel.appendChild(h);
+    function detectActivePreset() {
+        for (const p of presets) {
+            if (p.keys === null) {
+                if ([...panel.querySelectorAll('input[data-key]')].every(el => el.checked)) return p.id;
+            } else if (p.keys.length === 0) {
+                if ([...panel.querySelectorAll('input[data-key]')].every(el => !el.checked)) return p.id;
+            } else {
+                const match = [...panel.querySelectorAll('input[data-key]')].every(el =>
+                    p.keys.includes(el.dataset.key) ? el.checked : !el.checked
+                );
+                if (match) return p.id;
+            }
+        }
+        return null;
+    }
 
-        entries.forEach(([key, info]) => {
-            const wrap = document.createElement('div');
-            wrap.className = 'form-check form-switch';
-
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.className = 'form-check-input';
-            input.id = 'perm_' + key;
-            input.dataset.key = key;
-            input.checked = info.granted === 1;
-
-            const label = document.createElement('label');
-            label.className = 'form-check-label small';
-            label.htmlFor = input.id;
-            label.textContent = info.label;
-
-            wrap.appendChild(input);
-            wrap.appendChild(label);
-            panel.appendChild(wrap);
+    function updatePresetCards() {
+        const active = detectActivePreset();
+        panel.querySelectorAll('.perm-preset-card').forEach(card => {
+            const isActive = card.dataset.preset === active;
+            card.classList.toggle('perm-preset-active', isActive);
         });
     }
 
-    // Save button
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'btn btn-primary btn-sm mt-3';
-    saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Sauvegarder les accès';
-    saveBtn.addEventListener('click', async () => {
+    function setAll(val) {
+        panel.querySelectorAll('input[data-key]').forEach(el => { el.checked = val; });
+        updatePresetCards();
+    }
+
+    function applyPreset(keys) {
+        if (keys === null) { setAll(true); return; }
+        panel.querySelectorAll('input[data-key]').forEach(el => {
+            el.checked = keys.includes(el.dataset.key);
+        });
+        updatePresetCards();
+    }
+
+    // Build HTML
+    panel.innerHTML =
+        // Preset cards
+        '<div class="perm-presets-grid">'
+        + presets.map(p =>
+            '<div class="perm-preset-card" data-preset="' + p.id + '">'
+            + '<div class="perm-preset-check"><i class="bi bi-check-lg"></i></div>'
+            + '<i class="bi ' + p.icon + ' perm-preset-icon"></i>'
+            + '<div class="perm-preset-label">' + p.label + '</div>'
+            + '<div class="perm-preset-desc">' + p.desc + '</div>'
+            + '</div>'
+        ).join('')
+        + '</div>'
+
+        // Two columns
+        + '<div class="perm-columns">'
+
+        // Left: Général
+        + '<div class="perm-col">'
+        + '<div class="perm-col-title">Général</div>'
+        + pageEntries.map(([key, info]) =>
+            '<div class="form-check form-switch">'
+            + '<input type="checkbox" class="form-check-input" id="uep_' + key + '" data-key="' + key + '"' + (info.granted === 1 ? ' checked' : '') + '>'
+            + '<label class="form-check-label small" for="uep_' + key + '">' + escapeHtml(info.label) + '</label>'
+            + '</div>'
+        ).join('')
+        + '</div>'
+
+        // Right: Cuisine
+        + '<div class="perm-col">'
+        + '<div class="perm-col-title">Cuisine</div>'
+        + cuisineEntries.map(([key, info]) =>
+            '<div class="form-check form-switch">'
+            + '<input type="checkbox" class="form-check-input" id="uep_' + key + '" data-key="' + key + '"' + (info.granted === 1 ? ' checked' : '') + '>'
+            + '<label class="form-check-label small" for="uep_' + key + '">' + escapeHtml(info.label) + '</label>'
+            + '</div>'
+        ).join('')
+        + '</div>'
+
+        + '</div>';
+
+    // Preset click handlers
+    panel.querySelectorAll('.perm-preset-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const p = presets.find(x => x.id === card.dataset.preset);
+            if (p) applyPreset(p.keys);
+        });
+    });
+
+    // Switch change → update preset highlight
+    panel.querySelectorAll('input[data-key]').forEach(el => {
+        el.addEventListener('change', updatePresetCards);
+    });
+
+    updatePresetCards();
+
+    // Save handler
+    document.getElementById('uePermSaveBtn').onclick = async () => {
         const data = {};
         panel.querySelectorAll('input[data-key]').forEach(el => {
             data[el.dataset.key] = el.checked ? 1 : 0;
         });
         const r = await adminApiPost('admin_save_user_permissions', { user_id: userId, permissions: data });
-        showToast(r.success ? 'Accès mis à jour' : (r.message || 'Erreur'), r.success ? 'success' : 'error');
-    });
-    panel.appendChild(saveBtn);
-
-    function setAll(val) {
-        panel.querySelectorAll('input[data-key]').forEach(el => { el.checked = val; });
-    }
-
-    function applyPreset(allowed) {
-        panel.querySelectorAll('input[data-key]').forEach(el => {
-            el.checked = allowed.includes(el.dataset.key);
-        });
-    }
+        if (r.success) {
+            showToast('Accès mis à jour', 'success');
+            permModal.hide();
+        } else {
+            showToast(r.message || 'Erreur', 'error');
+        }
+    };
 }
 
 window.initUsereditPage = initUsereditPage;
@@ -466,10 +535,36 @@ window.initUsereditPage = initUsereditPage;
     background: var(--zt-teal, #2a9d8f); display: flex; align-items: center; justify-content: center;
     overflow: hidden; border: 3px solid var(--cl-border, #e0e0e0);
 }
-.ue-avatar-preview .ue-avatar-img {
-    width: 100%; height: 100%; object-fit: cover;
+.ue-avatar-preview .ue-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.ue-avatar-preview .ue-avatar-initials { color: #fff; font-size: 1.8rem; font-weight: 700; }
+
+/* Permissions modal — Preset cards */
+.perm-presets-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;
 }
-.ue-avatar-preview .ue-avatar-initials {
-    color: #fff; font-size: 1.8rem; font-weight: 700;
+.perm-preset-card {
+    position: relative; border: 1.5px solid var(--cl-border, #E8E5E0); border-radius: 12px;
+    padding: 14px 10px 12px; text-align: center; cursor: pointer;
+    transition: all .2s; background: var(--cl-bg, #F7F5F2);
+}
+.perm-preset-card:hover { border-color: var(--cl-border-hover, #D4D0CA); background: var(--cl-surface, #fff); }
+.perm-preset-active { border-color: #1A1A1A !important; background: var(--cl-surface, #fff) !important; }
+.perm-preset-check {
+    position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%;
+    background: #1A1A1A; color: #fff; font-size: .65rem; display: none;
+    align-items: center; justify-content: center;
+}
+.perm-preset-active .perm-preset-check { display: flex; }
+.perm-preset-icon { font-size: 1.3rem; color: var(--cl-text-secondary); display: block; margin-bottom: 6px; }
+.perm-preset-active .perm-preset-icon { color: #1A1A1A; }
+.perm-preset-label { font-weight: 600; font-size: .82rem; margin-bottom: 2px; }
+.perm-preset-desc { font-size: .7rem; color: var(--cl-text-muted); line-height: 1.3; }
+
+/* Two columns */
+.perm-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.perm-col-title {
+    font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--cl-text-secondary); padding-bottom: 6px; margin-bottom: 8px;
+    border-bottom: 1.5px solid var(--cl-border);
 }
 </style>

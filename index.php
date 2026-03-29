@@ -112,8 +112,12 @@ if ($user && !empty($deniedPerms)) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>zerdaTime — Gestion des Plannings</title>
 <meta name="description" content="Application de gestion des plannings - zerdaTime, Genève">
-<meta name="theme-color" content="#1B2A4A">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+<meta name="theme-color" content="#1A1A1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/zerdatime/manifest.json">
+<link rel="apple-touch-icon" href="/zerdatime/assets/icons/icon-192x192.png">
+<link rel="icon" href="/zerdatime/assets/icons/icon-96x96.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
@@ -265,5 +269,10 @@ window.__ZT__ = {
 <script nonce="<?= $cspNonce ?>" src="assets/js/vendor/bootstrap.bundle.min.js"></script>
 <script nonce="<?= $cspNonce ?>" src="assets/js/zerda-select.js?v=<?= $v ?>"></script>
 <script nonce="<?= $cspNonce ?>" type="module" src="assets/js/app.js?v=<?= $v ?>"></script>
+<script nonce="<?= $cspNonce ?>">
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/zerdatime/sw.js', { scope: '/zerdatime/' }).catch(() => {});
+}
+</script>
 </body>
 </html>
