@@ -201,48 +201,51 @@ $allPassed = !in_array(false, $checks, true);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>zerdaTime — Installation</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Inter',sans-serif; background:#f0f2f5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
-.installer { background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,.08); max-width:620px; width:100%; overflow:hidden; }
-.installer-header { background:linear-gradient(135deg,#1B2A4A,#00b4a0); color:#fff; padding:2rem; text-align:center; }
-.installer-header h1 { font-size:1.5rem; font-weight:700; margin-bottom:0.25rem; }
-.installer-header p { opacity:.8; font-size:.85rem; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#F7F5F2; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+.installer { background:#fff; border-radius:2rem; box-shadow:0 4px 24px rgba(0,0,0,.06); max-width:620px; width:100%; overflow:hidden; border:1px solid #E8E5E0; }
+.installer-header { background:#1A1A1A; color:#fff; padding:2rem 2rem 2.5rem; text-align:center; }
+.installer-header img { height:40px; margin-bottom:10px; }
+.installer-header h1 { font-size:1.4rem; font-weight:700; margin-bottom:0.2rem; letter-spacing:-.02em; }
+.installer-header p { opacity:.6; font-size:.82rem; }
 .steps { display:flex; gap:0; padding:0 2rem; margin-top:-18px; justify-content:center; }
-.step-dot { width:36px; height:36px; border-radius:50%; background:#e0e0e0; color:#999; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.8rem; transition:all .3s; }
-.step-dot.active { background:#00b4a0; color:#fff; transform:scale(1.15); }
-.step-dot.done { background:#198754; color:#fff; }
-.step-line { width:40px; height:2px; background:#e0e0e0; align-self:center; }
+.step-dot { width:36px; height:36px; border-radius:50%; background:#E8E5E0; color:#9B9B9B; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.8rem; transition:all .3s; border:2px solid #fff; }
+.step-dot.active { background:#1A1A1A; color:#fff; transform:scale(1.15); }
+.step-dot.done { background:#bcd2cb; color:#2d4a43; }
+.step-line { width:40px; height:2px; background:#E8E5E0; align-self:center; }
 .installer-body { padding:2rem; }
 .form-group { margin-bottom:1rem; }
-.form-group label { display:block; font-weight:500; font-size:.85rem; margin-bottom:4px; color:#333; }
-.form-group input, .form-group select { width:100%; padding:0.5rem 0.75rem; border:1px solid #ddd; border-radius:8px; font-size:.9rem; font-family:inherit; }
-.form-group input:focus, .form-group select:focus { outline:none; border-color:#00b4a0; box-shadow:0 0 0 3px rgba(0,180,160,.1); }
-.btn { padding:0.6rem 1.5rem; border:none; border-radius:8px; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:0.4rem; }
-.btn-primary { background:#00b4a0; color:#fff; }
-.btn-primary:hover { background:#009688; }
-.btn-secondary { background:#e0e0e0; color:#333; }
-.btn-secondary:hover { background:#ccc; }
+.form-group label { display:block; font-weight:500; font-size:.85rem; margin-bottom:4px; color:#1A1A1A; }
+.form-group input, .form-group select { width:100%; padding:0.55rem 0.75rem; border:1px solid #E8E5E0; border-radius:10px; font-size:.9rem; font-family:inherit; background:#FAFAF8; transition:all .2s; }
+.form-group input:focus, .form-group select:focus { outline:none; border-color:#1A1A1A; box-shadow:0 0 0 3px rgba(26,26,26,.06); background:#fff; }
+.btn { padding:0.6rem 1.5rem; border:none; border-radius:10px; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:0.4rem; }
+.btn-primary { background:#1A1A1A; color:#fff; }
+.btn-primary:hover { background:#000; }
+.btn-secondary { background:#F0EDE8; color:#1A1A1A; }
+.btn-secondary:hover { background:#E8E5E0; }
 .check-list { list-style:none; margin:1rem 0; }
-.check-list li { padding:0.4rem 0; display:flex; align-items:center; gap:0.5rem; font-size:.9rem; }
-.check-list .bi-check-circle-fill { color:#198754; }
-.check-list .bi-x-circle-fill { color:#dc3545; }
-.alert { padding:0.75rem 1rem; border-radius:8px; font-size:.85rem; margin-bottom:1rem; }
-.alert-danger { background:#fce4ec; color:#c62828; }
-.alert-success { background:#e8f5e9; color:#2e7d32; }
+.check-list li { padding:0.5rem 0.75rem; display:flex; align-items:center; gap:0.6rem; font-size:.9rem; border-radius:8px; }
+.check-list li:nth-child(odd) { background:#FAFAF8; }
+.check-list .bi-check-circle-fill { color:#2d4a43; }
+.check-list .bi-x-circle-fill { color:#7B3B2C; }
+.alert { padding:0.75rem 1rem; border-radius:10px; font-size:.85rem; margin-bottom:1rem; }
+.alert-danger { background:#E2B8AE; color:#7B3B2C; }
+.alert-success { background:#bcd2cb; color:#2d4a43; }
 .row { display:flex; gap:1rem; }
 .row > * { flex:1; }
-.installer-footer { padding:1rem 2rem; display:flex; justify-content:space-between; border-top:1px solid #eee; }
+.installer-footer { padding:1rem 2rem; display:flex; justify-content:space-between; border-top:1px solid #F0EDE8; }
 #stepContent { min-height:200px; }
+#stepContent h5 { font-weight:700; color:#1A1A1A; }
 </style>
 </head>
 <body>
 
 <div class="installer">
   <div class="installer-header">
-    <h1>🏥 zerdaTime</h1>
+    <img src="/zerdatime/logo.png" alt="zerdaTime">
+    <h1>zerdaTime</h1>
     <p>Assistant d'installation</p>
   </div>
 
@@ -376,9 +379,9 @@ function showStep(step) {
     if (step === 6) {
         content.innerHTML = `
             <div style="text-align:center;padding:2rem 0">
-                <div style="font-size:3rem;margin-bottom:1rem">🎉</div>
-                <h4 style="margin-bottom:0.5rem">Installation terminée !</h4>
-                <p style="color:#666;margin-bottom:1.5rem">zerdaTime est prêt à être utilisé.</p>
+                <div style="width:64px;height:64px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:1rem"><i class="bi bi-check-lg"></i></div>
+                <h4 style="margin-bottom:0.5rem;font-weight:700">Installation terminée</h4>
+                <p style="color:#6B6B6B;margin-bottom:1.5rem">zerdaTime est prêt à être utilisé.</p>
                 <a href="/zerdatime/login" class="btn btn-primary" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i> Se connecter</a>
             </div>
         `;
