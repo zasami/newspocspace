@@ -70,6 +70,63 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 .ext-no-config { text-align: center; padding: 60px 20px; }
 .ext-no-config i { font-size: 4rem; opacity: .15; display: block; margin-bottom: 16px; }
 
+/* Contacts modal */
+.ct-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1050; display: flex; align-items: center; justify-content: center; animation: ctFadeIn .2s ease; }
+.ct-overlay.hidden { display: none !important; }
+.ct-modal { background: var(--cl-surface, #fff); border-radius: 16px; width: 680px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.ct-header { padding: 16px 20px; border-bottom: 1px solid var(--cl-border, #E8E5E0); display: flex; align-items: center; gap: 12px; }
+.ct-header h6 { font-weight: 700; margin: 0; flex: 1; }
+.ct-header-btn { background: none; border: none; cursor: pointer; color: var(--cl-text-secondary); font-size: 1.1rem; padding: 4px; border-radius: 6px; transition: background .15s; }
+.ct-header-btn:hover { background: var(--cl-bg, #F7F5F2); }
+.ct-search { padding: 10px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+.ct-search input { width: 100%; border: 1px solid var(--cl-border); border-radius: 8px; padding: 7px 12px 7px 32px; font-size: .85rem; background: var(--cl-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239B9B9B' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") 10px center no-repeat; }
+.ct-search input:focus { outline: none; border-color: var(--cl-accent); }
+.ct-body { flex: 1; overflow-y: auto; min-height: 200px; }
+.ct-empty { text-align: center; padding: 40px 20px; color: var(--cl-text-muted); }
+.ct-empty i { font-size: 2.5rem; opacity: .2; display: block; margin-bottom: 8px; }
+.ct-row { display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); cursor: pointer; transition: background .12s; }
+.ct-row:hover { background: var(--cl-bg, #F7F5F2); }
+.ct-row.selected { background: rgba(25,25,24,.06); }
+.ct-avatar { width: 36px; height: 36px; border-radius: 50%; background: #E2B8AE; color: #7B3B2C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .75rem; flex-shrink: 0; }
+.ct-info { flex: 1; min-width: 0; }
+.ct-name { font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-email { font-size: .78rem; color: var(--cl-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-entreprise { font-size: .72rem; color: var(--cl-text-secondary); }
+.ct-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.ct-actions button { background: none; border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; color: var(--cl-text-muted); font-size: .9rem; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+.ct-actions button:hover { background: var(--cl-bg); color: var(--cl-text); }
+.ct-actions button.danger:hover { background: #E2B8AE; color: #7B3B2C; }
+.ct-footer { padding: 12px 20px; border-top: 1px solid var(--cl-border); display: flex; gap: 8px; align-items: center; }
+.ct-footer-info { flex: 1; font-size: .78rem; color: var(--cl-text-muted); }
+.ct-btn { padding: 6px 14px; border: none; border-radius: 8px; font-weight: 600; font-size: .82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all .15s; }
+.ct-btn-primary { background: var(--cl-accent, #191918); color: #fff; }
+.ct-btn-primary:hover { background: #000; }
+.ct-btn-outline { background: var(--cl-bg); border: 1px solid var(--cl-border); color: var(--cl-text); }
+.ct-btn-outline:hover { background: var(--cl-surface); border-color: var(--cl-accent); }
+
+/* Context menu */
+.ct-ctx { position: fixed; z-index: 1060; background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); min-width: 180px; animation: ctFadeIn .12s ease; }
+.ct-ctx-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: .84rem; cursor: pointer; color: var(--cl-text); transition: background .1s; border: none; background: none; width: 100%; text-align: left; }
+.ct-ctx-item:hover { background: var(--cl-bg); }
+.ct-ctx-item.danger { color: #7B3B2C; }
+.ct-ctx-item.danger:hover { background: #E2B8AE; }
+.ct-ctx-sep { height: 1px; background: var(--cl-border-light); margin: 4px 0; }
+
+/* Contact form (inline in modal) */
+.ct-form { padding: 20px; }
+.ct-form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.ct-form-row > * { flex: 1; }
+.ct-form label { display: block; font-size: .78rem; font-weight: 600; color: var(--cl-text-secondary); margin-bottom: 3px; }
+.ct-form input, .ct-form textarea { width: 100%; border: 1px solid var(--cl-border); border-radius: 8px; padding: 7px 10px; font-size: .85rem; font-family: inherit; }
+.ct-form input:focus, .ct-form textarea:focus { outline: none; border-color: var(--cl-accent); }
+.ct-form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+/* Import area */
+.ct-import-zone { border: 2px dashed var(--cl-border); border-radius: 12px; padding: 30px 20px; text-align: center; color: var(--cl-text-muted); cursor: pointer; transition: all .2s; }
+.ct-import-zone:hover { border-color: var(--cl-accent); background: rgba(25,25,24,.02); }
+.ct-import-zone i { font-size: 2rem; opacity: .3; display: block; margin-bottom: 8px; }
+@keyframes ctFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 /* Lightbox */
 .ext-lb { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: extLbIn .25s ease; }
 .ext-lb-hidden { display: none !important; }
@@ -487,10 +544,338 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
         }
     });
 
-    // ── Contacts modal (placeholder) ──
-    document.getElementById('extContactsBtn')?.addEventListener('click', () => {
-        showToast('Carnet de contacts — bientôt disponible', 'info');
-    });
+    // ══════════════════════════════════════════════════════════════════════
+    // CONTACTS MODAL — Full address book
+    // ══════════════════════════════════════════════════════════════════════
+    let ctContacts = [];
+    let ctSearch = '';
+    let ctView = 'list'; // 'list' | 'form' | 'import'
+    let ctEditId = null;
+    let ctContextMenu = null;
+
+    document.getElementById('extContactsBtn')?.addEventListener('click', openContacts);
+
+    async function openContacts() {
+        ctView = 'list'; ctEditId = null; ctSearch = '';
+        await loadContacts();
+        renderContactsModal();
+    }
+
+    async function loadContacts() {
+        const res = await adminApiPost('admin_email_ext_get_contacts', {});
+        if (res.success) ctContacts = res.contacts || [];
+    }
+
+    function getInitials(c) {
+        return ((c.prenom || '')[0] || '') + ((c.nom || '')[0] || c.email[0] || '?');
+    }
+
+    function filteredContacts() {
+        if (!ctSearch) return ctContacts;
+        const q = ctSearch.toLowerCase();
+        return ctContacts.filter(c =>
+            (c.nom || '').toLowerCase().includes(q) ||
+            (c.prenom || '').toLowerCase().includes(q) ||
+            (c.email || '').toLowerCase().includes(q) ||
+            (c.entreprise || '').toLowerCase().includes(q) ||
+            (c.telephone || '').toLowerCase().includes(q)
+        );
+    }
+
+    function renderContactsModal() {
+        closeContextMenu();
+        let overlay = document.getElementById('ctOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'ctOverlay';
+            overlay.className = 'ct-overlay';
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.remove('hidden');
+
+        if (ctView === 'form') { renderContactForm(); return; }
+        if (ctView === 'import') { renderImportView(); return; }
+
+        const list = filteredContacts();
+        const listHtml = list.length
+            ? list.map(c => {
+                const initials = getInitials(c).toUpperCase();
+                const name = [c.prenom, c.nom].filter(Boolean).join(' ') || c.email;
+                return '<div class="ct-row" data-id="' + c.id + '">'
+                    + '<div class="ct-avatar">' + escapeHtml(initials) + '</div>'
+                    + '<div class="ct-info">'
+                    + '<div class="ct-name">' + escapeHtml(name) + '</div>'
+                    + '<div class="ct-email">' + escapeHtml(c.email) + '</div>'
+                    + (c.entreprise ? '<div class="ct-entreprise">' + escapeHtml(c.entreprise) + '</div>' : '')
+                    + '</div>'
+                    + '<div class="ct-actions">'
+                    + '<button class="ct-send" title="Envoyer un email"><i class="bi bi-send"></i></button>'
+                    + '<button class="ct-edit" title="Modifier"><i class="bi bi-pencil"></i></button>'
+                    + '<button class="ct-del danger" title="Supprimer"><i class="bi bi-trash3"></i></button>'
+                    + '</div>'
+                    + '</div>';
+            }).join('')
+            : (ctContacts.length === 0
+                ? '<div class="ct-empty"><i class="bi bi-person-rolodex"></i><p>Aucun contact</p><button class="ct-btn ct-btn-outline" id="ctEmptyImport"><i class="bi bi-upload"></i> Importer des contacts</button></div>'
+                : '<div class="ct-empty"><i class="bi bi-search"></i><p>Aucun résultat pour «' + escapeHtml(ctSearch) + '»</p></div>');
+
+        overlay.innerHTML =
+            '<div class="ct-modal">'
+            + '<div class="ct-header">'
+            + '<i class="bi bi-person-rolodex" style="font-size:1.2rem"></i>'
+            + '<h6>Carnet d\'adresses</h6>'
+            + '<button class="ct-header-btn" id="ctCloseBtn" title="Fermer"><i class="bi bi-x-lg"></i></button>'
+            + '</div>'
+            + '<div class="ct-search"><input type="text" id="ctSearchInput" placeholder="Rechercher un contact..." value="' + escapeHtml(ctSearch) + '"></div>'
+            + '<div class="ct-body" id="ctBody">' + listHtml + '</div>'
+            + '<div class="ct-footer">'
+            + '<span class="ct-footer-info">' + ctContacts.length + ' contact(s)</span>'
+            + '<button class="ct-btn ct-btn-outline" id="ctImportBtn"><i class="bi bi-upload"></i> Importer</button>'
+            + '<button class="ct-btn ct-btn-primary" id="ctAddBtn"><i class="bi bi-plus-lg"></i> Ajouter</button>'
+            + '</div>'
+            + '</div>';
+
+        // Events
+        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeContacts(); });
+        overlay.querySelector('#ctSearchInput').addEventListener('input', (e) => { ctSearch = e.target.value; renderContactsModal(); });
+        overlay.querySelector('#ctSearchInput').focus();
+        overlay.querySelector('#ctAddBtn').addEventListener('click', () => { ctView = 'form'; ctEditId = null; renderContactsModal(); });
+        overlay.querySelector('#ctImportBtn')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
+        overlay.querySelector('#ctEmptyImport')?.addEventListener('click', () => { ctView = 'import'; renderContactsModal(); });
+
+        // Row actions
+        overlay.querySelectorAll('.ct-row').forEach(row => {
+            const id = row.dataset.id;
+            row.querySelector('.ct-send')?.addEventListener('click', (e) => { e.stopPropagation(); sendToContact(id); });
+            row.querySelector('.ct-edit')?.addEventListener('click', (e) => { e.stopPropagation(); ctEditId = id; ctView = 'form'; renderContactsModal(); });
+            row.querySelector('.ct-del')?.addEventListener('click', (e) => { e.stopPropagation(); deleteContact(id); });
+
+            // Right-click context menu
+            row.addEventListener('contextmenu', (e) => { e.preventDefault(); showContextMenu(e, id); });
+        });
+    }
+
+    function renderContactForm() {
+        const overlay = document.getElementById('ctOverlay');
+        const c = ctEditId ? ctContacts.find(x => x.id === ctEditId) : {};
+        const isEdit = !!ctEditId;
+
+        overlay.innerHTML =
+            '<div class="ct-modal">'
+            + '<div class="ct-header">'
+            + '<button class="ct-header-btn" id="ctBackBtn" title="Retour"><i class="bi bi-arrow-left"></i></button>'
+            + '<h6>' + (isEdit ? 'Modifier le contact' : 'Nouveau contact') + '</h6>'
+            + '<button class="ct-header-btn" id="ctCloseBtn" title="Fermer"><i class="bi bi-x-lg"></i></button>'
+            + '</div>'
+            + '<div class="ct-form">'
+            + '<div class="ct-form-row">'
+            + '<div><label>Prénom</label><input id="ctPrenom" value="' + escapeHtml(c.prenom || '') + '"></div>'
+            + '<div><label>Nom</label><input id="ctNom" value="' + escapeHtml(c.nom || '') + '"></div>'
+            + '</div>'
+            + '<div class="ct-form-row">'
+            + '<div><label>Email *</label><input id="ctEmail" type="email" value="' + escapeHtml(c.email || '') + '"></div>'
+            + '</div>'
+            + '<div class="ct-form-row">'
+            + '<div><label>Entreprise</label><input id="ctEntreprise" value="' + escapeHtml(c.entreprise || '') + '"></div>'
+            + '<div><label>Téléphone</label><input id="ctTel" value="' + escapeHtml(c.telephone || '') + '"></div>'
+            + '</div>'
+            + '<div><label>Notes</label><textarea id="ctNotes" rows="2">' + escapeHtml(c.notes || '') + '</textarea></div>'
+            + '<div style="margin-top:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="ctShared" ' + (c.is_shared ? 'checked' : '') + '> Partagé avec toute l\'équipe</label></div>'
+            + '<div class="ct-form-actions">'
+            + '<button class="ct-btn ct-btn-outline" id="ctCancelForm">Annuler</button>'
+            + '<button class="ct-btn ct-btn-primary" id="ctSaveForm"><i class="bi bi-check-lg"></i> ' + (isEdit ? 'Modifier' : 'Ajouter') + '</button>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+
+        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
+        overlay.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        overlay.querySelector('#ctCancelForm').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+        overlay.querySelector('#ctSaveForm').addEventListener('click', saveContact);
+        overlay.querySelector('#ctPrenom').focus();
+    }
+
+    function renderImportView() {
+        const overlay = document.getElementById('ctOverlay');
+        overlay.innerHTML =
+            '<div class="ct-modal">'
+            + '<div class="ct-header">'
+            + '<button class="ct-header-btn" id="ctBackBtn"><i class="bi bi-arrow-left"></i></button>'
+            + '<h6>Importer des contacts</h6>'
+            + '<button class="ct-header-btn" id="ctCloseBtn"><i class="bi bi-x-lg"></i></button>'
+            + '</div>'
+            + '<div style="padding:20px">'
+            + '<div class="ct-import-zone" id="ctImportZone">'
+            + '<i class="bi bi-file-earmark-arrow-up"></i>'
+            + '<p style="font-size:.88rem;margin-bottom:4px"><strong>Glissez un fichier CSV ici</strong></p>'
+            + '<p style="font-size:.78rem">ou cliquez pour sélectionner</p>'
+            + '<input type="file" id="ctImportFile" accept=".csv,.txt,.vcf" hidden>'
+            + '</div>'
+            + '<div style="margin-top:16px;font-size:.82rem;color:var(--cl-text-muted)">'
+            + '<p><strong>Format CSV attendu :</strong></p>'
+            + '<code style="display:block;background:var(--cl-bg);padding:8px 12px;border-radius:6px;margin-top:6px;font-size:.78rem">'
+            + 'prenom,nom,email,entreprise,telephone<br>'
+            + 'Jean,Dupont,jean@example.com,Entreprise SA,+41 22 123 45 67'
+            + '</code>'
+            + '</div>'
+            + '<div id="ctImportResult" style="margin-top:12px"></div>'
+            + '</div>'
+            + '</div>';
+
+        overlay.querySelector('#ctCloseBtn').addEventListener('click', closeContacts);
+        overlay.querySelector('#ctBackBtn').addEventListener('click', () => { ctView = 'list'; renderContactsModal(); });
+
+        const zone = overlay.querySelector('#ctImportZone');
+        const fileInput = overlay.querySelector('#ctImportFile');
+        zone.addEventListener('click', () => fileInput.click());
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--cl-accent)'; });
+        zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.style.borderColor = ''; if (e.dataTransfer.files[0]) processImportFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) processImportFile(e.target.files[0]); });
+    }
+
+    async function processImportFile(file) {
+        const resultEl = document.getElementById('ctImportResult');
+        resultEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Lecture...';
+
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { resultEl.innerHTML = '<div class="alert alert-danger" style="background:#E2B8AE;color:#7B3B2C;padding:8px 12px;border-radius:8px;font-size:.85rem">Fichier vide ou invalide</div>'; return; }
+
+        // Parse header
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        const emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
+        if (emailIdx === -1) { resultEl.innerHTML = '<div class="alert alert-danger" style="background:#E2B8AE;color:#7B3B2C;padding:8px 12px;border-radius:8px;font-size:.85rem">Colonne "email" non trouvée</div>'; return; }
+
+        const nomIdx = headers.findIndex(h => h === 'nom' || h === 'last_name' || h === 'lastname' || h === 'family_name');
+        const prenomIdx = headers.findIndex(h => h === 'prenom' || h === 'prénom' || h === 'first_name' || h === 'firstname' || h === 'given_name');
+        const entIdx = headers.findIndex(h => h.includes('entreprise') || h.includes('company') || h.includes('organization') || h.includes('organisation'));
+        const telIdx = headers.findIndex(h => h.includes('tel') || h.includes('phone') || h.includes('mobile'));
+
+        const contacts = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(sep).map(c => c.trim().replace(/^['"]|['"]$/g, ''));
+            const email = cols[emailIdx] || '';
+            if (!email) continue;
+            contacts.push({
+                email,
+                nom: nomIdx >= 0 ? (cols[nomIdx] || '') : '',
+                prenom: prenomIdx >= 0 ? (cols[prenomIdx] || '') : '',
+                entreprise: entIdx >= 0 ? (cols[entIdx] || '') : '',
+                telephone: telIdx >= 0 ? (cols[telIdx] || '') : '',
+            });
+        }
+
+        if (!contacts.length) { resultEl.innerHTML = '<div style="background:#E2B8AE;color:#7B3B2C;padding:8px 12px;border-radius:8px;font-size:.85rem">Aucun contact valide trouvé</div>'; return; }
+
+        resultEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Import de ' + contacts.length + ' contact(s)...';
+        const res = await adminApiPost('admin_email_ext_import_contacts', { contacts });
+        if (res.success) {
+            resultEl.innerHTML = '<div style="background:#bcd2cb;color:#2d4a43;padding:8px 12px;border-radius:8px;font-size:.85rem"><i class="bi bi-check-circle"></i> ' + escapeHtml(res.message) + '</div>';
+            await loadContacts();
+            setTimeout(() => { ctView = 'list'; renderContactsModal(); }, 1200);
+        } else {
+            resultEl.innerHTML = '<div style="background:#E2B8AE;color:#7B3B2C;padding:8px 12px;border-radius:8px;font-size:.85rem">' + escapeHtml(res.message || 'Erreur') + '</div>';
+        }
+    }
+
+    async function saveContact() {
+        const data = {
+            id: ctEditId || '',
+            prenom: document.getElementById('ctPrenom').value.trim(),
+            nom: document.getElementById('ctNom').value.trim(),
+            email: document.getElementById('ctEmail').value.trim(),
+            entreprise: document.getElementById('ctEntreprise').value.trim(),
+            telephone: document.getElementById('ctTel').value.trim(),
+            notes: document.getElementById('ctNotes').value.trim(),
+            is_shared: document.getElementById('ctShared').checked ? 1 : 0,
+        };
+        if (!data.email) { showToast('Email requis', 'error'); return; }
+
+        const res = await adminApiPost('admin_email_ext_save_contact', data);
+        if (res.success) {
+            showToast(ctEditId ? 'Contact modifié' : 'Contact ajouté', 'success');
+            await loadContacts();
+            ctView = 'list'; ctEditId = null;
+            renderContactsModal();
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
+    }
+
+    async function deleteContact(id) {
+        closeContextMenu();
+        const c = ctContacts.find(x => x.id === id);
+        const confirmed = await adminConfirm({
+            title: 'Supprimer ce contact ?',
+            text: escapeHtml([c?.prenom, c?.nom].filter(Boolean).join(' ') || c?.email),
+            type: 'danger', icon: 'bi-trash3', okText: 'Supprimer'
+        });
+        if (!confirmed) return;
+        const res = await adminApiPost('admin_email_ext_delete_contact', { id });
+        if (res.success) {
+            showToast('Contact supprimé', 'success');
+            await loadContacts();
+            renderContactsModal();
+        }
+    }
+
+    function sendToContact(id) {
+        closeContextMenu();
+        closeContacts();
+        const c = ctContacts.find(x => x.id === id);
+        if (!c) return;
+        openExtCompose({ to: c.email, subject: '' });
+    }
+
+    function closeContacts() {
+        closeContextMenu();
+        const overlay = document.getElementById('ctOverlay');
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    function showContextMenu(e, id) {
+        closeContextMenu();
+        const c = ctContacts.find(x => x.id === id);
+        if (!c) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'ct-ctx';
+        menu.id = 'ctCtxMenu';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        menu.innerHTML =
+            '<button class="ct-ctx-item" data-action="send"><i class="bi bi-send"></i> Envoyer un email</button>'
+            + '<button class="ct-ctx-item" data-action="copy"><i class="bi bi-clipboard"></i> Copier l\'email</button>'
+            + '<button class="ct-ctx-item" data-action="edit"><i class="bi bi-pencil"></i> Modifier</button>'
+            + '<div class="ct-ctx-sep"></div>'
+            + '<button class="ct-ctx-item danger" data-action="delete"><i class="bi bi-trash3"></i> Supprimer</button>';
+        document.body.appendChild(menu);
+
+        // Keep in viewport
+        const r = menu.getBoundingClientRect();
+        if (r.right > window.innerWidth) menu.style.left = (window.innerWidth - r.width - 8) + 'px';
+        if (r.bottom > window.innerHeight) menu.style.top = (window.innerHeight - r.height - 8) + 'px';
+
+        menu.querySelectorAll('.ct-ctx-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                if (action === 'send') sendToContact(id);
+                else if (action === 'copy') { navigator.clipboard.writeText(c.email); showToast('Email copié', 'success'); closeContextMenu(); }
+                else if (action === 'edit') { closeContextMenu(); ctEditId = id; ctView = 'form'; renderContactsModal(); }
+                else if (action === 'delete') deleteContact(id);
+            });
+        });
+
+        ctContextMenu = menu;
+        setTimeout(() => document.addEventListener('click', closeContextMenu, { once: true }), 10);
+    }
+
+    function closeContextMenu() {
+        if (ctContextMenu) { ctContextMenu.remove(); ctContextMenu = null; }
+    }
 
     // ── Load real IMAP folders ──
     async function loadFolders() {

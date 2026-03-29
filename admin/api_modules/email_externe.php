@@ -298,3 +298,30 @@ function admin_email_ext_delete_contact()
     Db::exec("DELETE FROM email_externe_contacts WHERE id = ?", [$id]);
     respond(['success' => true, 'message' => 'Contact supprimé']);
 }
+
+function admin_email_ext_import_contacts()
+{
+    global $params;
+    $user = require_auth();
+    $contacts = $params['contacts'] ?? [];
+    if (!is_array($contacts) || empty($contacts)) bad_request('Aucun contact à importer');
+
+    $imported = 0;
+    $skipped = 0;
+    foreach ($contacts as $c) {
+        $email = trim($c['email'] ?? '');
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) { $skipped++; continue; }
+
+        // Skip duplicates
+        $exists = Db::getOne("SELECT COUNT(*) FROM email_externe_contacts WHERE email = ? AND (created_by = ? OR is_shared = 1)", [$email, $user['id']]);
+        if ($exists) { $skipped++; continue; }
+
+        Db::exec(
+            "INSERT INTO email_externe_contacts (id, nom, prenom, email, entreprise, telephone, notes, created_by, is_shared) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            [Uuid::v4(), trim($c['nom'] ?? ''), trim($c['prenom'] ?? ''), $email, trim($c['entreprise'] ?? ''), trim($c['telephone'] ?? ''), trim($c['notes'] ?? ''), $user['id']]
+        );
+        $imported++;
+    }
+
+    respond(['success' => true, 'imported' => $imported, 'skipped' => $skipped, 'message' => "$imported contact(s) importé(s)" . ($skipped ? ", $skipped ignoré(s)" : '')]);
+}
