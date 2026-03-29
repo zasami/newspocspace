@@ -91,18 +91,72 @@
             </label>
           </div>
         </div>
-        <!-- Remarques -->
+        <!-- Remarques (tag input) -->
         <div style="margin-bottom:0">
           <label class="form-label" style="font-weight:600">Demande spéciale <small class="text-muted">(optionnel)</small></label>
-          <input type="text" class="form-control" id="crRemarques" placeholder="Ex: sans viande, allergie noix..." maxlength="500">
-          <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.5rem">
-            <button type="button" class="btn btn-sm btn-outline-secondary cr-quick-tag" data-tag="Sans viande">Sans viande</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cr-quick-tag" data-tag="Sans porc">Sans porc</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cr-quick-tag" data-tag="Sans gluten">Sans gluten</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cr-quick-tag" data-tag="Sans lactose">Sans lactose</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary cr-quick-tag" data-tag="Végétarien">Végétarien</button>
+          <input type="hidden" id="crRemarques">
+          <div class="cr-tag-input" id="crTagWrap">
+            <div class="cr-tag-list" id="crTagList"></div>
+            <input type="text" class="cr-tag-text" id="crTagText" placeholder="Tapez ou cliquez ci-dessous..." maxlength="100">
+          </div>
+          <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.5rem">
+            <span class="cr-quick-tag" data-tag="Sans viande">Sans viande</span>
+            <span class="cr-quick-tag" data-tag="Sans porc">Sans porc</span>
+            <span class="cr-quick-tag" data-tag="Sans gluten">Sans gluten</span>
+            <span class="cr-quick-tag" data-tag="Sans lactose">Sans lactose</span>
+            <span class="cr-quick-tag" data-tag="Végétarien">Végétarien</span>
+            <span class="cr-quick-tag" data-tag="Allergie noix">Allergie noix</span>
+            <span class="cr-quick-tag" data-tag="Halal">Halal</span>
+            <span class="cr-quick-tag" data-tag="Mixé">Mixé</span>
           </div>
         </div>
+        <style>
+        .cr-tag-input {
+            display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+            min-height:42px; padding:6px 10px;
+            border:1px solid var(--zt-border, #E0DDD8); border-radius:10px;
+            background:var(--zt-surface, #fff); cursor:text;
+            transition:border-color .2s, box-shadow .2s;
+        }
+        .cr-tag-input:focus-within {
+            border-color:var(--zt-teal, #2d4a43);
+            box-shadow:0 0 0 3px rgba(45,74,67,.1);
+        }
+        .cr-tag-list { display:flex; flex-wrap:wrap; gap:5px; }
+        .cr-tag-chip {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:3px 8px 3px 10px; border-radius:20px;
+            background:var(--zt-accent-bg, #E8F0EE); color:var(--zt-teal, #2d4a43);
+            font-size:.82rem; font-weight:500; white-space:nowrap;
+            animation: crTagIn .2s ease;
+        }
+        @keyframes crTagIn { from { transform:scale(.85); opacity:0 } to { transform:scale(1); opacity:1 } }
+        .cr-tag-chip .cr-tag-x {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:18px; height:18px; border-radius:50%; cursor:pointer;
+            font-size:.7rem; line-height:1; color:var(--zt-teal, #2d4a43);
+            background:rgba(45,74,67,.1); transition:background .15s;
+        }
+        .cr-tag-chip .cr-tag-x:hover { background:rgba(45,74,67,.25); }
+        .cr-tag-text {
+            flex:1; min-width:80px; border:none; outline:none;
+            font-size:.88rem; background:transparent; color:var(--zt-text, #333);
+            padding:2px 0;
+        }
+        .cr-tag-text::placeholder { color:var(--zt-text-muted, #aaa); }
+        .cr-quick-tag {
+            display:inline-block; padding:4px 12px; border-radius:20px;
+            font-size:.78rem; font-weight:500; cursor:pointer; user-select:none;
+            background:var(--zt-bg, #F7F5F2); color:var(--zt-text-secondary, #6B6560);
+            border:1px solid var(--zt-border, #E0DDD8);
+            transition:all .15s;
+        }
+        .cr-quick-tag:hover { background:var(--zt-accent-bg, #E8F0EE); border-color:var(--zt-teal, #2d4a43); color:var(--zt-teal, #2d4a43); }
+        .cr-quick-tag.cr-tag-active {
+            background:var(--zt-teal, #2d4a43); color:#fff;
+            border-color:var(--zt-teal, #2d4a43);
+        }
+        </style>
       </div>
       <div class="modal-footer d-flex" style="flex-shrink:0">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>

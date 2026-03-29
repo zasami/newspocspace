@@ -41,15 +41,65 @@ export function init() {
             }
         });
     });
+    // Tag input system
+    const tagList = document.getElementById('crTagList');
+    const tagText = document.getElementById('crTagText');
+    const tagHidden = document.getElementById('crRemarques');
+    const tagWrap = document.getElementById('crTagWrap');
+    let tags = [];
+
+    function syncTags() {
+        tagHidden.value = tags.join(', ');
+        tagList.innerHTML = tags.map((t, i) =>
+            `<span class="cr-tag-chip" data-idx="${i}">${escapeHtml(t)}<span class="cr-tag-x" data-idx="${i}">&times;</span></span>`
+        ).join('');
+        // Update quick tag buttons active state
+        document.querySelectorAll('#crModal .cr-quick-tag').forEach(b => {
+            b.classList.toggle('cr-tag-active', tags.some(t => t.toLowerCase() === b.dataset.tag.toLowerCase()));
+        });
+        tagText.placeholder = tags.length ? '' : 'Tapez ou cliquez ci-dessous...';
+    }
+
+    function addTag(text) {
+        text = text.trim();
+        if (!text || tags.some(t => t.toLowerCase() === text.toLowerCase())) return;
+        tags.push(text);
+        syncTags();
+    }
+
+    function removeTag(idx) {
+        tags.splice(idx, 1);
+        syncTags();
+    }
+
+    window.__crTagsClear = () => { tags = []; syncTags(); };
+    window.__crTagsGet = () => tags;
+
+    tagList.addEventListener('click', e => {
+        const x = e.target.closest('.cr-tag-x');
+        if (x) removeTag(parseInt(x.dataset.idx));
+    });
+
+    tagText.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(tagText.value);
+            tagText.value = '';
+        }
+        if (e.key === 'Backspace' && !tagText.value && tags.length) {
+            removeTag(tags.length - 1);
+        }
+    });
+
+    tagWrap.addEventListener('click', () => tagText.focus());
+
     // Quick tags
     document.querySelectorAll('#crModal .cr-quick-tag').forEach(btn => {
         btn.addEventListener('click', e => {
             e.preventDefault();
-            const input = document.getElementById('crRemarques');
             const tag = btn.dataset.tag;
-            if (input.value.toLowerCase().includes(tag.toLowerCase())) return;
-            input.value = input.value.trim() ? input.value.trim() + ', ' + tag : tag;
-            btn.style.background = 'var(--zt-accent-bg)'; btn.style.borderColor = 'var(--zt-teal)';
+            const idx = tags.findIndex(t => t.toLowerCase() === tag.toLowerCase());
+            if (idx >= 0) { removeTag(idx); } else { addTag(tag); }
         });
     });
 
@@ -131,6 +181,8 @@ function openAddModal() {
     document.getElementById('crUserResults').innerHTML = '';
     document.getElementById('crNb').value = '1';
     document.getElementById('crRemarques').value = '';
+    if (document.getElementById('crTagText')) document.getElementById('crTagText').value = '';
+    if (window.__crTagsClear) window.__crTagsClear();
 
     // Reset choix
     const menuRadio = document.querySelector('#crModal input[name="crChoix"][value="menu"]');
@@ -151,6 +203,7 @@ function openAddModal() {
     // Reset quick tags
     document.querySelectorAll('#crModal .cr-quick-tag').forEach(b => {
         b.style.background = ''; b.style.borderColor = '';
+        b.classList.remove('cr-tag-active');
     });
 
     modal?.show();

@@ -105,7 +105,7 @@ $horaires = Db::fetchAll("SELECT * FROM horaires_types ORDER BY code");
             <small class="text-muted" id="horaireModalSubtitle">Définissez le code, les horaires et les pauses</small>
           </div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <form id="horaireForm" class="horaire-form-flex">
         <input type="hidden" id="horaireId">

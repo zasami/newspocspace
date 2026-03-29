@@ -147,7 +147,7 @@ function fmtChgDate($dateStr, $joursFr, $moisFr) {
     <div class="modal-content modal-info">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2"></i>Détail du changement</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body chg-modal-body-scroll">
         <div class="row mb-3" id="chgDetailSummary"></div>
