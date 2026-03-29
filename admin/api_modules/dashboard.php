@@ -23,7 +23,7 @@ function admin_get_dashboard_stats()
     $totalAbsences = Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
     $totalDesirs = Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
     $userId = $_SESSION['zt_user']['id'] ?? '';
-    $totalMessages = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
+    $totalMessages = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
 
     $absencesParType = Db::fetchAll(
         "SELECT type, COUNT(*) as total FROM absences WHERE statut = 'valide' AND date_fin >= CURDATE() GROUP BY type"

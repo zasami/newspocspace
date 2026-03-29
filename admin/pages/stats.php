@@ -3,7 +3,7 @@
 $statTotalUsers    = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
 $statPendingAbs    = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
 $statPendingDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
-$statUnreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0 AND deleted = 0");
+$statUnreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE lu = 0 AND deleted = 0");
 
 $absParType = Db::fetchAll(
     "SELECT type, COUNT(*) as total FROM absences WHERE statut = 'valide' AND date_fin >= CURDATE() GROUP BY type"

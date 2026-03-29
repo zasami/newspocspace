@@ -404,14 +404,14 @@ function admin_send_pv_email()
     $threadId = $emailId;
 
     Db::exec(
-        "INSERT INTO emails (id, thread_id, from_user_id, sujet, contenu, created_at)
+        "INSERT INTO messages (id, thread_id, from_user_id, sujet, contenu, created_at)
          VALUES (?, ?, ?, ?, ?, NOW())",
         [$emailId, $threadId, $userId, $sujet, $contenu]
     );
 
     foreach ($recipientIds as $rid) {
         Db::exec(
-            "INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
             [Uuid::v4(), $emailId, $rid]
         );
     }

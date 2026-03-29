@@ -401,7 +401,7 @@ function admin_delete_user_permanent()
     $tables = [
         "DELETE FROM absences WHERE user_id = ?",
         "DELETE FROM desirs WHERE user_id = ?",
-        "DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?",
+        "DELETE FROM message_recipients WHERE user_id = ?",
         "DELETE FROM planning_assignations WHERE user_id = ?",
         "DELETE FROM user_modules WHERE user_id = ?",
         "DELETE FROM notifications WHERE user_id = ?",

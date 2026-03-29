@@ -37,13 +37,11 @@ return [
         'admin_get_proposals', 'admin_create_proposal', 'admin_toggle_vote_status',
         'admin_validate_proposal', 'admin_delete_proposal', 'admin_get_proposal_votes',
     ],
-    'messages' => [
-        'admin_get_messages', 'admin_reply_message', 'admin_get_unread_counts',
-    ],
-    'emails' => [
-        'admin_get_all_emails', 'admin_get_email_detail', 'admin_get_email_contacts',
-        'admin_send_email', 'admin_delete_email', 'admin_get_email_stats',
-        'admin_upload_attachment', 'admin_download_attachment',
+    'messages_internes' => [
+        'admin_get_all_messages', 'admin_get_message_detail', 'admin_get_message_contacts',
+        'admin_send_message', 'admin_delete_message', 'admin_get_message_stats',
+        'admin_upload_message_attachment', 'admin_download_message_attachment',
+        'admin_get_unread_counts',
     ],
     'config' => [
         'admin_get_config', 'admin_save_config', 'admin_assign_module_responsable',

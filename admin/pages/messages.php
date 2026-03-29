@@ -12,10 +12,10 @@ $emailContacts = Db::fetchAll(
      ORDER BY module_ordre, m.nom, u.nom, u.prenom"
 );
 
-$emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0");
-$emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
-$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0");
-$emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachments");
+$emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
+$emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
+$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE lu = 0");
+$emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
 ?>
 <!-- Admin Emails Page — Split-view email client -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
@@ -236,7 +236,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
     };
 
     async function loadStats() {
-        const res = await adminApiPost('admin_get_email_stats');
+        const res = await adminApiPost('admin_get_message_stats');
         if (!res.success) return;
         const s = res.stats;
         document.getElementById('emailStatsLine').textContent =
@@ -266,8 +266,8 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         const container = document.getElementById('emailListContainer');
         container.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
 
-        const res = await adminApiPost('admin_get_all_emails', { page: currentPage, search: currentSearch, tab: currentTab });
-        const emails = res.emails || [];
+        const res = await adminApiPost('admin_get_all_messages', { page: currentPage, search: currentSearch, tab: currentTab });
+        const emails = res.messages || [];
         totalEmails = res.total || 0;
         const limit = 50;
         totalPagesVal = Math.ceil(totalEmails / limit) || 1;
@@ -322,7 +322,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         const card = document.getElementById('emailDetailCard');
         card.innerHTML = '<div class="card-body text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
 
-        const res = await adminApiPost('admin_get_email_detail', { id });
+        const res = await adminApiPost('admin_get_message_detail', { id });
         if (!res.success || !res.email) {
             card.innerHTML = '<div class="card-body text-center text-muted py-4"><i class="bi bi-exclamation-triangle"></i> Email non trouvé</div>';
             return;
@@ -369,7 +369,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
                 <div class="email-att-grid">
                 ${attachments.map(a => {
                     const isImg = a.mime_type && a.mime_type.startsWith('image/');
-                    const dlUrl = '/zerdatime/admin/api.php?action=admin_download_attachment&id=' + encodeURIComponent(a.id);
+                    const dlUrl = '/zerdatime/admin/api.php?action=admin_download_message_attachment&id=' + encodeURIComponent(a.id);
                     const thumb = isImg
                         ? `<img src="${dlUrl}" alt="">`
                         : `<i class="bi ${getFileIcon(a.mime_type)} ${getFileColorClass(a.mime_type)}"></i>`;
@@ -446,7 +446,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         });
         card.querySelector('#btnDetailDelete')?.addEventListener('click', async () => {
             if (!confirm('Supprimer définitivement ce message ?')) return;
-            const r = await adminApiPost('admin_delete_email', { id: e.id });
+            const r = await adminApiPost('admin_delete_message', { id: e.id });
             if (r.success) {
                 showToast('Message supprimé', 'success');
                 selectedId = null;
@@ -544,7 +544,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
 
-        const res = await adminApiPost('admin_send_email', {
+        const res = await adminApiPost('admin_send_message', {
             sujet, contenu,
             to: toSelected,
             cc: ccSelected,
@@ -681,7 +681,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
     async function uploadAttachments(emailId) {
         for (const f of pendingFiles) {
             const fd = new FormData();
-            fd.append('action', 'admin_upload_attachment');
+            fd.append('action', 'admin_upload_message_attachment');
             fd.append('email_id', emailId);
             fd.append('file', f);
             await fetch('/zerdatime/admin/api.php', {

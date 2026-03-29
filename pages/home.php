@@ -8,7 +8,7 @@ $homeDesirCount = (int) Db::getOne(
 );
 $homeMaxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: 4);
 $homeUnread = (int) Db::getOne(
-    "SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
+    "SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
     [$uid]
 );
 ?>

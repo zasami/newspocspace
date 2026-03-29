@@ -23,10 +23,10 @@ return [
     'messages' => [
         'get_mes_messages', 'send_message', 'mark_message_read',
     ],
-    'emails' => [
-        'get_inbox', 'get_sent', 'get_email_detail', 'send_email',
-        'upload_email_attachment', 'download_attachment', 'delete_email',
-        'get_unread_count', 'get_email_contacts',
+    'messages_internes' => [
+        'get_inbox', 'get_sent', 'get_message_detail', 'send_message',
+        'upload_message_attachment', 'download_attachment', 'delete_message',
+        'get_unread_count', 'get_message_contacts',
         'save_draft', 'delete_draft',
     ],
     'votes' => [

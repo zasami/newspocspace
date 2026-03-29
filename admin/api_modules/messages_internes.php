@@ -1,9 +1,9 @@
 <?php
 /**
- * Email interne — Admin API actions
+ * Messagerie interne — Admin API actions
  */
 
-function admin_get_all_emails()
+function admin_get_all_messages()
 {
     require_responsable();
     global $params;
@@ -18,7 +18,7 @@ function admin_get_all_emails()
     $binds = [];
 
     if ($tab === 'inbox') {
-        $where .= " AND EXISTS (SELECT 1 FROM email_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
+        $where .= " AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
         $binds[] = $adminId;
     } elseif ($tab === 'sent') {
         $where .= " AND e.from_user_id = ? AND e.sender_deleted = 0";
@@ -32,7 +32,7 @@ function admin_get_all_emails()
     }
 
     $total = (int)Db::getOne(
-        "SELECT COUNT(*) FROM emails e JOIN users uf ON uf.id = e.from_user_id WHERE $where",
+        "SELECT COUNT(*) FROM messages e JOIN users uf ON uf.id = e.from_user_id WHERE $where",
         $binds
     );
 
@@ -40,12 +40,12 @@ function admin_get_all_emails()
         "SELECT e.id, e.sujet, e.contenu, e.from_user_id, e.thread_id, e.created_at,
                 uf.prenom AS from_prenom, uf.nom AS from_nom,
                 (SELECT GROUP_CONCAT(CONCAT(u2.prenom, ' ', u2.nom) SEPARATOR ', ')
-                 FROM email_recipients er2 JOIN users u2 ON u2.id = er2.user_id
+                 FROM message_recipients er2 JOIN users u2 ON u2.id = er2.user_id
                  WHERE er2.email_id = e.id AND er2.type = 'to') AS to_names,
-                (SELECT COUNT(*) FROM email_attachments ea WHERE ea.email_id = e.id) AS nb_attachments,
-                (SELECT COUNT(*) FROM email_recipients er3 WHERE er3.email_id = e.id AND er3.lu = 0) AS nb_unread,
-                COALESCE((SELECT er4.lu FROM email_recipients er4 WHERE er4.email_id = e.id AND er4.user_id = ? LIMIT 1), 1) AS my_read
-         FROM emails e
+                (SELECT COUNT(*) FROM message_attachments ea WHERE ea.email_id = e.id) AS nb_attachments,
+                (SELECT COUNT(*) FROM message_recipients er3 WHERE er3.email_id = e.id AND er3.lu = 0) AS nb_unread,
+                COALESCE((SELECT er4.lu FROM message_recipients er4 WHERE er4.email_id = e.id AND er4.user_id = ? LIMIT 1), 1) AS my_read
+         FROM messages e
          JOIN users uf ON uf.id = e.from_user_id
          WHERE $where
          ORDER BY e.created_at DESC
@@ -53,10 +53,10 @@ function admin_get_all_emails()
         array_merge([$adminId], $binds, [$limit, $offset])
     );
 
-    respond(['success' => true, 'emails' => $emails, 'total' => $total, 'page' => $page]);
+    respond(['success' => true, 'messages' => $emails, 'total' => $total, 'page' => $page]);
 }
 
-function admin_get_email_detail()
+function admin_get_message_detail()
 {
     require_responsable();
     global $params;
@@ -65,7 +65,7 @@ function admin_get_email_detail()
 
     $email = Db::fetch(
         "SELECT e.*, uf.prenom AS from_prenom, uf.nom AS from_nom, uf.email AS from_email
-         FROM emails e
+         FROM messages e
          JOIN users uf ON uf.id = e.from_user_id
          WHERE e.id = ?",
         [$id]
@@ -75,20 +75,20 @@ function admin_get_email_detail()
     // Mark as read for the current admin user
     $adminId = $_SESSION['zt_user']['id'];
     Db::exec(
-        "UPDATE email_recipients SET lu = 1, lu_at = NOW() WHERE email_id = ? AND user_id = ? AND lu = 0",
+        "UPDATE message_recipients SET lu = 1, lu_at = NOW() WHERE email_id = ? AND user_id = ? AND lu = 0",
         [$id, $adminId]
     );
 
     $recipients = Db::fetchAll(
         "SELECT er.type, er.user_id, er.lu, er.lu_at, u.prenom, u.nom, u.email
-         FROM email_recipients er
+         FROM message_recipients er
          JOIN users u ON u.id = er.user_id
          WHERE er.email_id = ?",
         [$id]
     );
 
     $attachments = Db::fetchAll(
-        "SELECT id, filename, original_name, mime_type, size FROM email_attachments WHERE email_id = ?",
+        "SELECT id, filename, original_name, mime_type, size FROM message_attachments WHERE email_id = ?",
         [$id]
     );
 
@@ -97,7 +97,7 @@ function admin_get_email_detail()
         $thread = Db::fetchAll(
             "SELECT e.id, e.sujet, e.contenu, e.from_user_id, e.created_at, e.parent_id,
                     uf.prenom AS from_prenom, uf.nom AS from_nom
-             FROM emails e
+             FROM messages e
              JOIN users uf ON uf.id = e.from_user_id
              WHERE e.thread_id = ? AND e.is_draft = 0
              ORDER BY e.created_at ASC",
@@ -114,7 +114,7 @@ function admin_get_email_detail()
     ]);
 }
 
-function admin_get_email_contacts()
+function admin_get_message_contacts()
 {
     require_responsable();
 
@@ -132,7 +132,7 @@ function admin_get_email_contacts()
     respond(['success' => true, 'contacts' => $contacts]);
 }
 
-function admin_send_email()
+function admin_send_message()
 {
     global $params;
     $admin = require_responsable();
@@ -162,7 +162,7 @@ function admin_send_email()
 
     $threadId = null;
     if ($parentId) {
-        $parent = Db::fetch("SELECT thread_id, id FROM emails WHERE id = ?", [$parentId]);
+        $parent = Db::fetch("SELECT thread_id, id FROM messages WHERE id = ?", [$parentId]);
         if ($parent) {
             $threadId = $parent['thread_id'] ?: $parent['id'];
         }
@@ -174,20 +174,20 @@ function admin_send_email()
     }
 
     Db::exec(
-        "INSERT INTO emails (id, parent_id, thread_id, from_user_id, sujet, contenu)
+        "INSERT INTO messages (id, parent_id, thread_id, from_user_id, sujet, contenu)
          VALUES (?, ?, ?, ?, ?, ?)",
         [$emailId, $parentId, $threadId, $admin['id'], $sujet, $contenu]
     );
 
     foreach ($toIds as $uid) {
         Db::exec(
-            "INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
             [Uuid::v4(), $emailId, $uid]
         );
     }
     foreach ($ccIds as $uid) {
         Db::exec(
-            "INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')",
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')",
             [Uuid::v4(), $emailId, $uid]
         );
     }
@@ -195,38 +195,38 @@ function admin_send_email()
     respond(['success' => true, 'message' => 'Email envoyé', 'id' => $emailId]);
 }
 
-function admin_delete_email()
+function admin_delete_message()
 {
     global $params;
     require_admin();
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $email = Db::fetch("SELECT id FROM emails WHERE id = ?", [$id]);
+    $email = Db::fetch("SELECT id FROM messages WHERE id = ?", [$id]);
     if (!$email) not_found('Email non trouvé');
 
     // Hard delete for admin
-    Db::exec("DELETE FROM email_attachments WHERE email_id = ?", [$id]);
-    Db::exec("DELETE FROM email_recipients WHERE email_id = ?", [$id]);
-    Db::exec("DELETE FROM emails WHERE id = ?", [$id]);
+    Db::exec("DELETE FROM message_attachments WHERE email_id = ?", [$id]);
+    Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$id]);
+    Db::exec("DELETE FROM messages WHERE id = ?", [$id]);
 
     respond(['success' => true]);
 }
 
-function admin_get_email_stats()
+function admin_get_message_stats()
 {
     require_responsable();
 
-    $total = (int)Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0");
-    $today = (int)Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
-    $week = (int)Db::getOne("SELECT COUNT(*) FROM emails WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-    $unread = (int)Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0");
-    $attachments = (int)Db::getOne("SELECT COUNT(*) FROM email_attachments");
+    $total = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
+    $today = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
+    $week = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+    $unread = (int)Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE lu = 0");
+    $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
 
     respond(['success' => true, 'stats' => compact('total', 'today', 'week', 'unread', 'attachments')]);
 }
 
-function admin_download_attachment()
+function admin_download_message_attachment()
 {
     require_responsable();
     global $params;
@@ -235,7 +235,7 @@ function admin_download_attachment()
     if (!$attId) bad_request('ID requis');
 
     $att = Db::fetch(
-        "SELECT * FROM email_attachments WHERE id = ?",
+        "SELECT * FROM message_attachments WHERE id = ?",
         [$attId]
     );
     if (!$att) not_found('Pièce jointe non trouvée');
@@ -255,14 +255,14 @@ function admin_download_attachment()
     exit;
 }
 
-function admin_upload_attachment()
+function admin_upload_message_attachment()
 {
     $admin = require_responsable();
 
     $emailId = $_POST['email_id'] ?? '';
     if (!$emailId) bad_request('email_id requis');
 
-    $email = Db::fetch("SELECT id, from_user_id FROM emails WHERE id = ?", [$emailId]);
+    $email = Db::fetch("SELECT id, from_user_id FROM messages WHERE id = ?", [$emailId]);
     if (!$email || $email['from_user_id'] !== $admin['id']) {
         forbidden('Accès non autorisé');
     }
@@ -300,7 +300,7 @@ function admin_upload_attachment()
     $originalName = mb_substr(basename($file['name']), 0, 255);
 
     Db::exec(
-        "INSERT INTO email_attachments (id, email_id, filename, original_name, mime_type, size)
+        "INSERT INTO message_attachments (id, email_id, filename, original_name, mime_type, size)
          VALUES (?, ?, ?, ?, ?, ?)",
         [$attId, $emailId, $filename, $originalName, $file['type'], $file['size']]
     );
@@ -313,5 +313,48 @@ function admin_upload_attachment()
             'mime_type' => $file['type'],
             'size' => $file['size'],
         ],
+    ]);
+}
+
+function admin_get_unread_counts()
+{
+    $user = require_auth();
+    $userId = $user['id'];
+
+    // Internal messages (message_recipients table)
+    $unreadMessages = (int) Db::getOne(
+        "SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
+        [$userId]
+    );
+
+    // External email — IMAP unread (only if configured)
+    $unreadEmail = 0;
+    $hasEmailConfig = Db::fetch(
+        "SELECT imap_host, imap_port, imap_encryption, username, encrypted_password, password_iv
+         FROM email_externe_config WHERE user_id = ? AND is_active = 1",
+        [$userId]
+    );
+    if ($hasEmailConfig) {
+        try {
+            require_once __DIR__ . '/../../core/Mailer.php';
+            $password = Mailer::decryptPassword($hasEmailConfig['encrypted_password'], $hasEmailConfig['password_iv']);
+            $flags = '';
+            if ($hasEmailConfig['imap_encryption'] === 'ssl') $flags = '/imap/ssl/validate-cert';
+            elseif ($hasEmailConfig['imap_encryption'] === 'tls') $flags = '/imap/tls';
+            else $flags = '/imap/notls';
+            $mailbox = '{' . $hasEmailConfig['imap_host'] . ':' . $hasEmailConfig['imap_port'] . $flags . '}INBOX';
+            $imap = @imap_open($mailbox, $hasEmailConfig['username'], $password, 0, 1);
+            if ($imap) {
+                $status = imap_status($imap, $mailbox, SA_UNSEEN);
+                if ($status) $unreadEmail = $status->unseen ?? 0;
+                @imap_close($imap);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    respond([
+        'success' => true,
+        'unread_messages' => $unreadMessages,
+        'unread_email' => $unreadEmail,
     ]);
 }

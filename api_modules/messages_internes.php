@@ -14,8 +14,8 @@ function get_inbox()
     $offset = ($page - 1) * $limit;
 
     $total = (int)Db::getOne(
-        "SELECT COUNT(DISTINCT e.id) FROM emails e
-         JOIN email_recipients er ON er.email_id = e.id
+        "SELECT COUNT(DISTINCT e.id) FROM messages e
+         JOIN message_recipients er ON er.email_id = e.id
          WHERE er.user_id = ? AND er.deleted = 0 AND e.is_draft = 0",
         [$user['id']]
     );
@@ -25,9 +25,9 @@ function get_inbox()
                 e.from_user_id, e.created_at,
                 er.lu, er.lu_at, er.archived,
                 uf.prenom AS from_prenom, uf.nom AS from_nom,
-                (SELECT COUNT(*) FROM email_attachments ea WHERE ea.email_id = e.id) AS nb_attachments
-         FROM emails e
-         JOIN email_recipients er ON er.email_id = e.id
+                (SELECT COUNT(*) FROM message_attachments ea WHERE ea.email_id = e.id) AS nb_attachments
+         FROM messages e
+         JOIN message_recipients er ON er.email_id = e.id
          JOIN users uf ON uf.id = e.from_user_id
          WHERE er.user_id = ? AND er.deleted = 0 AND e.is_draft = 0
          ORDER BY e.created_at DESC
@@ -49,18 +49,18 @@ function get_sent()
     $offset = ($page - 1) * $limit;
 
     $total = (int)Db::getOne(
-        "SELECT COUNT(*) FROM emails e
+        "SELECT COUNT(*) FROM messages e
          WHERE e.from_user_id = ? AND e.sender_deleted = 0 AND e.is_draft = 0",
         [$user['id']]
     );
 
     $emails = Db::fetchAll(
         "SELECT e.id, e.sujet, e.contenu, e.thread_id, e.created_at,
-                (SELECT COUNT(*) FROM email_attachments ea WHERE ea.email_id = e.id) AS nb_attachments,
+                (SELECT COUNT(*) FROM message_attachments ea WHERE ea.email_id = e.id) AS nb_attachments,
                 (SELECT GROUP_CONCAT(CONCAT(u2.prenom, ' ', u2.nom) SEPARATOR ', ')
-                 FROM email_recipients er2 JOIN users u2 ON u2.id = er2.user_id
+                 FROM message_recipients er2 JOIN users u2 ON u2.id = er2.user_id
                  WHERE er2.email_id = e.id AND er2.type = 'to') AS to_names
-         FROM emails e
+         FROM messages e
          WHERE e.from_user_id = ? AND e.sender_deleted = 0 AND e.is_draft = 0
          ORDER BY e.created_at DESC
          LIMIT ? OFFSET ?",
@@ -73,7 +73,7 @@ function get_sent()
 /**
  * Détail d'un email complet (avec fil de discussion)
  */
-function get_email_detail()
+function get_message_detail()
 {
     global $params;
     $user = require_auth();
@@ -83,7 +83,7 @@ function get_email_detail()
     // Vérifier accès
     $email = Db::fetch(
         "SELECT e.* , uf.prenom AS from_prenom, uf.nom AS from_nom
-         FROM emails e
+         FROM messages e
          JOIN users uf ON uf.id = e.from_user_id
          WHERE e.id = ?",
         [$id]
@@ -92,7 +92,7 @@ function get_email_detail()
 
     // L'utilisateur doit être expéditeur ou destinataire
     $isRecipient = Db::getOne(
-        "SELECT COUNT(*) FROM email_recipients WHERE email_id = ? AND user_id = ?",
+        "SELECT COUNT(*) FROM message_recipients WHERE email_id = ? AND user_id = ?",
         [$id, $user['id']]
     );
     if ($email['from_user_id'] !== $user['id'] && !$isRecipient) {
@@ -102,7 +102,7 @@ function get_email_detail()
     // Marquer comme lu si destinataire
     if ($isRecipient) {
         Db::exec(
-            "UPDATE email_recipients SET lu = 1, lu_at = NOW() WHERE email_id = ? AND user_id = ? AND lu = 0",
+            "UPDATE message_recipients SET lu = 1, lu_at = NOW() WHERE email_id = ? AND user_id = ? AND lu = 0",
             [$id, $user['id']]
         );
     }
@@ -110,7 +110,7 @@ function get_email_detail()
     // Destinataires
     $recipients = Db::fetchAll(
         "SELECT er.type, er.user_id, u.prenom, u.nom
-         FROM email_recipients er
+         FROM message_recipients er
          JOIN users u ON u.id = er.user_id
          WHERE er.email_id = ?",
         [$id]
@@ -118,7 +118,7 @@ function get_email_detail()
 
     // Pièces jointes
     $attachments = Db::fetchAll(
-        "SELECT id, filename, original_name, mime_type, size FROM email_attachments WHERE email_id = ?",
+        "SELECT id, filename, original_name, mime_type, size FROM message_attachments WHERE email_id = ?",
         [$id]
     );
 
@@ -128,8 +128,8 @@ function get_email_detail()
         $thread = Db::fetchAll(
             "SELECT e.id, e.sujet, e.contenu, e.from_user_id, e.created_at, e.parent_id,
                     uf.prenom AS from_prenom, uf.nom AS from_nom,
-                    (SELECT COUNT(*) FROM email_attachments ea WHERE ea.email_id = e.id) AS nb_attachments
-             FROM emails e
+                    (SELECT COUNT(*) FROM message_attachments ea WHERE ea.email_id = e.id) AS nb_attachments
+             FROM messages e
              JOIN users uf ON uf.id = e.from_user_id
              WHERE e.thread_id = ? AND e.is_draft = 0
              ORDER BY e.created_at ASC",
@@ -149,7 +149,7 @@ function get_email_detail()
 /**
  * Envoyer un email (nouveau ou réponse)
  */
-function send_email()
+function send_message()
 {
     global $params;
     $user = require_auth();
@@ -181,15 +181,15 @@ function send_email()
 
     // Si c'est un brouillon existant, le publier
     if ($draftId) {
-        $draft = Db::fetch("SELECT id FROM emails WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$draftId, $user['id']]);
+        $draft = Db::fetch("SELECT id FROM messages WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$draftId, $user['id']]);
         if ($draft) {
-            Db::exec("UPDATE emails SET sujet = ?, contenu = ?, is_draft = 0, created_at = NOW() WHERE id = ?", [$sujet, $contenu, $draftId]);
-            Db::exec("DELETE FROM email_recipients WHERE email_id = ?", [$draftId]);
+            Db::exec("UPDATE messages SET sujet = ?, contenu = ?, is_draft = 0, created_at = NOW() WHERE id = ?", [$sujet, $contenu, $draftId]);
+            Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$draftId]);
             foreach ($toIds as $uid) {
-                Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $draftId, $uid]);
+                Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $draftId, $uid]);
             }
             foreach ($ccIds as $uid) {
-                Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $draftId, $uid]);
+                Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $draftId, $uid]);
             }
             respond(['success' => true, 'message' => 'Email envoyé', 'id' => $draftId]);
             return;
@@ -199,7 +199,7 @@ function send_email()
     // Déterminer le thread_id
     $threadId = null;
     if ($parentId) {
-        $parent = Db::fetch("SELECT thread_id, id FROM emails WHERE id = ?", [$parentId]);
+        $parent = Db::fetch("SELECT thread_id, id FROM messages WHERE id = ?", [$parentId]);
         if ($parent) {
             $threadId = $parent['thread_id'] ?: $parent['id'];
         }
@@ -211,20 +211,20 @@ function send_email()
     }
 
     Db::exec(
-        "INSERT INTO emails (id, parent_id, thread_id, from_user_id, sujet, contenu)
+        "INSERT INTO messages (id, parent_id, thread_id, from_user_id, sujet, contenu)
          VALUES (?, ?, ?, ?, ?, ?)",
         [$emailId, $parentId, $threadId, $user['id'], $sujet, $contenu]
     );
 
     foreach ($toIds as $uid) {
         Db::exec(
-            "INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')",
             [Uuid::v4(), $emailId, $uid]
         );
     }
     foreach ($ccIds as $uid) {
         Db::exec(
-            "INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')",
+            "INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')",
             [Uuid::v4(), $emailId, $uid]
         );
     }
@@ -235,7 +235,7 @@ function send_email()
 /**
  * Upload pièce jointe
  */
-function upload_email_attachment()
+function upload_message_attachment()
 {
     $user = require_auth();
 
@@ -243,7 +243,7 @@ function upload_email_attachment()
     if (!$emailId) bad_request('email_id requis');
 
     // Vérifier que l'email existe et appartient à l'expéditeur
-    $email = Db::fetch("SELECT id, from_user_id FROM emails WHERE id = ?", [$emailId]);
+    $email = Db::fetch("SELECT id, from_user_id FROM messages WHERE id = ?", [$emailId]);
     if (!$email || $email['from_user_id'] !== $user['id']) {
         forbidden('Accès non autorisé');
     }
@@ -297,7 +297,7 @@ function upload_email_attachment()
     $originalName = mb_substr(basename($file['name']), 0, 255);
 
     Db::exec(
-        "INSERT INTO email_attachments (id, email_id, filename, original_name, mime_type, size)
+        "INSERT INTO message_attachments (id, email_id, filename, original_name, mime_type, size)
          VALUES (?, ?, ?, ?, ?, ?)",
         [$attId, $emailId, $filename, $originalName, $realMime, $file['size']]
     );
@@ -325,8 +325,8 @@ function download_attachment()
     if (!$attId) bad_request('ID requis');
 
     $att = Db::fetch(
-        "SELECT ea.*, e.from_user_id FROM email_attachments ea
-         JOIN emails e ON e.id = ea.email_id
+        "SELECT ea.*, e.from_user_id FROM message_attachments ea
+         JOIN messages e ON e.id = ea.email_id
          WHERE ea.id = ?",
         [$attId]
     );
@@ -334,7 +334,7 @@ function download_attachment()
 
     // Vérifier accès
     $isRecipient = Db::getOne(
-        "SELECT COUNT(*) FROM email_recipients WHERE email_id = ? AND user_id = ?",
+        "SELECT COUNT(*) FROM message_recipients WHERE email_id = ? AND user_id = ?",
         [$att['email_id'], $user['id']]
     );
     if ($att['from_user_id'] !== $user['id'] && !$isRecipient) {
@@ -360,25 +360,25 @@ function download_attachment()
 /**
  * Supprimer un email (soft delete)
  */
-function delete_email()
+function delete_message()
 {
     global $params;
     $user = require_auth();
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $email = Db::fetch("SELECT from_user_id FROM emails WHERE id = ?", [$id]);
+    $email = Db::fetch("SELECT from_user_id FROM messages WHERE id = ?", [$id]);
     if (!$email) not_found('Email non trouvé');
 
     // Supprimer côté destinataire
     Db::exec(
-        "UPDATE email_recipients SET deleted = 1 WHERE email_id = ? AND user_id = ?",
+        "UPDATE message_recipients SET deleted = 1 WHERE email_id = ? AND user_id = ?",
         [$id, $user['id']]
     );
 
     // Supprimer côté expéditeur
     if ($email['from_user_id'] === $user['id']) {
-        Db::exec("UPDATE emails SET sender_deleted = 1 WHERE id = ?", [$id]);
+        Db::exec("UPDATE messages SET sender_deleted = 1 WHERE id = ?", [$id]);
     }
 
     respond(['success' => true]);
@@ -392,8 +392,8 @@ function get_unread_count()
     $user = require_auth();
 
     $count = (int)Db::getOne(
-        "SELECT COUNT(*) FROM email_recipients er
-         JOIN emails e ON e.id = er.email_id
+        "SELECT COUNT(*) FROM message_recipients er
+         JOIN messages e ON e.id = er.email_id
          WHERE er.user_id = ? AND er.lu = 0 AND er.deleted = 0 AND e.is_draft = 0",
         [$user['id']]
     );
@@ -404,7 +404,7 @@ function get_unread_count()
 /**
  * Liste des contacts (pour le compose)
  */
-function get_email_contacts()
+function get_message_contacts()
 {
     $user = require_auth();
 
@@ -441,16 +441,16 @@ function save_draft()
 
     if ($draftId) {
         // Vérifier que le brouillon existe et appartient à l'utilisateur
-        $existing = Db::fetch("SELECT id FROM emails WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$draftId, $user['id']]);
+        $existing = Db::fetch("SELECT id FROM messages WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$draftId, $user['id']]);
         if ($existing) {
-            Db::exec("UPDATE emails SET sujet = ?, contenu = ?, updated_at = NOW() WHERE id = ?", [$sujet, $contenu, $draftId]);
+            Db::exec("UPDATE messages SET sujet = ?, contenu = ?, updated_at = NOW() WHERE id = ?", [$sujet, $contenu, $draftId]);
             // Supprimer anciens destinataires et réinsérer
-            Db::exec("DELETE FROM email_recipients WHERE email_id = ?", [$draftId]);
+            Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$draftId]);
             foreach (($toIds ?: []) as $uid) {
-                Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $draftId, $uid]);
+                Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $draftId, $uid]);
             }
             foreach (($ccIds ?: []) as $uid) {
-                Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $draftId, $uid]);
+                Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $draftId, $uid]);
             }
             respond(['success' => true, 'draft_id' => $draftId]);
             return;
@@ -461,20 +461,20 @@ function save_draft()
     $id = Uuid::v4();
     $threadId = $id;
     if ($parentId) {
-        $parent = Db::fetch("SELECT thread_id, id FROM emails WHERE id = ?", [$parentId]);
+        $parent = Db::fetch("SELECT thread_id, id FROM messages WHERE id = ?", [$parentId]);
         if ($parent) $threadId = $parent['thread_id'] ?: $parent['id'];
     }
 
     Db::exec(
-        "INSERT INTO emails (id, parent_id, thread_id, from_user_id, sujet, contenu, is_draft) VALUES (?, ?, ?, ?, ?, ?, 1)",
+        "INSERT INTO messages (id, parent_id, thread_id, from_user_id, sujet, contenu, is_draft) VALUES (?, ?, ?, ?, ?, ?, 1)",
         [$id, $parentId, $threadId, $user['id'], $sujet, $contenu]
     );
 
     foreach (($toIds ?: []) as $uid) {
-        Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $id, $uid]);
+        Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'to')", [Uuid::v4(), $id, $uid]);
     }
     foreach (($ccIds ?: []) as $uid) {
-        Db::exec("INSERT INTO email_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $id, $uid]);
+        Db::exec("INSERT INTO message_recipients (id, email_id, user_id, type) VALUES (?, ?, ?, 'cc')", [Uuid::v4(), $id, $uid]);
     }
 
     respond(['success' => true, 'draft_id' => $id]);
@@ -490,12 +490,12 @@ function delete_draft()
     $id = $params['draft_id'] ?? '';
     if (!$id) bad_request('draft_id requis');
 
-    $draft = Db::fetch("SELECT id FROM emails WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$id, $user['id']]);
+    $draft = Db::fetch("SELECT id FROM messages WHERE id = ? AND from_user_id = ? AND is_draft = 1", [$id, $user['id']]);
     if (!$draft) not_found('Brouillon non trouvé');
 
-    Db::exec("DELETE FROM email_recipients WHERE email_id = ?", [$id]);
-    Db::exec("DELETE FROM email_attachments WHERE email_id = ?", [$id]);
-    Db::exec("DELETE FROM emails WHERE id = ?", [$id]);
+    Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$id]);
+    Db::exec("DELETE FROM message_attachments WHERE email_id = ?", [$id]);
+    Db::exec("DELETE FROM messages WHERE id = ?", [$id]);
 
     respond(['success' => true]);
 }

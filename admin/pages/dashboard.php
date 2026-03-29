@@ -4,7 +4,7 @@ $totalUsers    = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 
 $pendingAbs    = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
 $pendingDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
 $currentUserId = $_SESSION['zt_user']['id'] ?? '';
-$unreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$currentUserId]);
+$unreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$currentUserId]);
 
 $recentAbsences = Db::fetchAll(
     "SELECT a.*, u.prenom, u.nom, u.photo

@@ -263,7 +263,7 @@ async function loadDetail(id) {
     if (!panel) return;
     panel.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
 
-    const res = await apiPost('get_email_detail', { id });
+    const res = await apiPost('get_message_detail', { id });
     if (!res.success || !res.email) {
         panel.innerHTML = '<div class="adm-email-empty"><i class="bi bi-exclamation-triangle" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px"></i><p class="mb-0" style="font-size:.88rem">Email non trouvé</p></div>';
         return;
@@ -368,7 +368,7 @@ async function loadDetail(id) {
     });
     panel.querySelector('#btnDelete')?.addEventListener('click', async () => {
         if (!confirm('Supprimer cet email ?')) return;
-        const r = await apiPost('delete_email', { id: e.id });
+        const r = await apiPost('delete_message', { id: e.id });
         if (r.success) {
             toast('Email supprimé');
             selectedId = null;
@@ -576,7 +576,7 @@ async function sendEmail() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
 
-    const res = await apiPost('send_email', {
+    const res = await apiPost('send_message', {
         sujet,
         contenu,
         to: toSelected,
@@ -596,7 +596,7 @@ async function sendEmail() {
     if (pendingFiles.length && res.id) {
         for (const file of pendingFiles) {
             const fd = new FormData();
-            fd.append('action', 'upload_email_attachment');
+            fd.append('action', 'upload_message_attachment');
             fd.append('email_id', res.id);
             fd.append('file', file);
 

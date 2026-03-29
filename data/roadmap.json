@@ -189,13 +189,22 @@
         "order": 21
     },
     {
+        "id": "pour-les-contactes-ajouter-le-groupe",
+        "title": "Pour les contactes ajouter le groupe",
+        "desc": "Ajoute groupe Responsble par exempl ..cad donner la main a l'admin de crree de groupe de choisir 6 email le nomme ASA par exempl...",
+        "difficulty": "moyen",
+        "category": "General",
+        "done": false,
+        "order": 22
+    },
+    {
         "id": "module-animation",
         "title": "Module Animation",
         "desc": "Saisie des activites, animations repetitives, affichage auto sur le site, objectifs animation.",
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 22
+        "order": 23
     },
     {
         "id": "ia-animations",
@@ -204,7 +213,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 23
+        "order": 24
     },
     {
         "id": "formation",
@@ -213,7 +222,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 24
+        "order": 25
     },
     {
         "id": "postulation",
@@ -222,7 +231,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 25
+        "order": 26
     },
     {
         "id": "suivi-dossier",
@@ -231,7 +240,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 26
+        "order": 27
     },
     {
         "id": "transcription-pv",
@@ -240,7 +249,7 @@
         "difficulty": "difficile",
         "category": "PV \/ IA",
         "done": false,
-        "order": 27
+        "order": 28
     },
     {
         "id": "chiffrement",
@@ -249,7 +258,7 @@
         "difficulty": "difficile",
         "category": "Securite",
         "done": false,
-        "order": 28
+        "order": 29
     },
     {
         "id": "ajoute-sur-le-site-une-page-envoy-ma-condidature",
@@ -258,7 +267,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 29
+        "order": 30
     },
     {
         "id": "ajoute-page-gal-rie-pour-la-famille",
@@ -267,7 +276,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 30
+        "order": 31
     },
     {
         "id": "module-pour-les-interims",
@@ -276,7 +285,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 31
+        "order": 32
     },
     {
         "id": "espace-famille-r-sident",
@@ -285,7 +294,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 32
+        "order": 33
     },
     {
         "id": "organigrame-de-l-ems",
@@ -294,7 +303,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 33
+        "order": 34
     },
     {
         "id": "popup-email",
@@ -303,7 +312,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 34
+        "order": 35
     },
     {
         "id": "param-tres-fonctions-et-horraires",
@@ -312,7 +321,7 @@
         "difficulty": "difficile",
         "category": "Planning",
         "done": false,
-        "order": 35
+        "order": 36
     },
     {
         "id": "espace-famille",
@@ -321,7 +330,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 36
+        "order": 37
     },
     {
         "id": "r-diger-le-help",
@@ -330,6 +339,6 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 37
+        "order": 38
     }
 ]

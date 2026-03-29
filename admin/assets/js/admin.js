@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Email notification badge ──
     async function updateAdminEmailBadge() {
         try {
-            const res = await adminApiPost('admin_get_email_stats');
+            const res = await adminApiPost('admin_get_message_stats');
             if (!res.success) return;
             const badge = document.getElementById('adminEmailBadge');
             if (badge) {

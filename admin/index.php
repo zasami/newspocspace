@@ -301,6 +301,9 @@ $activeSection = match($page) {
         <i class="bi bi-envelope"></i>
         <span class="topbar-notif-badge" id="topbarEmailBadge" style="display:none"></span>
       </a>
+      <a href="<?= admin_url('email-externe') ?>?contacts=1" class="topbar-icon-btn" id="topbarContactsBtn" title="Contacts">
+        <i class="bi bi-person-rolodex"></i>
+      </a>
       <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>
@@ -1018,7 +1021,7 @@ function adminPrompt(opts = {}) {
         const attachmentIds = [];
         for (const file of pendingFiles) {
             const fd = new FormData();
-            fd.append('action', 'admin_upload_attachment');
+            fd.append('action', 'admin_upload_message_attachment');
             fd.append('file', file);
             const resp = await fetch('/zerdatime/admin/api.php', {
                 method: 'POST',
@@ -1029,7 +1032,7 @@ function adminPrompt(opts = {}) {
             if (r.success && r.id) attachmentIds.push(r.id);
         }
 
-        const res = await adminApiPost('admin_send_email', {
+        const res = await adminApiPost('admin_send_message', {
             sujet,
             contenu,
             to: toSelected,

@@ -1020,6 +1020,11 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
     loadFolders();
     loadList();
 
+    // Auto-open contacts modal if ?contacts=1
+    if (new URLSearchParams(window.location.search).get('contacts') === '1') {
+        setTimeout(() => openContacts(), 300);
+    }
+
     // ── Lightbox for attachments ──
     function openExtLightbox(url, filename, type) {
         let lb = document.getElementById('extLightbox');
