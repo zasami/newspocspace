@@ -738,7 +738,7 @@ function admin_generate_planning()
     // ── Helper: get forced shift codes for a user (from shift_only rules) ──
     $getForcedShifts = function ($u, $modId = null) use (&$structuredRules, &$ruleUserMap) {
         foreach ($structuredRules as $rule) {
-            if ($rule['rule_type'] !== 'shift_only') continue;
+            if ($rule['rule_type'] !== 'shift_only' && $rule['rule_type'] !== 'user_schedule') continue;
             if ($rule['target_mode'] === 'all') { /* applies */ }
             elseif ($rule['target_mode'] === 'module') {
                 $targetModIds = $rule['params']['target_module_ids'] ?? [];
@@ -797,6 +797,19 @@ function admin_generate_planning()
             $p = $rule['params'];
 
             switch ($rule['rule_type']) {
+                case 'user_schedule':
+                    // Combined: restrict days AND shifts
+                    if (!empty($p['days']) && !in_array($dow, $p['days'])) {
+                        return false;
+                    }
+                    if ($shiftCode !== null && !empty($p['shift_codes'])) {
+                        if (!$isNightModule) {
+                            $onlyNight = !array_diff($p['shift_codes'], $nightCodes);
+                            if ($onlyNight) break;
+                        }
+                        if (!in_array($shiftCode, $p['shift_codes'])) return false;
+                    }
+                    break;
                 case 'shift_only':
                     if ($shiftCode !== null && !empty($p['shift_codes'])) {
                         // If rule only contains night shifts but employee is not in night module, skip this rule

@@ -1521,6 +1521,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     }
 
     const gsRuleTypeLabels = {
+        user_schedule: 'Collaborateur horaire unique',
         shift_only: 'Horaires autorisés',
         shift_exclude: 'Horaires exclus',
         days_only: 'Jours autorisés',
@@ -1742,7 +1743,38 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             const det = document.getElementById('gsrParamsDetail');
             det.innerHTML = '';
 
-            if (type === 'shift_only' || type === 'shift_exclude') {
+            if (type === 'user_schedule') {
+                // Combined: shifts + days
+                const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+                const selectedDays = params.days || [];
+                det.innerHTML = '<label class="form-label small fw-bold">Horaire(s) autorisé(s)</label>'
+                    + '<div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
+                    + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1 mb-3"></div>'
+                    + '<label class="form-label small fw-bold">Jours de travail</label>'
+                    + '<div class="d-flex flex-wrap gap-2" id="gsrDaysWrap">'
+                    + dayNames.map((name, i) => {
+                        const dow = i + 1;
+                        const checked = selectedDays.includes(dow);
+                        return '<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1.5px solid ' + (checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)') + ';cursor:pointer;font-size:.82rem;font-weight:500;background:' + (checked ? 'var(--cl-primary-light,#f0f0f0)' : '') + ';transition:all .15s">'
+                            + '<input type="checkbox" class="gsr-day-cb" value="' + dow + '"' + (checked ? ' checked' : '') + ' style="accent-color:var(--cl-primary,#1a1a1a)">' + name + '</label>';
+                    }).join('') + '</div>';
+                window._gsSelectedShifts = (params.shift_codes || []).slice();
+                zerdaSelect.init('#gsrShiftSelect', horaireOpts, {
+                    search: true,
+                    onSelect: (val) => {
+                        if (val && !window._gsSelectedShifts.includes(val)) { window._gsSelectedShifts.push(val); gsRenderShiftTags(); }
+                        zerdaSelect.setValue('#gsrShiftSelect', '');
+                    }
+                });
+                gsRenderShiftTags();
+                det.querySelectorAll('.gsr-day-cb').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        const label = cb.closest('label');
+                        label.style.borderColor = cb.checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)';
+                        label.style.background = cb.checked ? 'var(--cl-primary-light,#f0f0f0)' : '';
+                    });
+                });
+            } else if (type === 'shift_only' || type === 'shift_exclude') {
                 det.innerHTML = '<label class="form-label small fw-bold">Horaires</label><div class="zs-select" id="gsrShiftSelect" data-placeholder="Ajouter un horaire"></div>'
                     + '<div id="gsrShiftTags" class="d-flex flex-wrap gap-1 mt-1"></div>';
                 window._gsSelectedShifts = (params.shift_codes || []).slice();
@@ -1842,7 +1874,10 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         const userIds = window._gsSelectedUsers || [];
 
         let ruleParams = {};
-        if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
+        if (ruleType === 'user_schedule') {
+            ruleParams.shift_codes = window._gsSelectedShifts || [];
+            ruleParams.days = [...document.querySelectorAll('.gsr-day-cb:checked')].map(cb => parseInt(cb.value));
+        } else if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
             ruleParams.shift_codes = window._gsSelectedShifts || [];
         } else if (ruleType === 'days_only') {
             ruleParams.days = [...document.querySelectorAll('.gsr-day-cb:checked')].map(cb => parseInt(cb.value));

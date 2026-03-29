@@ -541,12 +541,16 @@ function admin_create_ia_rule()
 
     // Structured rule fields
     $ruleType = $params['rule_type'] ?? null;
-    $allowedTypes = ['shift_only', 'shift_exclude', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week'];
+    $allowedTypes = ['user_schedule', 'shift_only', 'shift_exclude', 'days_only', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week'];
     if ($ruleType && !in_array($ruleType, $allowedTypes)) $ruleType = null;
 
     $ruleParams = null;
-    if ($ruleType && isset($params['rule_params']) && is_array($params['rule_params'])) {
-        $ruleParams = json_encode($params['rule_params']);
+    if ($ruleType && isset($params['rule_params'])) {
+        if (is_string($params['rule_params'])) {
+            $ruleParams = $params['rule_params'];
+        } elseif (is_array($params['rule_params'])) {
+            $ruleParams = json_encode($params['rule_params']);
+        }
     }
 
     $targetMode = $params['target_mode'] ?? 'all';
@@ -628,12 +632,16 @@ function admin_update_ia_rule()
 
     // Structured rule fields
     $ruleType = array_key_exists('rule_type', $params) ? $params['rule_type'] : $rule['rule_type'];
-    $allowedTypes = ['shift_only', 'shift_exclude', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week', null];
+    $allowedTypes = ['shift_only', 'shift_exclude', 'days_only', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week', null];
     if (!in_array($ruleType, $allowedTypes)) $ruleType = $rule['rule_type'];
 
     $ruleParams = $rule['rule_params'];
-    if (isset($params['rule_params']) && is_array($params['rule_params'])) {
-        $ruleParams = json_encode($params['rule_params']);
+    if (isset($params['rule_params'])) {
+        if (is_string($params['rule_params'])) {
+            $ruleParams = $params['rule_params'];
+        } elseif (is_array($params['rule_params'])) {
+            $ruleParams = json_encode($params['rule_params']);
+        }
     }
 
     $targetMode = $params['target_mode'] ?? $rule['target_mode'];
