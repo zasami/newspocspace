@@ -1122,7 +1122,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
                             if (a.horaire_code) {
                                 const color = a.couleur || hColorMap[a.horaire_type_id] || '#6c757d';
-                                cellContent = `<span class="shift-code" style="background:${color}">${escapeHtml(a.horaire_code)}</span>`;
+                                const desirIcon = (a.notes && a.notes.includes('desir')) ? '<i class="bi bi-emoji-smile" style="font-size:.55rem;color:#e8a838;position:absolute;top:-2px;right:-2px"></i>' : '';
+                                cellContent = `<span class="shift-code" style="background:${color};position:relative">${escapeHtml(a.horaire_code)}${desirIcon}</span>`;
                                 if (a.statut === 'present') {
                                     const h = (refs.horaires || []).find(h => h.id === a.horaire_type_id);
                                     if (h) totalHours += parseFloat(h.duree_effective) || 0;

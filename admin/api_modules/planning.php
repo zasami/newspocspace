@@ -403,14 +403,17 @@ function admin_generate_planning()
 
     // Approved desirs for this month
     $desirs = Db::fetchAll(
-        "SELECT user_id, date_souhaitee, type
+        "SELECT user_id, date_souhaitee, type, horaire_type_id
          FROM desirs
          WHERE mois_cible = ? AND statut = 'valide'",
         [$mois]
     );
-    $desirMap = [];
+    $desirMap = []; // [userId][date] = ['type' => ..., 'horaire_type_id' => ...]
     foreach ($desirs as $d) {
-        $desirMap[$d['user_id']][$d['date_souhaitee']] = $d['type'];
+        $desirMap[$d['user_id']][$d['date_souhaitee']] = [
+            'type' => $d['type'],
+            'horaire_type_id' => $d['horaire_type_id'],
+        ];
     }
 
     // Approved absences overlapping this month
@@ -730,9 +733,17 @@ function admin_generate_planning()
     // ── Helper: check if user is eligible ──
     $isEligible = function ($u, $date) use (&$absenceMap, &$desirMap, &$userDays) {
         if (isset($absenceMap[$u['id']][$date])) return false;
-        if (isset($desirMap[$u['id']][$date]) && $desirMap[$u['id']][$date] === 'jour_off') return false;
+        if (isset($desirMap[$u['id']][$date]) && $desirMap[$u['id']][$date]['type'] === 'jour_off') return false;
         if (isset($userDays[$u['id']][$date])) return false;
         return true;
+    };
+
+    // ── Helper: get desired shift for a user on a date (from horaire_special desirs) ──
+    $getDesiredShift = function ($u, $date) use (&$desirMap, &$horaireById) {
+        if (!isset($desirMap[$u['id']][$date])) return null;
+        $d = $desirMap[$u['id']][$date];
+        if ($d['type'] !== 'horaire_special' || empty($d['horaire_type_id'])) return null;
+        return $horaireById[$d['horaire_type_id']] ?? null;
     };
 
     // ── Helper: get forced shift codes for a user (from shift_only rules) ──
@@ -950,13 +961,18 @@ function admin_generate_planning()
                         if ($currentWeekHours >= $weeklyTarget + 5) continue;
                     }
 
-                    // Pick shift based on coverage pattern + fonction
-                    $shift = $pickShift($modId, $assignedForSlot, $nbReqd, $d, $u, $u['fonction_code']);
-                    if (!$shift) continue;
-                    // If shift is rejected by rules, try to resolve with forced shifts
-                    if (!$checkRules($u, $shift['code'], $modId, $date)) {
-                        $shift = $resolveShift($u, $shift, $modId, $date);
-                        if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                    // Pick shift: prefer user's desired shift if approved
+                    $desiredShift = $getDesiredShift($u, $date);
+                    if ($desiredShift && $checkRules($u, $desiredShift['code'], $modId, $date)) {
+                        $shift = $desiredShift;
+                    } else {
+                        $shift = $pickShift($modId, $assignedForSlot, $nbReqd, $d, $u, $u['fonction_code']);
+                        if (!$shift) continue;
+                        // If shift is rejected by rules, try to resolve with forced shifts
+                        if (!$checkRules($u, $shift['code'], $modId, $date)) {
+                            $shift = $resolveShift($u, $shift, $modId, $date);
+                            if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                        }
                     }
 
                     // AS weekly hours: check if this shift would exceed weekly target
@@ -978,9 +994,10 @@ function admin_generate_planning()
                         $moduleASSlotIdx[$modId][$date]++;
                     }
 
+                    $desirNote = isset($desirMap[$u['id']][$date]) ? 'desir' : null;
                     $stmtInsert->execute([
                         Uuid::v4(), $planningId, $u['id'], $date,
-                        $shift['id'], $modId, $groupeId, 'present', null
+                        $shift['id'], $modId, $groupeId, 'present', $desirNote
                     ]);
 
                     $wk = $getWeekNum($date);
@@ -1060,11 +1077,17 @@ function admin_generate_planning()
 
                 // Determine slot index for shift pairing (continue from what's already assigned)
                 $slotIdx = $c['assigne'] + $filled;
-                $shift = $pickShift($modId, $slotIdx, $c['requis'], (int) substr($date, -2), $u, 'AS');
-                if (!$shift) continue;
-                if (!$checkRules($u, $shift['code'], $modId, $date)) {
-                    $shift = $resolveShift($u, $shift, $modId, $date);
-                    if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                // Prefer desired shift if approved
+                $desiredShift = $getDesiredShift($u, $date);
+                if ($desiredShift && $checkRules($u, $desiredShift['code'], $modId, $date)) {
+                    $shift = $desiredShift;
+                } else {
+                    $shift = $pickShift($modId, $slotIdx, $c['requis'], (int) substr($date, -2), $u, 'AS');
+                    if (!$shift) continue;
+                    if (!$checkRules($u, $shift['code'], $modId, $date)) {
+                        $shift = $resolveShift($u, $shift, $modId, $date);
+                        if (!$shift || !$checkRules($u, $shift['code'], $modId, $date)) continue;
+                    }
                 }
 
                 // Final weekly check with shift duration
@@ -1078,9 +1101,10 @@ function admin_generate_planning()
                 if (!isset($moduleASSlotIdx[$modId][$date])) $moduleASSlotIdx[$modId][$date] = 0;
                 $moduleASSlotIdx[$modId][$date]++;
 
+                $desirNote1_5 = isset($desirMap[$u['id']][$date]) ? 'desir' : null;
                 $stmtInsert->execute([
                     Uuid::v4(), $planningId, $u['id'], $date,
-                    $shift['id'], $modId, $groupeId, 'entraide', null
+                    $shift['id'], $modId, $groupeId, 'entraide', $desirNote1_5
                 ]);
 
                 $wk = $getWeekNum($date);
@@ -1158,6 +1182,13 @@ function admin_generate_planning()
                 // Direction/weekend off check
                 if (in_array($u['role'], ['direction', 'responsable']) && $iaDirWeekendOff && $dow >= 6) continue;
 
+                // Check for desired shift first
+                $desiredShift = $getDesiredShift($u, $date);
+                if ($desiredShift && $checkRules($u, $desiredShift['code'], $principalMod, $date)) {
+                    $shift = $desiredShift;
+                    goto pass2_assign;
+                }
+
                 // Night module → night shift
                 $isNight = ($principalMod === $nightModuleId);
                 if ($isNight && !empty($nightShifts)) {
@@ -1220,6 +1251,7 @@ function admin_generate_planning()
                     if (!$shift || !$checkRules($u, $shift['code'], $principalMod, $date)) continue;
                 }
 
+                pass2_assign:
                 $groupeIdP2 = null;
                 if ($isAS) {
                     $asSlotP2 = $moduleASSlotIdx[$principalMod][$date] ?? 0;
@@ -1228,9 +1260,10 @@ function admin_generate_planning()
                     $moduleASSlotIdx[$principalMod][$date]++;
                 }
 
+                $desirNoteP2 = isset($desirMap[$u['id']][$date]) ? 'desir' : null;
                 $stmtInsert->execute([
                     Uuid::v4(), $planningId, $u['id'], $date,
-                    $shift['id'], $principalMod, $groupeIdP2, 'present', null
+                    $shift['id'], $principalMod, $groupeIdP2, 'present', $desirNoteP2
                 ]);
                 $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
                 $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
