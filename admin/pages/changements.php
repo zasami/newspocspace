@@ -189,7 +189,7 @@ function fmtChgDate($dateStr, $joursFr, $moisFr) {
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content chg-confirm-content">
       <div class="modal-body text-center py-4 px-4 position-relative">
-        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" id="chgConfirmClose" aria-label="Fermer"></button>
+        <button type="button" class="confirm-close-btn position-absolute top-0 end-0 m-3" id="chgConfirmClose" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
         <div class="chg-confirm-icon mb-3">
           <svg class="chg-check-svg" viewBox="0 0 80 80" width="80" height="80">
             <circle class="chg-check-circle" cx="40" cy="40" r="36" fill="none" stroke="#bcd2cb" stroke-width="3"/>

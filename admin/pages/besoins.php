@@ -116,7 +116,7 @@ $besoinsFonctions = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY o
     <div class="modal-content">
       <div class="modal-header py-2">
         <h6 class="modal-title fw-semibold"><i class="bi bi-copy me-2"></i>Dupliquer les besoins</h6>
-        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">

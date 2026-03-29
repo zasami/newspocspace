@@ -182,7 +182,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-envelope"></i> Envoyer le planning par email</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -244,7 +244,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     <div class="modal-content">
       <div class="modal-header py-2">
         <h6 class="modal-title"><i class="bi bi-code-slash me-1"></i> Prompt IA envoyé</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body p-0">
         <div id="promptSummary" class="px-3 py-2 border-bottom prompt-summary"></div>
@@ -610,7 +610,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     <div class="modal-content">
       <div class="modal-header py-2">
         <h6 class="modal-title"><i class="bi bi-calendar2-plus me-1"></i> Générer le planning</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body pt-0">
 

@@ -55,7 +55,7 @@ $configNbModules = Db::getOne("SELECT config_value FROM ems_config WHERE config_
     <div class="modal-content">
       <div class="modal-header">
         <h6 class="modal-title"><i class="bi bi-building-add"></i> Nouveau module / unité</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="row g-2 mb-3">

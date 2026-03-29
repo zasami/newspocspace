@@ -223,7 +223,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
     <div class="modal-content">
       <div class="modal-header" id="ctModalHeader">
         <h5 class="modal-title" id="ctModalTitle"><i class="bi bi-person-rolodex"></i> Carnet d'adresses</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div id="ctModalSearch"></div>
       <div class="modal-body" id="ctModalBody"></div>

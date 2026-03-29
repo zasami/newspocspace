@@ -1011,7 +1011,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
     <div class="modal-content">
       <div class="modal-header py-2">
         <h6 class="modal-title fw-semibold" id="infoModalTitle"></h6>
-        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body ia-fs-modal" id="infoModalBody"></div>
     </div>
@@ -1024,7 +1024,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="iaRuleModalLabel"><i class="bi bi-file-text me-2"></i>Ajouter une règle</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <form id="iaRuleForm">

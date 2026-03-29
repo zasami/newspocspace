@@ -252,7 +252,7 @@ $initPermanents = Db::fetchAll(
           <h6 class="modal-title mb-0" id="desirModalTitle"></h6>
           <small class="text-muted" id="desirModalSubtitle"></small>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="desirModalBody"></div>
       <div class="modal-footer d-flex" id="desirModalFooter">

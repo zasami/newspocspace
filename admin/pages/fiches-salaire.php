@@ -106,7 +106,7 @@ $fsUsers = Db::fetchAll(
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-receipt"></i> Ajouter une fiche de salaire</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -148,7 +148,7 @@ $fsUsers = Db::fetchAll(
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-cloud-arrow-up"></i> Import en lot</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="alert alert-info small mb-3">

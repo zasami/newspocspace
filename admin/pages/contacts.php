@@ -114,7 +114,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="ctFormTitle">Nouveau contact</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="ct-form-row">
@@ -145,7 +145,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Importer des contacts (CSV)</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="ct-import-zone" id="ctImportZone">
@@ -170,7 +170,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Importer depuis mes emails</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body text-center" id="ctExtractBody">
         <div class="ct-extract-icon"><i class="bi bi-envelope-arrow-down"></i></div>

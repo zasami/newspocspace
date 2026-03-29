@@ -104,7 +104,7 @@ $todoItems = Db::fetchAll(
     <div class="modal-content todo-modal-content">
       <div class="modal-header border-0 pb-0">
         <h6 class="modal-title fw-bold" id="modalTodoTitle">Nouvelle tâche</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="todoEditId">

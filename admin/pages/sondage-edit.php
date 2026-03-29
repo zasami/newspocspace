@@ -498,7 +498,7 @@ if ($isEdit) {
     <div class="modal-content se-modal-content">
       <div class="modal-header se-ai-modal-header">
         <h6 class="modal-title"><i class="bi bi-magic"></i> Générer des questions avec l'IA</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
@@ -537,7 +537,7 @@ if ($isEdit) {
     <div class="modal-content se-modal-content">
       <div class="modal-header se-modal-header">
         <h6 class="modal-title"><i class="bi bi-eye"></i> Aperçu du sondage</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body p-0">
         <div id="previewContent" class="se-preview-body"></div>

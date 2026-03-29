@@ -86,7 +86,7 @@ $famResidents = Db::fetchAll(
 
 <!-- Modal Activité -->
 <div class="modal fade" id="famActModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title" id="famActModalTitle">Nouvelle activité</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h6 class="modal-title" id="famActModalTitle">Nouvelle activité</h6><button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
   <div class="modal-body">
     <input type="hidden" id="famActEditId">
     <div class="mb-3"><label class="form-label fw-600">Titre</label><input type="text" class="form-control" id="famActTitre"></div>
@@ -101,7 +101,7 @@ $famResidents = Db::fetchAll(
 
 <!-- Modal Médical -->
 <div class="modal fade" id="famMedModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title" id="famMedModalTitle">Nouvel avis médical</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h6 class="modal-title" id="famMedModalTitle">Nouvel avis médical</h6><button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
   <div class="modal-body">
     <input type="hidden" id="famMedEditId">
     <div class="mb-3"><label class="form-label fw-600">Titre</label><input type="text" class="form-control" id="famMedTitre"></div>
@@ -121,7 +121,7 @@ $famResidents = Db::fetchAll(
 
 <!-- Modal Album -->
 <div class="modal fade" id="famAlbModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title" id="famAlbModalTitle">Nouvel album</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header"><h6 class="modal-title" id="famAlbModalTitle">Nouvel album</h6><button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
   <div class="modal-body">
     <input type="hidden" id="famAlbEditId">
     <div class="mb-3"><label class="form-label fw-600">Titre</label><input type="text" class="form-control" id="famAlbTitre"></div>
