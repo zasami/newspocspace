@@ -2,7 +2,6 @@
  * zerdaTime - Notifications module
  */
 import { apiPost, escapeHtml, toast } from '../helpers.js';
-import { loadPage } from '../app.js';
 
 const TYPE_CONFIG = {
     vacances_valide:     { icon: 'bi-check-circle-fill', color: '#2d4a43', bg: '#bcd2cb' },
@@ -73,7 +72,10 @@ function renderNotifications(notifs) {
                 showAlertNotifModal(el);
                 return;
             }
-            if (link) loadPage(link);
+            if (link) {
+                const { loadPage } = await import('../app.js');
+                loadPage(link);
+            }
         });
     });
 }

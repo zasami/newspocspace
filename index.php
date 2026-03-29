@@ -53,8 +53,7 @@ $sidebarNav = [
         'items' => [
             'collegues'   => ['label' => 'Collègues',            'icon' => 'people'],
             'covoiturage' => ['label' => 'Covoiturage',      'icon' => 'car-front'],
-            'emails'      => ['label' => 'Email',             'icon' => 'envelope'],
-            'messages'    => ['label' => 'Messagerie interne','icon' => 'chat-dots'],
+            'emails'      => ['label' => 'Messagerie interne','icon' => 'chat-dots'],
         ],
     ],
     'cuisine' => [
@@ -171,9 +170,6 @@ if ($user && !empty($deniedPerms)) {
         <i class="bi bi-<?= $item['icon'] ?>"></i>
         <span class="fe-nav-label"><?= h($item['label']) ?></span>
         <?php if ($key === 'emails'): ?>
-        <span class="fe-sidebar-badge" id="emailBadgeSidebar" style="display:none"></span>
-        <?php endif; ?>
-        <?php if ($key === 'messages'): ?>
         <span class="fe-sidebar-badge" id="msgBadgeSidebar" style="display:none"></span>
         <?php endif; ?>
       </a>
@@ -220,16 +216,10 @@ if ($user && !empty($deniedPerms)) {
         <i class="bi bi-bell"></i>
         <span class="fe-topbar-notif" style="display:none"></span>
       </a>
-      <?php if (!in_array('page_messages', $deniedPerms)): ?>
-      <a href="/zerdatime/messages" data-link="messages" class="fe-topbar-icon-btn" title="Messagerie interne">
+      <?php if (!in_array('page_emails', $deniedPerms)): ?>
+      <a href="/zerdatime/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
         <i class="bi bi-chat-dots"></i>
         <span class="fe-topbar-notif" id="msgBadge" style="display:none"></span>
-      </a>
-      <?php endif; ?>
-      <?php if (!in_array('page_emails', $deniedPerms)): ?>
-      <a href="/zerdatime/emails" data-link="emails" class="fe-topbar-icon-btn" title="Email">
-        <i class="bi bi-envelope"></i>
-        <span class="fe-topbar-notif" id="emailBadge" style="display:none"></span>
       </a>
       <?php endif; ?>
       <button class="fe-topbar-icon-btn" id="fullscreenToggle" title="Plein écran">

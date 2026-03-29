@@ -632,7 +632,7 @@ function admin_update_ia_rule()
 
     // Structured rule fields
     $ruleType = array_key_exists('rule_type', $params) ? $params['rule_type'] : $rule['rule_type'];
-    $allowedTypes = ['shift_only', 'shift_exclude', 'days_only', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week', null];
+    $allowedTypes = ['user_schedule', 'shift_only', 'shift_exclude', 'days_only', 'module_only', 'module_exclude', 'no_weekend', 'max_days_week', null];
     if (!in_array($ruleType, $allowedTypes)) $ruleType = $rule['rule_type'];
 
     $ruleParams = $rule['rule_params'];

@@ -1,10 +1,11 @@
 <?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
 $uid = $_SESSION['zt_user']['id'];
 $emailContacts = Db::fetchAll(
-    "SELECT u.id, u.prenom, u.nom, u.email, u.fonction_nom,
+    "SELECT u.id, u.prenom, u.nom, u.email, COALESCE(f.nom, '') AS fonction_nom,
             COALESCE(m.nom, 'Sans module') AS module_nom,
             COALESCE(m.ordre, 999) AS module_ordre
      FROM users u
+     LEFT JOIN fonctions f ON f.id = u.fonction_id
      LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
      LEFT JOIN modules m ON m.id = um.module_id
      WHERE u.is_active = 1 AND u.id != ?
@@ -12,7 +13,7 @@ $emailContacts = Db::fetchAll(
     [$uid]
 );
 ?>
-<!-- Email Interne — Split-view email client -->
+<!-- Messagerie interne — Split-view client -->
 <link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 <style>
 .colleague-dropdown{position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1px solid var(--zt-border);border-radius:0 0 6px 6px;max-height:220px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.12)}
@@ -29,7 +30,7 @@ $emailContacts = Db::fetchAll(
     <div class="adm-email-left-header">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <div>
-          <h6 class="mb-0" style="font-weight:700"><i class="bi bi-envelope"></i> Emails</h6>
+          <h6 class="mb-0" style="font-weight:700"><i class="bi bi-chat-dots"></i> Messagerie interne</h6>
         </div>
         <button class="btn btn-sm btn-primary" id="btnCompose" title="Nouveau message">
           <i class="bi bi-pencil-square"></i>

@@ -2,7 +2,7 @@
  * zerdaTime - Fiches de salaire (employee view)
  */
 import { apiPost, escapeHtml, toast } from '../helpers.js';
-import { BASE } from '../app.js';
+const BASE = '/zerdatime';
 
 const MOIS = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 let currentYear = new Date().getFullYear();

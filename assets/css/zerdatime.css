@@ -1529,10 +1529,12 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .adm-email-left {
   flex: 0 0 360px;
   max-width: 400px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background: var(--zt-bg);
   border-right: 1px solid var(--zt-border);
+  overflow: hidden;
 }
 .adm-email-right {
   flex: 1;
@@ -1544,6 +1546,7 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .adm-email-left-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--zt-border);
+  overflow: hidden;
 }
 .adm-email-left-footer {
   padding: 14px;
@@ -1599,6 +1602,7 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .adm-email-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .adm-email-empty {
   text-align: center;
