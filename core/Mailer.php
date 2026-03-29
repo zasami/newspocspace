@@ -409,7 +409,73 @@ class Mailer
         $this->smtpCommand($smtp, "QUIT\r\n", 221);
         fclose($smtp);
 
+        // Copy to Sent folder via IMAP (so it appears in "Envoyés")
+        $fullMessage = $headers . "\r\n" . $body;
+        try {
+            $this->appendToSent($fullMessage);
+        } catch (\Throwable $e) {
+            // Non-fatal: email was sent, just not saved to Sent folder
+        }
+
         return true;
+    }
+
+    /**
+     * Append a message to the Sent folder via IMAP
+     */
+    private function appendToSent(string $message): void
+    {
+        $this->connectImap('INBOX');
+        $base = $this->getImapBase();
+
+        // List all folders and find the Sent folder
+        $list = imap_list($this->imap, $base, '*') ?: [];
+        $folderNames = array_map(fn($f) => str_replace($base, '', $f), $list);
+
+        // Priority-ordered candidates
+        $candidates = ['INBOX.Sent', 'Sent', 'INBOX.Envoy&AOk-s', 'Envoy&AOk-s', 'Sent Messages', 'Sent Items'];
+        $sentFolder = null;
+
+        // Exact match first
+        foreach ($candidates as $candidate) {
+            foreach ($folderNames as $name) {
+                if (strcasecmp($name, $candidate) === 0) {
+                    $sentFolder = $name;
+                    break 2;
+                }
+            }
+        }
+
+        // Fuzzy match: folder containing "sent" or "envoy"
+        if (!$sentFolder) {
+            foreach ($folderNames as $name) {
+                if (stripos($name, 'sent') !== false || stripos($name, 'envoy') !== false) {
+                    $sentFolder = $name;
+                    break;
+                }
+            }
+        }
+
+        if (!$sentFolder) {
+            $this->disconnectImap();
+            return;
+        }
+
+        imap_append($this->imap, $base . $sentFolder, $message, "\\Seen");
+
+        $this->disconnectImap();
+    }
+
+    /**
+     * Get IMAP base string (server + flags, no folder)
+     */
+    private function getImapBase(): string
+    {
+        $flags = '';
+        if ($this->imapEncryption === 'ssl') $flags = '/imap/ssl/validate-cert';
+        elseif ($this->imapEncryption === 'tls') $flags = '/imap/tls';
+        else $flags = '/imap/notls';
+        return '{' . $this->imapHost . ':' . $this->imapPort . $flags . '}';
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

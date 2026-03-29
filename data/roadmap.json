@@ -322,5 +322,14 @@
         "category": "Site web",
         "done": false,
         "order": 36
+    },
+    {
+        "id": "r-diger-le-help",
+        "title": "Rédiger le help",
+        "desc": "Rédiger le help de tous le programme , avec tout le fonctionne en cas de panne c'est qu'il faut faire",
+        "difficulty": "difficile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 37
     }
 ]

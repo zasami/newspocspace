@@ -3,7 +3,9 @@
 $totalUsers    = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
 $pendingAbs    = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
 $pendingDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
-$unreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE lu = 0 AND deleted = 0");
+$currentUserId = $_SESSION['zt_user']['id'] ?? '';
+$unreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM email_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$currentUserId])
+               + (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE (to_user_id = ? OR to_user_id IS NULL) AND lu = 0", [$currentUserId]);
 
 $recentAbsences = Db::fetchAll(
     "SELECT a.*, u.prenom, u.nom, u.photo
@@ -87,7 +89,7 @@ $absStatusLbl = [
   </div>
   <div class="col-sm-6 col-lg-3">
     <div class="stat-card">
-      <div class="stat-icon bg-red"><i class="bi bi-envelope"></i></div>
+      <div class="stat-icon bg-red"><i class="bi bi-chat-dots"></i></div>
       <div>
         <div class="stat-value"><?= $unreadMsgs ?></div>
         <div class="stat-label">Messages non lus</div>

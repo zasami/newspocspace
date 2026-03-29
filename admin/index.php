@@ -204,8 +204,8 @@ $sidebarCategories = [
         'items' => [
             'documents' => ['label' => 'Documents',             'icon' => 'folder2'],
             'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
-            'messages' => ['label' => 'Messagerie',            'icon' => 'envelope'],
-            'email-externe' => ['label' => 'Email',              'icon' => 'mailbox'],
+            'messages' => ['label' => 'Messagerie',            'icon' => 'chat-dots'],
+            'email-externe' => ['label' => 'Email',              'icon' => 'envelope'],
             'email-config'  => ['label' => 'Config Email',       'icon' => 'gear'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
@@ -256,9 +256,11 @@ $activeSection = match($page) {
     </div>
     <div class="sidebar-cat-items" data-cat-body="<?= $catId ?>">
       <?php foreach ($cat['items'] as $key => $item): ?>
-      <a href="<?= admin_url($key) ?>" class="sidebar-link <?= $activeSection === $key ? 'active' : '' ?>" title="<?= h($item['label']) ?>">
+      <a href="<?= admin_url($key) ?>" class="sidebar-link <?= $activeSection === $key ? 'active' : '' ?>" title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
         <i class="bi bi-<?= $item['icon'] ?>"></i>
         <span class="nav-label"><?= h($item['label']) ?></span>
+        <?php if ($key === 'messages'): ?><span class="sidebar-badge" id="sidebarMsgBadge" style="display:none"></span><?php endif; ?>
+        <?php if ($key === 'email-externe'): ?><span class="sidebar-badge" id="sidebarEmailBadge" style="display:none"></span><?php endif; ?>
       </a>
       <?php endforeach; ?>
     </div>
@@ -291,9 +293,13 @@ $activeSection = match($page) {
       <div class="topbar-search-results" id="topbarSearchResults"></div>
     </div>
     <div class="topbar-right">
-      <a href="<?= admin_url('messages') ?>" class="topbar-icon-btn" id="topbarEmailNotif" title="Messagerie">
+      <a href="<?= admin_url('messages') ?>" class="topbar-icon-btn" id="topbarMsgNotif" title="Messagerie">
+        <i class="bi bi-chat-dots"></i>
+        <span class="topbar-notif-badge" id="topbarMsgBadge" style="display:none"></span>
+      </a>
+      <a href="<?= admin_url('email-externe') ?>" class="topbar-icon-btn" id="topbarEmailNotif" title="Email">
         <i class="bi bi-envelope"></i>
-        <span class="topbar-notif-badge" id="adminEmailBadge" style="display:none"></span>
+        <span class="topbar-notif-badge" id="topbarEmailBadge" style="display:none"></span>
       </a>
       <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
@@ -374,6 +380,38 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     setInterval(updateCountdown, 30000);
 }
 
+// ── Unread counts polling (messages + email externe) ──
+(function() {
+    function setBadge(el, count) {
+        if (!el) return;
+        if (count > 0) {
+            el.textContent = count > 99 ? '99+' : count;
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    async function fetchUnreadCounts() {
+        try {
+            const res = await adminApiPost('admin_get_unread_counts', {});
+            if (!res.success) return;
+            // Topbar badges
+            setBadge(document.getElementById('topbarMsgBadge'), res.unread_messages);
+            setBadge(document.getElementById('topbarEmailBadge'), res.unread_email);
+            // Sidebar badges
+            setBadge(document.getElementById('sidebarMsgBadge'), res.unread_messages);
+            setBadge(document.getElementById('sidebarEmailBadge'), res.unread_email);
+        } catch (e) {}
+    }
+
+    // Initial fetch + poll every 60s
+    fetchUnreadCounts();
+    setInterval(fetchUnreadCounts, 60000);
+
+    // Expose for manual refresh
+    window.__ztRefreshUnread = fetchUnreadCounts;
+})();
 
 </script>
 

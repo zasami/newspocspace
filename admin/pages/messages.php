@@ -327,6 +327,8 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM email_attachment
             card.innerHTML = '<div class="card-body text-center text-muted py-4"><i class="bi bi-exclamation-triangle"></i> Email non trouvé</div>';
             return;
         }
+        // Refresh unread badges (message was just marked as read)
+        if (window.__ztRefreshUnread) window.__ztRefreshUnread();
 
         const e = res.email;
         const recipients = res.recipients || [];

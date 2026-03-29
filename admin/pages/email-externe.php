@@ -84,10 +84,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
   <!-- Folders -->
   <div class="ext-sidebar" id="extFolders">
     <div class="ext-folder active" data-folder="INBOX"><i class="bi bi-inbox"></i> Boîte de réception <span class="ext-folder-badge" id="extInboxCount"></span></div>
-    <div class="ext-folder" data-folder="INBOX.Sent"><i class="bi bi-send"></i> Envoyés</div>
-    <div class="ext-folder" data-folder="INBOX.Drafts"><i class="bi bi-pencil-square"></i> Brouillons</div>
-    <div class="ext-folder" data-folder="INBOX.Trash"><i class="bi bi-trash3"></i> Corbeille</div>
-    <div class="ext-folder" data-folder="INBOX.Junk"><i class="bi bi-exclamation-triangle"></i> Spam</div>
+    <div id="extFoldersDynamic"></div>
     <hr style="margin:8px 0;opacity:.2">
     <div class="ext-folder" id="extComposeBtn"><i class="bi bi-plus-circle"></i> <strong>Nouveau</strong></div>
     <div class="ext-folder" id="extContactsBtn"><i class="bi bi-person-rolodex"></i> Contacts</div>
@@ -240,6 +237,8 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
 
         const res = await adminApiPost('admin_email_ext_fetch_email', { folder: currentFolder, uid });
         if (!res.success) { detail.innerHTML = '<div class="text-danger p-3">' + escapeHtml(res.message) + '</div>'; return; }
+        // Refresh unread badges (email marked as read by IMAP)
+        if (window.__ztRefreshUnread) window.__ztRefreshUnread();
 
         const e = res.email;
         lastEmailData = e;
@@ -466,7 +465,34 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
         showToast('Carnet de contacts — bientôt disponible', 'info');
     });
 
+    // ── Load real IMAP folders ──
+    async function loadFolders() {
+        const container = document.getElementById('extFoldersDynamic');
+        if (!container) return;
+        const res = await adminApiPost('admin_email_ext_get_folders', {});
+        if (!res.success || !res.folders) return;
+
+        const folderMap = {
+            'sent':     { icon: 'bi-send',                label: 'Envoyés' },
+            'drafts':   { icon: 'bi-pencil-square',       label: 'Brouillons' },
+            'trash':    { icon: 'bi-trash3',              label: 'Corbeille' },
+            'junk':     { icon: 'bi-exclamation-triangle', label: 'Spam' },
+            'spam':     { icon: 'bi-exclamation-triangle', label: 'Spam' },
+            'archives': { icon: 'bi-archive',             label: 'Archives' },
+            'archive':  { icon: 'bi-archive',             label: 'Archives' },
+        };
+
+        // Filter out INBOX (already shown) and build folder list
+        const folders = res.folders.filter(f => f !== 'INBOX');
+        container.innerHTML = folders.map(f => {
+            const key = f.replace(/^INBOX\.?/i, '').toLowerCase();
+            const info = folderMap[key] || { icon: 'bi-folder', label: f };
+            return '<div class="ext-folder" data-folder="' + escapeHtml(f) + '"><i class="bi ' + info.icon + '"></i> ' + escapeHtml(info.label) + '</div>';
+        }).join('');
+    }
+
     // ── Init ──
+    loadFolders();
     loadList();
 
     window.initEmailexternePage = () => {};

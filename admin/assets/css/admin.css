@@ -557,21 +557,57 @@ body {
   font-size: 1.15rem;
 }
 
-/* Notification badge (dot) */
+/* Notification badge (count) */
 .topbar-notif-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #DC2626;
+  top: 2px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: #E2B8AE;
+  color: #7B3B2C;
+  font-size: .65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 4px;
   border: 2px solid var(--cl-surface);
-  animation: topbar-pulse 2s infinite;
 }
-@keyframes topbar-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.topbar-notif-badge::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: #E2B8AE;
+  opacity: 0;
+  z-index: -1;
+  animation: badge-halo 3s ease-out infinite;
+}
+@keyframes badge-halo {
+  0%   { opacity: .35; transform: scale(1); }
+  60%  { opacity: 0;   transform: scale(1.5); }
+  100% { opacity: 0;   transform: scale(1.5); }
+}
+
+/* Sidebar badge */
+.sidebar-badge {
+  position: relative;
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #E2B8AE;
+  color: #7B3B2C;
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  padding: 0 5px;
+}
+.sidebar-link.active .sidebar-badge {
+  background: rgba(255,255,255,.25);
+  color: #fff;
 }
 
 /* ── User info ── */
