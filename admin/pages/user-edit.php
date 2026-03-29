@@ -406,9 +406,22 @@ async function loadPermissionsModal(userId) {
     const cuisineEntries = Object.entries(perms).filter(([k]) => k.startsWith('cuisine_'));
 
     // Presets definition
+    // Build key sets for role-based presets
+    const allPageKeys = pageEntries.map(([k]) => k);
+    const allCuisineKeys = cuisineEntries.map(([k]) => k);
+    const allKeys = [...allPageKeys, ...allCuisineKeys];
+    // Soins roles: everything except email externe
+    const soinsKeys = allKeys.filter(k => k !== 'page_emails');
+
     const presets = [
-        { id: 'standard', label: 'Standard', desc: 'Accès complet à toutes les pages', icon: 'bi-person-check',
+        { id: 'standard', label: 'Standard', desc: 'Accès complet (email inclus)', icon: 'bi-person-check',
           keys: null },
+        { id: 'infirmiere', label: 'Infirmière', desc: 'Tout accès + email', icon: 'bi-heart-pulse',
+          keys: null },
+        { id: 'assc', label: 'ASSC', desc: 'Tout sauf email externe', icon: 'bi-clipboard2-pulse',
+          keys: soinsKeys },
+        { id: 'aide_soignant', label: 'Aide soignant', desc: 'Tout sauf email externe', icon: 'bi-bandaid',
+          keys: soinsKeys },
         { id: 'cuisine', label: 'Cuisine complet', desc: 'Cuisine + menus + réservations', icon: 'bi-egg-fried',
           keys: ['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_messages'] },
         { id: 'hotellerie', label: 'Hôtellerie', desc: 'Cuisine + réservations famille', icon: 'bi-building',
@@ -540,7 +553,7 @@ window.initUsereditPage = initUsereditPage;
 
 /* Permissions modal — Preset cards */
 .perm-presets-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;
 }
 .perm-preset-card {
     position: relative; border: 1.5px solid var(--cl-border, #E8E5E0); border-radius: 12px;

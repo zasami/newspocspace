@@ -12,13 +12,13 @@ export function init() {
     }
 
     // Eye toggle for all password fields
-    document.querySelectorAll('.pwd-toggle-eye').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const input = document.getElementById(btn.dataset.target);
+    document.querySelectorAll('.pwd-eye').forEach(el => {
+        el.addEventListener('click', () => {
+            const input = document.getElementById(el.dataset.target);
             if (!input) return;
             const isPassword = input.type === 'password';
             input.type = isPassword ? 'text' : 'password';
-            btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+            el.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
         });
     });
 

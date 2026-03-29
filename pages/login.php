@@ -14,8 +14,8 @@
       <div class="login-field">
         <label for="loginPassword">Mot de passe</label>
         <div style="position:relative">
-          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" style="padding-right:40px">
-          <button type="button" class="pwd-toggle-eye" data-target="loginPassword" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9B9690;padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" style="padding-right:42px">
+          <span class="pwd-eye" data-target="loginPassword" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9B9690;font-size:1.1rem;line-height:1;padding:4px;user-select:none;z-index:5"><i class="bi bi-eye"></i></span>
         </div>
       </div>
       <button type="submit" class="login-submit" id="loginBtn">

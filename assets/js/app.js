@@ -558,6 +558,19 @@ async function pollNotifBadge() {
             }
         }
     } catch (e) { /* silent */ }
+    // Messages unread count
+    try {
+        const { apiPost } = await import('./helpers.js');
+        const res = await apiPost('get_unread_count');
+        const count = res.count || 0;
+        const setBadge = (el) => {
+            if (!el) return;
+            if (count > 0) { el.textContent = count; el.style.display = ''; }
+            else { el.style.display = 'none'; }
+        };
+        setBadge(document.getElementById('msgBadge'));
+        setBadge(document.getElementById('msgBadgeSidebar'));
+    } catch (e) { /* silent */ }
 }
 
 /* ── Pending alerts modal ── */

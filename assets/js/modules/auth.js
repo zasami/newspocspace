@@ -5,13 +5,13 @@ import { apiPost, toast } from '../helpers.js';
 
 export async function init() {
     // Eye toggle for password field
-    document.querySelectorAll('.pwd-toggle-eye').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const input = document.getElementById(btn.dataset.target);
+    document.querySelectorAll('.pwd-eye').forEach(el => {
+        el.addEventListener('click', () => {
+            const input = document.getElementById(el.dataset.target);
             if (!input) return;
             const isPassword = input.type === 'password';
             input.type = isPassword ? 'text' : 'password';
-            btn.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+            el.querySelector('i').className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
         });
     });
 

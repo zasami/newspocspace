@@ -50,24 +50,24 @@ if ($profUser) {
         <form id="passwordForm">
           <div class="form-group">
             <label class="form-label">Mot de passe actuel</label>
-            <div style="position:relative">
-              <input type="password" class="form-control" id="currentPassword" required autocomplete="current-password" style="padding-right:40px">
-              <button type="button" class="pwd-toggle-eye" data-target="currentPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            <div class="pwd-field-wrap">
+              <input type="password" class="form-control" id="currentPassword" required autocomplete="current-password">
+              <span class="pwd-eye" data-target="currentPassword"><i class="bi bi-eye"></i></span>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Nouveau mot de passe</label>
-            <div style="position:relative">
-              <input type="password" class="form-control" id="newPassword" required minlength="8" autocomplete="new-password" style="padding-right:40px">
-              <button type="button" class="pwd-toggle-eye" data-target="newPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            <div class="pwd-field-wrap">
+              <input type="password" class="form-control" id="newPassword" required minlength="8" autocomplete="new-password">
+              <span class="pwd-eye" data-target="newPassword"><i class="bi bi-eye"></i></span>
             </div>
-            <div id="pwdStrength" style="margin-top:6px;font-size:.78rem;color:var(--zt-text-muted)"></div>
+            <div id="pwdStrength" style="margin-top:6px;font-size:.78rem"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Confirmer</label>
-            <div style="position:relative">
-              <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password" style="padding-right:40px">
-              <button type="button" class="pwd-toggle-eye" data-target="confirmPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--zt-text-muted);padding:4px;font-size:1.1rem;line-height:1"><i class="bi bi-eye"></i></button>
+            <div class="pwd-field-wrap">
+              <input type="password" class="form-control" id="confirmPassword" required autocomplete="new-password">
+              <span class="pwd-eye" data-target="confirmPassword"><i class="bi bi-eye"></i></span>
             </div>
           </div>
           <button type="submit" class="btn btn-primary w-100 mt-2" id="btnSavePassword">
@@ -78,4 +78,14 @@ if ($profUser) {
     </div>
   </div>
 </div>
+<style>
+.pwd-field-wrap { position: relative; }
+.pwd-field-wrap input { padding-right: 42px; }
+.pwd-eye {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: var(--zt-text-muted, #999); font-size: 1.1rem;
+    line-height: 1; padding: 4px; user-select: none; z-index: 5;
+}
+.pwd-eye:hover { color: var(--zt-text, #333); }
+</style>
 <script type="application/json" id="__zt_ssr__"><?= json_encode(['user' => $profUser], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
