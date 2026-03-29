@@ -1523,6 +1523,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     const gsRuleTypeLabels = {
         shift_only: 'Horaires autorisés',
         shift_exclude: 'Horaires exclus',
+        days_only: 'Jours autorisés',
         module_only: 'Modules autorisés',
         module_exclude: 'Modules exclus',
         no_weekend: 'Pas de weekend',
@@ -1756,6 +1757,25 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                     }
                 });
                 gsRenderShiftTags();
+            } else if (type === 'days_only') {
+                const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+                const selectedDays = params.days || [];
+                det.innerHTML = '<label class="form-label small fw-bold">Jours autorisés</label>'
+                    + '<div class="d-flex flex-wrap gap-2" id="gsrDaysWrap">'
+                    + dayNames.map((name, i) => {
+                        const dow = i + 1;
+                        const checked = selectedDays.includes(dow);
+                        return '<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1.5px solid ' + (checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)') + ';cursor:pointer;font-size:.82rem;font-weight:500;background:' + (checked ? 'var(--cl-primary-light,#f0f0f0)' : '') + ';transition:all .15s">'
+                            + '<input type="checkbox" class="gsr-day-cb" value="' + dow + '"' + (checked ? ' checked' : '') + ' style="accent-color:var(--cl-primary,#1a1a1a)">' + name + '</label>';
+                    }).join('')
+                    + '</div>';
+                det.querySelectorAll('.gsr-day-cb').forEach(cb => {
+                    cb.addEventListener('change', () => {
+                        const label = cb.closest('label');
+                        label.style.borderColor = cb.checked ? 'var(--cl-primary,#1a1a1a)' : 'var(--cl-border,#E8E5E0)';
+                        label.style.background = cb.checked ? 'var(--cl-primary-light,#f0f0f0)' : '';
+                    });
+                });
             } else if (type === 'max_days_week') {
                 det.innerHTML = '<label class="form-label small fw-bold">Max jours par semaine</label><input type="number" class="form-control form-control-sm" id="gsrMaxDays" min="1" max="7" value="' + (params.max_days || 5) + '">';
             } else if (type === 'module_only' || type === 'module_exclude') {
@@ -1824,6 +1844,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         let ruleParams = {};
         if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
             ruleParams.shift_codes = window._gsSelectedShifts || [];
+        } else if (ruleType === 'days_only') {
+            ruleParams.days = [...document.querySelectorAll('.gsr-day-cb:checked')].map(cb => parseInt(cb.value));
         } else if (ruleType === 'max_days_week') {
             ruleParams.max_days = parseInt(document.getElementById('gsrMaxDays')?.value || 5);
         } else if (ruleType === 'module_only' || ruleType === 'module_exclude') {

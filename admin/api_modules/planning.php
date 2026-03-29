@@ -822,6 +822,11 @@ function admin_generate_planning()
                         return false;
                     }
                     break;
+                case 'days_only':
+                    if (!empty($p['days']) && !in_array($dow, $p['days'])) {
+                        return false;
+                    }
+                    break;
                 case 'no_weekend':
                     if ($dow >= 6) return false;
                     break;
