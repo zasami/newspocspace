@@ -961,9 +961,9 @@ function admin_generate_planning()
                         if ($currentWeekHours >= $weeklyTarget + 5) continue;
                     }
 
-                    // Pick shift: prefer user's desired shift if approved
+                    // Pick shift: desired shift (approved) takes priority over IA rules
                     $desiredShift = $getDesiredShift($u, $date);
-                    if ($desiredShift && $checkRules($u, $desiredShift['code'], $modId, $date)) {
+                    if ($desiredShift) {
                         $shift = $desiredShift;
                     } else {
                         $shift = $pickShift($modId, $assignedForSlot, $nbReqd, $d, $u, $u['fonction_code']);
@@ -1077,9 +1077,9 @@ function admin_generate_planning()
 
                 // Determine slot index for shift pairing (continue from what's already assigned)
                 $slotIdx = $c['assigne'] + $filled;
-                // Prefer desired shift if approved
+                // Desired shift (approved) takes priority over IA rules
                 $desiredShift = $getDesiredShift($u, $date);
-                if ($desiredShift && $checkRules($u, $desiredShift['code'], $modId, $date)) {
+                if ($desiredShift) {
                     $shift = $desiredShift;
                 } else {
                     $shift = $pickShift($modId, $slotIdx, $c['requis'], (int) substr($date, -2), $u, 'AS');
@@ -1182,9 +1182,9 @@ function admin_generate_planning()
                 // Direction/weekend off check
                 if (in_array($u['role'], ['direction', 'responsable']) && $iaDirWeekendOff && $dow >= 6) continue;
 
-                // Check for desired shift first
+                // Desired shift (approved) takes priority over IA rules
                 $desiredShift = $getDesiredShift($u, $date);
-                if ($desiredShift && $checkRules($u, $desiredShift['code'], $principalMod, $date)) {
+                if ($desiredShift) {
                     $shift = $desiredShift;
                     goto pass2_assign;
                 }
