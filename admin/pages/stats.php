@@ -27,6 +27,26 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 
 /* ── Charts ── */
 .st-chart-card { border-radius:14px;border:1.5px solid var(--cl-border-light,#F0EDE8);background:var(--cl-surface,#fff);padding:20px; }
+.st-compare-btn { border:1.5px solid #D0C4D8;background:none;color:#5B4B6B;padding:5px 14px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px; }
+.st-compare-btn:hover { background:#D0C4D8;color:#fff; }
+.st-cmp-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+.st-cmp-card { border-radius:14px;border:1.5px solid var(--cl-border-light,#F0EDE8);padding:16px;background:var(--cl-surface,#fff); }
+.st-cmp-card-title { font-size:.78rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px; }
+.st-cmp-card-title .year { font-size:.68rem;padding:2px 8px;border-radius:10px;font-weight:600; }
+.st-cmp-stats { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px; }
+.st-cmp-stat { flex:1;min-width:70px;text-align:center;padding:8px 6px;border-radius:10px;background:var(--cl-bg,#F7F5F2); }
+.st-cmp-stat .val { font-size:1.1rem;font-weight:700; }
+.st-cmp-stat .lbl { font-size:.62rem;color:var(--cl-text-muted);margin-top:1px; }
+.st-cmp-chart { height:200px;position:relative; }
+.st-cmp-diff { border-radius:14px;padding:16px;border:1.5px solid var(--cl-border-light);background:var(--cl-surface,#fff); }
+.st-cmp-diff-title { font-size:.82rem;font-weight:700;margin-bottom:10px; }
+.st-cmp-diff-row { display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--cl-border-light);font-size:.85rem; }
+.st-cmp-diff-row:last-child { border:none; }
+.st-cmp-arrow { font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:3px; }
+.st-cmp-up { color:#7B3B2C; }
+.st-cmp-down { color:#2d4a43; }
+.st-cmp-equal { color:var(--cl-text-muted); }
+@media(max-width:768px) { .st-cmp-grid { grid-template-columns:1fr; } }
 .st-chart-title { font-size:.82rem;font-weight:700;margin-bottom:12px; }
 .st-chart-toggle { display:flex;gap:2px;background:var(--cl-bg,#F7F5F2);border-radius:8px;padding:2px; }
 .st-ct-btn { border:none;background:none;width:30px;height:28px;border-radius:6px;cursor:pointer;color:var(--cl-text-muted);font-size:.82rem;display:flex;align-items:center;justify-content:center;transition:all .15s; }
@@ -134,6 +154,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
     <span class="st-date-label" id="stDateLabel">—</span>
     <button id="stNext" title="Suivant"><i class="bi bi-chevron-right"></i></button>
   </div>
+  <button class="st-compare-btn" id="stCompareBtn" title="Comparer avec l'année précédente"><i class="bi bi-arrow-left-right"></i> Comparer</button>
 </div>
 
 <div class="row g-3 mb-3">
@@ -178,6 +199,26 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="stUserModalBody">
+        <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal: Comparaison ═══ -->
+<div class="modal fade" id="stCompareModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="stCompareTitle">Comparaison</h5>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <button class="btn btn-sm btn-outline-secondary" id="stCmpPrev" title="Mois précédent"><i class="bi bi-chevron-left"></i></button>
+          <span class="fw-bold" id="stCmpLabel" style="min-width:120px;text-align:center"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="stCmpNext" title="Mois suivant"><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="confirm-close-btn ms-3" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+      </div>
+      <div class="modal-body" id="stCompareBody">
         <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
       </div>
     </div>
@@ -376,6 +417,118 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
             if (stData) renderCharts(stData);
         });
     });
+
+    // ═══ Compare feature ═══
+    let cmpDate = new Date();
+    let cmpChartCurrent = null, cmpChartPrev = null;
+
+    document.getElementById('stCompareBtn')?.addEventListener('click', () => {
+        cmpDate = new Date(currentDate);
+        const modal = new bootstrap.Modal(document.getElementById('stCompareModal'));
+        modal.show();
+        loadCompare();
+    });
+
+    document.getElementById('stCmpPrev')?.addEventListener('click', () => {
+        cmpDate.setMonth(cmpDate.getMonth() - 1);
+        loadCompare();
+    });
+    document.getElementById('stCmpNext')?.addEventListener('click', () => {
+        cmpDate.setMonth(cmpDate.getMonth() + 1);
+        loadCompare();
+    });
+
+    async function loadCompare() {
+        const m = cmpDate.getMonth(), y = cmpDate.getFullYear();
+        document.getElementById('stCmpLabel').textContent = MONTHS_FR[m] + ' ' + y;
+        document.getElementById('stCompareTitle').textContent = 'Comparaison — ' + MONTHS_FR[m];
+        document.getElementById('stCompareBody').innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+
+        const dateCurrent = y + '-' + String(m+1).padStart(2,'0') + '-15';
+        const datePrev = (y-1) + '-' + String(m+1).padStart(2,'0') + '-15';
+
+        const [resCur, resPrev] = await Promise.all([
+            adminApiPost('admin_get_absence_stats', { period:'month', date:dateCurrent }),
+            adminApiPost('admin_get_absence_stats', { period:'month', date:datePrev }),
+        ]);
+
+        if (!resCur.success) { document.getElementById('stCompareBody').innerHTML = '<p class="text-danger">Erreur</p>'; return; }
+
+        const sCur = resCur.stats || {};
+        const sPrev = resPrev.success ? (resPrev.stats || {}) : { total_absents:0, total_jours:0, total_heures:0, justifiees:0, non_justifiees:0, par_type:{} };
+
+        let h = '<div class="st-cmp-grid">';
+
+        // Current year card
+        h += '<div class="st-cmp-card">';
+        h += '<div class="st-cmp-card-title"><i class="bi bi-calendar3"></i> ' + MONTHS_FR[m] + ' <span class="year" style="background:#bcd2cb;color:#2d4a43">' + y + '</span></div>';
+        h += cmpStats(sCur);
+        h += '<div class="st-cmp-chart"><canvas id="stCmpChartCur"></canvas></div>';
+        h += '</div>';
+
+        // Previous year card
+        h += '<div class="st-cmp-card">';
+        h += '<div class="st-cmp-card-title"><i class="bi bi-calendar3"></i> ' + MONTHS_FR[m] + ' <span class="year" style="background:#D0C4D8;color:#5B4B6B">' + (y-1) + '</span></div>';
+        h += cmpStats(sPrev);
+        h += '<div class="st-cmp-chart"><canvas id="stCmpChartPrev"></canvas></div>';
+        h += '</div>';
+
+        h += '</div>';
+
+        // Diff recap
+        h += '<div class="st-cmp-diff">';
+        h += '<div class="st-cmp-diff-title"><i class="bi bi-arrow-left-right"></i> Évolution ' + (y-1) + ' → ' + y + '</div>';
+        h += diffRow('Collaborateurs absents', sPrev.total_absents, sCur.total_absents);
+        h += diffRow('Jours d\'absence', sPrev.total_jours, sCur.total_jours);
+        h += diffRow('Heures d\'absence', sPrev.total_heures, sCur.total_heures);
+        h += diffRow('Justifiées', sPrev.justifiees, sCur.justifiees);
+        h += diffRow('Non justifiées', sPrev.non_justifiees, sCur.non_justifiees);
+        h += '</div>';
+
+        document.getElementById('stCompareBody').innerHTML = h;
+
+        // Render mini charts
+        if (cmpChartCurrent) cmpChartCurrent.destroy();
+        if (cmpChartPrev) cmpChartPrev.destroy();
+        const chartOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } };
+
+        const curCtx = document.getElementById('stCmpChartCur');
+        if (curCtx) {
+            const d = resCur.chart_data || [];
+            cmpChartCurrent = new Chart(curCtx, {
+                type:'bar', data:{ labels:d.map(x=>x.label), datasets:[{ data:d.map(x=>x.jours), backgroundColor:'rgba(188,210,203,.6)', borderColor:'#2d4a43', borderWidth:1, borderRadius:4, maxBarThickness:30 }] }, options:chartOpts
+            });
+        }
+        const prevCtx = document.getElementById('stCmpChartPrev');
+        if (prevCtx && resPrev.success) {
+            const d = resPrev.chart_data || [];
+            cmpChartPrev = new Chart(prevCtx, {
+                type:'bar', data:{ labels:d.map(x=>x.label), datasets:[{ data:d.map(x=>x.jours), backgroundColor:'rgba(208,196,216,.6)', borderColor:'#5B4B6B', borderWidth:1, borderRadius:4, maxBarThickness:30 }] }, options:chartOpts
+            });
+        }
+    }
+
+    function cmpStats(s) {
+        let h = '<div class="st-cmp-stats">';
+        h += '<div class="st-cmp-stat"><div class="val">' + (s.total_absents||0) + '</div><div class="lbl">Absents</div></div>';
+        h += '<div class="st-cmp-stat"><div class="val">' + (s.total_jours||0) + '</div><div class="lbl">Jours</div></div>';
+        h += '<div class="st-cmp-stat"><div class="val">' + (s.total_heures||0) + '</div><div class="lbl">Heures</div></div>';
+        h += '<div class="st-cmp-stat"><div class="val">' + (s.justifiees||0) + '</div><div class="lbl">Justif.</div></div>';
+        h += '<div class="st-cmp-stat"><div class="val">' + (s.non_justifiees||0) + '</div><div class="lbl">Non justif.</div></div>';
+        return h + '</div>';
+    }
+
+    function diffRow(label, prev, cur) {
+        prev = parseFloat(prev) || 0;
+        cur = parseFloat(cur) || 0;
+        const diff = cur - prev;
+        let arrow, cls;
+        if (diff > 0) { arrow = '▲ +' + diff; cls = 'st-cmp-up'; }
+        else if (diff < 0) { arrow = '▼ ' + diff; cls = 'st-cmp-down'; }
+        else { arrow = '= 0'; cls = 'st-cmp-equal'; }
+        const pct = prev > 0 ? Math.round((diff / prev) * 100) : (cur > 0 ? '+100' : '0');
+        return '<div class="st-cmp-diff-row"><span>' + label + '</span><span><strong>' + prev + '</strong> → <strong>' + cur + '</strong> <span class="st-cmp-arrow ' + cls + '">' + arrow + ' (' + (diff >= 0 ? '+' : '') + pct + '%)</span></span></div>';
+    }
 
     // Slidedown toggle
     document.getElementById('stToggleDetail')?.addEventListener('click', function() {
