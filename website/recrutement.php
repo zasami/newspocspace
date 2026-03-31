@@ -50,6 +50,45 @@ body {
   min-height: 100vh;
 }
 
+/* ── Navbar ── */
+.rec-nav {
+  position: sticky; top: 0; z-index: 1000;
+  background: rgba(250,253,247,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--rec-border); padding: 0;
+}
+.rec-nav-inner {
+  max-width: 1200px; margin: 0 auto; padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rec-nav-logo { height: 44px; width: auto; }
+.rec-nav-links { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.rec-nav-links a {
+  display: block; padding: 7px 14px; font-size: .85rem; font-weight: 500;
+  color: var(--rec-text-secondary); border-radius: var(--rec-radius-xs);
+  text-decoration: none; transition: all .2s;
+}
+.rec-nav-links a:hover { color: var(--rec-green); background: var(--rec-green-bg); }
+.rec-nav-links .rec-nav-btn {
+  background: var(--rec-green) !important; color: #fff !important;
+  border-radius: var(--rec-radius-xs) !important; font-weight: 600 !important;
+}
+.rec-nav-links .rec-nav-btn:hover { background: var(--rec-green-hover) !important; }
+.rec-nav-toggle {
+  display: none; background: none; border: 1px solid var(--rec-border);
+  border-radius: var(--rec-radius-xs); padding: 6px 10px; font-size: 1.3rem;
+  color: var(--rec-text); cursor: pointer;
+}
+@media (max-width: 768px) {
+  .rec-nav-toggle { display: block; }
+  .rec-nav-links {
+    display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--rec-surface); border-bottom: 1px solid var(--rec-border);
+    box-shadow: var(--rec-shadow-md); padding: 12px 20px; gap: 0;
+  }
+  .rec-nav-links.open { display: flex; }
+  .rec-nav-links a { padding: 10px 16px; }
+}
+
 /* ── Shell ── */
 .rec-shell { min-height: 100vh; padding: 24px 16px 60px; }
 .rec-container { max-width: 960px; margin: 0 auto; }
@@ -266,10 +305,27 @@ body {
 </style>
 </head>
 <body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="rec-nav">
+  <div class="rec-nav-inner">
+    <a href="/zerdatime/website/">
+      <img src="/zerdatime/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="<?= h($emsNom) ?>" class="rec-nav-logo">
+    </a>
+    <button class="rec-nav-toggle" id="recNavToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <ul class="rec-nav-links" id="recNavLinks">
+      <li><a href="/zerdatime/website/">Accueil</a></li>
+      <li><a href="/zerdatime/website/#about">Notre mission</a></li>
+      <li><a href="/zerdatime/website/#team">Équipe</a></li>
+      <li><a href="/zerdatime/website/#contact">Contact</a></li>
+      <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
+      <li><a href="/zerdatime/" class="rec-nav-btn"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>
+    </ul>
+  </div>
+</nav>
+
 <div class="rec-shell">
 <div class="rec-container">
-
-  <a href="/zerdatime/website/" class="rec-back"><i class="bi bi-arrow-left"></i> Retour au site</a>
 
   <!-- ═══ HEADER ═══ -->
   <div class="rec-header">
@@ -749,6 +805,11 @@ body {
   });
   document.getElementById('recTrackEmail').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') document.getElementById('recTrackBtn').click();
+  });
+
+  // ── Navbar toggle ──
+  document.getElementById('recNavToggle')?.addEventListener('click', () => {
+    document.getElementById('recNavLinks').classList.toggle('open');
   });
 
   // ── Init ──

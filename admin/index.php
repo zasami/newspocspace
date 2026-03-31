@@ -202,6 +202,12 @@ $sidebarCategories = [
             'sondages' => ['label' => 'Sondages',             'icon' => 'clipboard2-check'],
         ],
     ],
+    'rh' => [
+        'label' => 'Formation & RH',
+        'items' => [
+            'recrutement'   => ['label' => 'Recrutement',         'icon' => 'person-plus'],
+        ],
+    ],
     'autres' => [
         'label' => 'Autres',
         'items' => [
@@ -213,7 +219,6 @@ $sidebarCategories = [
             'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
-            'recrutement'   => ['label' => 'Recrutement',       'icon' => 'person-plus'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
         ],
