@@ -72,29 +72,8 @@ $besoinsFonctions = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY o
   </div>
 </div>
 
-<!-- FTE Summary banner — aligned as table row -->
-<div id="besoins-fte-summary" class="b-hidden" style="overflow-x:auto">
-  <table class="tr-grid" style="margin-bottom:0">
-    <thead>
-      <tr>
-        <th class="b-col-header" style="min-width:200px;max-width:260px">
-          <div class="d-flex align-items-center gap-2"><i class="bi bi-people-fill text-primary"></i><span class="fw-semibold small">Postes requis / jour</span></div>
-        </th>
-        <th class="b-col-day text-center" id="bfteLun">Lun<br><strong>—</strong></th>
-        <th class="b-col-day text-center" id="bfteMar">Mar<br><strong>—</strong></th>
-        <th class="b-col-day text-center" id="bfteMer">Mer<br><strong>—</strong></th>
-        <th class="b-col-day text-center" id="bfteJeu">Jeu<br><strong>—</strong></th>
-        <th class="b-col-day text-center" id="bfteVen">Ven<br><strong>—</strong></th>
-        <th class="b-col-day text-center" style="color:#e6a817" id="bfteSam">Sam<br><strong>—</strong></th>
-        <th class="b-col-day text-center" style="color:#e6a817" id="bfteDim">Dim<br><strong>—</strong></th>
-        <th class="text-center" style="min-width:80px">
-          <span class="text-muted small">Total semaine :</span><br>
-          <span class="badge bg-primary" id="besoins-fte-total">0</span>
-        </th>
-      </tr>
-    </thead>
-  </table>
-</div>
+<!-- FTE Summary (inline in tfoot) -->
+<div id="besoins-fte-summary" class="b-hidden"></div>
 
 <div id="besoins-loading" class="text-center py-5 b-hidden">
   <div class="admin-spinner b-spinner"></div>
@@ -314,8 +293,7 @@ function initBesoinsPage() {
     fhtml += '</tr>';
     tfoot.innerHTML = fhtml;
 
-    // FTE summary banner
-    renderFteSummary(dayTotals, grandTotal);
+    // FTE summary (removed — totals shown in tfoot)
 
     // Event delegation on tbody
     bindTableEvents(tbody);

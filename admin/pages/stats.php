@@ -104,9 +104,13 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 .st-mini-bar-month { width:20px;height:18px;border-radius:4px;background:var(--cl-border-light,#E8E4DE);display:flex;align-items:center;justify-content:center; }
 .st-mini-bar-month.active { background:#bcd2cb; }
 .st-mini-bar-month span { font-size:.5rem;color:var(--cl-text-muted); }
-.st-detail-table { width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:10px; }
-.st-detail-table th { padding:8px 10px;background:var(--cl-bg);border-bottom:1px solid var(--cl-border-light);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-text-muted); }
-.st-detail-table td { padding:8px 10px;border-bottom:1px solid var(--cl-border-light); }
+.st-detail-wrap { border:1.5px solid var(--cl-border-light,#F0EDE8);border-radius:14px;overflow:hidden;background:var(--cl-surface,#fff);margin-bottom:14px; }
+.st-detail-table { width:100%;border-collapse:collapse;font-size:.82rem;margin:0; }
+.st-detail-table th { padding:10px 12px;background:var(--cl-bg,#F7F5F2);border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-text-muted);text-align:left; }
+.st-detail-table th:first-child { border-top-left-radius:14px; }
+.st-detail-table th:last-child { border-top-right-radius:14px; }
+.st-detail-table td { padding:9px 12px;border-bottom:1px solid var(--cl-border-light,#F0EDE8); }
+.st-detail-table tr:last-child td { border-bottom:none; }
 
 @media print { .st-no-print { display:none!important; } }
 </style>
@@ -192,14 +196,17 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 
 <!-- ═══ Modal: Détail collaborateur ═══ -->
 <div class="modal fade" id="stUserModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="stUserModalTitle">Détail collaborateur</h5>
+        <h5 class="modal-title" id="stUserModalTitle"><i class="bi bi-person-badge me-2"></i>Détail collaborateur</h5>
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="stUserModalBody">
         <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light ms-auto" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -224,7 +231,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -380,14 +387,14 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         }
 
         // Absences table
-        h += '<table class="st-detail-table"><thead><tr><th>Début</th><th>Fin</th><th>Durée</th><th>Type</th><th>Justifié</th><th>Motif</th></tr></thead><tbody>';
+        h += '<div class="st-detail-wrap"><table class="st-detail-table"><thead><tr><th>Début</th><th>Fin</th><th>Durée</th><th>Type</th><th>Justifié</th><th>Motif</th></tr></thead><tbody>';
         (c.absences||[]).forEach(a => {
             h += '<tr><td>'+fmtDate(a.date_debut)+'</td><td>'+fmtDate(a.date_fin)+'</td><td>'+a.duree_jours+'j</td>';
             h += '<td>'+typeBadge(a.type)+'</td>';
             h += '<td>'+(a.has_justificatif?'<span class="st-badge st-badge-oui">✓</span>':'<span class="st-badge st-badge-non">✗</span>')+'</td>';
             h += '<td>'+esc(a.motif||'-')+'</td></tr>';
         });
-        h += '</tbody></table>';
+        h += '</tbody></table></div>';
 
         // Mini bar annuel
         h += '<div class="small text-muted fw-bold mb-1">Historique annuel</div><div class="st-mini-bar">';
