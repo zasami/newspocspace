@@ -10,17 +10,38 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 ?>
 <style>
 /* ── Stat cards ── */
-.rhc-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-.rhc-stat-card { flex: 1; min-width: 110px; text-align: center; padding: 12px 8px; border-radius: 12px; border: 1px solid var(--cl-border-light, #F0EDE8); }
-.rhc-stat-icon { width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: .9rem; margin-bottom: 5px; }
-.rhc-stat-val { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
-.rhc-stat-lbl { font-size: .68rem; color: var(--cl-text-muted); margin-top: 2px; }
+.rhc-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.rhc-stat-card {
+    flex: 1; min-width: 120px; text-align: center; padding: 16px 10px;
+    border-radius: 14px; border: 1px solid var(--cl-border-light, #F0EDE8);
+    background: var(--cl-surface, #fff);
+}
+.rhc-stat-icon {
+    width: 38px; height: 38px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; margin-bottom: 8px;
+}
+.rhc-stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.rhc-stat-lbl { font-size: .7rem; color: var(--cl-text-muted); margin-top: 3px; }
 
-/* ── Table ── */
-.rhc-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.rhc-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border); text-align: left; }
-.rhc-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
-.rhc-table tr:hover td { background: var(--cl-bg); }
+/* ── Table wrapper ── */
+.rhc-table-wrap {
+    border: 1.5px solid var(--cl-border-light, #F0EDE8);
+    border-radius: 14px; overflow: hidden;
+    background: var(--cl-surface, #fff);
+}
+.rhc-table { width: 100%; border-collapse: collapse; }
+.rhc-table th {
+    font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--cl-text-muted); padding: 12px 14px;
+    border-bottom: 1.5px solid var(--cl-border-light, #F0EDE8);
+    text-align: left; background: var(--cl-bg, #F7F5F2);
+}
+.rhc-table th:first-child { border-top-left-radius: 14px; }
+.rhc-table th:last-child { border-top-right-radius: 14px; }
+.rhc-table td { padding: 11px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
+.rhc-table tr:last-child td { border-bottom: none; }
+.rhc-table tr:hover td { background: var(--cl-bg, #FAFAF7); }
 
 /* ── Badges ── */
 .rhc-badge { font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
@@ -94,34 +115,34 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 
 <!-- Stat cards -->
 <div class="rhc-stats">
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f0f6f4;border-color:#d4e5df">
     <div class="rhc-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-people"></i></div>
-    <div class="rhc-stat-val" id="rhcStatTotal"><?= $ssrTotal ?></div>
+    <div class="rhc-stat-val" style="color:#2d4a43" id="rhcStatTotal"><?= $ssrTotal ?></div>
     <div class="rhc-stat-lbl">Total</div>
   </div>
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f8f4ed;border-color:#e8dece">
     <div class="rhc-stat-icon" style="background:#D4C4A8;color:#6B5B3E"><i class="bi bi-inbox"></i></div>
-    <div class="rhc-stat-val" id="rhcStatRecues"><?= $ssrRecues ?></div>
+    <div class="rhc-stat-val" style="color:#6B5B3E" id="rhcStatRecues"><?= $ssrRecues ?></div>
     <div class="rhc-stat-lbl">Reçues</div>
   </div>
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f0f4f8;border-color:#d4dfe8">
     <div class="rhc-stat-icon" style="background:#B8C9D4;color:#3B4F6B"><i class="bi bi-arrow-repeat"></i></div>
-    <div class="rhc-stat-val" id="rhcStatEnCours"><?= $ssrEnCours ?></div>
+    <div class="rhc-stat-val" style="color:#3B4F6B" id="rhcStatEnCours"><?= $ssrEnCours ?></div>
     <div class="rhc-stat-lbl">En cours</div>
   </div>
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f4f0f6;border-color:#e0d8e6">
     <div class="rhc-stat-icon" style="background:#D0C4D8;color:#5B4B6B"><i class="bi bi-calendar-event"></i></div>
-    <div class="rhc-stat-val" id="rhcStatEntretien"><?= $ssrEntretien ?></div>
+    <div class="rhc-stat-val" style="color:#5B4B6B" id="rhcStatEntretien"><?= $ssrEntretien ?></div>
     <div class="rhc-stat-lbl">Entretien</div>
   </div>
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f0f6f4;border-color:#d4e5df">
     <div class="rhc-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-check-circle"></i></div>
-    <div class="rhc-stat-val" id="rhcStatAcceptees"><?= $ssrAcceptees ?></div>
+    <div class="rhc-stat-val" style="color:#2d4a43" id="rhcStatAcceptees"><?= $ssrAcceptees ?></div>
     <div class="rhc-stat-lbl">Acceptées</div>
   </div>
-  <div class="rhc-stat-card">
+  <div class="rhc-stat-card" style="background:#f8f0ee;border-color:#e8d4ce">
     <div class="rhc-stat-icon" style="background:#E2B8AE;color:#7B3B2C"><i class="bi bi-x-circle"></i></div>
-    <div class="rhc-stat-val" id="rhcStatRefusees"><?= $ssrRefusees ?></div>
+    <div class="rhc-stat-val" style="color:#7B3B2C" id="rhcStatRefusees"><?= $ssrRefusees ?></div>
     <div class="rhc-stat-lbl">Refusées</div>
   </div>
 </div>
@@ -218,7 +239,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             return;
         }
         const today = new Date(); today.setHours(0,0,0,0);
-        let html = '<table class="rhc-table"><thead><tr><th>Date</th><th>Nom Prénom</th><th>Email</th><th>Offre</th><th>Statut</th><th>Code suivi</th><th>Timer</th><th style="width:60px">Actions</th></tr></thead><tbody>';
+        let html = '<div class="rhc-table-wrap"><table class="rhc-table"><thead><tr><th>Date</th><th>Nom Prénom</th><th>Email</th><th>Offre</th><th>Statut</th><th>Code suivi</th><th>Timer</th><th style="width:60px">Actions</th></tr></thead><tbody>';
         candData.forEach(c => {
             const cls = c.statut || 'archivee';
             const created = new Date(c.created_at); created.setHours(0,0,0,0);
@@ -235,7 +256,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
                 <td><button class="rhc-row-btn" data-view="${c.id}" title="Voir détail"><i class="bi bi-eye"></i></button></td>
             </tr>`;
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         if (total > candData.length) html += `<p class="text-muted small mt-2">${candData.length} / ${total} résultats affichés</p>`;
         el.innerHTML = html;
     }
