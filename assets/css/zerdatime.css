@@ -2959,6 +2959,14 @@ input[type="checkbox"]:not(.form-check-input):hover {
 }
 .zs-search:focus { border-color: #2d4a43; }
 
+/* ── Connection indicator ── */
+.fe-conn-status { display: flex; align-items: center; gap: 4px; padding: 4px 8px; cursor: default; }
+.fe-conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.fe-conn-online { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,.4); }
+.fe-conn-offline { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.4); animation: zt-pulse 2s infinite; }
+@keyframes zt-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+.fe-conn-count { font-size: .65rem; font-weight: 700; background: #f59e0b; color: #fff; border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; }
+
 /* Print-friendly collab */
 @media print {
     .fe-sidebar, .fe-topbar, .cuis-tabs, .page-header, .card-header .btn { display: none !important; }

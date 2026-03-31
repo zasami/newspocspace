@@ -4,6 +4,9 @@ return [
         'login', 'logout', 'me', 'request_reset', 'reset_password',
         'update_profile', 'update_password', 'upload_avatar',
     ],
+    'sync' => [
+        'sync_delta',
+    ],
     'planning' => [
         'get_planning_hebdo', 'get_planning_mois',
         'get_mon_planning', 'get_modules_list',

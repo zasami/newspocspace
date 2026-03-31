@@ -38,10 +38,10 @@ export async function apiPost(action, data = {}) {
         try {
             const { handleOfflineGet, canQueue, enqueue } = await import('./modules/offline.js');
             if (readOnly) {
-                const cached = handleOfflineGet(action, data);
+                const cached = await handleOfflineGet(action, data);
                 if (cached) return cached;
             } else if (canQueue(action)) {
-                enqueue(action, data);
+                await enqueue(action, data);
                 return { success: true, message: 'Action sauvegardée hors-ligne', _queued: true };
             }
         } catch (e) { /* offline module not loaded */ }

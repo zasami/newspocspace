@@ -495,6 +495,36 @@ function init() {
         setInterval(pollNotifBadge, 60000); // every 60s
         checkPendingAlerts();
         import('./modules/offline.js').then(m => m.initOffline()).catch(() => {});
+
+        // Connection indicator updates
+        function updateConnIndicator() {
+            const dot = document.querySelector('#feConnStatus .fe-conn-dot');
+            const status = document.getElementById('feConnStatus');
+            if (!dot || !status) return;
+            if (navigator.onLine) {
+                dot.className = 'fe-conn-dot fe-conn-online';
+                status.title = 'En ligne';
+            } else {
+                dot.className = 'fe-conn-dot fe-conn-offline';
+                status.title = 'Hors ligne';
+            }
+        }
+        window.addEventListener('online', updateConnIndicator);
+        window.addEventListener('offline', updateConnIndicator);
+        updateConnIndicator();
+
+        // Update pending queue count periodically
+        setInterval(async () => {
+            try {
+                const { getQueueCount } = await import('./modules/offline.js');
+                const count = await getQueueCount();
+                const badge = document.getElementById('feConnPending');
+                if (badge) {
+                    if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+                    else { badge.style.display = 'none'; }
+                }
+            } catch {}
+        }, 10000);
         initFullscreen();
         if (window.__ZT__.mustChangePassword) showTempPasswordBanner();
     }

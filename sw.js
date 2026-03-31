@@ -9,21 +9,20 @@ const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
 const SYNC_QUEUE = 'zt-sync-queue';
 
-// Static assets to pre-cache on install (only publicly accessible files)
+// Static assets to pre-cache on install (employee SPA)
 const PRECACHE_URLS = [
+  '/zerdatime/',
   '/zerdatime/logo.png',
-  '/zerdatime/assets/icons/icon-192x192.png',
   '/zerdatime/manifest.json',
-  // CSS & JS (no auth required for static files)
-  '/zerdatime/admin/assets/css/admin.css',
-  '/zerdatime/admin/assets/css/editor.css',
-  '/zerdatime/admin/assets/css/vendor/bootstrap.min.css',
-  '/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css',
-  '/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js',
-  '/zerdatime/admin/assets/js/helpers.js',
-  '/zerdatime/admin/assets/js/admin.js',
-  '/zerdatime/admin/assets/js/url-manager.js',
-  '/zerdatime/admin/assets/js/zerda-select.js',
+  '/zerdatime/assets/css/vendor/bootstrap.min.css',
+  '/zerdatime/assets/css/vendor/bootstrap-icons.min.css',
+  '/zerdatime/assets/css/zerdatime.css',
+  '/zerdatime/assets/js/vendor/bootstrap.bundle.min.js',
+  '/zerdatime/assets/js/app.js',
+  '/zerdatime/assets/js/helpers.js',
+  '/zerdatime/assets/js/zt-db.js',
+  '/zerdatime/assets/js/zerda-select.js',
+  '/zerdatime/assets/icons/icon-192x192.png',
 ];
 
 // API actions that can be cached for offline reading
@@ -46,6 +45,7 @@ const CACHEABLE_GET_ACTIONS = [
   'get_inbox',
   'get_sent',
   'get_unread_count',
+  'sync_delta',
 ];
 
 // API actions that should be queued for sync when offline
@@ -309,10 +309,9 @@ async function processQueue() {
 }
 
 async function getCSRFToken() {
-  // Try to get CSRF token from a cached page
   try {
     const cache = await caches.open(DYNAMIC_CACHE);
-    const response = await cache.match('/zerdatime/admin/');
+    const response = await cache.match('/zerdatime/');
     if (response) {
       const html = await response.text();
       const match = html.match(/csrfToken:\s*'([^']+)'/);
