@@ -75,16 +75,30 @@ function admin_save_assignation()
         bad_request('planning_id, user_id et date_jour requis');
     }
 
+    // Optimistic locking: client sends expected_updated_at to detect conflicts
+    $expectedUpdatedAt = $params['expected_updated_at'] ?? null;
+
     // Upsert
     $existing = Db::fetch(
-        "SELECT id FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+        "SELECT id, updated_at FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
         [$planningId, $userId, $dateJour]
     );
 
     if ($existing) {
+        // Conflict detection: if client sent an expected timestamp, verify it matches
+        if ($expectedUpdatedAt && $existing['updated_at'] && $expectedUpdatedAt !== $existing['updated_at']) {
+            respond([
+                'success' => false,
+                'conflict' => true,
+                'message' => 'Cette cellule a été modifiée par un autre utilisateur. Rechargez le planning.',
+                'server_updated_at' => $existing['updated_at'],
+            ]);
+            return;
+        }
+
         Db::exec(
             "UPDATE planning_assignations
-             SET horaire_type_id = ?, module_id = ?, groupe_id = ?, statut = ?, notes = ?
+             SET horaire_type_id = ?, module_id = ?, groupe_id = ?, statut = ?, notes = ?, updated_at = NOW()
              WHERE id = ?",
             [$horaireTypeId, $moduleId, $groupeId, $statut, $notes, $existing['id']]
         );
@@ -108,6 +122,19 @@ function admin_delete_assignation()
 
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
+
+    $expectedUpdatedAt = $params['expected_updated_at'] ?? null;
+    if ($expectedUpdatedAt) {
+        $existing = Db::fetch("SELECT updated_at FROM planning_assignations WHERE id = ?", [$id]);
+        if ($existing && $existing['updated_at'] && $expectedUpdatedAt !== $existing['updated_at']) {
+            respond([
+                'success' => false,
+                'conflict' => true,
+                'message' => 'Cette cellule a été modifiée par un autre utilisateur. Rechargez le planning.',
+            ]);
+            return;
+        }
+    }
 
     Db::exec("DELETE FROM planning_assignations WHERE id = ?", [$id]);
     respond(['success' => true]);

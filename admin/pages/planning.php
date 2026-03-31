@@ -1202,6 +1202,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             `${user ? user.prenom + ' ' + user.nom : ''} — ${date}`;
         document.getElementById('cellUserId').value = userId;
         document.getElementById('cellDate').value = date;
+        // Store updated_at for optimistic locking
+        document.getElementById('cellUserId').dataset.updatedAt = a?.updated_at || '';
 
         // Set horaire card active
         document.querySelectorAll('#cellHoraireGrid .ch-card').forEach(c => {
@@ -1229,6 +1231,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         const statut = zerdaSelect.getValue('#cellStatut') || 'present';
         const notes = document.getElementById('cellNotes').value;
 
+        const expectedUpdatedAt = document.getElementById('cellUserId').dataset.updatedAt || null;
+
         const res = await adminApiPost('admin_save_assignation', {
             planning_id: planning.id,
             user_id: userId,
@@ -1237,9 +1241,14 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             module_id: moduleId,
             statut: statut,
             notes: notes,
+            expected_updated_at: expectedUpdatedAt || undefined,
         });
 
-        if (res.success) {
+        if (res.conflict) {
+            showToast('⚠ Conflit : cette cellule a été modifiée par un autre utilisateur. Le planning va se recharger.', 'error');
+            cellModal.hide();
+            await reload();
+        } else if (res.success) {
             cellModal.hide();
             await reload();
         } else {
