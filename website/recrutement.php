@@ -265,6 +265,52 @@ body {
 }
 
 /* ── Tracking ── */
+/* ── Timeline ── */
+.rec-timeline { position: relative; padding: 0; margin: 24px 0 0; }
+.rec-tl-item {
+    display: flex; gap: 16px; position: relative; padding-bottom: 24px;
+}
+.rec-tl-item:last-child { padding-bottom: 0; }
+.rec-tl-line {
+    width: 32px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+}
+.rec-tl-dot {
+    width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--rec-border);
+    background: var(--rec-surface); flex-shrink: 0; z-index: 1; transition: all .3s;
+}
+.rec-tl-dot.active { border-color: var(--rec-green); background: var(--rec-green); box-shadow: 0 0 0 4px rgba(46,125,50,.15); }
+.rec-tl-dot.done { border-color: var(--rec-green); background: var(--rec-green); }
+.rec-tl-dot.refused { border-color: #D32F2F; background: #D32F2F; }
+.rec-tl-dot.pending { border-color: var(--rec-border); background: var(--rec-bg-alt); }
+.rec-tl-bar { flex: 1; width: 2px; background: var(--rec-border); margin: 4px 0; }
+.rec-tl-bar.done { background: var(--rec-green); }
+.rec-tl-content { flex: 1; min-width: 0; }
+.rec-tl-title { font-size: .92rem; font-weight: 600; color: var(--rec-text); margin-bottom: 2px; }
+.rec-tl-desc { font-size: .82rem; color: var(--rec-text-muted); }
+.rec-tl-date { font-size: .72rem; color: var(--rec-text-muted); margin-top: 2px; }
+
+.rec-tl-card {
+    background: var(--rec-surface); border: 1.5px solid var(--rec-border); border-radius: 14px;
+    padding: 20px; margin-bottom: 20px;
+}
+.rec-tl-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--rec-border);
+}
+.rec-tl-header-icon {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+}
+.rec-tl-header-info { flex: 1; }
+.rec-tl-header-info h3 { font-size: 1rem; font-weight: 700; margin: 0 0 2px; color: var(--rec-text); }
+.rec-tl-header-info p { font-size: .82rem; color: var(--rec-text-muted); margin: 0; }
+.rec-tl-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.rec-tl-tag {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px;
+    border-radius: 20px; font-size: .78rem; font-weight: 500;
+    background: var(--rec-bg-alt); color: var(--rec-text-secondary); border: 1px solid var(--rec-border);
+}
+
 .rec-track-form {
   background: var(--rec-surface); border: 1px solid var(--rec-border);
   border-radius: var(--rec-radius); padding: 32px; max-width: 500px; margin: 0 auto;
@@ -789,22 +835,72 @@ body {
       }
 
       const c = data.candidature;
-      const statusLabels = {
-        recue: 'Recue',
-        en_cours: 'En cours d\'examen',
-        entretien: 'Entretien planifie',
-        acceptee: 'Acceptee',
-        refusee: 'Refusee',
-        archivee: 'Archivee'
-      };
+      const steps = [
+          { key: 'recue',     label: 'Candidature reçue',     icon: 'bi-inbox',           desc: 'Votre dossier a été réceptionné' },
+          { key: 'en_cours',  label: 'Examen du dossier',     icon: 'bi-search',          desc: 'Votre candidature est en cours d\'analyse' },
+          { key: 'entretien', label: 'Entretien planifié',    icon: 'bi-calendar-event',  desc: 'Vous serez contacté pour un entretien' },
+          { key: 'acceptee',  label: 'Candidature acceptée',  icon: 'bi-check-circle',    desc: 'Félicitations ! Votre candidature est retenue' },
+      ];
+      const statusOrder = { recue: 0, en_cours: 1, entretien: 2, acceptee: 3, refusee: -1, archivee: -2 };
+      const currentStep = statusOrder[c.statut] ?? -1;
+      const isRefused = c.statut === 'refusee';
+      const isArchived = c.statut === 'archivee';
 
-      resultEl.innerHTML =
-        '<div class="rec-track-result">' +
-          '<h4><i class="bi bi-check-circle" style="color:var(--rec-green)"></i> Candidature trouvee</h4>' +
-          '<div class="rec-track-row"><span class="rec-track-label">Offre</span><span class="rec-track-value">' + escHtml(c.offre_titre) + '</span></div>' +
-          '<div class="rec-track-row"><span class="rec-track-label">Date de soumission</span><span class="rec-track-value">' + formatDate(c.date_soumission) + '</span></div>' +
-          '<div class="rec-track-row"><span class="rec-track-label">Statut</span><span class="rec-track-value"><span class="rec-status-badge rec-status-' + escHtml(c.statut) + '">' + escHtml(statusLabels[c.statut] || c.statut) + '</span></span></div>' +
-        '</div>';
+      // Header card
+      const iconBg = isRefused ? '#FECACA' : (currentStep >= 3 ? '#D1FAE5' : 'rgba(46,125,50,.1)');
+      const iconColor = isRefused ? '#991B1B' : '#2E7D32';
+      const headerIcon = isRefused ? 'bi-x-circle' : (currentStep >= 3 ? 'bi-check-circle-fill' : 'bi-person-badge');
+
+      let html = '<div class="rec-tl-card">';
+      html += '<div class="rec-tl-header">';
+      html += '<div class="rec-tl-header-icon" style="background:' + iconBg + ';color:' + iconColor + '"><i class="bi ' + headerIcon + '"></i></div>';
+      html += '<div class="rec-tl-header-info"><h3>' + escHtml(c.prenom) + ' ' + escHtml(c.nom) + '</h3>';
+      html += '<p>Code de suivi : <strong>' + escHtml(c.code_suivi) + '</strong></p></div>';
+      html += '<span class="rec-status-badge rec-status-' + escHtml(c.statut) + '">' + escHtml(c.statut === 'refusee' ? 'Refusée' : c.statut === 'archivee' ? 'Archivée' : steps[currentStep]?.label || c.statut) + '</span>';
+      html += '</div>';
+
+      // Meta tags
+      html += '<div class="rec-tl-meta">';
+      html += '<span class="rec-tl-tag"><i class="bi bi-briefcase"></i> ' + escHtml(c.offre_titre) + '</span>';
+      if (c.offre_departement) html += '<span class="rec-tl-tag"><i class="bi bi-building"></i> ' + escHtml(c.offre_departement) + '</span>';
+      if (c.offre_contrat) html += '<span class="rec-tl-tag"><i class="bi bi-file-text"></i> ' + escHtml(c.offre_contrat) + '</span>';
+      if (c.offre_taux) html += '<span class="rec-tl-tag"><i class="bi bi-speedometer2"></i> ' + escHtml(c.offre_taux) + '</span>';
+      html += '</div>';
+
+      // Timeline
+      if (isRefused || isArchived) {
+          html += '<div class="rec-timeline">';
+          html += '<div class="rec-tl-item"><div class="rec-tl-line"><div class="rec-tl-dot done"></div><div class="rec-tl-bar done"></div></div>';
+          html += '<div class="rec-tl-content"><div class="rec-tl-title">Candidature reçue</div><div class="rec-tl-date">' + formatDate(c.date_soumission) + '</div></div></div>';
+          html += '<div class="rec-tl-item"><div class="rec-tl-line"><div class="rec-tl-dot refused"></div></div>';
+          html += '<div class="rec-tl-content"><div class="rec-tl-title">' + (isRefused ? 'Candidature refusée' : 'Dossier archivé') + '</div>';
+          html += '<div class="rec-tl-desc">' + (isRefused ? 'Votre candidature n\'a pas été retenue cette fois.' : 'Ce dossier a été archivé.') + '</div>';
+          if (c.updated_at) html += '<div class="rec-tl-date">' + formatDate(c.updated_at) + '</div>';
+          html += '</div></div></div>';
+      } else {
+          html += '<div class="rec-timeline">';
+          steps.forEach((step, i) => {
+              const isDone = i < currentStep;
+              const isActive = i === currentStep;
+              const isPending = i > currentStep;
+              const dotCls = isDone ? 'done' : (isActive ? 'active' : 'pending');
+              const barCls = isDone ? 'done' : '';
+              html += '<div class="rec-tl-item">';
+              html += '<div class="rec-tl-line"><div class="rec-tl-dot ' + dotCls + '"></div>';
+              if (i < steps.length - 1) html += '<div class="rec-tl-bar ' + barCls + '"></div>';
+              html += '</div>';
+              html += '<div class="rec-tl-content">';
+              html += '<div class="rec-tl-title" style="' + (isPending ? 'opacity:.4' : '') + '"><i class="bi ' + step.icon + '" style="margin-right:6px"></i>' + step.label + '</div>';
+              html += '<div class="rec-tl-desc" style="' + (isPending ? 'opacity:.3' : '') + '">' + step.desc + '</div>';
+              if (i === 0) html += '<div class="rec-tl-date">' + formatDate(c.date_soumission) + '</div>';
+              else if (isActive && c.updated_at && c.updated_at !== c.date_soumission) html += '<div class="rec-tl-date">' + formatDate(c.updated_at) + '</div>';
+              html += '</div></div>';
+          });
+          html += '</div>';
+      }
+
+      html += '</div>';
+      resultEl.innerHTML = html;
     } catch (err) {
       errEl.textContent = 'Erreur de connexion. Veuillez reessayer.';
     }

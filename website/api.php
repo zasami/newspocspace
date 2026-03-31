@@ -573,7 +573,11 @@ case 'track_candidature':
     }
 
     $candidature = Db::fetch(
-        "SELECT c.statut, c.created_at AS date_soumission, o.titre AS offre_titre
+        "SELECT c.prenom, c.nom, c.statut, c.code_suivi,
+                c.created_at AS date_soumission, c.updated_at,
+                o.titre AS offre_titre, o.departement AS offre_departement,
+                o.type_contrat AS offre_contrat, o.taux_activite AS offre_taux,
+                o.date_limite AS offre_date_limite
          FROM candidatures c
          JOIN offres_emploi o ON o.id = c.offre_id
          WHERE c.code_suivi = ? AND c.email = ?",
@@ -586,11 +590,7 @@ case 'track_candidature':
 
     respond([
         'success' => true,
-        'candidature' => [
-            'offre_titre' => $candidature['offre_titre'],
-            'statut' => $candidature['statut'],
-            'date_soumission' => $candidature['date_soumission'],
-        ]
+        'candidature' => $candidature,
     ]);
     break;
 
