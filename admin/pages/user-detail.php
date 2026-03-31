@@ -33,10 +33,16 @@ if ($userId) {
 .ud-badge-horaire-special { background: #9B51E0; }
 .ud-badge-permanent { background: rgba(255,193,7,0.15); color: #d4a017; font-size: 0.7rem; border: 1px solid rgba(255,193,7,0.3); }
 .ud-badge-dynamic { color: #fff; }
-.ud-plan-day-th { min-width: 36px; font-size: 0.72rem; }
+.ud-plan-day-th { min-width: 34px; font-size: 0.68rem; padding: 4px 2px !important; }
 .ud-plan-label { font-size: 0.8rem; }
-.ud-plan-cell { font-size: 0.75rem; }
+.ud-plan-cell { font-size: 0.72rem; padding: 4px 2px !important; vertical-align: middle; }
 .ud-plan-corner { min-width: 40px; }
+.ud-plan-sticky { position: sticky; left: 0; background: #fff; z-index: 2; border-right: 2px solid var(--cl-border, #E8E5E0) !important; }
+.ud-plan-sticky-end { position: sticky; right: 0; background: #fff; z-index: 2; border-left: 2px solid var(--cl-border, #E8E5E0) !important; }
+.ud-plan-weekend { background: #faf8f5 !important; }
+.ud-stat-card { flex: 1; min-width: 100px; text-align: center; padding: 12px 8px; border-radius: 12px; background: var(--cl-bg, #F7F5F2); border: 1px solid var(--cl-border-light, #F0EDE8); }
+.ud-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+.ud-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 2px; }
 
 /* Desir modal */
 .ud-desir-header-attente { background: #FEF3C7; border-bottom: 2px solid #F59E0B; }
@@ -169,18 +175,20 @@ if ($userId) {
 
     <!-- Planning -->
     <div class="tab-pane fade" id="tabPlanning">
-      <div class="card">
+      <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center py-2">
-          <strong>Planning mensuel</strong>
+          <strong><i class="bi bi-calendar3 me-1"></i> Planning mensuel</strong>
           <input type="month" class="form-control form-control-sm ud-width-auto" id="udPlanMois">
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive" style="overflow-x:auto">
           <table class="table table-sm table-bordered mb-0" id="udPlanTable">
             <thead id="udPlanHead"></thead>
             <tbody id="udPlanBody"><tr><td class="text-center text-muted py-3">Chargement...</td></tr></tbody>
           </table>
         </div>
       </div>
+      <!-- Recap -->
+      <div class="row g-3" id="udPlanRecap"></div>
     </div>
   </div>
 </div>
@@ -437,44 +445,175 @@ if ($userId) {
 
     async function loadPlanning() {
         const mois = document.getElementById('udPlanMois').value;
-        const res = await adminApiPost('admin_get_planning', { mois });
-        const assignations = (res.assignations || []).filter(a => a.user_id === userId);
+        if (!mois) return;
+
+        const [year, month] = mois.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const u = ssrUser;
+        const taux = Math.round(u.taux || 0);
+
+        // Fetch planning + refs + desirs + absences + rules in parallel
+        const [planRes, refsRes, desirsRes, absRes, rulesRes] = await Promise.all([
+            adminApiPost('admin_get_planning', { mois }),
+            adminApiPost('admin_get_planning_refs'),
+            adminApiPost('admin_get_desirs', { mois, user_id: userId }),
+            adminApiPost('admin_get_absences'),
+            adminApiPost('admin_get_ia_rules'),
+        ]);
+
+        const assignations = (planRes.assignations || []).filter(a => a.user_id === userId);
+        const horaires = refsRes.horaires || [];
+        const hMap = {};
+        horaires.forEach(h => { hMap[h.id] = h; });
+
+        const desirs = (desirsRes.desirs || []).filter(d => d.mois_cible === mois);
+        const absences = (absRes.absences || []).filter(a => a.user_id === userId && a.date_debut <= `${mois}-31` && a.date_fin >= `${mois}-01`);
+
+        // Rules for this user
+        const allRules = rulesRes.rules || [];
+        const userRules = allRules.filter(r => {
+            if (!r.actif) return false;
+            if (r.target_mode === 'all') return true;
+            if (r.target_mode === 'users' && (r.targeted_users || []).some(tu => tu.id === userId)) return true;
+            if (r.target_mode === 'fonction' && r.target_fonction_code === u.fonction_code) return true;
+            return false;
+        });
+
         const thead = document.getElementById('udPlanHead');
         const tbody = document.getElementById('udPlanBody');
 
-        if (!mois) return;
-        const [year, month] = mois.split('-').map(Number);
-        const daysInMonth = new Date(year, month, 0).getDate();
+        // Absence map
+        const absMap = {};
+        absences.filter(a => a.statut === 'valide').forEach(a => {
+            const s = new Date(a.date_debut + 'T00:00:00'), e = new Date(a.date_fin + 'T00:00:00');
+            for (let dt = new Date(s); dt <= e; dt.setDate(dt.getDate() + 1)) {
+                absMap[dt.toISOString().slice(0, 10)] = a.type_absence || 'absence';
+            }
+        });
 
-        // Header row
-        let hdr = '<tr><th class="ud-plan-corner">Jour</th>';
+        // Desir map
+        const desirMap = {};
+        desirs.filter(d => d.statut === 'valide').forEach(d => { desirMap[d.date_souhaitee] = d; });
+
+        // Header: Nom | % | 1 | 2 | ... | 31 | Total
+        let hdr = '<tr><th class="ud-plan-sticky" style="min-width:120px">Collaborateur</th><th class="text-center ud-plan-day-th" style="min-width:40px">%</th>';
         for (let d = 1; d <= daysInMonth; d++) {
-            const date = new Date(year, month-1, d);
+            const date = new Date(year, month - 1, d);
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-            hdr += `<th class="text-center ud-plan-day-th ${isWeekend?'bg-light':''}">${joursSemaine[date.getDay()]}<br>${d}</th>`;
+            hdr += `<th class="text-center ud-plan-day-th ${isWeekend ? 'ud-plan-weekend' : ''}">${joursSemaine[date.getDay()]}<br><small>${d}</small></th>`;
         }
-        thead.innerHTML = hdr + '</tr>';
+        hdr += '<th class="text-center ud-plan-day-th ud-plan-sticky-end" style="min-width:55px">Heures</th></tr>';
+        thead.innerHTML = hdr;
 
-        // Map by date
+        // Body row
         const byDate = {};
         assignations.forEach(a => { byDate[a.date_jour] = a; });
 
-        let row = '<tr><td class="fw-bold ud-plan-label">Horaire</td>';
+        let totalHours = 0;
+        let row = `<tr><td class="ud-plan-sticky fw-bold" style="font-size:.82rem"><i class="bi bi-person-fill me-1"></i>${escapeHtml(u.prenom + ' ' + u.nom)}</td>`;
+        row += `<td class="text-center" style="font-size:.78rem;font-weight:600">${taux}%</td>`;
+
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const a = byDate[dateStr];
-            const date = new Date(year, month-1, d);
+            const date = new Date(year, month - 1, d);
             const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-            if (a && a.horaire_code) {
-                const color = a.couleur || a.horaire_couleur || '#1a1a1a';
-                row += `<td class="text-center ud-plan-cell ${isWeekend?'bg-light':''}">
-                    <span class="badge ud-badge-dynamic" style="background:${escapeHtml(color)}">${escapeHtml(a.horaire_code)}</span>
-                </td>`;
+            const isAbs = absMap[dateStr];
+            const isDesir = desirMap[dateStr];
+
+            let cls = 'text-center ud-plan-cell';
+            if (isWeekend) cls += ' ud-plan-weekend';
+
+            if (isAbs && !a) {
+                row += `<td class="${cls}" style="background:#FEE2E2" title="${escapeHtml(isAbs)}"><span style="font-size:.65rem;color:#7B3B2C">ABS</span></td>`;
+            } else if (a && a.horaire_code) {
+                const color = a.couleur || a.horaire_couleur || '#6c757d';
+                const h = hMap[a.horaire_type_id];
+                if (h) totalHours += parseFloat(h.duree_effective) || 0;
+                const desirIcon = (a.notes && a.notes.includes('desir')) ? '<i class="bi bi-emoji-smile" style="font-size:.5rem;color:#e8a838;position:absolute;top:-1px;right:-1px"></i>' : '';
+                const modCode = a.module_code ? `<br><span style="font-size:.55rem;color:var(--cl-text-muted)">${escapeHtml(a.module_code)}</span>` : '';
+                row += `<td class="${cls}"><span class="badge ud-badge-dynamic" style="background:${escapeHtml(color)};position:relative;font-size:.68rem">${escapeHtml(a.horaire_code)}${desirIcon}</span>${modCode}</td>`;
             } else {
-                row += `<td class="text-center ud-plan-cell ${isWeekend?'bg-light':''}">—</td>`;
+                row += `<td class="${cls}"><span class="text-muted" style="font-size:.7rem">—</span></td>`;
             }
         }
-        tbody.innerHTML = row + '</tr>';
+        const targetH = Math.round(21 * 7.6 * (taux / 100));
+        const pct = targetH > 0 ? Math.round(totalHours / targetH * 100) : 0;
+        const hColor = pct >= 90 ? '#198754' : pct >= 70 ? '#e8a838' : '#dc3545';
+        row += `<td class="text-center ud-plan-sticky-end" style="font-size:.78rem;font-weight:700;color:${hColor}">${totalHours.toFixed(1)}h<br><small style="font-weight:400;color:var(--cl-text-muted)">${targetH}h</small></td></tr>`;
+        tbody.innerHTML = row;
+
+        // ── Recap cards ──
+        const recap = document.getElementById('udPlanRecap');
+        if (!recap) return;
+
+        // Desirs card
+        const desirRows = desirs.length ? desirs.map(d => {
+            const stCls = d.statut === 'valide' ? 'success' : d.statut === 'refuse' ? 'danger' : 'warning';
+            const dt = new Date(d.date_souhaitee + 'T00:00:00');
+            const fulfilled = byDate[d.date_souhaitee] && d.type === 'horaire_special' && byDate[d.date_souhaitee].horaire_code === d.horaire_code;
+            const icon = d.statut === 'valide' ? (fulfilled ? '✓' : '⚠') : '';
+            return `<tr>
+                <td style="font-size:.78rem">${joursComplets[dt.getDay()]} ${dt.getDate()}</td>
+                <td style="font-size:.78rem">${d.type === 'jour_off' ? '<span class="badge bg-secondary">Jour off</span>' : `<span class="badge" style="background:${escapeHtml(d.horaire_couleur || '#666')};color:#fff">${escapeHtml(d.horaire_code || '?')}</span>`}</td>
+                <td><span class="badge bg-${stCls}" style="font-size:.68rem">${escapeHtml(d.statut)}</span></td>
+                <td style="font-size:.78rem">${icon}</td>
+            </tr>`;
+        }).join('') : '<tr><td colspan="4" class="text-center text-muted py-2" style="font-size:.82rem">Aucun désir ce mois</td></tr>';
+
+        // Absences card
+        const absRows = absences.length ? absences.map(a => {
+            const stCls = a.statut === 'valide' ? 'success' : a.statut === 'refuse' ? 'danger' : 'warning';
+            return `<tr>
+                <td style="font-size:.78rem">${escapeHtml(a.date_debut)} → ${escapeHtml(a.date_fin)}</td>
+                <td style="font-size:.78rem"><span class="badge bg-secondary">${escapeHtml(a.type_absence || '?')}</span></td>
+                <td><span class="badge bg-${stCls}" style="font-size:.68rem">${escapeHtml(a.statut)}</span></td>
+            </tr>`;
+        }).join('') : '<tr><td colspan="3" class="text-center text-muted py-2" style="font-size:.82rem">Aucune absence</td></tr>';
+
+        // Rules card
+        const ruleTypeLabels = { user_schedule: 'Horaire unique', shift_only: 'Horaires autorisés', shift_exclude: 'Horaires exclus', days_only: 'Jours autorisés', module_only: 'Modules autorisés', module_exclude: 'Modules exclus', no_weekend: 'Pas de weekend', max_days_week: 'Max jours/sem.' };
+        const rulesRows = userRules.length ? userRules.map(r => {
+            const p = typeof r.rule_params === 'string' ? JSON.parse(r.rule_params || '{}') : (r.rule_params || {});
+            let detail = ruleTypeLabels[r.rule_type] || r.rule_type || 'Texte libre';
+            if (p.shift_codes?.length) detail += ' : ' + p.shift_codes.join(', ');
+            if (p.days?.length) { const dn = ['','Lun','Mar','Mer','Jeu','Ven','Sam','Dim']; detail += ' | Jours: ' + p.days.map(d => dn[d]).join(', '); }
+            return `<tr>
+                <td style="font-size:.78rem">${escapeHtml(r.titre)}</td>
+                <td style="font-size:.78rem">${escapeHtml(detail)}</td>
+                <td><span class="badge bg-${r.importance === 'important' ? 'danger' : 'warning'}" style="font-size:.65rem">${escapeHtml(r.importance)}</span></td>
+            </tr>`;
+        }).join('') : '<tr><td colspan="3" class="text-center text-muted py-2" style="font-size:.82rem">Aucune règle spécifique</td></tr>';
+
+        // Stats
+        const nbJours = assignations.length;
+        const nbDesirRespectes = desirs.filter(d => d.statut === 'valide').filter(d => {
+            if (d.type === 'jour_off') return !byDate[d.date_souhaitee];
+            return byDate[d.date_souhaitee] && byDate[d.date_souhaitee].horaire_code === d.horaire_code;
+        }).length;
+        const nbDesirTotal = desirs.filter(d => d.statut === 'valide').length;
+
+        recap.innerHTML = `
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                <div class="ud-stat-card"><div class="ud-stat-val" style="color:#2d4a43">${nbJours}</div><div class="ud-stat-lbl">Jours planifiés</div></div>
+                <div class="ud-stat-card"><div class="ud-stat-val" style="color:${hColor}">${totalHours.toFixed(1)}h</div><div class="ud-stat-lbl">sur ${targetH}h cible</div></div>
+                <div class="ud-stat-card"><div class="ud-stat-val" style="color:#e8a838">${nbDesirRespectes}/${nbDesirTotal}</div><div class="ud-stat-lbl">Désirs respectés</div></div>
+                <div class="ud-stat-card"><div class="ud-stat-val" style="color:#7B3B2C">${Object.keys(absMap).length}</div><div class="ud-stat-lbl">Jours d'absence</div></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-header py-2"><strong style="font-size:.85rem"><i class="bi bi-star me-1"></i> Désirs</strong></div>
+            <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th style="font-size:.72rem">Date</th><th style="font-size:.72rem">Type</th><th style="font-size:.72rem">Statut</th><th style="font-size:.72rem"></th></tr></thead><tbody>${desirRows}</tbody></table></div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-header py-2"><strong style="font-size:.85rem"><i class="bi bi-calendar-x me-1"></i> Absences</strong></div>
+            <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th style="font-size:.72rem">Période</th><th style="font-size:.72rem">Type</th><th style="font-size:.72rem">Statut</th></tr></thead><tbody>${absRows}</tbody></table></div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-header py-2"><strong style="font-size:.85rem"><i class="bi bi-sliders me-1"></i> Règles IA appliquées</strong></div>
+            <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th style="font-size:.72rem">Règle</th><th style="font-size:.72rem">Détail</th><th style="font-size:.72rem">Priorité</th></tr></thead><tbody>${rulesRows}</tbody></table></div></div>
+        </div>`;
     }
 
     async function loadPermissionsModal(uid) {
