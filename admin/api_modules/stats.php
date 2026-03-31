@@ -41,7 +41,7 @@ function admin_get_absence_stats()
     $absences = Db::fetchAll(
         "SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.type, a.motif,
                 a.statut, a.justifie, a.justificatif_path,
-                u.prenom, u.nom, u.photo, u.taux_activite,
+                u.prenom, u.nom, u.photo, u.taux,
                 f.nom AS fonction_nom
          FROM absences a
          JOIN users u ON u.id = a.user_id
@@ -101,7 +101,7 @@ function admin_get_absence_stats()
                 'nom'             => $a['nom'],
                 'photo'           => $a['photo'],
                 'fonction_nom'    => $a['fonction_nom'],
-                'taux'            => $a['taux_activite'],
+                'taux'            => $a['taux'],
                 'nb_jours_periode' => 0,
                 'nb_jours_annee'  => 0,
                 'absences'        => [],
