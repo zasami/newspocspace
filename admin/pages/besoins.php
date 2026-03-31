@@ -187,26 +187,32 @@ function initBesoinsPage() {
   }
 
   function renderFteSummary(dayTotals, grandTotal) {
-    const wrap = document.getElementById('besoins-fte-summary');
-    const totalEl = document.getElementById('besoins-fte-total');
-    if (!wrap) return;
-
-    const ids = ['bfteLun','bfteMar','bfteMer','bfteJeu','bfteVen','bfteSam','bfteDim'];
+    const row = document.getElementById('bfteSummaryRow');
+    if (!row) return;
+    row.style.display = '';
     for (let j = 0; j < 7; j++) {
-      const el = document.getElementById(ids[j]);
+      const el = document.getElementById('bfte_' + j);
       if (el) {
         const isWe = j >= 5;
-        el.innerHTML = JOURS[j] + '<br><strong style="font-size:1.1rem">' + dayTotals[j] + '</strong>';
+        el.innerHTML = '<span style="font-size:.72rem;' + (isWe ? 'color:#e6a817' : 'opacity:.7') + '">' + JOURS[j] + '</span><br><strong style="font-size:1.3rem;' + (isWe ? 'color:#e6a817' : '') + '">' + dayTotals[j] + '</strong>';
       }
     }
-    if (totalEl) totalEl.textContent = grandTotal + ' postes/sem';
-    wrap.classList.remove('b-hidden');
+    const badge = document.getElementById('bfteTotalBadge');
+    if (badge) badge.textContent = grandTotal + ' postes/sem';
   }
 
   function renderGrid() {
     // Header
     const thead = document.getElementById('besoins-thead');
-    let hhtml = '<tr><th class="col-user b-col-header">Module / Fonction</th>';
+    // Row 1: FTE summary (big numbers)
+    let hhtml = '<tr id="bfteSummaryRow" style="display:none"><th class="col-user b-col-header" style="vertical-align:middle"><div class="d-flex align-items-center gap-2"><i class="bi bi-people-fill" style="color:#2d4a43;font-size:1rem"></i><span class="fw-bold" style="font-size:.85rem">Postes requis / jour</span></div></th>';
+    JOURS.forEach((j, i) => {
+      const isWe = i >= 5;
+      hhtml += '<th class="b-col-day text-center" style="vertical-align:middle;padding:10px 4px" id="bfte_' + i + '"><span style="font-size:.72rem;' + (isWe ? 'color:#e6a817' : 'opacity:.7') + '">' + j + '</span><br><strong style="font-size:1.3rem;' + (isWe ? 'color:#e6a817' : '') + '">—</strong></th>';
+    });
+    hhtml += '<th class="text-center" style="vertical-align:middle"><span class="text-muted" style="font-size:.68rem">Total semaine :</span><br><span class="badge bg-dark" id="bfteTotalBadge" style="font-size:.82rem">0</span></th><th class="b-col-action"></th></tr>';
+    // Row 2: Column headers
+    hhtml += '<tr><th class="col-user b-col-header">Module / Fonction</th>';
     JOURS.forEach((j, i) => {
       const cls = (i >= 5) ? ' th-we' : '';
       hhtml += '<th class="b-col-day' + cls + '">' + j + '</th>';
@@ -293,7 +299,7 @@ function initBesoinsPage() {
     fhtml += '</tr>';
     tfoot.innerHTML = fhtml;
 
-    // FTE summary (removed — totals shown in tfoot)
+    renderFteSummary(dayTotals, grandTotal);
 
     // Event delegation on tbody
     bindTableEvents(tbody);
