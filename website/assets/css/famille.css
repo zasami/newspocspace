@@ -17,14 +17,22 @@
   --fam-accent: #8B7355;
 }
 
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+
 /* ── Shell ── */
-.fam-shell { min-height: 100vh; background: var(--fam-bg); font-family: 'Inter', sans-serif; }
+.fam-shell { min-height: 100%; background: var(--fam-bg); font-family: 'Inter', sans-serif; }
 .fam-container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+/* Dashboard mode: shell fills viewport, container becomes full-width */
+.fam-shell.fam-dashboard-mode { height: 100vh; overflow: hidden; }
+.fam-shell.fam-dashboard-mode .fam-container { max-width: none; padding: 0; height: 100%; }
 .fam-back { display: inline-flex; align-items: center; gap: 6px; color: var(--fam-text-muted); text-decoration: none; font-size: .9rem; margin-bottom: 16px; }
 .fam-back:hover { color: var(--fam-text); }
 
 /* ── App layout (after login) ── */
-.fam-app { display: flex; min-height: 100vh; }
+.fam-app { display: flex; height: 100vh; overflow: hidden; }
 
 /* ── Sidebar ── */
 .fam-sidebar {
@@ -71,7 +79,7 @@
 .fam-sb-logout:hover { border-color: #C53030; color: #C53030; }
 
 /* ── Main content ── */
-.fam-main { flex: 1; margin-left: 240px; min-height: 100vh; background: var(--fam-bg); }
+.fam-main { flex: 1; margin-left: 240px; height: 100vh; overflow-y: auto; background: var(--fam-bg); }
 .fam-page-header {
   position: sticky; top: 0; z-index: 50; background: var(--fam-bg); padding: 18px 28px;
   border-bottom: 1px solid var(--fam-border); display: flex; align-items: center; gap: 12px;

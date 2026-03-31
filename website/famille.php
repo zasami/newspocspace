@@ -286,6 +286,7 @@ function logout() {
     localStorage.removeItem('fam_token');
     document.getElementById('famLogin').style.display = '';
     document.getElementById('famDashboard').style.display = 'none';
+    document.querySelector('.fam-shell').classList.remove('fam-dashboard-mode');
 }
 document.getElementById('famLogoutBtn')?.addEventListener('click', logout);
 
@@ -294,6 +295,7 @@ document.getElementById('famLogoutBtn')?.addEventListener('click', logout);
 function showDashboard() {
     document.getElementById('famLogin').style.display = 'none';
     document.getElementById('famDashboard').style.display = '';
+    document.querySelector('.fam-shell').classList.add('fam-dashboard-mode');
 
     // Sidebar profile
     const initials = ((resident.prenom?.[0] || '') + (resident.nom?.[0] || '')).toUpperCase();
