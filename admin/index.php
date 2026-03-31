@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -141,6 +141,7 @@ $pageLabels = [
     'email-externe' => 'Email',
     'email-config'  => 'Configuration Email',
     'contacts'      => 'Contacts',
+    'recrutement'   => 'Recrutement',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -212,6 +213,7 @@ $sidebarCategories = [
             'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
+            'recrutement'   => ['label' => 'Recrutement',       'icon' => 'person-plus'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
         ],

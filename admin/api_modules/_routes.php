@@ -124,6 +124,11 @@ return [
         'admin_famille_get_galerie', 'admin_famille_save_album', 'admin_famille_delete_album',
         'admin_famille_upload_galerie_photo', 'admin_famille_set_cover',
     ],
+    'recrutement' => [
+        'admin_get_offres', 'admin_create_offre', 'admin_update_offre', 'admin_delete_offre',
+        'admin_get_candidatures', 'admin_get_candidature_detail', 'admin_update_candidature_status',
+        'admin_download_candidature_doc', 'admin_delete_candidature',
+    ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',
         'admin_email_ext_get_folders', 'admin_email_ext_fetch_list', 'admin_email_ext_fetch_email',
