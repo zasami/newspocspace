@@ -12,6 +12,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/zerdatime/website/assets/css/famille.css">
+<?php include __DIR__ . '/includes/footer-styles.php'; ?>
 </head>
 <body>
 <div class="fam-shell">
@@ -780,5 +781,8 @@ checkSession();
 
 })();
 </script>
+
+<?php include __DIR__ . '/includes/footer.php'; ?>
+
 </body>
 </html>

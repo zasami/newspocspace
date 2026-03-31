@@ -1167,51 +1167,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ FOOTER ═══ -->
-<footer class="ws-footer">
-  <div class="container">
-    <div class="row g-4">
-      <div class="col-lg-4">
-        <div class="ws-footer-brand">
-          <img src="EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-footer-logo">
-        </div>
-        <p class="ws-footer-desc">
-          Établissement médico-social au service des personnes âgées à Genève.
-          Un lieu de vie où chacun trouve écoute, soins et chaleur humaine.
-        </p>
-      </div>
-      <div class="col-lg-2 col-md-4">
-        <h6>Navigation</h6>
-        <ul class="ws-footer-links">
-          <li><a href="#hero">Accueil</a></li>
-          <li><a href="#about">Notre mission</a></li>
-          <li><a href="#services">Nos soins</a></li>
-          <li><a href="#life">Vie quotidienne</a></li>
-        </ul>
-      </div>
-      <div class="col-lg-2 col-md-4">
-        <h6>L'EMS</h6>
-        <ul class="ws-footer-links">
-          <li><a href="#modules">Organisation</a></li>
-          <li><a href="#team">Notre équipe</a></li>
-          <li><a href="#values">Nos valeurs</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-      </div>
-      <div class="col-lg-4 col-md-4">
-        <h6>Contact</h6>
-        <ul class="ws-footer-links">
-          <li><i class="bi bi-geo-alt"></i> Genève, Suisse</li>
-          <li><i class="bi bi-telephone"></i> +41 22 XXX XX XX</li>
-          <li><i class="bi bi-envelope"></i> contact@ems-la-terrassiere.ch</li>
-        </ul>
-      </div>
-    </div>
-    <div class="ws-footer-bottom">
-      <p>&copy; <?= date('Y') ?> E.M.S. La Terrassière SA — Tous droits réservés</p>
-      <p class="ws-footer-legal">Conforme LPD/RGPD — Hébergement Suisse</p>
-    </div>
-  </div>
-</footer>
+<?php include __DIR__ . '/includes/footer.php'; ?>
 
 <!-- ═══ FLOATING SIDE WIDGET ═══ -->
 <div class="ws-side-widget" id="wsSideWidget">
