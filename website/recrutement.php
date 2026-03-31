@@ -7,7 +7,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recrutement — <?= h($emsNom) ?></title>
+<title>Offres d'emploi — <?= h($emsNom) ?></title>
 <meta name="description" content="Offres d'emploi de l'EMS La Terrassière SA. Rejoignez notre équipe de soins à Genève.">
 <meta name="robots" content="index, follow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -330,8 +330,8 @@ body {
 
   <!-- ═══ HEADER ═══ -->
   <div class="rec-header">
-    <h1><i class="bi bi-feather" style="color:var(--rec-green)"></i> Nos offres d'emploi</h1>
-    <p>Rejoignez une equipe passionnee au service du bien-etre des personnes agees. Nous recherchons des professionnels motives et bienveillants.</p>
+    <h1><i class="bi bi-heart-pulse" style="color:var(--rec-green)"></i> Offres d'emploi</h1>
+    <p>Rejoignez une équipe passionnée au service du bien-être des personnes âgées. Soins, animation, formation — trouvez votre place à La Terrassière.</p>
     <div class="rec-tabs">
       <button class="rec-tab active" data-view="offres"><i class="bi bi-briefcase"></i> Offres</button>
       <button class="rec-tab" data-view="suivi"><i class="bi bi-search"></i> Suivi candidature</button>
