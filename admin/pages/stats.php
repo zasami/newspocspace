@@ -28,6 +28,10 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 /* ── Charts ── */
 .st-chart-card { border-radius:14px;border:1.5px solid var(--cl-border-light,#F0EDE8);background:var(--cl-surface,#fff);padding:20px; }
 .st-chart-title { font-size:.82rem;font-weight:700;margin-bottom:12px; }
+.st-chart-toggle { display:flex;gap:2px;background:var(--cl-bg,#F7F5F2);border-radius:8px;padding:2px; }
+.st-ct-btn { border:none;background:none;width:30px;height:28px;border-radius:6px;cursor:pointer;color:var(--cl-text-muted);font-size:.82rem;display:flex;align-items:center;justify-content:center;transition:all .15s; }
+.st-ct-btn:hover { color:var(--cl-text); }
+.st-ct-btn.active { background:var(--cl-surface,#fff);color:#2d4a43;box-shadow:0 1px 3px rgba(0,0,0,.08); }
 .st-chart-wrap { position:relative;height:220px; }
 
 /* ── Detail button ── */
@@ -134,7 +138,17 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 
 <div class="row g-3 mb-3">
   <div class="col-lg-8">
-    <div class="st-chart-card"><div class="st-chart-title">Jours d'absence par sous-période</div><div class="st-chart-wrap"><canvas id="stChartBar"></canvas></div></div>
+    <div class="st-chart-card">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="st-chart-title mb-0">Jours d'absence par sous-période</div>
+        <div class="st-chart-toggle">
+          <button class="st-ct-btn active" data-chart="bar" title="Barres"><i class="bi bi-bar-chart-fill"></i></button>
+          <button class="st-ct-btn" data-chart="line" title="Courbe"><i class="bi bi-graph-up"></i></button>
+          <button class="st-ct-btn" data-chart="polarArea" title="Polaire"><i class="bi bi-pie-chart-fill"></i></button>
+        </div>
+      </div>
+      <div class="st-chart-wrap"><canvas id="stChartBar"></canvas></div>
+    </div>
   </div>
   <div class="col-lg-4">
     <div class="st-chart-card"><div class="st-chart-title">Répartition par type</div><div class="st-chart-wrap"><canvas id="stChartDoughnut"></canvas></div></div>
@@ -177,6 +191,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
     let currentDate = new Date();
     let stData = null;
     let chartBar = null, chartDoughnut = null;
+    let chartType = 'bar';
 
     const TYPE_COLORS = { vacances:'#bcd2cb', maladie:'#E2B8AE', accident:'#D4C4A8', formation:'#B8C9D4', conge_special:'#D0C4D8', militaire:'#C8C4BE', autre:'#E8E4DE' };
     const TYPE_LABELS = { vacances:'Vacances', maladie:'Maladie', accident:'Accident', formation:'Formation', conge_special:'Congé spécial', militaire:'Militaire', autre:'Autre' };
@@ -224,10 +239,26 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         if (chartBar) chartBar.destroy();
         const ctxBar = document.getElementById('stChartBar');
         if (ctxBar) {
+            const colors = values.map((_,i) => {
+                const palette = ['#bcd2cb','#B8C9D4','#D4C4A8','#D0C4D8','#E2B8AE','#C8C4BE'];
+                return palette[i % palette.length];
+            });
+            const cfg = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } };
+            let dsOpts = {};
+            if (chartType === 'bar') {
+                dsOpts = { backgroundColor:'rgba(188,210,203,.6)', borderColor:'#2d4a43', borderWidth:1, borderRadius:6, maxBarThickness:40 };
+                cfg.scales = { y:{ beginAtZero:true, ticks:{ stepSize:1 } } };
+            } else if (chartType === 'line') {
+                dsOpts = { borderColor:'#2d4a43', backgroundColor:'rgba(188,210,203,.15)', fill:true, tension:.3, pointRadius:5, pointBackgroundColor:'#2d4a43' };
+                cfg.scales = { y:{ beginAtZero:true, ticks:{ stepSize:1 } } };
+            } else {
+                dsOpts = { backgroundColor:colors, borderWidth:2, borderColor:'#fff' };
+                cfg.scales = {};
+            }
             chartBar = new Chart(ctxBar, {
-                type: 'bar',
-                data: { labels, datasets: [{ label:'Jours', data:values, backgroundColor:'rgba(188,210,203,.6)', borderColor:'#2d4a43', borderWidth:1, borderRadius:6, maxBarThickness:40 }] },
-                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+                type: chartType,
+                data: { labels, datasets: [{ label:'Jours', data:values, ...dsOpts }] },
+                options: cfg
             });
         }
         if (chartDoughnut) chartDoughnut.destroy();
@@ -335,6 +366,16 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
     });
     document.getElementById('stPrev')?.addEventListener('click', () => navigate(-1));
     document.getElementById('stNext')?.addEventListener('click', () => navigate(1));
+
+    // Chart type toggle
+    document.querySelectorAll('.st-ct-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.st-ct-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            chartType = btn.dataset.chart;
+            if (stData) renderCharts(stData);
+        });
+    });
 
     // Slidedown toggle
     document.getElementById('stToggleDetail')?.addEventListener('click', function() {
