@@ -460,6 +460,140 @@ case 'famille_reserver':
     respond(['success' => true, 'message' => 'Réservation confirmée']);
     break;
 
+// ── Recrutement: Offres d'emploi ──────────────────────────────────────────
+
+case 'get_offres':
+    $offres = Db::fetchAll(
+        "SELECT id, titre, description, type_contrat, taux_activite, departement, lieu,
+                date_debut, date_limite, exigences, avantages, salaire_indication
+         FROM offres_emploi
+         WHERE is_active = 1 AND (date_limite IS NULL OR date_limite >= CURDATE())
+         ORDER BY ordre, created_at DESC"
+    );
+    respond(['success' => true, 'offres' => $offres]);
+    break;
+
+case 'submit_candidature':
+    $offre_id     = trim($input['offre_id'] ?? '');
+    $nom          = trim($input['nom'] ?? '');
+    $prenom       = trim($input['prenom'] ?? '');
+    $email        = trim($input['email'] ?? '');
+    $telephone    = trim($input['telephone'] ?? '');
+    $date_naissance = trim($input['date_naissance'] ?? '');
+    $adresse      = trim($input['adresse'] ?? '');
+    $nationalite  = trim($input['nationalite'] ?? '');
+    $permis_travail = trim($input['permis_travail'] ?? '');
+    $disponibilite = trim($input['disponibilite'] ?? '');
+    $motivation   = trim($input['motivation'] ?? '');
+    $experience   = trim($input['experience'] ?? '');
+
+    // For multipart/form-data fallback
+    if (!$offre_id) $offre_id = trim($_POST['offre_id'] ?? '');
+    if (!$nom) $nom = trim($_POST['nom'] ?? '');
+    if (!$prenom) $prenom = trim($_POST['prenom'] ?? '');
+    if (!$email) $email = trim($_POST['email'] ?? '');
+    if (!$telephone) $telephone = trim($_POST['telephone'] ?? '');
+    if (!$date_naissance) $date_naissance = trim($_POST['date_naissance'] ?? '');
+    if (!$adresse) $adresse = trim($_POST['adresse'] ?? '');
+    if (!$nationalite) $nationalite = trim($_POST['nationalite'] ?? '');
+    if (!$permis_travail) $permis_travail = trim($_POST['permis_travail'] ?? '');
+    if (!$disponibilite) $disponibilite = trim($_POST['disponibilite'] ?? '');
+    if (!$motivation) $motivation = trim($_POST['motivation'] ?? '');
+    if (!$experience) $experience = trim($_POST['experience'] ?? '');
+
+    if (!$offre_id || !$nom || !$prenom || !$email) {
+        respond(['success' => false, 'message' => 'Les champs offre, nom, prénom et email sont requis.'], 400);
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        respond(['success' => false, 'message' => 'Adresse email invalide.'], 400);
+    }
+
+    // Verify offre exists and is active
+    $offre = Db::fetch(
+        "SELECT id, titre FROM offres_emploi WHERE id = ? AND is_active = 1 AND (date_limite IS NULL OR date_limite >= CURDATE())",
+        [$offre_id]
+    );
+    if (!$offre) {
+        respond(['success' => false, 'message' => 'Cette offre n\'est plus disponible.'], 400);
+    }
+
+    $code_suivi = strtoupper(bin2hex(random_bytes(4)));
+    $candidature_id = Uuid::v4();
+
+    Db::exec(
+        "INSERT INTO candidatures (id, offre_id, nom, prenom, email, telephone, date_naissance, adresse, nationalite, permis_travail, disponibilite, motivation, experience, code_suivi, statut)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'recue')",
+        [$candidature_id, $offre_id, $nom, $prenom, $email, $telephone, $date_naissance ?: null, $adresse, $nationalite, $permis_travail, $disponibilite, $motivation, $experience, $code_suivi]
+    );
+
+    // Handle file uploads
+    $allowedExt = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+    $maxSize = 10 * 1024 * 1024; // 10MB
+    $uploadDir = __DIR__ . '/../storage/candidatures/';
+
+    foreach (['cv', 'lettre_motivation', 'diplome', 'certificat', 'autre'] as $fieldName) {
+        if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) continue;
+
+        $file = $_FILES[$fieldName];
+        if ($file['error'] !== UPLOAD_ERR_OK) continue;
+
+        if ($file['size'] > $maxSize) {
+            respond(['success' => false, 'message' => "Le fichier $fieldName dépasse la taille maximale de 10 Mo."], 400);
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExt)) {
+            respond(['success' => false, 'message' => "Type de fichier non autorisé pour $fieldName. Formats acceptés : " . implode(', ', $allowedExt)], 400);
+        }
+
+        $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+        $destPath = $uploadDir . $storedName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+            respond(['success' => false, 'message' => "Erreur lors de l'upload du fichier $fieldName."], 500);
+        }
+
+        Db::exec(
+            "INSERT INTO candidature_documents (id, candidature_id, type_document, nom_original, nom_fichier, taille, mime_type)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [Uuid::v4(), $candidature_id, $fieldName, $file['name'], 'storage/candidatures/' . $storedName, $file['size'], $file['type']]
+        );
+    }
+
+    respond(['success' => true, 'code_suivi' => $code_suivi, 'message' => 'Votre candidature a été soumise avec succès.']);
+    break;
+
+case 'track_candidature':
+    $email = trim($input['email'] ?? '');
+    $code_suivi = trim($input['code_suivi'] ?? '');
+
+    if (!$email || !$code_suivi) {
+        respond(['success' => false, 'message' => 'Email et code de suivi requis.'], 400);
+    }
+
+    $candidature = Db::fetch(
+        "SELECT c.statut, c.created_at AS date_soumission, o.titre AS offre_titre
+         FROM candidatures c
+         JOIN offres_emploi o ON o.id = c.offre_id
+         WHERE c.code_suivi = ? AND c.email = ?",
+        [$code_suivi, $email]
+    );
+
+    if (!$candidature) {
+        respond(['success' => false, 'message' => 'Aucune candidature trouvée avec ces informations.']);
+    }
+
+    respond([
+        'success' => true,
+        'candidature' => [
+            'offre_titre' => $candidature['offre_titre'],
+            'statut' => $candidature['statut'],
+            'date_soumission' => $candidature['date_soumission'],
+        ]
+    ]);
+    break;
+
 default:
     respond(['success' => false, 'message' => 'Action inconnue'], 400);
 }

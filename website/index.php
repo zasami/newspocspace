@@ -984,7 +984,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     <div class="ws-team-cta">
       <h4><i class="bi bi-feather"></i> Rejoignez notre équipe</h4>
       <p>Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
-      <a href="#contact" class="ws-btn ws-btn-primary"><i class="bi bi-envelope"></i> Postuler</a>
+      <a href="/zerdatime/website/recrutement.php" class="ws-btn ws-btn-primary"><i class="bi bi-send"></i> Postuler</a>
     </div>
   </div>
 </section>
