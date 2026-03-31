@@ -7,17 +7,31 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
 ?>
 <style>
 /* ── Stat cards ── */
-.rho-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-.rho-stat-card { flex: 1; min-width: 140px; text-align: center; padding: 14px 10px; border-radius: 12px; border: 1px solid var(--cl-border-light, #F0EDE8); }
-.rho-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 6px; }
-.rho-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
-.rho-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 2px; }
+.rho-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+.rho-stat-card {
+    flex: 1; min-width: 140px; text-align: center; padding: 16px 10px;
+    border-radius: 14px; border: 1.5px solid var(--cl-border-light, #F0EDE8);
+    background: var(--cl-surface, #fff);
+}
+.rho-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 8px; }
+.rho-stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.rho-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 3px; }
 
 /* ── Table ── */
-.rho-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.rho-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border); text-align: left; }
-.rho-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
-.rho-table tr:hover td { background: var(--cl-bg); }
+.rho-table-wrap { border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 14px; overflow: hidden; background: var(--cl-surface, #fff); }
+.rho-table { width: 100%; border-collapse: collapse; }
+.rho-table th {
+    font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--cl-text-muted); padding: 12px 14px;
+    border-bottom: 1.5px solid var(--cl-border-light, #F0EDE8);
+    text-align: left; background: var(--cl-bg, #F7F5F2);
+}
+.rho-table th:first-child { border-top-left-radius: 14px; }
+.rho-table th:last-child { border-top-right-radius: 14px; }
+.rho-table td { padding: 11px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
+.rho-table tr:last-child td { border-bottom: none; }
+.rho-table tbody tr { cursor: pointer; transition: background .12s; }
+.rho-table tbody tr:hover td { background: var(--cl-bg, #FAFAF7); }
 
 /* ── Badges ── */
 .rho-badge-active   { background: #bcd2cb; color: #2d4a43; font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; border: none; cursor: pointer; }
@@ -44,24 +58,24 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
 
 <!-- Stat cards -->
 <div class="rho-stats">
-  <div class="rho-stat-card">
+  <div class="rho-stat-card" style="background:#f0f6f4;border-color:#d4e5df">
     <div class="rho-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-briefcase"></i></div>
-    <div class="rho-stat-val" id="rhoStatTotal"><?= $ssrTotalOffres ?></div>
+    <div class="rho-stat-val" style="color:#2d4a43" id="rhoStatTotal"><?= $ssrTotalOffres ?></div>
     <div class="rho-stat-lbl">Total offres</div>
   </div>
-  <div class="rho-stat-card">
+  <div class="rho-stat-card" style="background:#f0f8f0;border-color:#d4e8d4">
     <div class="rho-stat-icon" style="background:#C6E2C0;color:#2D5A2D"><i class="bi bi-check-circle"></i></div>
-    <div class="rho-stat-val" id="rhoStatActive"><?= $ssrActiveOffres ?></div>
+    <div class="rho-stat-val" style="color:#2D5A2D" id="rhoStatActive"><?= $ssrActiveOffres ?></div>
     <div class="rho-stat-lbl">Offres actives</div>
   </div>
-  <div class="rho-stat-card">
+  <div class="rho-stat-card" style="background:#f0f4f8;border-color:#d4dfe8">
     <div class="rho-stat-icon" style="background:#B8C9D4;color:#3B4F6B"><i class="bi bi-person-lines-fill"></i></div>
-    <div class="rho-stat-val" id="rhoStatCand"><?= $ssrTotalCand ?></div>
+    <div class="rho-stat-val" style="color:#3B4F6B" id="rhoStatCand"><?= $ssrTotalCand ?></div>
     <div class="rho-stat-lbl">Total candidatures</div>
   </div>
-  <div class="rho-stat-card">
+  <div class="rho-stat-card" style="background:#f8f4ed;border-color:#e8dece">
     <div class="rho-stat-icon" style="background:#D4C4A8;color:#6B5B3E"><i class="bi bi-clock"></i></div>
-    <div class="rho-stat-val" id="rhoStatPending"><?= $ssrPendingCand ?></div>
+    <div class="rho-stat-val" style="color:#6B5B3E" id="rhoStatPending"><?= $ssrPendingCand ?></div>
     <div class="rho-stat-lbl">En attente</div>
   </div>
 </div>
@@ -217,7 +231,7 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
             return;
         }
         const today = new Date(); today.setHours(0,0,0,0);
-        let html = '<table class="rho-table"><thead><tr><th>Titre</th><th>Département</th><th>Contrat</th><th>Taux</th><th>Date limite</th><th>Candidatures</th><th>Actif</th><th style="width:80px">Actions</th></tr></thead><tbody>';
+        let html = '<div class="rho-table-wrap"><table class="rho-table"><thead><tr><th>Titre</th><th>Département</th><th>Contrat</th><th>Taux</th><th>Date limite</th><th>Candidatures</th><th>Actif</th><th style="width:80px">Actions</th></tr></thead><tbody>';
         filtered.forEach(o => {
             const isActive = parseInt(o.is_active);
             let dlHtml = '-';
@@ -228,7 +242,7 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
                 const lbl = diff < 0 ? 'expiré' : diff === 0 ? 'aujourd\'hui' : diff + 'j';
                 dlHtml = formatDate(o.date_limite) + ' <span class="rho-days-badge ' + cls + '">' + lbl + '</span>';
             }
-            html += `<tr>
+            html += `<tr data-offre-id="${o.id}">
                 <td><strong>${escapeHtml(o.titre)}</strong></td>
                 <td>${escapeHtml(o.departement || '-')}</td>
                 <td>${escapeHtml(o.type_contrat || '-')}</td>
@@ -242,7 +256,7 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
                 </div></td>
             </tr>`;
         });
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         el.innerHTML = html;
     }
 
@@ -260,7 +274,10 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
         const edit = e.target.closest('[data-edit]');
         if (edit) { openOffreModal(edit.dataset.edit); return; }
         const del = e.target.closest('[data-del]');
-        if (del) { deleteId = del.dataset.del; new bootstrap.Modal(document.getElementById('rhoDeleteModal')).show(); }
+        if (del) { deleteId = del.dataset.del; new bootstrap.Modal(document.getElementById('rhoDeleteModal')).show(); return; }
+        // Row click → open edit
+        const row = e.target.closest('tr[data-offre-id]');
+        if (row) openOffreModal(row.dataset.offreId);
     });
 
     document.getElementById('btnAddOffre')?.addEventListener('click', () => openOffreModal(null));
