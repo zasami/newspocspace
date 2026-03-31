@@ -409,8 +409,18 @@ body {
             </select>
           </div>
           <div class="rec-form-group">
-            <label>Disponibilite</label>
-            <input type="text" class="rec-input" name="disponibilite" placeholder="Ex: Immediatement, 1er mai 2026...">
+            <label>Disponibilité</label>
+            <select class="rec-input" name="disponibilite">
+              <option value="">— Choisir —</option>
+              <option value="Immédiate">Immédiate</option>
+              <option value="Dans 1 mois">Dans 1 mois</option>
+              <option value="Dans 2 mois">Dans 2 mois</option>
+              <option value="Dans 3 mois">Dans 3 mois</option>
+              <option value="Dans 4 mois">Dans 4 mois</option>
+              <option value="Dans 5 mois">Dans 5 mois</option>
+              <option value="Dans 6 mois">Dans 6 mois</option>
+              <option value="À convenir">À convenir</option>
+            </select>
           </div>
         </div>
       </div>

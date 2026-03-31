@@ -101,7 +101,10 @@ self.addEventListener('fetch', event => {
   // Skip non-GET cross-origin
   if (url.origin !== self.location.origin) return;
 
-  // API requests (POST to api.php)
+  // Skip website public API (multipart uploads, no caching needed)
+  if (url.pathname.includes('/website/api.php')) return;
+
+  // API requests (POST to api.php — employee SPA only)
   if (event.request.method === 'POST' && url.pathname.includes('api.php')) {
     event.respondWith(handleApiRequest(event.request));
     return;
