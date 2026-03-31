@@ -447,17 +447,28 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             const c = r.candidature;
             document.getElementById('candDetailTitle').textContent = `${c.prenom || ''} ${c.nom || ''} - ${c.offre_titre || 'Candidature'}`;
 
-            let html = '<div class="row g-3">';
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Nom</div><div class="recr-detail-val">${escapeHtml(c.nom || '-')} ${escapeHtml(c.prenom || '')}</div></div></div>`;
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Email</div><div class="recr-detail-val">${c.email ? '<a href="mailto:'+escapeHtml(c.email)+'">'+escapeHtml(c.email)+'</a>' : '-'}</div></div></div>`;
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Téléphone</div><div class="recr-detail-val">${escapeHtml(c.telephone || '-')}</div></div></div>`;
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Offre</div><div class="recr-detail-val">${escapeHtml(c.offre_titre || '-')} <span class="text-muted small">${escapeHtml(c.offre_departement || '')}</span></div></div></div>`;
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Date de candidature</div><div class="recr-detail-val">${formatDate(c.created_at)}</div></div></div>`;
-            html += `<div class="col-md-6"><div class="recr-detail-section"><div class="recr-detail-label">Disponibilité</div><div class="recr-detail-val">${escapeHtml(c.disponibilite || '-')}</div></div></div>`;
+            const field = (label, val) => `<div class="recr-detail-section"><div class="recr-detail-label">${label}</div><div class="recr-detail-val">${val}</div></div>`;
 
-            if (c.message) {
-                html += `<div class="col-12"><div class="recr-detail-section"><div class="recr-detail-label">Message</div><div class="recr-detail-val" style="white-space:pre-wrap">${escapeHtml(c.message)}</div></div></div>`;
-            }
+            let html = '<div class="row g-3">';
+            // Infos personnelles
+            html += `<div class="col-md-6">${field('Nom Prénom', escapeHtml((c.nom||'')+' '+(c.prenom||'')))}</div>`;
+            html += `<div class="col-md-6">${field('Email', c.email ? '<a href="mailto:'+escapeHtml(c.email)+'">'+escapeHtml(c.email)+'</a>' : '-')}</div>`;
+            html += `<div class="col-md-4">${field('Téléphone', escapeHtml(c.telephone || '-'))}</div>`;
+            html += `<div class="col-md-4">${field('Date de naissance', c.date_naissance ? formatDate(c.date_naissance) : '-')}</div>`;
+            html += `<div class="col-md-4">${field('Nationalité', escapeHtml(c.nationalite || '-'))}</div>`;
+            html += `<div class="col-md-4">${field('Permis de travail', escapeHtml(c.permis_travail || '-'))}</div>`;
+            html += `<div class="col-md-4">${field('Disponibilité', escapeHtml(c.disponibilite || '-'))}</div>`;
+            html += `<div class="col-md-4">${field('Code de suivi', '<code>'+escapeHtml(c.code_suivi || '-')+'</code>')}</div>`;
+            if (c.adresse) html += `<div class="col-12">${field('Adresse', escapeHtml(c.adresse))}</div>`;
+
+            // Offre
+            html += `<div class="col-12"><hr class="my-1"></div>`;
+            html += `<div class="col-md-6">${field('Offre', escapeHtml(c.offre_titre || '-')+' <span class="text-muted small">'+escapeHtml(c.offre_departement || '')+'</span>')}</div>`;
+            html += `<div class="col-md-6">${field('Date de candidature', formatDate(c.created_at))}</div>`;
+
+            // Motivation + Expérience
+            if (c.motivation) html += `<div class="col-12">${field('Motivation', '<div style="white-space:pre-wrap;background:var(--cl-bg);padding:10px;border-radius:8px;font-size:.85rem">'+escapeHtml(c.motivation)+'</div>')}</div>`;
+            if (c.experience) html += `<div class="col-12">${field('Expérience', '<div style="white-space:pre-wrap;background:var(--cl-bg);padding:10px;border-radius:8px;font-size:.85rem">'+escapeHtml(c.experience)+'</div>')}</div>`;
 
             // Documents
             if (c.documents && c.documents.length) {
