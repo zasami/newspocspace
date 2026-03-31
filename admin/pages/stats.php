@@ -207,19 +207,24 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
 
 <!-- ═══ Modal: Comparaison ═══ -->
 <div class="modal fade" id="stCompareModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="stCompareTitle">Comparaison</h5>
-        <div class="d-flex align-items-center gap-2 ms-auto">
-          <button class="btn btn-sm btn-outline-secondary" id="stCmpPrev" title="Mois précédent"><i class="bi bi-chevron-left"></i></button>
-          <span class="fw-bold" id="stCmpLabel" style="min-width:120px;text-align:center"></span>
-          <button class="btn btn-sm btn-outline-secondary" id="stCmpNext" title="Mois suivant"><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="confirm-close-btn ms-3" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
+        <h5 class="modal-title" id="stCompareTitle"><i class="bi bi-arrow-left-right me-2"></i>Comparaison</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="stCompareBody">
-        <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-secondary" id="stCmpPrev" title="Mois précédent"><i class="bi bi-chevron-left"></i></button>
+          <span class="fw-bold" id="stCmpLabel" style="min-width:150px;text-align:center;font-size:.95rem"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="stCmpNext" title="Mois suivant"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div id="stCompareContent">
+          <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -442,7 +447,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         const m = cmpDate.getMonth(), y = cmpDate.getFullYear();
         document.getElementById('stCmpLabel').textContent = MONTHS_FR[m] + ' ' + y;
         document.getElementById('stCompareTitle').textContent = 'Comparaison — ' + MONTHS_FR[m];
-        document.getElementById('stCompareBody').innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+        document.getElementById('stCompareContent').innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>';
 
         const dateCurrent = y + '-' + String(m+1).padStart(2,'0') + '-15';
         const datePrev = (y-1) + '-' + String(m+1).padStart(2,'0') + '-15';
@@ -452,7 +457,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
             adminApiPost('admin_get_absence_stats', { period:'month', date:datePrev }),
         ]);
 
-        if (!resCur.success) { document.getElementById('stCompareBody').innerHTML = '<p class="text-danger">Erreur</p>'; return; }
+        if (!resCur.success) { document.getElementById('stCompareContent').innerHTML = '<p class="text-danger">Erreur</p>'; return; }
 
         const sCur = resCur.stats || {};
         const sPrev = resPrev.success ? (resPrev.stats || {}) : { total_absents:0, total_jours:0, total_heures:0, justifiees:0, non_justifiees:0, par_type:{} };
@@ -485,7 +490,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
         h += diffRow('Non justifiées', sPrev.non_justifiees, sCur.non_justifiees);
         h += '</div>';
 
-        document.getElementById('stCompareBody').innerHTML = h;
+        document.getElementById('stCompareContent').innerHTML = h;
 
         // Render mini charts
         if (cmpChartCurrent) cmpChartCurrent.destroy();

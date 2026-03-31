@@ -72,21 +72,28 @@ $besoinsFonctions = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY o
   </div>
 </div>
 
-<!-- FTE Summary banner -->
-<div id="besoins-fte-summary" class="card mb-3 b-hidden">
-  <div class="card-body py-2 px-3">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-people-fill text-primary"></i>
-        <span class="fw-semibold small">Postes requis / jour</span>
-      </div>
-      <div class="d-flex gap-3 flex-wrap" id="besoins-fte-days"></div>
-      <div class="d-flex align-items-center gap-2">
-        <span class="text-muted small">Total semaine :</span>
-        <span class="badge bg-primary" id="besoins-fte-total">0</span>
-      </div>
-    </div>
-  </div>
+<!-- FTE Summary banner — aligned as table row -->
+<div id="besoins-fte-summary" class="b-hidden" style="overflow-x:auto">
+  <table class="tr-grid" style="margin-bottom:0">
+    <thead>
+      <tr>
+        <th class="b-col-header" style="min-width:200px;max-width:260px">
+          <div class="d-flex align-items-center gap-2"><i class="bi bi-people-fill text-primary"></i><span class="fw-semibold small">Postes requis / jour</span></div>
+        </th>
+        <th class="b-col-day text-center" id="bfteLun">Lun<br><strong>—</strong></th>
+        <th class="b-col-day text-center" id="bfteMar">Mar<br><strong>—</strong></th>
+        <th class="b-col-day text-center" id="bfteMer">Mer<br><strong>—</strong></th>
+        <th class="b-col-day text-center" id="bfteJeu">Jeu<br><strong>—</strong></th>
+        <th class="b-col-day text-center" id="bfteVen">Ven<br><strong>—</strong></th>
+        <th class="b-col-day text-center" style="color:#e6a817" id="bfteSam">Sam<br><strong>—</strong></th>
+        <th class="b-col-day text-center" style="color:#e6a817" id="bfteDim">Dim<br><strong>—</strong></th>
+        <th class="text-center" style="min-width:80px">
+          <span class="text-muted small">Total semaine :</span><br>
+          <span class="badge bg-primary" id="besoins-fte-total">0</span>
+        </th>
+      </tr>
+    </thead>
+  </table>
 </div>
 
 <div id="besoins-loading" class="text-center py-5 b-hidden">
@@ -202,21 +209,18 @@ function initBesoinsPage() {
 
   function renderFteSummary(dayTotals, grandTotal) {
     const wrap = document.getElementById('besoins-fte-summary');
-    const daysEl = document.getElementById('besoins-fte-days');
     const totalEl = document.getElementById('besoins-fte-total');
-    if (!wrap || !daysEl) return;
+    if (!wrap) return;
 
-    let html = '';
+    const ids = ['bfteLun','bfteMar','bfteMer','bfteJeu','bfteVen','bfteSam','bfteDim'];
     for (let j = 0; j < 7; j++) {
-      const isWe = j >= 5;
-      const cls = isWe ? 'text-warning' : 'text-body';
-      html += '<div class="text-center b-fte-day">';
-      html += '<div class="' + cls + ' b-fte-day-label">' + JOURS[j] + '</div>';
-      html += '<div class="fw-bold ' + cls + ' b-fte-day-value">' + dayTotals[j] + '</div>';
-      html += '</div>';
+      const el = document.getElementById(ids[j]);
+      if (el) {
+        const isWe = j >= 5;
+        el.innerHTML = JOURS[j] + '<br><strong style="font-size:1.1rem">' + dayTotals[j] + '</strong>';
+      }
     }
-    daysEl.innerHTML = html;
-    totalEl.textContent = grandTotal + ' postes/sem';
+    if (totalEl) totalEl.textContent = grandTotal + ' postes/sem';
     wrap.classList.remove('b-hidden');
   }
 
