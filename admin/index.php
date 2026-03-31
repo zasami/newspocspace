@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -141,7 +141,10 @@ $pageLabels = [
     'email-externe' => 'Email',
     'email-config'  => 'Configuration Email',
     'contacts'      => 'Contacts',
-    'recrutement'   => 'Recrutement',
+    'recrutement'      => 'Recrutement',
+    'rh-offres'        => 'Offres d\'emploi',
+    'rh-candidatures'  => 'Candidatures',
+    'rh-formations'    => 'Formations collaborateurs',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -203,9 +206,11 @@ $sidebarCategories = [
         ],
     ],
     'rh' => [
-        'label' => 'Formation & RH',
+        'label' => 'Recrutement & RH',
         'items' => [
-            'recrutement'   => ['label' => 'Recrutement',         'icon' => 'person-plus'],
+            'rh-offres'       => ['label' => 'Offres d\'emploi',     'icon' => 'briefcase'],
+            'rh-candidatures' => ['label' => 'Candidatures',         'icon' => 'person-lines-fill'],
+            'rh-formations'   => ['label' => 'Formations',           'icon' => 'mortarboard'],
         ],
     ],
     'autres' => [

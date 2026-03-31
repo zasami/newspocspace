@@ -318,3 +318,169 @@ function admin_delete_candidature()
 
     respond(['success' => true, 'message' => 'Candidature supprimée']);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORMATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function admin_get_formations()
+{
+    require_responsable();
+
+    $formations = Db::fetchAll(
+        "SELECT f.*,
+                (SELECT COUNT(*) FROM formation_participants fp WHERE fp.formation_id = f.id) AS nb_participants,
+                u.prenom AS created_prenom, u.nom AS created_nom
+         FROM formations f
+         LEFT JOIN users u ON u.id = f.created_by
+         ORDER BY f.date_debut DESC, f.created_at DESC"
+    );
+
+    respond(['success' => true, 'formations' => $formations]);
+}
+
+function admin_create_formation()
+{
+    require_admin();
+    global $params;
+
+    $titre = Sanitize::text($params['titre'] ?? '', 255);
+    if (!$titre) bad_request('Titre requis');
+
+    $id = Uuid::v4();
+    Db::exec(
+        "INSERT INTO formations (id, titre, description, type, formateur, lieu, date_debut, date_fin, duree_heures, max_participants, is_obligatoire, statut, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            $id, $titre,
+            Sanitize::text($params['description'] ?? '', 10000),
+            in_array($params['type'] ?? '', ['interne','externe','e-learning','certificat']) ? $params['type'] : 'interne',
+            Sanitize::text($params['formateur'] ?? '', 255),
+            Sanitize::text($params['lieu'] ?? '', 255),
+            Sanitize::date($params['date_debut'] ?? '') ?: null,
+            Sanitize::date($params['date_fin'] ?? '') ?: null,
+            $params['duree_heures'] ?? null,
+            $params['max_participants'] ? (int) $params['max_participants'] : null,
+            !empty($params['is_obligatoire']) ? 1 : 0,
+            'planifiee',
+            $_SESSION['zt_user']['id'],
+        ]
+    );
+
+    respond(['success' => true, 'message' => 'Formation créée', 'id' => $id]);
+}
+
+function admin_update_formation()
+{
+    require_admin();
+    global $params;
+
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    if (!Db::fetch("SELECT id FROM formations WHERE id = ?", [$id])) not_found();
+
+    $sets = [];
+    $binds = [];
+    $textFields = ['titre' => 255, 'description' => 10000, 'formateur' => 255, 'lieu' => 255];
+    foreach ($textFields as $f => $max) {
+        if (isset($params[$f])) { $sets[] = "$f = ?"; $binds[] = Sanitize::text($params[$f], $max); }
+    }
+    if (isset($params['type'])) { $sets[] = 'type = ?'; $binds[] = in_array($params['type'], ['interne','externe','e-learning','certificat']) ? $params['type'] : 'interne'; }
+    if (isset($params['date_debut'])) { $sets[] = 'date_debut = ?'; $binds[] = Sanitize::date($params['date_debut']) ?: null; }
+    if (isset($params['date_fin'])) { $sets[] = 'date_fin = ?'; $binds[] = Sanitize::date($params['date_fin']) ?: null; }
+    if (isset($params['duree_heures'])) { $sets[] = 'duree_heures = ?'; $binds[] = $params['duree_heures']; }
+    if (isset($params['max_participants'])) { $sets[] = 'max_participants = ?'; $binds[] = (int) $params['max_participants'] ?: null; }
+    if (isset($params['is_obligatoire'])) { $sets[] = 'is_obligatoire = ?'; $binds[] = (int) $params['is_obligatoire']; }
+    if (isset($params['statut'])) {
+        $allowed = ['planifiee','en_cours','terminee','annulee'];
+        if (in_array($params['statut'], $allowed)) { $sets[] = 'statut = ?'; $binds[] = $params['statut']; }
+    }
+
+    if (empty($sets)) bad_request('Rien à modifier');
+    $binds[] = $id;
+    Db::exec("UPDATE formations SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
+
+    respond(['success' => true, 'message' => 'Formation mise à jour']);
+}
+
+function admin_delete_formation()
+{
+    require_admin();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    Db::exec("DELETE FROM formation_participants WHERE formation_id = ?", [$id]);
+    Db::exec("DELETE FROM formations WHERE id = ?", [$id]);
+
+    respond(['success' => true, 'message' => 'Formation supprimée']);
+}
+
+function admin_get_formation_detail()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    $formation = Db::fetch("SELECT * FROM formations WHERE id = ?", [$id]);
+    if (!$formation) not_found();
+
+    $formation['participants'] = Db::fetchAll(
+        "SELECT fp.*, u.prenom, u.nom, u.email, u.photo, f.nom AS fonction_nom
+         FROM formation_participants fp
+         JOIN users u ON u.id = fp.user_id
+         LEFT JOIN fonctions f ON f.id = u.fonction_id
+         WHERE fp.formation_id = ?
+         ORDER BY u.nom, u.prenom",
+        [$id]
+    );
+
+    respond(['success' => true, 'formation' => $formation]);
+}
+
+function admin_add_formation_participant()
+{
+    require_responsable();
+    global $params;
+    $formationId = $params['formation_id'] ?? '';
+    $userId = $params['user_id'] ?? '';
+    if (!$formationId || !$userId) bad_request('Paramètres manquants');
+
+    $existing = Db::fetch("SELECT id FROM formation_participants WHERE formation_id = ? AND user_id = ?", [$formationId, $userId]);
+    if ($existing) bad_request('Déjà inscrit');
+
+    Db::exec("INSERT INTO formation_participants (id, formation_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $formationId, $userId]);
+    respond(['success' => true, 'message' => 'Participant ajouté']);
+}
+
+function admin_remove_formation_participant()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    Db::exec("DELETE FROM formation_participants WHERE id = ?", [$id]);
+    respond(['success' => true, 'message' => 'Participant retiré']);
+}
+
+function admin_update_formation_participant()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    $sets = [];
+    $binds = [];
+    if (isset($params['statut'])) {
+        $allowed = ['inscrit','present','absent','valide'];
+        if (in_array($params['statut'], $allowed)) { $sets[] = 'statut = ?'; $binds[] = $params['statut']; }
+    }
+    if (isset($params['note'])) { $sets[] = 'note = ?'; $binds[] = Sanitize::text($params['note'], 2000); }
+
+    if (empty($sets)) bad_request('Rien à modifier');
+    $binds[] = $id;
+    Db::exec("UPDATE formation_participants SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
+    respond(['success' => true, 'message' => 'Participant mis à jour']);
+}

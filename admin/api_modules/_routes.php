@@ -128,6 +128,9 @@ return [
         'admin_get_offres', 'admin_create_offre', 'admin_update_offre', 'admin_delete_offre',
         'admin_get_candidatures', 'admin_get_candidature_detail', 'admin_update_candidature_status',
         'admin_download_candidature_doc', 'admin_delete_candidature',
+        'admin_get_formations', 'admin_create_formation', 'admin_update_formation', 'admin_delete_formation',
+        'admin_get_formation_detail', 'admin_add_formation_participant', 'admin_remove_formation_participant',
+        'admin_update_formation_participant',
     ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',
