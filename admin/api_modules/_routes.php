@@ -82,6 +82,7 @@ return [
         'admin_create_service', 'admin_update_service', 'admin_serve_document',
         'admin_archive_document', 'admin_restore_document',
         'admin_get_document_versions', 'admin_restore_document_version', 'admin_serve_document_version',
+        'admin_convert_document_pdf',
     ],
     'changements' => [
         'admin_get_changements', 'admin_valider_changement', 'admin_get_changement_detail',

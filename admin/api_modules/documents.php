@@ -347,6 +347,105 @@ function admin_serve_document_version()
     exit;
 }
 
+/**
+ * Convert DOCX to PDF and serve it.
+ * Caches the PDF so conversion only happens once per file version.
+ */
+function admin_convert_document_pdf()
+{
+    require_responsable();
+    global $params;
+
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    $doc = Db::fetch("SELECT filename, original_name, mime_type, version FROM documents WHERE id = ?", [$id]);
+    if (!$doc) not_found('Document introuvable');
+
+    // Only convert Word documents
+    $isWord = strpos($doc['mime_type'], 'word') !== false || strpos($doc['mime_type'], 'msword') !== false;
+    if (!$isWord) {
+        // Not a Word doc — serve original
+        $filePath = __DIR__ . '/../../storage/documents/' . $doc['filename'];
+        if (!file_exists($filePath)) not_found('Fichier introuvable');
+        header('Content-Type: ' . $doc['mime_type']);
+        header('Content-Disposition: inline; filename="' . addslashes($doc['original_name']) . '"');
+        readfile($filePath);
+        exit;
+    }
+
+    $storageDir = __DIR__ . '/../../storage/documents/';
+    $cacheDir = $storageDir . 'pdf_cache/';
+    if (!is_dir($cacheDir)) mkdir($cacheDir, 0755, true);
+
+    // Cache key: document id + version
+    $cacheFile = $cacheDir . $id . '_v' . $doc['version'] . '.pdf';
+
+    if (file_exists($cacheFile)) {
+        // Serve cached PDF
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf') . '"');
+        header('Content-Length: ' . filesize($cacheFile));
+        header('Cache-Control: private, max-age=86400');
+        readfile($cacheFile);
+        exit;
+    }
+
+    // Convert DOCX → HTML → PDF
+    $srcPath = $storageDir . $doc['filename'];
+    if (!file_exists($srcPath)) not_found('Fichier source introuvable');
+
+    require_once __DIR__ . '/../../vendor/autoload.php';
+
+    try {
+        // Read DOCX with PhpWord
+        $phpWord = \PhpOffice\PhpWord\IOFactory::load($srcPath, 'Word2007');
+
+        // Convert to HTML
+        $htmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'HTML');
+        ob_start();
+        $htmlWriter->save('php://output');
+        $html = ob_get_clean();
+
+        // Clean up HTML for DOMPDF
+        $html = preg_replace('/<head>.*?<\/head>/s', '<head><meta charset="UTF-8"><style>
+            body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; color: #333; line-height: 1.5; margin: 20mm; }
+            table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+            td, th { border: 1px solid #ccc; padding: 6px 8px; font-size: 10pt; }
+            th { background: #f5f5f5; font-weight: bold; }
+            img { max-width: 100%; height: auto; }
+            h1 { font-size: 18pt; } h2 { font-size: 15pt; } h3 { font-size: 13pt; }
+        </style></head>', $html);
+
+        // Generate PDF with DOMPDF
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $pdfContent = $dompdf->output();
+
+        // Cache the result
+        file_put_contents($cacheFile, $pdfContent);
+
+        // Serve
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf') . '"');
+        header('Content-Length: ' . strlen($pdfContent));
+        header('Cache-Control: private, max-age=86400');
+        echo $pdfContent;
+        exit;
+
+    } catch (\Exception $e) {
+        bad_request('Erreur de conversion : ' . $e->getMessage());
+    }
+}
+
 function admin_toggle_document_visibility()
 {
     require_responsable();

@@ -459,82 +459,11 @@ $docServices = Db::fetchAll(
             stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
             fsBtn.classList.remove('d-none');
         } else if (isWord) {
-            stage.innerHTML = '<div class="doc-lb-word-wrap">'
-                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-word" style="color:#2B579A"></i> ' + escapeHtml(titre) + '</h6><button class="doc-lb-word-close" id="docxClose"><i class="bi bi-x-lg"></i></button></div>'
-                + '<div class="doc-lb-word-body"><div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm"></span> Chargement du document...</div><div id="docxContainer"></div></div>'
-                + '<div class="doc-lb-word-footer">'
-                + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomOut" title="Dézoomer"><i class="bi bi-zoom-out"></i></button>'
-                + '<input type="range" id="docxZoomSlider" min="50" max="200" value="100" style="width:100px;accent-color:#2d4a43">'
-                + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomIn" title="Zoomer"><i class="bi bi-zoom-in"></i></button>'
-                + '<span id="docxZoomVal" style="font-size:.78rem;font-weight:600;min-width:40px;text-align:center">100%</span>'
-                + '<div style="flex:1"></div>'
-                + '<button class="btn btn-sm btn-outline-secondary" id="docxPrint"><i class="bi bi-file-earmark-pdf"></i> Exporter en PDF</button>'
-                + '<a href="' + url + '" download class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> Télécharger</a>'
-                + '<button class="btn btn-sm btn-light" id="docxCloseFooter">Fermer</button>'
-                + '</div>'
-                + '</div>';
-            fsBtn.classList.add('d-none');
-            (async () => {
-                try {
-                    if (!window.docx) {
-                        // Load jszip first (dependency), then docx-preview
-                        if (!window.JSZip) {
-                            await new Promise((resolve, reject) => {
-                                const s = document.createElement('script');
-                                s.src = '/zerdatime/assets/js/vendor/jszip.min.js';
-                                s.onload = resolve; s.onerror = reject;
-                                document.head.appendChild(s);
-                            });
-                        }
-                        await new Promise((resolve, reject) => {
-                            const s = document.createElement('script');
-                            s.src = '/zerdatime/assets/js/vendor/docx-preview.min.js';
-                            s.onload = resolve; s.onerror = reject;
-                            document.head.appendChild(s);
-                        });
-                    }
-                    const resp = await fetch(url);
-                    const blob = await resp.blob();
-                    const container = document.getElementById('docxContainer');
-                    const loadingEl = stage.querySelector('.doc-lb-word-body > .text-center');
-                    if (loadingEl) loadingEl.remove();
-                    await window.docx.renderAsync(blob, container, null, {
-                        className: 'docx-preview-body',
-                        inWrapper: true,
-                        ignoreWidth: false,
-                        ignoreHeight: false,
-                        ignoreFonts: false,
-                        breakPages: true,
-                        renderHeaders: true,
-                        renderFooters: true,
-                        renderFootnotes: true,
-                    });
-                    // Bind close buttons
-                    document.getElementById('docxClose')?.addEventListener('click', closeLb);
-                    document.getElementById('docxCloseFooter')?.addEventListener('click', closeLb);
-                    // Print
-                    document.getElementById('docxPrint')?.addEventListener('click', () => {
-                        const w = window.open('','_blank');
-                        w.document.write('<html><head><title>' + escapeHtml(titre) + '</title><style>body{margin:0;padding:20px;font-family:system-ui}@media print{@page{size:A4;margin:15mm}}</style></head><body>' + container.innerHTML + '</body></html>');
-                        w.document.close();
-                        w.onload = () => w.print();
-                    });
-                    // Zoom slider
-                    let zoom = 100;
-                    document.getElementById('docxZoomIn')?.addEventListener('click', () => { zoom = Math.min(200, zoom + 10); applyZoom(); });
-                    document.getElementById('docxZoomOut')?.addEventListener('click', () => { zoom = Math.max(50, zoom - 10); applyZoom(); });
-                    document.getElementById('docxZoomSlider')?.addEventListener('input', (e) => { zoom = parseInt(e.target.value); applyZoom(); });
-                    function applyZoom() {
-                        container.style.transform = 'scale(' + (zoom/100) + ')';
-                        container.style.transformOrigin = 'top center';
-                        document.getElementById('docxZoomVal').textContent = zoom + '%';
-                        document.getElementById('docxZoomSlider').value = zoom;
-                    }
-                } catch(e) {
-                    const wrap = stage.querySelector('.doc-lb-word-wrap');
-                    if (wrap) wrap.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-exclamation-triangle" style="font-size:2rem"></i><p>Impossible de prévisualiser</p><a href="' + url + '" download class="btn btn-sm btn-primary mt-2"><i class="bi bi-download"></i> Télécharger</a></div>';
-                }
-            })();
+            // Convert DOCX to PDF server-side and display in iframe
+            const docId = new URLSearchParams(url.split('?')[1]).get('id');
+            const pdfUrl = '/zerdatime/admin/api.php?action=admin_convert_document_pdf&id=' + encodeURIComponent(docId);
+            stage.innerHTML = '<iframe id="docLbIframe" src="' + pdfUrl + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
+            fsBtn.classList.remove('d-none');
         } else if (isText) {
             stage.innerHTML = '<div class="doc-lb-word-wrap"><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span></div></div>';
             fsBtn.classList.add('d-none');
