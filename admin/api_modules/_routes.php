@@ -113,6 +113,11 @@ return [
         'admin_get_residents', 'admin_create_resident', 'admin_update_resident', 'admin_toggle_resident',
         'admin_upload_resident_photo', 'admin_serve_resident_photo', 'admin_delete_resident_photo',
     ],
+    'marquage' => [
+        'admin_get_marquages', 'admin_create_marquage', 'admin_upload_marquage_photo',
+        'admin_serve_marquage_photo', 'admin_update_marquage_statut', 'admin_delete_marquage',
+        'admin_get_marquage_history',
+    ],
     'menus' => [
         'admin_get_menus', 'admin_save_menu', 'admin_delete_menu',
         'admin_get_menu_reservations', 'admin_get_reservations_jour',

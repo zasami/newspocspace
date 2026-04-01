@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -93,6 +93,7 @@ $topbarPlaceholders = [
     'cuisine'   => 'Rechercher un menu...',
     'reservations' => 'Rechercher une réservation...',
     'residents'    => 'Rechercher un résident...',
+    'marquage'     => 'Rechercher un marquage...',
     'famille'      => 'Rechercher un résident...',
     'email-externe' => 'Rechercher un email...',
     'contacts'      => 'Rechercher un contact...',
@@ -135,6 +136,7 @@ $pageLabels = [
     'changements'   => 'Changements d\'horaire',
     'roadmap'       => 'Roadmap',
     'residents'     => 'Résidents',
+    'marquage'      => 'Marquage Lingerie',
     'famille'       => 'Espace Famille',
     'cuisine'       => 'Cuisine — Menus',
     'reservations'  => 'Réservations repas',
@@ -191,6 +193,7 @@ $sidebarCategories = [
             'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
             'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
             'residents' => ['label' => 'Résidents',          'icon' => 'person-badge'],
+            'marquage'  => ['label' => 'Marquage Lingerie',   'icon' => 'tags'],
             'famille'   => ['label' => 'Espace Famille',     'icon' => 'house-heart'],
             'cuisine'      => ['label' => 'Menus',               'icon' => 'egg-fried'],
             'reservations' => ['label' => 'Réservations repas',  'icon' => 'calendar-check'],
