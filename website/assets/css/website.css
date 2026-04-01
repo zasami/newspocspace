@@ -793,7 +793,24 @@ a:hover { color: var(--ws-green-hover); }
 .ws-cta-contact-links a:hover { opacity: .7; }
 .ws-cta-contact-links a i { font-size: 1.1rem; }
 .ws-cta-closing { font-weight: 700; font-size: 1.05rem; color: var(--ws-text); margin: 0; font-style: italic; }
-.ws-cta-postuler { margin-top: 24px; }
+.ws-cta-postuler {
+  margin-top: 32px; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.ws-cta-postuler h5 {
+  font-size: 1.1rem; font-weight: 700; margin: 0 0 4px; display: flex; align-items: center; gap: 8px;
+}
+.ws-cta-postuler h5 i { color: var(--ws-green); }
+.ws-cta-postuler p { font-size: .9rem; margin: 0; color: var(--ws-text-muted); }
+.ws-btn-outline-sm {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 8px 18px; border-radius: 8px; font-size: .85rem; font-weight: 600;
+  border: 1.5px solid var(--ws-green); color: var(--ws-green);
+  background: transparent; text-decoration: none; transition: all .2s; flex-shrink: 0;
+}
+.ws-btn-outline-sm:hover { background: var(--ws-green); color: #fff; }
+@media (max-width: 576px) {
+  .ws-cta-postuler { flex-direction: column; align-items: flex-start; }
+}
 
 /* ══════════════════════════════════════
    VALUES
