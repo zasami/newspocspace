@@ -300,13 +300,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.1rem;
+  padding: .7rem 1.1rem;
   border-bottom: 1px solid var(--cl-border);
-  min-height: 58px;
+  min-height: 56px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 2;
+  background: var(--cl-sidebar-bg);
   background: var(--cl-sidebar-bg);
 }
 .sidebar-brand-link {
@@ -453,7 +454,7 @@ body {
 }
 .admin-sidebar.mini .sidebar-header {
   justify-content: center;
-  padding: 1rem 0.5rem;
+  padding: .7rem 0.5rem;
 }
 .admin-sidebar.mini .sidebar-brand-link { display: none; }
 .admin-sidebar.mini .sidebar-toggle-btn {
