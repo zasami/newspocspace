@@ -54,6 +54,14 @@ $docServices = Db::fetchAll(
 .doc-ver-badge { min-width: 36px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 700; }
 .doc-ver-current { background: #bcd2cb; color: #2d4a43; }
 .doc-ver-old     { background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); }
+
+/* ── Word preview in lightbox ── */
+.doc-lb-word-wrap { width: 90vw; max-width: 800px; max-height: 85vh; overflow-y: auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.doc-lb-word-banner { padding: 10px 20px; background: #FEF3C7; color: #92400E; font-size: .82rem; border-bottom: 1px solid #F59E0B; border-radius: 12px 12px 0 0; }
+.doc-lb-word-content { padding: 0; overflow-y: auto; max-height: calc(85vh - 50px); }
+.doc-lb-word-content .docx-wrapper { background: #fff !important; padding: 20px !important; }
+.doc-lb-word-content .docx-wrapper section.docx { box-shadow: 0 2px 8px rgba(0,0,0,.08) !important; margin-bottom: 16px !important; }
+.doc-lb-word-loading { text-align: center; padding: 60px 20px; color: #999; }
 .doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
 .doc-row-actions { display: flex; gap: 2px; }
 .doc-row-btn { background: none; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; color: var(--cl-text-muted); font-size: .88rem; transition: all .12s; display: flex; align-items: center; justify-content: center; }
@@ -374,12 +382,13 @@ $docServices = Db::fetchAll(
     function viewDoc(url, mime, titre) {
         const isImage = mime && mime.startsWith('image/');
         const isPdf = mime && mime.includes('pdf');
-        if (!isImage && !isPdf) {
-            // Download — browser will propose to open with the associated app
+        const isWord = mime && (mime.includes('word') || mime.includes('msword'));
+        const isExcel = mime && (mime.includes('excel') || mime.includes('spreadsheet'));
+        const isText = mime && (mime.includes('text/plain') || mime.includes('text/csv'));
+
+        if (!isImage && !isPdf && !isWord && !isText) {
             const a = document.createElement('a');
-            a.href = url;
-            a.download = '';
-            a.click();
+            a.href = url; a.download = ''; a.click();
             return;
         }
 
@@ -410,6 +419,56 @@ $docServices = Db::fetchAll(
         } else if (isPdf) {
             stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
             fsBtn.classList.remove('d-none');
+        } else if (isWord) {
+            stage.innerHTML = '<div class="doc-lb-word-wrap"><div class="doc-lb-word-banner"><i class="bi bi-file-earmark-word"></i> Aperçu du document — <a href="' + url + '" download style="color:inherit;text-decoration:underline">télécharger l\'original</a></div><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span> Chargement...</div><div class="doc-lb-word-content" id="docxContainer"></div></div>';
+            fsBtn.classList.add('d-none');
+            (async () => {
+                try {
+                    if (!window.docx) {
+                        // Load jszip first (dependency), then docx-preview
+                        if (!window.JSZip) {
+                            await new Promise((resolve, reject) => {
+                                const s = document.createElement('script');
+                                s.src = '/zerdatime/assets/js/vendor/jszip.min.js';
+                                s.onload = resolve; s.onerror = reject;
+                                document.head.appendChild(s);
+                            });
+                        }
+                        await new Promise((resolve, reject) => {
+                            const s = document.createElement('script');
+                            s.src = '/zerdatime/assets/js/vendor/docx-preview.min.js';
+                            s.onload = resolve; s.onerror = reject;
+                            document.head.appendChild(s);
+                        });
+                    }
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    const container = document.getElementById('docxContainer');
+                    const loading = stage.querySelector('.doc-lb-word-loading');
+                    if (loading) loading.remove();
+                    await window.docx.renderAsync(blob, container, null, {
+                        className: 'docx-preview-body',
+                        inWrapper: true,
+                        ignoreWidth: false,
+                        ignoreHeight: false,
+                        ignoreFonts: false,
+                        breakPages: true,
+                        renderHeaders: true,
+                        renderFooters: true,
+                        renderFootnotes: true,
+                    });
+                } catch(e) {
+                    const wrap = stage.querySelector('.doc-lb-word-wrap');
+                    if (wrap) wrap.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-exclamation-triangle" style="font-size:2rem"></i><p>Impossible de prévisualiser</p><a href="' + url + '" download class="btn btn-sm btn-primary mt-2"><i class="bi bi-download"></i> Télécharger</a></div>';
+                }
+            })();
+        } else if (isText) {
+            stage.innerHTML = '<div class="doc-lb-word-wrap"><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span></div></div>';
+            fsBtn.classList.add('d-none');
+            fetch(url).then(r => r.text()).then(text => {
+                const wrap = stage.querySelector('.doc-lb-word-wrap');
+                if (wrap) wrap.innerHTML = '<div class="doc-lb-word-content"><pre style="white-space:pre-wrap;font-size:.88rem">' + escapeHtml(text) + '</pre></div>';
+            });
         }
 
         lb.classList.remove('doc-lb-hidden');
