@@ -52,27 +52,49 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 
 /* ── Drop zone ── */
 .mrk-drop-zone {
-    border: 2px dashed var(--cl-border, #E0DDD8); border-radius: 14px; padding: 24px 16px;
-    text-align: center; cursor: pointer; transition: all .2s;
+    border: 2px dashed var(--cl-border, #E0DDD8); border-radius: 14px; padding: 28px 16px;
+    text-align: center; cursor: pointer; transition: all .25s;
     color: var(--cl-text-muted); background: var(--cl-bg, #FAFAF8);
+    position: relative; overflow: hidden;
 }
 .mrk-drop-zone:hover, .mrk-drop-zone.dragover {
-    border-color: #bcd2cb; background: rgba(188,210,203,.08);
+    border-color: #bcd2cb; background: rgba(188,210,203,.1);
 }
-.mrk-drop-zone i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 6px; color: #bcd2cb; }
-.mrk-drop-zone:hover i { opacity: .6; }
-.mrk-drop-zone p { margin-bottom: 2px; font-size: .88rem; }
-.mrk-drop-zone small { font-size: .72rem; }
+.mrk-drop-zone .mrk-dz-icon { font-size: 2.2rem; opacity: .25; display: block; margin-bottom: 6px; color: #bcd2cb; transition: all .25s; }
+.mrk-drop-zone p { margin-bottom: 2px; font-size: .88rem; transition: opacity .2s; }
+.mrk-drop-zone small { font-size: .72rem; transition: opacity .2s; }
+/* Hover: show big plus icon */
+.mrk-drop-zone .mrk-dz-hover {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.mrk-drop-zone .mrk-dz-hover i {
+    font-size: 3rem; color: #bcd2cb; background: rgba(188,210,203,.15);
+    width: 70px; height: 70px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; transition: transform .2s;
+}
+.mrk-drop-zone:hover .mrk-dz-hover { opacity: 1; }
+.mrk-drop-zone:hover .mrk-dz-hover i { transform: scale(1.1); }
+.mrk-drop-zone:hover .mrk-dz-icon,
+.mrk-drop-zone:hover p,
+.mrk-drop-zone:hover small { opacity: 0; }
+/* Mobile: always show text, tap target */
+@media (max-width: 576px) {
+    .mrk-drop-zone { padding: 20px 12px; }
+    .mrk-drop-zone .mrk-dz-hover { display: none; }
+    .mrk-drop-zone:hover .mrk-dz-icon,
+    .mrk-drop-zone:hover p,
+    .mrk-drop-zone:hover small { opacity: 1; }
+}
 
 /* ── Photo grid ── */
 .mrk-photo-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
 .mrk-photo-item {
-    width: 80px; height: 80px; border-radius: 10px; overflow: hidden;
-    position: relative; border: 1.5px solid var(--cl-border-light, #F0EDE8);
-    transition: transform .15s;
+    width: 80px; height: 80px; border-radius: 10px; overflow: visible;
+    position: relative; transition: transform .15s;
 }
 .mrk-photo-item:hover { transform: scale(1.05); }
-.mrk-photo-item img { width: 100%; height: 100%; object-fit: cover; }
+.mrk-photo-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
 .mrk-photo-item .mrk-photo-del {
     position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
     border-radius: 50%; background: #E2B8AE; color: #7B3B2C; border: 2px solid #fff;
@@ -144,9 +166,10 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
           <label class="form-label small fw-bold">Photos</label>
           <div class="mrk-drop-zone" id="mrkDropZone">
             <input type="file" id="mrkPhotoInput" class="d-none" accept="image/*" multiple capture="environment">
-            <i class="bi bi-image"></i>
+            <i class="bi bi-image mrk-dz-icon"></i>
             <p><strong>Glissez vos photos ici</strong> ou cliquez pour parcourir</p>
             <small>JPG, PNG, WebP — max 10 Mo par photo</small>
+            <div class="mrk-dz-hover"><i class="bi bi-plus-lg"></i></div>
           </div>
           <div class="mrk-photo-grid" id="mrkPhotoGrid"></div>
         </div>
