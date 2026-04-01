@@ -40,15 +40,16 @@ function admin_get_marquages() {
     $stats = Db::fetch(
         "SELECT
             COUNT(*) AS total,
-            COALESCE(SUM(m.statut = 'en_cours'), 0) AS en_cours,
+            COALESCE(SUM(m.statut = 'déposé'), 0) AS deposes,
+            COALESCE(SUM(m.statut = 'récupéré'), 0) AS recuperes,
             COALESCE(SUM(m.statut = 'marqué'), 0) AS marques,
-            COALESCE(SUM(m.statut = 'terminé'), 0) AS termines,
+            COALESCE(SUM(m.statut = 'livré'), 0) AS livres,
             COUNT(DISTINCT m.resident_id) AS residents_count,
             COUNT(DISTINCT r.chambre) AS chambres_count
          FROM marquages m
          LEFT JOIN residents r ON r.id = m.resident_id"
     );
-    if (!$stats) $stats = ['total'=>0,'en_cours'=>0,'marques'=>0,'termines'=>0,'residents_count'=>0,'chambres_count'=>0];
+    if (!$stats) $stats = ['total'=>0,'deposes'=>0,'recuperes'=>0,'marques'=>0,'livres'=>0,'residents_count'=>0,'chambres_count'=>0];
 
     respond(['success' => true, 'marquages' => $rows, 'stats' => $stats]);
 }
@@ -59,7 +60,7 @@ function admin_create_marquage() {
     $action = $params['action_type'] ?? 'marquer';
     $quantite = max(1, intval($params['quantite'] ?? 1));
     $description = trim($params['description'] ?? '');
-    $userId = $_SESSION['admin']['id'];
+    $userId = $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? '';
 
     if (!$residentId) bad_request('Résident requis');
 
@@ -69,8 +70,8 @@ function admin_create_marquage() {
     $id = Uuid::v4();
 
     Db::exec(
-        "INSERT INTO marquages (id, resident_id, user_id, action, quantite, description)
-         VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO marquages (id, resident_id, user_id, action, statut, quantite, description)
+         VALUES (?, ?, ?, ?, 'déposé', ?, ?)",
         [$id, $residentId, $userId, $action, $quantite, $description]
     );
 
@@ -158,11 +159,12 @@ function admin_update_marquage_statut() {
     $statut = $params['statut'] ?? '';
     if (!$id || !$statut) bad_request('ID et statut requis');
 
-    $allowed = ['en_cours','marqué','terminé'];
+    $allowed = ['déposé','récupéré','marqué','livré'];
     if (!in_array($statut, $allowed)) bad_request('Statut invalide');
 
-    $completedBy = in_array($statut, ['marqué','terminé']) ? $_SESSION['admin']['id'] : null;
-    $completedAt = in_array($statut, ['marqué','terminé']) ? date('Y-m-d H:i:s') : null;
+    $userId = $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? null;
+    $completedBy = in_array($statut, ['marqué','livré']) ? $userId : null;
+    $completedAt = in_array($statut, ['marqué','livré']) ? date('Y-m-d H:i:s') : null;
 
     Db::exec(
         "UPDATE marquages SET statut = ?, completed_by = ?, completed_at = ? WHERE id = ?",
@@ -210,9 +212,10 @@ function admin_get_marquage_history() {
 
     $stats = Db::fetch(
         "SELECT COUNT(*) AS total,
-                SUM(statut = 'en_cours') AS en_cours,
+                SUM(statut = 'déposé') AS deposes,
+                SUM(statut = 'récupéré') AS recuperes,
                 SUM(statut = 'marqué') AS marques,
-                SUM(statut = 'terminé') AS termines
+                SUM(statut = 'livré') AS livres
          FROM marquages WHERE resident_id = ?",
         [$residentId]
     );

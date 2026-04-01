@@ -5,10 +5,8 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 /* ── Stat cards as filters ── */
 .mrk-stat-card { cursor: pointer; transition: all .2s; position: relative; }
 .mrk-stat-card.active { box-shadow: 0 0 0 2px var(--cl-accent, #2d4a43); }
-.mrk-stat-card.active::after {
-    content: '\F26E'; font-family: 'bootstrap-icons'; position: absolute; top: 8px; right: 10px;
-    font-size: .7rem; color: var(--cl-accent, #2d4a43); opacity: .7;
-}
+.mrk-stat-check { position: absolute; top: 8px; right: 10px; display: none; color: var(--cl-accent, #2d4a43); font-size: .85rem; }
+.mrk-stat-card.active .mrk-stat-check { display: block; }
 
 /* ── Table ── */
 .mrk-table-wrap { border-radius: 14px; overflow: hidden; border: 1.5px solid var(--cl-border-light, #F0EDE8); background: var(--cl-surface, #fff); }
@@ -35,9 +33,14 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 .mrk-detail-desc { background: var(--cl-bg, #F7F5F2); border-radius: 10px; padding: 12px 14px; font-size: .88rem; margin-top: 12px; }
 
 .mrk-badge { font-size: .72rem; padding: 3px 10px; border-radius: 8px; font-weight: 600; display: inline-block; }
-.mrk-badge-en_cours  { background: #D4C4A8; color: #6B5B3E; }
+.mrk-badge-déposé    { background: #D4C4A8; color: #6B5B3E; }
+.mrk-badge-récupéré  { background: #E2B8AE; color: #7B3B2C; }
 .mrk-badge-marqué    { background: #B8C9D4; color: #3B4F6B; }
-.mrk-badge-terminé   { background: #bcd2cb; color: #2d4a43; }
+.mrk-badge-livré     { background: #bcd2cb; color: #2d4a43; }
+
+/* ── Photo thumb with count badge ── */
+.mrk-photo-cell { position: relative; display: inline-block; }
+.mrk-photo-count { position: absolute; bottom: -4px; right: -4px; background: #1A1A1A; color: #fff; font-size: .6rem; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
 
 .mrk-action-badge { font-size: .72rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
 .mrk-act-marquer   { background: #E2B8AE; color: #7B3B2C; }
@@ -57,9 +60,10 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 .mrk-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--cl-border-light, #F0EDE8); }
 .mrk-tl-item { position: relative; margin-bottom: 16px; }
 .mrk-tl-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; }
-.mrk-tl-dot-en_cours  { background: #D4C4A8; }
+.mrk-tl-dot-déposé    { background: #D4C4A8; }
+.mrk-tl-dot-récupéré  { background: #E2B8AE; }
 .mrk-tl-dot-marqué    { background: #B8C9D4; }
-.mrk-tl-dot-terminé   { background: #bcd2cb; }
+.mrk-tl-dot-livré     { background: #bcd2cb; }
 .mrk-tl-content { background: var(--cl-bg); border-radius: 10px; padding: 12px 14px; }
 .mrk-tl-photo { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; margin-top: 8px; cursor: pointer; }
 
@@ -123,11 +127,11 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 
 <!-- Stat cards = filters -->
 <div class="row g-3 mb-4" id="mrkStats">
-  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card active" data-filter=""><div class="stat-icon bg-teal"><i class="bi bi-tags"></i></div><div><div class="stat-value" id="mrkStatTotal">—</div><div class="stat-label">Tous</div></div></div></div>
-  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="en_cours"><div class="stat-icon bg-orange"><i class="bi bi-hourglass-split"></i></div><div><div class="stat-value" id="mrkStatEnCours">—</div><div class="stat-label">En cours</div></div></div></div>
-  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="marqué"><div class="stat-icon bg-green"><i class="bi bi-check-circle"></i></div><div><div class="stat-value" id="mrkStatMarques">—</div><div class="stat-label">Marqués</div></div></div></div>
-  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="terminé"><div class="stat-icon bg-teal"><i class="bi bi-check-all"></i></div><div><div class="stat-value" id="mrkStatTermines">—</div><div class="stat-label">Terminés</div></div></div></div>
-  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="_residents"><div class="stat-icon bg-purple"><i class="bi bi-people"></i></div><div><div class="stat-value" id="mrkStatResidents">—</div><div class="stat-label">Résidents</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card active" data-filter=""><i class="bi bi-check mrk-stat-check"></i><div class="stat-icon bg-teal"><i class="bi bi-tags"></i></div><div><div class="stat-value" id="mrkStatTotal">—</div><div class="stat-label">Tous</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="déposé"><i class="bi bi-check mrk-stat-check"></i><div class="stat-icon bg-orange"><i class="bi bi-inbox"></i></div><div><div class="stat-value" id="mrkStatDepose">—</div><div class="stat-label">Déposés</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="récupéré"><i class="bi bi-check mrk-stat-check"></i><div class="stat-icon bg-red"><i class="bi bi-hand-index"></i></div><div><div class="stat-value" id="mrkStatRecupere">—</div><div class="stat-label">Récupérés</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="marqué"><i class="bi bi-check mrk-stat-check"></i><div class="stat-icon bg-green"><i class="bi bi-check-circle"></i></div><div><div class="stat-value" id="mrkStatMarques">—</div><div class="stat-label">Marqués</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="livré"><i class="bi bi-check mrk-stat-check"></i><div class="stat-icon bg-teal"><i class="bi bi-house-check"></i></div><div><div class="stat-value" id="mrkStatLivre">—</div><div class="stat-label">Livrés</div></div></div></div>
 </div>
 
 <!-- Table -->
@@ -305,16 +309,16 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
     }
 
     function renderStats(s) {
-        if (!s) s = { total:0, en_cours:0, marques:0, termines:0, residents_count:0 };
+        if (!s) s = { total:0, deposes:0, recuperes:0, marques:0, livres:0 };
         document.getElementById('mrkStatTotal').textContent = s.total || 0;
-        document.getElementById('mrkStatEnCours').textContent = s.en_cours || 0;
+        document.getElementById('mrkStatDepose').textContent = s.deposes || 0;
+        document.getElementById('mrkStatRecupere').textContent = s.recuperes || 0;
         document.getElementById('mrkStatMarques').textContent = s.marques || 0;
-        document.getElementById('mrkStatTermines').textContent = s.termines || 0;
-        document.getElementById('mrkStatResidents').textContent = s.residents_count || 0;
+        document.getElementById('mrkStatLivre').textContent = s.livres || 0;
     }
 
     const actionLabels = { marquer: 'Marquer', laver: 'Laver', repasser: 'Repasser', reparer: 'Réparer', autre: 'Autre' };
-    const statutLabels = { en_cours: 'En cours', 'marqué': 'Marqué', 'terminé': 'Terminé' };
+    const statutLabels = { 'déposé': 'Déposé', 'récupéré': 'Récupéré', 'marqué': 'Marqué', 'livré': 'Livré' };
 
     function renderTable(rows) {
         const tbody = document.getElementById('mrkBody');
@@ -326,10 +330,10 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             const photos = m.photo_path ? m.photo_path.split(',') : [];
             let photoHtml = '';
             if (photos.length) {
-                photoHtml = photos.map(f => {
-                    const u = '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
-                    return '<img src="' + u + '" class="mrk-photo-thumb" data-lightbox="' + u + '" style="margin-right:2px">';
-                }).join('');
+                const firstUrl = '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(photos[0]);
+                photoHtml = '<div class="mrk-photo-cell"><img src="' + firstUrl + '" class="mrk-photo-thumb">'
+                    + (photos.length > 1 ? '<span class="mrk-photo-count">+' + (photos.length - 1) + '</span>' : '')
+                    + '</div>';
             } else {
                 photoHtml = '<span class="text-muted small">—</span>';
             }
@@ -353,11 +357,14 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
     }
 
     function statusButtons(m) {
-        if (m.statut === 'en_cours') {
+        if (m.statut === 'déposé') {
+            return '<button class="mrk-row-btn" title="Récupérer (lingerie)" data-status="' + m.id + '" data-to="récupéré" style="color:#7B3B2C"><i class="bi bi-hand-index"></i></button>';
+        }
+        if (m.statut === 'récupéré') {
             return '<button class="mrk-row-btn" title="Marquer comme marqué" data-status="' + m.id + '" data-to="marqué" style="color:#3B4F6B"><i class="bi bi-check-circle"></i></button>';
         }
         if (m.statut === 'marqué') {
-            return '<button class="mrk-row-btn" title="Marquer comme terminé" data-status="' + m.id + '" data-to="terminé" style="color:#2d4a43"><i class="bi bi-check-all"></i></button>';
+            return '<button class="mrk-row-btn" title="Livré en chambre" data-status="' + m.id + '" data-to="livré" style="color:#2d4a43"><i class="bi bi-house-check"></i></button>';
         }
         return '';
     }
@@ -436,10 +443,12 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 
         // Footer with action buttons
         let footer = '';
-        if (m.statut === 'en_cours') {
-            footer += '<button class="btn btn-primary btn-sm" id="mrkDetailAction" data-id="' + m.id + '" data-to="marqué"><i class="bi bi-check-circle"></i> Marquer comme marqué</button>';
+        if (m.statut === 'déposé') {
+            footer += '<button class="btn btn-sm" style="background:#E2B8AE;color:#7B3B2C" id="mrkDetailAction" data-id="' + m.id + '" data-to="récupéré"><i class="bi bi-hand-index"></i> Récupérer (lingerie)</button>';
+        } else if (m.statut === 'récupéré') {
+            footer += '<button class="btn btn-primary btn-sm" id="mrkDetailAction" data-id="' + m.id + '" data-to="marqué"><i class="bi bi-check-circle"></i> Marqué</button>';
         } else if (m.statut === 'marqué') {
-            footer += '<button class="btn btn-primary btn-sm" id="mrkDetailAction" data-id="' + m.id + '" data-to="terminé"><i class="bi bi-check-all"></i> Marquer comme terminé</button>';
+            footer += '<button class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="mrkDetailAction" data-id="' + m.id + '" data-to="livré"><i class="bi bi-house-check"></i> Livré en chambre</button>';
         }
         footer += '<button class="btn btn-light btn-sm" data-bs-dismiss="modal">Fermer</button>';
         document.getElementById('mrkDetailFooter').innerHTML = footer;
