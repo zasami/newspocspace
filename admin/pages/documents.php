@@ -56,19 +56,34 @@ $docServices = Db::fetchAll(
 .doc-ver-old     { background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); }
 
 /* ── Word preview in lightbox ── */
-.doc-lb-word-wrap { width: 95vw; max-width: 1000px; height: 92vh; display: flex; flex-direction: column; background: #e8e8e8; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden; }
-.doc-lb-word-banner { padding: 10px 20px; background: #FEF3C7; color: #92400E; font-size: .82rem; border-bottom: 1px solid #F59E0B; flex-shrink: 0; }
-.doc-lb-word-content { flex: 1; overflow-y: auto; padding: 20px; }
-.doc-lb-word-content .docx-wrapper { background: transparent !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.doc-lb-word-content .docx-wrapper section.docx {
-    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.12) !important;
+.doc-lb-word-wrap {
+    width: 95vw; max-width: 1000px; height: 92vh;
+    display: flex; flex-direction: column;
+    background: var(--cl-surface, #fff); border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden;
+}
+.doc-lb-word-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
+}
+.doc-lb-word-header h6 { margin: 0; font-weight: 700; font-size: .92rem; display: flex; align-items: center; gap: 8px; }
+.doc-lb-word-body {
+    flex: 1; overflow-y: auto; padding: 24px;
+    background: var(--cl-bg, #F7F5F2);
+}
+.doc-lb-word-body .docx-wrapper { background: transparent !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.doc-lb-word-body .docx-wrapper section.docx {
+    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.1) !important;
     margin: 0 !important; border-radius: 2px;
-    /* A4 proportions */
     width: 210mm !important; min-height: 297mm !important;
     padding: 20mm 15mm !important;
 }
+.doc-lb-word-footer {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    padding: 10px 20px; border-top: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
+}
 @media (max-width: 900px) {
-    .doc-lb-word-content .docx-wrapper section.docx { width: 100% !important; min-height: auto !important; padding: 10mm !important; }
+    .doc-lb-word-body .docx-wrapper section.docx { width: 100% !important; min-height: auto !important; padding: 10mm !important; }
 }
 .doc-lb-word-loading { text-align: center; padding: 60px 20px; color: #999; }
 .doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
@@ -429,7 +444,20 @@ $docServices = Db::fetchAll(
             stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
             fsBtn.classList.remove('d-none');
         } else if (isWord) {
-            stage.innerHTML = '<div class="doc-lb-word-wrap"><div class="doc-lb-word-banner"><i class="bi bi-file-earmark-word"></i> Aperçu du document — <a href="' + url + '" download style="color:inherit;text-decoration:underline">télécharger l\'original</a></div><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span> Chargement...</div><div class="doc-lb-word-content" id="docxContainer"></div></div>';
+            stage.innerHTML = '<div class="doc-lb-word-wrap">'
+                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-word" style="color:#2B579A"></i> ' + escapeHtml(titre) + '</h6><button class="confirm-close-btn" id="docxClose"><i class="bi bi-x-lg"></i></button></div>'
+                + '<div class="doc-lb-word-body"><div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm"></span> Chargement du document...</div><div id="docxContainer"></div></div>'
+                + '<div class="doc-lb-word-footer">'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomOut" title="Dézoomer"><i class="bi bi-zoom-out"></i></button>'
+                + '<input type="range" id="docxZoomSlider" min="50" max="200" value="100" style="width:100px;accent-color:#2d4a43">'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomIn" title="Zoomer"><i class="bi bi-zoom-in"></i></button>'
+                + '<span id="docxZoomVal" style="font-size:.78rem;font-weight:600;min-width:40px;text-align:center">100%</span>'
+                + '<div style="flex:1"></div>'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docxPrint"><i class="bi bi-printer"></i> Imprimer</button>'
+                + '<a href="' + url + '" download class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> Télécharger</a>'
+                + '<button class="btn btn-sm btn-light" id="docxCloseFooter">Fermer</button>'
+                + '</div>'
+                + '</div>';
             fsBtn.classList.add('d-none');
             (async () => {
                 try {
@@ -453,8 +481,8 @@ $docServices = Db::fetchAll(
                     const resp = await fetch(url);
                     const blob = await resp.blob();
                     const container = document.getElementById('docxContainer');
-                    const loading = stage.querySelector('.doc-lb-word-loading');
-                    if (loading) loading.remove();
+                    const loadingEl = stage.querySelector('.doc-lb-word-body > .text-center');
+                    if (loadingEl) loadingEl.remove();
                     await window.docx.renderAsync(blob, container, null, {
                         className: 'docx-preview-body',
                         inWrapper: true,
@@ -466,6 +494,27 @@ $docServices = Db::fetchAll(
                         renderFooters: true,
                         renderFootnotes: true,
                     });
+                    // Bind close buttons
+                    document.getElementById('docxClose')?.addEventListener('click', closeLb);
+                    document.getElementById('docxCloseFooter')?.addEventListener('click', closeLb);
+                    // Print
+                    document.getElementById('docxPrint')?.addEventListener('click', () => {
+                        const w = window.open('','_blank');
+                        w.document.write('<html><head><title>' + escapeHtml(titre) + '</title><style>body{margin:0;padding:20px;font-family:system-ui}@media print{@page{size:A4;margin:15mm}}</style></head><body>' + container.innerHTML + '</body></html>');
+                        w.document.close();
+                        w.onload = () => w.print();
+                    });
+                    // Zoom slider
+                    let zoom = 100;
+                    document.getElementById('docxZoomIn')?.addEventListener('click', () => { zoom = Math.min(200, zoom + 10); applyZoom(); });
+                    document.getElementById('docxZoomOut')?.addEventListener('click', () => { zoom = Math.max(50, zoom - 10); applyZoom(); });
+                    document.getElementById('docxZoomSlider')?.addEventListener('input', (e) => { zoom = parseInt(e.target.value); applyZoom(); });
+                    function applyZoom() {
+                        container.style.transform = 'scale(' + (zoom/100) + ')';
+                        container.style.transformOrigin = 'top center';
+                        document.getElementById('docxZoomVal').textContent = zoom + '%';
+                        document.getElementById('docxZoomSlider').value = zoom;
+                    }
                 } catch(e) {
                     const wrap = stage.querySelector('.doc-lb-word-wrap');
                     if (wrap) wrap.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-exclamation-triangle" style="font-size:2rem"></i><p>Impossible de prévisualiser</p><a href="' + url + '" download class="btn btn-sm btn-primary mt-2"><i class="bi bi-download"></i> Télécharger</a></div>';
