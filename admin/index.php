@@ -285,7 +285,7 @@ $activeSection = match($page) {
     <?php endforeach; ?>
   </nav>
   <div class="sidebar-footer">
-    <a href="/zerdatime/care/" class="sidebar-link" title="zerdaCare — Résidents & Soins">
+    <a href="/zerdacare/" class="sidebar-link" title="zerdaCare — Résidents & Soins">
       <i class="bi bi-heart-pulse" style="color:#2d4a43"></i>
       <span class="nav-label">zerdaCare</span>
     </a>

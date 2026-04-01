@@ -105,7 +105,7 @@ if (!empty($_GET['_spa'])) {
 
 // Helper for clean URLs
 function care_url(string $page = '', string $id = ''): string {
-    $base = '/zerdatime/care/';
+    $base = '/zerdacare/';
     if (!$page) return $base;
     if ($id) return $base . $page . '/' . $id;
     return $base . $page;
@@ -122,7 +122,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2d4a43">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<base href="/zerdatime/care/">
+<base href="/zerdacare/">
 <title><?= h($pageTitle) ?> — zerdaCare</title>
 <link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
 <link href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
@@ -232,7 +232,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <script nonce="<?= $cspNonce ?>">
 // Override AdminURL base for zerdaCare
 (function(){
-    const BASE = '/zerdatime/care';
+    const BASE = '/zerdacare';
     AdminURL.page = function(page, id, params) {
         let url = (!page || page === 'dashboard') ? BASE + '/' : BASE + '/' + encodeURIComponent(page);
         if (id) url += '/' + encodeURIComponent(id);
@@ -263,6 +263,8 @@ window.__ZT_CARE__ = {
     userName: '<?= h($user['prenom'] . ' ' . $user['nom']) ?>',
     role: '<?= $user['role'] ?>'
 };
+// Alias for admin pages compatibility
+window.__ZT_ADMIN__ = window.__ZT_CARE__;
 
 // ── Care API helper (uses admin API for now) ──
 window.careApiPost = async function(action, data = {}) {
