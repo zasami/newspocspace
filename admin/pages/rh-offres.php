@@ -6,17 +6,6 @@ $ssrTotalCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures");
 $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE statut = 'recue'");
 ?>
 <style>
-/* ── Stat cards ── */
-.rho-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
-.rho-stat-card {
-    flex: 1; min-width: 140px; text-align: center; padding: 16px 10px;
-    border-radius: 14px; border: 1.5px solid var(--cl-border-light, #F0EDE8);
-    background: var(--cl-surface, #fff);
-}
-.rho-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 8px; }
-.rho-stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
-.rho-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 3px; }
-
 /* ── Table ── */
 .rho-table-wrap { border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 14px; overflow: hidden; background: var(--cl-surface, #fff); }
 .rho-table { width: 100%; border-collapse: collapse; }
@@ -56,27 +45,31 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
   <h4 class="mb-0"><i class="bi bi-briefcase"></i> Offres d'emploi</h4>
 </div>
 
-<!-- Stat cards -->
-<div class="rho-stats">
-  <div class="rho-stat-card" style="background:#f0f6f4;border-color:#d4e5df">
-    <div class="rho-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-briefcase"></i></div>
-    <div class="rho-stat-val" style="color:#2d4a43" id="rhoStatTotal"><?= $ssrTotalOffres ?></div>
-    <div class="rho-stat-lbl">Total offres</div>
+<!-- Stat cards (same pattern as dashboard) -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-teal"><i class="bi bi-briefcase"></i></div>
+      <div><div class="stat-value" id="rhoStatTotal"><?= $ssrTotalOffres ?></div><div class="stat-label">Total offres</div></div>
+    </div>
   </div>
-  <div class="rho-stat-card" style="background:#f0f8f0;border-color:#d4e8d4">
-    <div class="rho-stat-icon" style="background:#C6E2C0;color:#2D5A2D"><i class="bi bi-check-circle"></i></div>
-    <div class="rho-stat-val" style="color:#2D5A2D" id="rhoStatActive"><?= $ssrActiveOffres ?></div>
-    <div class="rho-stat-lbl">Offres actives</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-green"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value" id="rhoStatActive"><?= $ssrActiveOffres ?></div><div class="stat-label">Offres actives</div></div>
+    </div>
   </div>
-  <div class="rho-stat-card" style="background:#f0f4f8;border-color:#d4dfe8">
-    <div class="rho-stat-icon" style="background:#B8C9D4;color:#3B4F6B"><i class="bi bi-person-lines-fill"></i></div>
-    <div class="rho-stat-val" style="color:#3B4F6B" id="rhoStatCand"><?= $ssrTotalCand ?></div>
-    <div class="rho-stat-lbl">Total candidatures</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-orange"><i class="bi bi-person-lines-fill"></i></div>
+      <div><div class="stat-value" id="rhoStatCand"><?= $ssrTotalCand ?></div><div class="stat-label">Total candidatures</div></div>
+    </div>
   </div>
-  <div class="rho-stat-card" style="background:#f8f4ed;border-color:#e8dece">
-    <div class="rho-stat-icon" style="background:#D4C4A8;color:#6B5B3E"><i class="bi bi-clock"></i></div>
-    <div class="rho-stat-val" style="color:#6B5B3E" id="rhoStatPending"><?= $ssrPendingCand ?></div>
-    <div class="rho-stat-lbl">En attente</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-red"><i class="bi bi-clock"></i></div>
+      <div><div class="stat-value" id="rhoStatPending"><?= $ssrPendingCand ?></div><div class="stat-label">En attente</div></div>
+    </div>
   </div>
 </div>
 
@@ -172,8 +165,8 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-sm btn-primary" id="btnSaveOffre"><i class="bi bi-check-lg"></i> Enregistrer</button>
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="btnSaveOffre"><i class="bi bi-check-lg"></i> Enregistrer</button>
       </div>
     </div>
   </div>
@@ -191,8 +184,8 @@ $ssrPendingCand = (int) Db::getOne("SELECT COUNT(*) FROM candidatures WHERE stat
         <p class="mb-0 small text-muted">Cette action est irréversible.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-sm btn-danger" id="btnConfirmDelete"><i class="bi bi-trash"></i> Supprimer</button>
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmDelete"><i class="bi bi-trash"></i> Supprimer</button>
       </div>
     </div>
   </div>

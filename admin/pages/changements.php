@@ -39,6 +39,8 @@ function fmtChgDate($dateStr, $joursFr, $moisFr) {
 /* Layout utilities */
 .chg-w-auto { width: auto; }
 .chg-text-center { text-align: center; }
+.chg-col-cede { background: #FFF8EE !important; }
+.chg-col-prend { background: #F0F8F5 !important; }
 
 /* Modal detail body */
 .chg-modal-body-scroll { max-height: 80vh; overflow-y: auto; }
@@ -88,13 +90,13 @@ function fmtChgDate($dateStr, $joursFr, $moisFr) {
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>Cède</th>
+          <th class="chg-col-cede">Cède</th>
           <th>Demandeur</th>
           <th>Son horaire</th>
           <th class="chg-text-center"><i class="bi bi-arrow-left-right"></i></th>
           <th>Collègue</th>
           <th>Son horaire</th>
-          <th>Prend</th>
+          <th class="chg-col-prend">Prend</th>
           <th>Motif</th>
           <th>Statut</th>
         </tr>
@@ -352,13 +354,13 @@ async function loadChangements() {
         const dateDemFmt = new Date(dateDem + 'T00:00:00').toLocaleDateString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' });
         const dateDestFmt = new Date(dateDest + 'T00:00:00').toLocaleDateString('fr-CH', { weekday: 'short', day: 'numeric', month: 'short' });
         return `<tr class="chg-row" data-id="${escapeHtml(ch.id)}" role="button">
-            <td><strong>${escapeHtml(dateDemFmt)}</strong></td>
+            <td class="chg-col-cede"><strong>${escapeHtml(dateDemFmt)}</strong></td>
             <td><strong>${escapeHtml(ch.demandeur_prenom)} ${escapeHtml(ch.demandeur_nom)}</strong><br><small class="text-muted">${escapeHtml(ch.demandeur_fonction || '')}</small></td>
             <td>${horDem}</td>
             <td class="chg-text-center"><i class="bi bi-arrow-left-right text-primary"></i></td>
             <td><strong>${escapeHtml(ch.destinataire_prenom)} ${escapeHtml(ch.destinataire_nom)}</strong><br><small class="text-muted">${escapeHtml(ch.destinataire_fonction || '')}</small></td>
             <td>${horDest}</td>
-            <td><strong>${escapeHtml(dateDestFmt)}</strong></td>
+            <td class="chg-col-prend"><strong>${escapeHtml(dateDestFmt)}</strong></td>
             <td>${ch.motif ? `<small>${escapeHtml(ch.motif)}</small>` : '<span class="text-muted">\u2014</span>'}</td>
             <td>${statutBadge}</td>
         </tr>`;
