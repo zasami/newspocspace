@@ -788,7 +788,7 @@ $famResidents = Db::fetchAll(
         for (let i = 0; i < photos.length; i++) {
             const p = photos[i];
             try {
-                const res = await fetch('/zerdatime/admin/api.php?action=admin_famille_upload_galerie_photo&file=' + encodeURIComponent(p.file_name));
+                const res = await fetch('/zerdatime/admin/api.php?action=admin_famille_serve_galerie_photo&id=' + encodeURIComponent(p.id));
                 if (!res.ok) { viewerPhotos.push({ url: '', id: p.id }); grid += '<div class="fam-gal-item"><div class="text-center text-muted py-4"><i class="bi bi-image"></i></div></div>'; continue; }
                 const encData = await res.arrayBuffer();
                 const iv = hexToBytes(p.encrypted_iv);
@@ -821,7 +821,7 @@ $famResidents = Db::fetchAll(
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 if (!confirm('Supprimer cette photo ?')) return;
-                const r = await adminApiPost('admin_famille_delete_photo', { id: btn.dataset.galDel });
+                const r = await adminApiPost('admin_famille_delete_photo', { id: btn.dataset.galDel, type: 'galerie_photo' });
                 if (r.success) {
                     showToast('Photo supprimée', 'success');
                     // Refresh album

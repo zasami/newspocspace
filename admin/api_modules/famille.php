@@ -385,6 +385,25 @@ function admin_famille_delete_album()
     respond(['success' => true, 'message' => 'Album supprimé']);
 }
 
+function admin_famille_serve_galerie_photo()
+{
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('id requis');
+
+    $row = Db::fetch("SELECT file_path FROM famille_galerie_photos WHERE id = ?", [$id]);
+    if (!$row || !$row['file_path']) not_found();
+
+    $path = __DIR__ . '/../../' . $row['file_path'];
+    if (!file_exists($path)) not_found();
+
+    // Serve raw encrypted file
+    header('Content-Type: application/octet-stream');
+    header('Cache-Control: private, max-age=3600');
+    readfile($path);
+    exit;
+}
+
 function admin_famille_upload_galerie_photo()
 {
     require_responsable();

@@ -134,6 +134,7 @@ return [
         'admin_famille_upload_medical_fichier',
         'admin_famille_get_galerie', 'admin_famille_save_album', 'admin_famille_delete_album',
         'admin_famille_upload_galerie_photo', 'admin_famille_set_cover',
+        'admin_famille_serve_galerie_photo',
     ],
     'stats' => [
         'admin_get_absence_stats',
