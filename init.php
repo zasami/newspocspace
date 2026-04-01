@@ -18,7 +18,7 @@ spl_autoload_register(function ($class) {
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => SESSION_LIFETIME,
-        'path'     => '/zerdatime/',
+        'path'     => '/',
         'secure'   => true,
         'httponly'  => true,
         'samesite' => 'Strict',

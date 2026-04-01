@@ -34,11 +34,18 @@ export async function init() {
         if (res.success) {
             window.__ZT__.user = res.user;
             if (res.csrf) window.__ZT__.csrfToken = res.csrf;
-            const role = res.user?.role;
-            if (role === 'admin' || role === 'direction') {
-                window.location.href = '/zerdatime/admin/';
+            // Check for redirect param
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            if (redirect && redirect.startsWith('/')) {
+                window.location.href = redirect;
             } else {
-                window.location.href = '/zerdatime/home';
+                const role = res.user?.role;
+                if (role === 'admin' || role === 'direction') {
+                    window.location.href = '/zerdatime/admin/';
+                } else {
+                    window.location.href = '/zerdatime/home';
+                }
             }
         } else {
             errorEl.textContent = res.message || 'Erreur de connexion';

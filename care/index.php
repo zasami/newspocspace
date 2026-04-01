@@ -7,7 +7,7 @@ require_once __DIR__ . '/../init.php';
 
 // Auth check — all roles can access zerdaCare
 if (empty($_SESSION['zt_user'])) {
-    header('Location: /zerdatime/login');
+    header('Location: /zerdatime/login?redirect=/zerdacare/');
     exit;
 }
 
