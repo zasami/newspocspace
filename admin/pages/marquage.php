@@ -11,11 +11,28 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 }
 
 /* ── Table ── */
-.mrk-table-wrap { border-radius: 14px; overflow: hidden; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
-.mrk-table { width: 100%; border-collapse: collapse; }
-.mrk-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border); text-align: left; background: var(--cl-bg); }
+.mrk-table-wrap { border-radius: 14px; overflow: hidden; border: 1.5px solid var(--cl-border-light, #F0EDE8); background: var(--cl-surface, #fff); }
+.mrk-table { width: 100%; border-collapse: collapse; background: var(--cl-surface, #fff); }
+.mrk-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border-light, #F0EDE8); text-align: left; background: var(--cl-bg, #F7F5F2); }
+.mrk-table th:first-child { border-top-left-radius: 14px; }
+.mrk-table th:last-child { border-top-right-radius: 14px; }
 .mrk-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
-.mrk-table tr:hover td { background: rgba(25,25,24,.02); }
+.mrk-table tr:last-child td { border-bottom: none; }
+.mrk-table tbody tr { cursor: pointer; transition: background .12s; }
+.mrk-table tbody tr:hover td { background: var(--cl-bg, #FAFAF7); }
+
+/* ── Detail modal ── */
+.mrk-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mrk-detail-label { font-size: .72rem; color: var(--cl-text-muted); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 2px; }
+.mrk-detail-val { font-size: .92rem; font-weight: 500; }
+.mrk-detail-photos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.mrk-detail-photo {
+    width: 120px; height: 120px; border-radius: 12px; overflow: hidden;
+    border: 1.5px solid var(--cl-border-light, #F0EDE8); cursor: pointer; transition: transform .15s;
+}
+.mrk-detail-photo:hover { transform: scale(1.04); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.mrk-detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+.mrk-detail-desc { background: var(--cl-bg, #F7F5F2); border-radius: 10px; padding: 12px 14px; font-size: .88rem; margin-top: 12px; }
 
 .mrk-badge { font-size: .72rem; padding: 3px 10px; border-radius: 8px; font-weight: 600; display: inline-block; }
 .mrk-badge-en_cours  { background: #D4C4A8; color: #6B5B3E; }
@@ -188,6 +205,22 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
   </div>
 </div>
 
+<!-- Detail modal -->
+<div class="modal fade" id="mrkDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mrkDetailTitle"><i class="bi bi-tags me-2"></i>Détail du marquage</h5>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" id="mrkDetailBody"></div>
+      <div class="modal-footer" id="mrkDetailFooter">
+        <button class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Photo lightbox (reuse simple overlay) -->
 <div id="mrkLightbox" class="position-fixed top-0 start-0 w-100 h-100" style="z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;cursor:pointer;display:none">
   <img id="mrkLbImg" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:10px">
@@ -301,7 +334,7 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
                 photoHtml = '<span class="text-muted small">—</span>';
             }
             const dt = new Date(m.created_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-            return '<tr>'
+            return '<tr data-id="' + m.id + '">'
                 + '<td>' + photoHtml + '</td>'
                 + '<td><strong>' + escapeHtml(m.resident_nom) + '</strong> ' + escapeHtml(m.resident_prenom) + '</td>'
                 + '<td>' + escapeHtml(m.chambre || '—') + '</td>'
@@ -331,14 +364,17 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 
     // ── Table events ──
     document.getElementById('mrkBody')?.addEventListener('click', async e => {
+        // Buttons first (stop propagation to row)
         const btn = e.target.closest('[data-status]');
         if (btn) {
+            e.stopPropagation();
             const r = await adminApiPost('admin_update_marquage_statut', { id: btn.dataset.status, statut: btn.dataset.to });
             if (r.success) { showToast('Statut mis à jour', 'success'); load(); }
             return;
         }
         const del = e.target.closest('[data-del]');
         if (del) {
+            e.stopPropagation();
             if (!await adminConfirm({ title: 'Supprimer', text: 'Supprimer ce marquage ?', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
             const r = await adminApiPost('admin_delete_marquage', { id: del.dataset.del });
             if (r.success) { showToast('Supprimé', 'success'); load(); }
@@ -346,14 +382,81 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
         }
         const hist = e.target.closest('[data-history]');
         if (hist) {
+            e.stopPropagation();
             openHistory(hist.dataset.history, hist.dataset.resName);
             return;
         }
         const lb = e.target.closest('[data-lightbox]');
         if (lb) {
             openLightbox(lb.dataset.lightbox);
+            return;
+        }
+        // Row click → detail modal
+        const row = e.target.closest('tr[data-id]');
+        if (row) {
+            const m = allMarquages.find(x => x.id === row.dataset.id);
+            if (m) openDetail(m);
         }
     });
+
+    // ── Detail modal ──
+    function openDetail(m) {
+        const photos = m.photo_path ? m.photo_path.split(',') : [];
+        const dt = new Date(m.created_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        const completedDt = m.completed_at ? new Date(m.completed_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+
+        document.getElementById('mrkDetailTitle').innerHTML = '<i class="bi bi-tags me-2"></i>' + escapeHtml(m.resident_nom + ' ' + m.resident_prenom) + ' — Ch.' + escapeHtml(m.chambre || '?');
+
+        let h = '<div class="mrk-detail-grid">'
+            + '<div><div class="mrk-detail-label">Action</div><div class="mrk-detail-val"><span class="mrk-action-badge mrk-act-' + m.action + '">' + (actionLabels[m.action]||m.action) + '</span></div></div>'
+            + '<div><div class="mrk-detail-label">Statut</div><div class="mrk-detail-val"><span class="mrk-badge mrk-badge-' + m.statut + '">' + (statutLabels[m.statut]||m.statut) + '</span></div></div>'
+            + '<div><div class="mrk-detail-label">Quantité</div><div class="mrk-detail-val">' + m.quantite + '</div></div>'
+            + '<div><div class="mrk-detail-label">Date</div><div class="mrk-detail-val">' + dt + '</div></div>'
+            + '<div><div class="mrk-detail-label">Par</div><div class="mrk-detail-val">' + escapeHtml((m.user_prenom||'') + ' ' + (m.user_nom||'')) + '</div></div>';
+        if (completedDt) {
+            h += '<div><div class="mrk-detail-label">Complété</div><div class="mrk-detail-val">' + escapeHtml((m.completed_prenom||'') + ' ' + (m.completed_nom||'')) + '<br><span class="text-muted small">' + completedDt + '</span></div></div>';
+        }
+        h += '</div>';
+
+        if (m.description) {
+            h += '<div class="mrk-detail-desc">' + escapeHtml(m.description) + '</div>';
+        }
+
+        if (photos.length) {
+            h += '<div class="mrk-detail-label mt-3">Photos (' + photos.length + ')</div>';
+            h += '<div class="mrk-detail-photos">';
+            photos.forEach(f => {
+                const u = '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
+                h += '<div class="mrk-detail-photo" data-lb-url="' + u + '"><img src="' + u + '"></div>';
+            });
+            h += '</div>';
+        }
+
+        document.getElementById('mrkDetailBody').innerHTML = h;
+
+        // Footer with action buttons
+        let footer = '';
+        if (m.statut === 'en_cours') {
+            footer += '<button class="btn btn-primary btn-sm" id="mrkDetailAction" data-id="' + m.id + '" data-to="marqué"><i class="bi bi-check-circle"></i> Marquer comme marqué</button>';
+        } else if (m.statut === 'marqué') {
+            footer += '<button class="btn btn-primary btn-sm" id="mrkDetailAction" data-id="' + m.id + '" data-to="terminé"><i class="bi bi-check-all"></i> Marquer comme terminé</button>';
+        }
+        footer += '<button class="btn btn-light btn-sm" data-bs-dismiss="modal">Fermer</button>';
+        document.getElementById('mrkDetailFooter').innerHTML = footer;
+
+        // Bind action button
+        document.getElementById('mrkDetailAction')?.addEventListener('click', async function() {
+            const r = await adminApiPost('admin_update_marquage_statut', { id: this.dataset.id, statut: this.dataset.to });
+            if (r.success) { showToast('Statut mis à jour', 'success'); bootstrap.Modal.getInstance(document.getElementById('mrkDetailModal'))?.hide(); load(); }
+        });
+
+        // Bind photo clicks in detail
+        document.querySelectorAll('#mrkDetailBody [data-lb-url]').forEach(el => {
+            el.addEventListener('click', () => openLightbox(el.dataset.lbUrl));
+        });
+
+        new bootstrap.Modal(document.getElementById('mrkDetailModal')).show();
+    }
 
     // ── Stat card filters ──
     document.getElementById('mrkStats')?.addEventListener('click', e => {
