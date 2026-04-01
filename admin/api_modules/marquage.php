@@ -100,9 +100,27 @@ function admin_upload_marquage_photo() {
     $dir = __DIR__ . '/../../storage/marquage/';
     if (!is_dir($dir)) mkdir($dir, 0755, true);
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-    $filename = $id . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-    move_uploaded_file($file['tmp_name'], $dir . $filename);
+    // Convert to WebP
+    $filename = $id . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.webp';
+    $tmpPath = $file['tmp_name'];
+
+    $img = null;
+    switch ($mime) {
+        case 'image/jpeg': $img = imagecreatefromjpeg($tmpPath); break;
+        case 'image/png':
+            $img = imagecreatefrompng($tmpPath);
+            imagepalettetotruecolor($img);
+            imagealphablending($img, true);
+            imagesavealpha($img, true);
+            break;
+        case 'image/webp': $img = imagecreatefromwebp($tmpPath); break;
+        case 'image/gif':  $img = imagecreatefromgif($tmpPath); break;
+    }
+
+    if (!$img) bad_request('Impossible de traiter l\'image');
+
+    imagewebp($img, $dir . $filename, 82);
+    imagedestroy($img);
 
     // Append to existing photos (comma-separated)
     $existing = $row['photo_path'] ? explode(',', $row['photo_path']) : [];
