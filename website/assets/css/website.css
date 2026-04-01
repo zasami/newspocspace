@@ -753,6 +753,48 @@ a:hover { color: var(--ws-green-hover); }
 .ws-team-cta h4 i { color: var(--ws-green); }
 .ws-team-cta p { font-size: .95rem; margin-bottom: 16px; }
 
+/* ── Formation CTA ── */
+.ws-cta-formation { text-align: left; }
+.ws-cta-formation h4 { justify-content: flex-start; }
+.ws-cta-lead { font-weight: 600; font-size: 1.05rem; color: var(--ws-text); }
+.ws-cta-icon-block { display: flex; gap: 20px; justify-content: center; }
+.ws-cta-icon-block i {
+  font-size: 2.8rem; color: var(--ws-green); opacity: .2;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(46,125,50,.06); display: flex;
+  align-items: center; justify-content: center;
+}
+
+/* ── Bénévoles CTA ── */
+.ws-cta-benevoles { text-align: left; margin-top: 24px; }
+.ws-cta-benevoles h4 { justify-content: flex-start; }
+.ws-cta-benevoles h4 i { color: #C53030; }
+.ws-cta-subtitle {
+  font-size: .88rem; font-weight: 700; color: var(--ws-text);
+  margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
+}
+.ws-cta-subtitle i { color: var(--ws-green); font-size: .95rem; }
+.ws-cta-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.ws-cta-list li {
+  position: relative; padding: 6px 0 6px 22px; font-size: .92rem; color: var(--ws-text-muted);
+}
+.ws-cta-list li::before {
+  content: ''; position: absolute; left: 0; top: 12px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ws-green); opacity: .5;
+}
+.ws-cta-contact {
+  background: rgba(46,125,50,.04); border-radius: 12px; padding: 20px; margin-top: 16px;
+}
+.ws-cta-contact-links { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.ws-cta-contact-links a {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ws-green); font-weight: 600; text-decoration: none; font-size: .95rem; transition: opacity .2s;
+}
+.ws-cta-contact-links a:hover { opacity: .7; }
+.ws-cta-contact-links a i { font-size: 1.1rem; }
+.ws-cta-closing { font-weight: 700; font-size: 1.05rem; color: var(--ws-text); margin: 0; font-style: italic; }
+.ws-cta-postuler { margin-top: 24px; }
+
 /* ══════════════════════════════════════
    VALUES
    ══════════════════════════════════════ */

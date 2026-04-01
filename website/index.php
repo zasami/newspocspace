@@ -981,10 +981,66 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
       </div>
     </div>
-    <div class="ws-team-cta">
+    <!-- Formation continue -->
+    <div class="ws-team-cta ws-cta-formation">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <h4><i class="bi bi-mortarboard"></i> Formation continue</h4>
+          <p class="ws-cta-lead">L'EMS La Terrassière SA encourage et soutient la formation continue comme le perfectionnement de ses collaborateurs.</p>
+          <p>La diversité des professions et des générations qui se côtoient dans notre établissement pousse au programme de formation continue. Faire progresser les compétences professionnelles et le développement personnel de chacun des collaborateurs est un objectif permanent de la direction.</p>
+        </div>
+        <div class="col-lg-5 text-center">
+          <div class="ws-cta-icon-block">
+            <i class="bi bi-book"></i>
+            <i class="bi bi-people"></i>
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bénévoles -->
+    <div class="ws-team-cta ws-cta-benevoles">
+      <div class="row align-items-start g-4">
+        <div class="col-lg-6">
+          <h4><i class="bi bi-heart"></i> Bénévoles recherchés</h4>
+          <p class="ws-cta-lead">Rejoignez-nous pour faire la différence !</p>
+          <p>Vous avez un peu de temps libre et souhaitez apporter de la joie et du soutien à nos aînés ? Notre établissement est à la recherche de bénévoles dévoués et bienveillants pour enrichir la vie de nos résidants.</p>
+          <h6 class="ws-cta-subtitle"><i class="bi bi-check-circle"></i> Vos missions</h6>
+          <ul class="ws-cta-list">
+            <li>Offrir une écoute attentive et un soutien moral</li>
+            <li>Aider lors des sorties et événements spéciaux</li>
+            <li>Participer à des activités récréatives et culturelles</li>
+            <li>Contribuer à créer une atmosphère chaleureuse et conviviale</li>
+          </ul>
+        </div>
+        <div class="col-lg-6">
+          <h6 class="ws-cta-subtitle"><i class="bi bi-gift"></i> Nous offrons</h6>
+          <ul class="ws-cta-list">
+            <li>Une expérience humaine enrichissante</li>
+            <li>La possibilité de développer de nouvelles compétences</li>
+            <li>Un environnement accueillant et respectueux</li>
+          </ul>
+          <div class="ws-cta-contact">
+            <h6 class="ws-cta-subtitle"><i class="bi bi-telephone"></i> Comment nous rejoindre ?</h6>
+            <p>Contactez-nous dès aujourd'hui :</p>
+            <div class="ws-cta-contact-links">
+              <a href="tel:0227186200"><i class="bi bi-telephone-fill"></i> 022 718 62 00</a>
+              <a href="mailto:info@ems-laterrassiere.ch"><i class="bi bi-envelope-fill"></i> info@ems-laterrassiere.ch</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <p class="ws-cta-closing">Ensemble, faisons de chaque jour un moment spécial pour nos résidants !</p>
+      </div>
+    </div>
+
+    <!-- Postuler -->
+    <div class="ws-team-cta ws-cta-postuler">
       <h4><i class="bi bi-feather"></i> Rejoignez notre équipe</h4>
       <p>Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
-      <a href="/zerdatime/website/recrutement.php" class="ws-btn ws-btn-primary"><i class="bi bi-send"></i> Postuler</a>
+      <a href="/zerdatime/website/recrutement.php" class="ws-btn ws-btn-primary"><i class="bi bi-send"></i> Voir les offres d'emploi</a>
     </div>
   </div>
 </section>
