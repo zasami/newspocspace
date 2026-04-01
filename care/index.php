@@ -228,6 +228,32 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 </div>
 
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>">
+// Override AdminURL base for zerdaCare
+(function(){
+    const BASE = '/zerdatime/care';
+    AdminURL.page = function(page, id, params) {
+        let url = (!page || page === 'dashboard') ? BASE + '/' : BASE + '/' + encodeURIComponent(page);
+        if (id) url += '/' + encodeURIComponent(id);
+        if (params && typeof params === 'object') { const qs = new URLSearchParams(params).toString(); if (qs) url += '?' + qs; }
+        return url;
+    };
+    AdminURL.currentPage = function() {
+        const path = window.location.pathname.replace(/\/+$/, '');
+        const relative = path.substring(BASE.length);
+        const parts = relative.split('/').filter(Boolean);
+        return parts[0] || 'dashboard';
+    };
+    AdminURL.currentId = function() {
+        const path = window.location.pathname.replace(/\/+$/, '');
+        const relative = path.substring(BASE.length);
+        const parts = relative.split('/').filter(Boolean);
+        return parts[1] || new URLSearchParams(window.location.search).get('id') || '';
+    };
+    AdminURL.go = function(page, id, params) { window.location.href = this.page(page, id, params); };
+})();
+</script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>">
@@ -238,11 +264,11 @@ window.__ZT_CARE__ = {
     role: '<?= $user['role'] ?>'
 };
 
-// ── Care API helper ──
+// ── Care API helper (uses admin API for now) ──
 window.careApiPost = async function(action, data = {}) {
     data.action = action;
     try {
-        const r = await fetch('/zerdatime/care/api.php', {
+        const r = await fetch('/zerdatime/admin/api.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

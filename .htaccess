@@ -13,8 +13,9 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Don't rewrite admin, api, old, Cahier des charges
+# Don't rewrite admin, care, api, old, Cahier des charges
 RewriteRule ^admin/ - [L]
+RewriteRule ^care/ - [L]
 RewriteRule ^api\.php - [L]
 RewriteRule ^old/ - [L]
 RewriteRule ^Cahier - [L]
