@@ -80,6 +80,8 @@ return [
         'admin_update_document', 'admin_delete_document', 'admin_toggle_document_visibility',
         'admin_set_document_access', 'admin_get_document_access',
         'admin_create_service', 'admin_update_service', 'admin_serve_document',
+        'admin_archive_document', 'admin_restore_document',
+        'admin_get_document_versions', 'admin_restore_document_version', 'admin_serve_document_version',
     ],
     'changements' => [
         'admin_get_changements', 'admin_valider_changement', 'admin_get_changement_detail',

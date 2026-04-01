@@ -15,7 +15,8 @@ function admin_get_documents()
     $limit = 50;
     $offset = ($page - 1) * $limit;
 
-    $where = ['1=1'];
+    $showArchived = !empty($params['show_archived']);
+    $where = $showArchived ? ['1=1'] : ['d.archived_at IS NULL'];
     $binds = [];
 
     if ($serviceId) {
@@ -123,27 +124,53 @@ function admin_upload_document()
         bad_request('Erreur lors de la sauvegarde du fichier');
     }
 
-    $id = Uuid::v4();
     $originalName = mb_substr(basename($file['name']), 0, 255);
+    $documentId = $_POST['document_id'] ?? ''; // If set, this is a new version
 
-    Db::exec(
-        "INSERT INTO documents (id, titre, description, service_id, filename, original_name, mime_type, size, uploaded_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [$id, $titre, $description, $serviceId, $filename, $originalName, $file['type'], $file['size'], $admin['id']]
-    );
+    if ($documentId) {
+        // New version of existing document
+        $existingDoc = Db::fetch("SELECT id, filename, original_name, mime_type, size, version, uploaded_by FROM documents WHERE id = ?", [$documentId]);
+        if (!$existingDoc) bad_request('Document introuvable');
 
-    // Notify all active users about new document
-    $activeUsers = Db::fetchAll("SELECT id FROM users WHERE is_active = 1");
-    foreach ($activeUsers as $u) {
-        if ($u['id'] !== $admin['id']) {
-            Notification::create($u['id'], 'document_ajoute', 'Nouveau document',
-                "Le document « $titre » a été ajouté.", 'documents');
+        // Archive current version
+        Db::exec(
+            "INSERT INTO document_versions (id, document_id, version, filename, original_name, mime_type, size, uploaded_by, note)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [Uuid::v4(), $documentId, $existingDoc['version'], $existingDoc['filename'], $existingDoc['original_name'],
+             $existingDoc['mime_type'], $existingDoc['size'], $existingDoc['uploaded_by'],
+             Sanitize::text($_POST['version_note'] ?? '', 500)]
+        );
+
+        $newVersion = (int) $existingDoc['version'] + 1;
+        Db::exec(
+            "UPDATE documents SET filename = ?, original_name = ?, mime_type = ?, size = ?, version = ?, uploaded_by = ? WHERE id = ?",
+            [$filename, $originalName, $file['type'], $file['size'], $newVersion, $admin['id'], $documentId]
+        );
+        $id = $documentId;
+    } else {
+        // Brand new document
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO documents (id, titre, description, service_id, filename, original_name, mime_type, size, version, uploaded_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+            [$id, $titre, $description, $serviceId, $filename, $originalName, $file['type'], $file['size'], $admin['id']]
+        );
+    }
+
+    // Notify all active users about new document (not for new versions)
+    if (!$documentId) {
+        $activeUsers = Db::fetchAll("SELECT id FROM users WHERE is_active = 1");
+        foreach ($activeUsers as $u) {
+            if ($u['id'] !== $admin['id']) {
+                Notification::create($u['id'], 'document_ajoute', 'Nouveau document',
+                    "Le document « $titre » a été ajouté.", 'documents');
+            }
         }
     }
 
     respond([
         'success' => true,
-        'message' => 'Document téléversé',
+        'message' => $documentId ? 'Nouvelle version téléversée (v' . $newVersion . ')' : 'Document téléversé',
         'document' => ['id' => $id, 'titre' => $titre],
     ]);
 }
@@ -189,20 +216,135 @@ function admin_delete_document()
     global $params;
 
     $id = $params['id'] ?? '';
+    $permanent = !empty($params['permanent']);
     if (!$id) bad_request('ID requis');
 
     $doc = Db::fetch("SELECT id, filename FROM documents WHERE id = ?", [$id]);
     if (!$doc) not_found('Document introuvable');
 
-    // Delete file
-    $filePath = __DIR__ . '/../../storage/documents/' . $doc['filename'];
-    if (file_exists($filePath)) unlink($filePath);
+    if ($permanent) {
+        // Hard delete: remove all version files + current file
+        $versions = Db::fetchAll("SELECT filename FROM document_versions WHERE document_id = ?", [$id]);
+        $storageDir = __DIR__ . '/../../storage/documents/';
+        foreach ($versions as $v) {
+            $vPath = $storageDir . $v['filename'];
+            if (file_exists($vPath)) @unlink($vPath);
+        }
+        $filePath = $storageDir . $doc['filename'];
+        if (file_exists($filePath)) @unlink($filePath);
 
-    // Delete access rules then document
-    Db::exec("DELETE FROM document_access WHERE document_id = ?", [$id]);
-    Db::exec("DELETE FROM documents WHERE id = ?", [$id]);
+        Db::exec("DELETE FROM document_versions WHERE document_id = ?", [$id]);
+        Db::exec("DELETE FROM document_access WHERE document_id = ?", [$id]);
+        Db::exec("DELETE FROM documents WHERE id = ?", [$id]);
 
-    respond(['success' => true, 'message' => 'Document supprimé']);
+        respond(['success' => true, 'message' => 'Document supprimé définitivement']);
+    } else {
+        // Soft delete: archive
+        Db::exec("UPDATE documents SET archived_at = NOW(), archived_by = ?, visible = 0 WHERE id = ?",
+            [$_SESSION['zt_user']['id'], $id]);
+        respond(['success' => true, 'message' => 'Document archivé']);
+    }
+}
+
+function admin_archive_document()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    Db::exec("UPDATE documents SET archived_at = NOW(), archived_by = ?, visible = 0 WHERE id = ?",
+        [$_SESSION['zt_user']['id'], $id]);
+    respond(['success' => true, 'message' => 'Document archivé']);
+}
+
+function admin_restore_document()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    Db::exec("UPDATE documents SET archived_at = NULL, archived_by = NULL, visible = 1 WHERE id = ?", [$id]);
+    respond(['success' => true, 'message' => 'Document restauré']);
+}
+
+function admin_get_document_versions()
+{
+    require_responsable();
+    global $params;
+    $id = $params['document_id'] ?? '';
+    if (!$id) bad_request('document_id requis');
+
+    $versions = Db::fetchAll(
+        "SELECT dv.*, u.prenom, u.nom
+         FROM document_versions dv
+         LEFT JOIN users u ON u.id = dv.uploaded_by
+         WHERE dv.document_id = ?
+         ORDER BY dv.version DESC",
+        [$id]
+    );
+
+    $current = Db::fetch(
+        "SELECT d.version, d.filename, d.original_name, d.mime_type, d.size, d.uploaded_by, d.updated_at,
+                u.prenom, u.nom
+         FROM documents d LEFT JOIN users u ON u.id = d.uploaded_by WHERE d.id = ?", [$id]);
+
+    respond(['success' => true, 'versions' => $versions, 'current' => $current]);
+}
+
+function admin_restore_document_version()
+{
+    require_responsable();
+    global $params;
+    $versionId = $params['version_id'] ?? '';
+    if (!$versionId) bad_request('version_id requis');
+
+    $version = Db::fetch("SELECT * FROM document_versions WHERE id = ?", [$versionId]);
+    if (!$version) not_found('Version introuvable');
+
+    $docId = $version['document_id'];
+    $doc = Db::fetch("SELECT * FROM documents WHERE id = ?", [$docId]);
+    if (!$doc) not_found('Document introuvable');
+
+    // Save current as a new version entry
+    Db::exec(
+        "INSERT INTO document_versions (id, document_id, version, filename, original_name, mime_type, size, uploaded_by, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Remplacé par restauration')",
+        [Uuid::v4(), $docId, $doc['version'], $doc['filename'], $doc['original_name'],
+         $doc['mime_type'], $doc['size'], $doc['uploaded_by']]
+    );
+
+    // Restore the old version as current
+    $newVersion = (int) $doc['version'] + 1;
+    Db::exec(
+        "UPDATE documents SET filename = ?, original_name = ?, mime_type = ?, size = ?, version = ? WHERE id = ?",
+        [$version['filename'], $version['original_name'], $version['mime_type'], $version['size'], $newVersion, $docId]
+    );
+
+    respond(['success' => true, 'message' => 'Version restaurée (v' . $newVersion . ')']);
+}
+
+function admin_serve_document_version()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    $v = Db::fetch("SELECT filename, original_name, mime_type FROM document_versions WHERE id = ?", [$id]);
+    if (!$v) not_found('Version introuvable');
+
+    $filePath = __DIR__ . '/../../storage/documents/' . $v['filename'];
+    if (!file_exists($filePath)) not_found('Fichier introuvable');
+
+    $realPath = realpath($filePath);
+    $storageDir = realpath(__DIR__ . '/../../storage/documents/');
+    if ($realPath === false || strpos($realPath, $storageDir) !== 0) forbidden('Accès interdit');
+
+    header('Content-Type: ' . $v['mime_type']);
+    header('Content-Disposition: inline; filename="' . addslashes($v['original_name']) . '"');
+    header('Content-Length: ' . filesize($filePath));
+    readfile($filePath);
+    exit;
 }
 
 function admin_toggle_document_visibility()

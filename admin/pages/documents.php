@@ -45,6 +45,15 @@ $docServices = Db::fetchAll(
 .doc-badge-svc { font-size: .72rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
 .doc-badge-visible   { background: #bcd2cb; color: #2d4a43; }
 .doc-badge-hidden    { background: #E2B8AE; color: #7B3B2C; }
+.doc-badge-archived  { background: #C8C4BE; color: #555; }
+.doc-version-badge   { font-size: .62rem; background: #B8C9D4; color: #3B4F6B; padding: 1px 6px; border-radius: 8px; font-weight: 600; margin-left: 4px; }
+
+/* ── Version history modal ── */
+.doc-ver-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+.doc-ver-item:last-child { border: none; }
+.doc-ver-badge { min-width: 36px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 700; }
+.doc-ver-current { background: #bcd2cb; color: #2d4a43; }
+.doc-ver-old     { background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); }
 .doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
 .doc-row-actions { display: flex; gap: 2px; }
 .doc-row-btn { background: none; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; color: var(--cl-text-muted); font-size: .88rem; transition: all .12s; display: flex; align-items: center; justify-content: center; }
@@ -90,6 +99,7 @@ $docServices = Db::fetchAll(
 <!-- Header -->
 <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
   <button class="btn btn-sm btn-outline-secondary" id="btnManageServices"><i class="bi bi-palette"></i> Services</button>
+  <button class="btn btn-sm btn-outline-secondary" id="btnToggleArchived"><i class="bi bi-archive"></i> Voir archives</button>
   <div class="ms-auto"></div>
   <button class="btn btn-sm btn-primary" id="btnUploadDoc"><i class="bi bi-cloud-upload"></i> Téléverser</button>
 </div>
@@ -285,10 +295,20 @@ $docServices = Db::fetchAll(
         });
     }
 
+    // ── Archive toggle ──
+    let showArchived = false;
+    document.getElementById('btnToggleArchived')?.addEventListener('click', function() {
+        showArchived = !showArchived;
+        this.classList.toggle('btn-outline-secondary', !showArchived);
+        this.classList.toggle('btn-secondary', showArchived);
+        this.innerHTML = showArchived ? '<i class="bi bi-archive-fill"></i> Masquer archives' : '<i class="bi bi-archive"></i> Voir archives';
+        loadDocs();
+    });
+
     // ── Documents ──
     async function loadDocs() {
         const q = document.getElementById('topbarSearchInput')?.value?.trim() || '';
-        const r = await adminApiPost('admin_get_documents', { service_id: currentFilter, search: q });
+        const r = await adminApiPost('admin_get_documents', { service_id: currentFilter, search: q, show_archived: showArchived ? 1 : 0 });
         if (!r.success) return;
         const docs = r.documents || [];
         const tbody = document.getElementById('docBody');
@@ -310,18 +330,25 @@ $docServices = Db::fetchAll(
                 ? (d.restrictions > 0 ? '<span class="doc-badge-svc doc-badge-restricted"><i class="bi bi-shield-exclamation"></i> Restreint</span>' : '<span class="doc-badge-svc doc-badge-visible"><i class="bi bi-eye"></i> Visible</span>')
                 : '<span class="doc-badge-svc doc-badge-hidden"><i class="bi bi-eye-slash"></i> Masqué</span>';
             const url = '/zerdatime/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(d.id);
-            return '<tr>'
+            const isArchived = !!d.archived_at;
+            const vBadge = d.version > 1 ? ' <span class="doc-version-badge">v' + d.version + '</span>' : '';
+            const archBadge = isArchived ? '<span class="doc-badge-svc doc-badge-archived"><i class="bi bi-archive"></i> Archivé</span>' : st;
+            return '<tr' + (isArchived ? ' style="opacity:.6"' : '') + '>'
                 + '<td><div class="doc-name-cell doc-name-link" data-act="view" data-url="' + url + '" data-mime="' + escapeHtml(d.mime_type||'') + '" data-titre="' + escapeHtml(d.titre) + '"><div class="doc-icon ' + fi.cls + '"><i class="bi ' + fi.icon + '"></i></div>'
-                + '<div><div class="doc-name">' + escapeHtml(d.titre) + '</div><div class="doc-desc">' + escapeHtml(d.original_name) + (d.description ? ' — ' + escapeHtml(d.description) : '') + '</div></div></div></td>'
+                + '<div><div class="doc-name">' + escapeHtml(d.titre) + vBadge + '</div><div class="doc-desc">' + escapeHtml(d.original_name) + (d.description ? ' — ' + escapeHtml(d.description) : '') + '</div></div></div></td>'
                 + '<td><span class="doc-badge-svc" style="background:' + escapeHtml(d.service_couleur) + '15;color:' + escapeHtml(d.service_couleur) + '">' + escapeHtml(d.service_nom) + '</span></td>'
                 + '<td class="text-muted small">' + fmtSize(d.size) + '</td>'
                 + '<td class="text-muted small">' + fmtDate(d.created_at) + '</td>'
-                + '<td>' + st + '</td>'
+                + '<td>' + archBadge + '</td>'
                 + '<td><div class="doc-row-actions">'
                 + '<button class="doc-row-btn" title="Voir" data-act="view" data-url="' + url + '" data-mime="' + escapeHtml(d.mime_type||'') + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-eye"></i></button>'
+                + '<button class="doc-row-btn" title="Nouvelle version" data-act="newver" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-cloud-upload"></i></button>'
+                + '<button class="doc-row-btn" title="Historique versions" data-act="versions" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-clock-history"></i></button>'
                 + '<button class="doc-row-btn" title="Modifier" data-act="edit" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '" data-svc="' + d.service_id + '" data-desc="' + escapeHtml(d.description||'') + '"><i class="bi bi-pencil"></i></button>'
                 + '<button class="doc-row-btn" title="Accès" data-act="access" data-id="' + d.id + '"><i class="bi bi-shield-lock"></i></button>'
-                + '<button class="doc-row-btn" title="' + (d.visible==1?'Masquer':'Afficher') + '" data-act="toggle" data-id="' + d.id + '"><i class="bi bi-' + (d.visible==1?'eye-slash':'eye') + '"></i></button>'
+                + (isArchived
+                    ? '<button class="doc-row-btn" title="Restaurer" data-act="restore" data-id="' + d.id + '"><i class="bi bi-arrow-counterclockwise"></i></button>'
+                    : '<button class="doc-row-btn" title="Archiver" data-act="archive" data-id="' + d.id + '"><i class="bi bi-archive"></i></button>')
                 + '<button class="doc-row-btn danger" title="Supprimer" data-act="del" data-id="' + d.id + '" data-titre="' + escapeHtml(d.titre) + '"><i class="bi bi-trash3"></i></button>'
                 + '</div></td></tr>';
         }).join('');
@@ -336,6 +363,10 @@ $docServices = Db::fetchAll(
         else if (b.dataset.act === 'edit') { document.getElementById('editDocId').value = b.dataset.id; document.getElementById('editTitre').value = b.dataset.titre; zerdaSelect.setValue('#editService', b.dataset.svc); document.getElementById('editDesc').value = b.dataset.desc; new bootstrap.Modal(document.getElementById('editModal')).show(); }
         else if (b.dataset.act === 'access') openAccess(b.dataset.id);
         else if (b.dataset.act === 'toggle') toggleVis(b.dataset.id);
+        else if (b.dataset.act === 'archive') archiveDoc(b.dataset.id);
+        else if (b.dataset.act === 'restore') restoreDoc(b.dataset.id);
+        else if (b.dataset.act === 'newver') openNewVersion(b.dataset.id, b.dataset.titre);
+        else if (b.dataset.act === 'versions') openVersions(b.dataset.id, b.dataset.titre);
         else if (b.dataset.act === 'del') delDoc(b.dataset.id, b.dataset.titre);
     });
 
@@ -343,10 +374,12 @@ $docServices = Db::fetchAll(
     function viewDoc(url, mime, titre) {
         const isImage = mime && mime.startsWith('image/');
         const isPdf = mime && mime.includes('pdf');
-
         if (!isImage && !isPdf) {
-            // Download
-            window.open(url, '_blank');
+            // Download — browser will propose to open with the associated app
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '';
+            a.click();
             return;
         }
 
@@ -374,8 +407,8 @@ $docServices = Db::fetchAll(
         if (isImage) {
             stage.innerHTML = '<img src="' + url + '" alt="' + escapeHtml(titre) + '" draggable="false">';
             fsBtn.classList.add('d-none');
-        } else {
-            stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=0&navpanes=0&view=FitH" sandbox="allow-same-origin" allowfullscreen></iframe>';
+        } else if (isPdf) {
+            stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
             fsBtn.classList.remove('d-none');
         }
 
@@ -439,11 +472,120 @@ $docServices = Db::fetchAll(
         else showToast(r.message||'Erreur','error');
     });
 
-    // ── Toggle / Delete ──
+    // ── Toggle / Delete / Archive / Restore ──
     async function toggleVis(id) { const r = await adminApiPost('admin_toggle_document_visibility',{id}); if (r.success) { showToast(r.message,'success'); loadDocs(); } }
+
+    async function archiveDoc(id) {
+        const r = await adminApiPost('admin_archive_document',{id});
+        if (r.success) { showToast('Document archivé','success'); loadSvcs(); loadDocs(); }
+    }
+
+    async function restoreDoc(id) {
+        const r = await adminApiPost('admin_restore_document',{id});
+        if (r.success) { showToast('Document restauré','success'); loadSvcs(); loadDocs(); }
+    }
+
     async function delDoc(id,titre) {
-        if (!await adminConfirm({title:'Supprimer',text:'Supprimer <strong>'+escapeHtml(titre)+'</strong> ?',icon:'bi-trash3',type:'danger',okText:'Supprimer'})) return;
-        const r = await adminApiPost('admin_delete_document',{id}); if (r.success) { showToast('Supprimé','success'); loadSvcs(); loadDocs(); }
+        if (!await adminConfirm({title:'Supprimer définitivement',text:'Supprimer <strong>'+escapeHtml(titre)+'</strong> et toutes ses versions ? Cette action est irréversible.',icon:'bi-trash3',type:'danger',okText:'Supprimer'})) return;
+        const r = await adminApiPost('admin_delete_document',{id, permanent: true}); if (r.success) { showToast('Supprimé','success'); loadSvcs(); loadDocs(); }
+    }
+
+    // ── New version upload ──
+    function openNewVersion(docId, titre) {
+        let modal = document.getElementById('newVerModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'newVerModal'; modal.className = 'modal fade'; modal.tabIndex = -1;
+            modal.innerHTML = `<div class="modal-dialog"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-cloud-upload me-2"></i>Nouvelle version</h5><button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Document : <strong id="newVerTitre"></strong></p>
+                    <div class="mb-3"><label class="form-label small fw-bold">Note de version</label><input type="text" class="form-control form-control-sm" id="newVerNote" placeholder="Ex: Mise à jour mars 2026"></div>
+                    <div class="mb-3"><label class="form-label small fw-bold">Fichier *</label><input type="file" class="form-control form-control-sm" id="newVerFile"></div>
+                    <input type="hidden" id="newVerDocId">
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Annuler</button><button class="btn btn-primary" id="newVerSave"><i class="bi bi-upload"></i> Téléverser</button></div>
+            </div></div>`;
+            document.body.appendChild(modal);
+            document.getElementById('newVerSave').addEventListener('click', async () => {
+                const file = document.getElementById('newVerFile').files[0];
+                if (!file) { showToast('Fichier requis','error'); return; }
+                const fd = new FormData();
+                fd.append('action','admin_upload_document');
+                fd.append('document_id', document.getElementById('newVerDocId').value);
+                fd.append('titre','_'); fd.append('service_id','_'); // not used for versions
+                fd.append('version_note', document.getElementById('newVerNote').value);
+                fd.append('file', file);
+                const r = await fetch('/zerdatime/admin/api.php', {method:'POST', headers:{'X-CSRF-Token':window.__ZT_ADMIN__?.csrfToken||''}, body:fd}).then(r=>r.json());
+                if (r.success) { showToast(r.message,'success'); bootstrap.Modal.getInstance(modal)?.hide(); loadDocs(); }
+                else showToast(r.message||'Erreur','error');
+            });
+        }
+        document.getElementById('newVerTitre').textContent = titre;
+        document.getElementById('newVerDocId').value = docId;
+        document.getElementById('newVerNote').value = '';
+        document.getElementById('newVerFile').value = '';
+        new bootstrap.Modal(modal).show();
+    }
+
+    // ── Version history ──
+    async function openVersions(docId, titre) {
+        let modal = document.getElementById('versionsModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'versionsModal'; modal.className = 'modal fade'; modal.tabIndex = -1;
+            modal.innerHTML = `<div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Historique des versions</h5><button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
+                <div class="modal-body" id="versionsBody"></div>
+                <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Fermer</button></div>
+            </div></div>`;
+            document.body.appendChild(modal);
+        }
+        document.getElementById('versionsBody').innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+        new bootstrap.Modal(modal).show();
+
+        const r = await adminApiPost('admin_get_document_versions',{document_id:docId});
+        if (!r.success) { document.getElementById('versionsBody').innerHTML = '<p class="text-danger">Erreur</p>'; return; }
+
+        const cur = r.current;
+        const vers = r.versions || [];
+
+        let h = '<p class="small text-muted mb-3">Document : <strong>' + escapeHtml(titre) + '</strong></p>';
+
+        // Current version
+        h += '<div class="doc-ver-item">';
+        h += '<span class="doc-ver-badge doc-ver-current">v' + cur.version + '</span>';
+        h += '<div class="flex-grow-1"><strong>' + escapeHtml(cur.original_name) + '</strong> <span class="text-muted small">(' + fmtSize(cur.size) + ')</span>';
+        h += '<br><span class="text-muted small">Par ' + escapeHtml((cur.prenom||'')+' '+(cur.nom||'')) + ' — ' + fmtDate(cur.updated_at) + '</span></div>';
+        h += '<span class="badge" style="background:#bcd2cb;color:#2d4a43;font-size:.7rem">Actuelle</span>';
+        h += '<a href="/zerdatime/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(docId) + '" target="_blank" class="doc-row-btn" title="Voir"><i class="bi bi-eye"></i></a>';
+        h += '</div>';
+
+        if (!vers.length) {
+            h += '<p class="text-center text-muted py-3 small">Aucune version précédente</p>';
+        } else {
+            vers.forEach(v => {
+                const vUrl = '/zerdatime/admin/api.php?action=admin_serve_document_version&id=' + encodeURIComponent(v.id);
+                h += '<div class="doc-ver-item">';
+                h += '<span class="doc-ver-badge doc-ver-old">v' + v.version + '</span>';
+                h += '<div class="flex-grow-1"><strong>' + escapeHtml(v.original_name) + '</strong> <span class="text-muted small">(' + fmtSize(v.size) + ')</span>';
+                if (v.note) h += '<br><em class="small text-muted">' + escapeHtml(v.note) + '</em>';
+                h += '<br><span class="text-muted small">Par ' + escapeHtml((v.prenom||'')+' '+(v.nom||'')) + ' — ' + fmtDate(v.created_at) + '</span></div>';
+                h += '<a href="' + vUrl + '" target="_blank" class="doc-row-btn" title="Voir"><i class="bi bi-eye"></i></a>';
+                h += '<button class="doc-row-btn" title="Restaurer cette version" data-restore-ver="' + v.id + '"><i class="bi bi-arrow-counterclockwise"></i></button>';
+                h += '</div>';
+            });
+        }
+        document.getElementById('versionsBody').innerHTML = h;
+
+        // Bind restore version clicks
+        document.getElementById('versionsBody').querySelectorAll('[data-restore-ver]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const vr = await adminApiPost('admin_restore_document_version',{version_id:btn.dataset.restoreVer});
+                if (vr.success) { showToast(vr.message,'success'); bootstrap.Modal.getInstance(modal)?.hide(); loadDocs(); }
+                else showToast(vr.message||'Erreur','error');
+            });
+        });
     }
 
     // ── Access ──
