@@ -364,6 +364,7 @@ body {
       <li><a href="/zerdatime/website/">Accueil</a></li>
       <li><a href="/zerdatime/website/#about">Notre mission</a></li>
       <li><a href="/zerdatime/website/#team">Équipe</a></li>
+      <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
       <li><a href="/zerdatime/website/#contact">Contact</a></li>
       <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
       <li><a href="/zerdatime/" class="rec-nav-btn"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>

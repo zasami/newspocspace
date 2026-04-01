@@ -52,6 +52,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         <li><a href="#services">Nos soins</a></li>
         <li><a href="#life">Vie quotidienne</a></li>
         <li><a href="#team">Équipe</a></li>
+        <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
         <li><a href="#contact">Contact</a></li>
         <li><a href="/zerdatime/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Espace collaborateur</a></li>
       </ul>

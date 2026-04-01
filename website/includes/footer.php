@@ -22,6 +22,7 @@
       <div>
         <h6>Services</h6>
         <ul class="ws-footer-links">
+          <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
           <li><a href="/zerdatime/website/recrutement.php">Recrutement</a></li>
           <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
           <li><a href="/zerdatime/">Espace Collaborateur</a></li>
