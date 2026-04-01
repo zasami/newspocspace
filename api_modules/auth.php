@@ -21,6 +21,12 @@ function login()
         // Regenerate CSRF
         $_SESSION['zt_csrf_token'] = bin2hex(random_bytes(32));
         $result['csrf'] = $_SESSION['zt_csrf_token'];
+
+        // Log connexion
+        Db::exec(
+            "INSERT INTO connexions (id, user_id, ip_address, user_agent) VALUES (?, ?, ?, ?)",
+            [Uuid::v4(), $result['user']['id'], $_SERVER['REMOTE_ADDR'] ?? '', substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)]
+        );
     }
     respond($result);
 }

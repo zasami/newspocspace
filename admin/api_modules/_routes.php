@@ -106,6 +106,9 @@ return [
         'admin_get_notes', 'admin_create_note', 'admin_update_note', 'admin_delete_note',
         'admin_toggle_pin_note',
     ],
+    'connexions' => [
+        'admin_get_connexions',
+    ],
     'roadmap' => [
         'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
     ],

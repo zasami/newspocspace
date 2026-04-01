@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -135,6 +135,7 @@ $pageLabels = [
     'import-export' => 'Import / Export',
     'changements'   => 'Changements d\'horaire',
     'roadmap'       => 'Roadmap',
+    'connexions'    => 'Connexions',
     'residents'     => 'Résidents',
     'marquage'      => 'Marquage Lingerie',
     'famille'       => 'Espace Famille',
@@ -224,6 +225,7 @@ $sidebarCategories = [
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
+            'connexions'   => ['label' => 'Connexions',        'icon' => 'person-check'],
         ],
     ],
 ];
