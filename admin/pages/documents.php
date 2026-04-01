@@ -64,26 +64,41 @@ $docServices = Db::fetchAll(
 }
 .doc-lb-word-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
+    padding: 14px 20px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
 }
-.doc-lb-word-header h6 { margin: 0; font-weight: 700; font-size: .92rem; display: flex; align-items: center; gap: 8px; }
+.doc-lb-word-header h6 { margin: 0; font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 8px; flex: 1; }
+.doc-lb-word-close {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--cl-border, #e5e7eb);
+    background: var(--cl-bg, #f9fafb); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: .85rem; color: var(--cl-text-muted); transition: all .15s; flex-shrink: 0;
+}
+.doc-lb-word-close:hover { background: var(--cl-border-light); color: var(--cl-text); }
 .doc-lb-word-body {
     flex: 1; overflow-y: auto; padding: 24px;
     background: var(--cl-bg, #F7F5F2);
 }
-.doc-lb-word-body .docx-wrapper { background: transparent !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.doc-lb-word-body .docx-wrapper section.docx {
-    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.1) !important;
-    margin: 0 !important; border-radius: 2px;
-    width: 210mm !important; min-height: 297mm !important;
-    padding: 20mm 15mm !important;
+.doc-lb-word-body .docx-wrapper,
+.doc-lb-word-body > div { background: var(--cl-bg, #F7F5F2) !important; padding: 20px !important; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.doc-lb-word-body .docx-wrapper > section,
+.doc-lb-word-body .docx-wrapper section.docx,
+.docx-preview-body-wrapper > section,
+.docx-preview-body-wrapper > article {
+    background: #fff !important; box-shadow: 0 2px 10px rgba(0,0,0,.08) !important;
+    margin: 0 auto 20px !important; border-radius: 8px !important; border: none !important;
 }
+/* Kill any grey/dark wrapper from the lib */
+.doc-lb-word-body [style*="background"] { background: var(--cl-bg, #F7F5F2) !important; }
+.docx-preview-body-wrapper { background: var(--cl-bg, #F7F5F2) !important; }
+/* Zoom slider warm color */
+.doc-lb-word-footer input[type="range"] { accent-color: #bcd2cb; }
+.doc-lb-word-footer input[type="range"]::-webkit-slider-runnable-track { background: var(--cl-border-light, #E8E5E0); }
+.doc-lb-word-footer input[type="range"]::-moz-range-track { background: var(--cl-border-light, #E8E5E0); }
 .doc-lb-word-footer {
     display: flex; align-items: center; justify-content: flex-end; gap: 8px;
     padding: 10px 20px; border-top: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
 }
 @media (max-width: 900px) {
-    .doc-lb-word-body .docx-wrapper section.docx { width: 100% !important; min-height: auto !important; padding: 10mm !important; }
+    .doc-lb-word-wrap { width: 100vw; height: 100vh; border-radius: 0; }
 }
 .doc-lb-word-loading { text-align: center; padding: 60px 20px; color: #999; }
 .doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
@@ -445,7 +460,7 @@ $docServices = Db::fetchAll(
             fsBtn.classList.remove('d-none');
         } else if (isWord) {
             stage.innerHTML = '<div class="doc-lb-word-wrap">'
-                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-word" style="color:#2B579A"></i> ' + escapeHtml(titre) + '</h6><button class="confirm-close-btn" id="docxClose"><i class="bi bi-x-lg"></i></button></div>'
+                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-word" style="color:#2B579A"></i> ' + escapeHtml(titre) + '</h6><button class="doc-lb-word-close" id="docxClose"><i class="bi bi-x-lg"></i></button></div>'
                 + '<div class="doc-lb-word-body"><div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm"></span> Chargement du document...</div><div id="docxContainer"></div></div>'
                 + '<div class="doc-lb-word-footer">'
                 + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomOut" title="Dézoomer"><i class="bi bi-zoom-out"></i></button>'
@@ -453,7 +468,7 @@ $docServices = Db::fetchAll(
                 + '<button class="btn btn-sm btn-outline-secondary" id="docxZoomIn" title="Zoomer"><i class="bi bi-zoom-in"></i></button>'
                 + '<span id="docxZoomVal" style="font-size:.78rem;font-weight:600;min-width:40px;text-align:center">100%</span>'
                 + '<div style="flex:1"></div>'
-                + '<button class="btn btn-sm btn-outline-secondary" id="docxPrint"><i class="bi bi-printer"></i> Imprimer</button>'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docxPrint"><i class="bi bi-file-earmark-pdf"></i> Exporter en PDF</button>'
                 + '<a href="' + url + '" download class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> Télécharger</a>'
                 + '<button class="btn btn-sm btn-light" id="docxCloseFooter">Fermer</button>'
                 + '</div>'
