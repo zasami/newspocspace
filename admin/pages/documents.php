@@ -56,11 +56,20 @@ $docServices = Db::fetchAll(
 .doc-ver-old     { background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); }
 
 /* ── Word preview in lightbox ── */
-.doc-lb-word-wrap { width: 90vw; max-width: 800px; max-height: 85vh; overflow-y: auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-.doc-lb-word-banner { padding: 10px 20px; background: #FEF3C7; color: #92400E; font-size: .82rem; border-bottom: 1px solid #F59E0B; border-radius: 12px 12px 0 0; }
-.doc-lb-word-content { padding: 0; overflow-y: auto; max-height: calc(85vh - 50px); }
-.doc-lb-word-content .docx-wrapper { background: #fff !important; padding: 20px !important; }
-.doc-lb-word-content .docx-wrapper section.docx { box-shadow: 0 2px 8px rgba(0,0,0,.08) !important; margin-bottom: 16px !important; }
+.doc-lb-word-wrap { width: 95vw; max-width: 1000px; height: 92vh; display: flex; flex-direction: column; background: #e8e8e8; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden; }
+.doc-lb-word-banner { padding: 10px 20px; background: #FEF3C7; color: #92400E; font-size: .82rem; border-bottom: 1px solid #F59E0B; flex-shrink: 0; }
+.doc-lb-word-content { flex: 1; overflow-y: auto; padding: 20px; }
+.doc-lb-word-content .docx-wrapper { background: transparent !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.doc-lb-word-content .docx-wrapper section.docx {
+    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.12) !important;
+    margin: 0 !important; border-radius: 2px;
+    /* A4 proportions */
+    width: 210mm !important; min-height: 297mm !important;
+    padding: 20mm 15mm !important;
+}
+@media (max-width: 900px) {
+    .doc-lb-word-content .docx-wrapper section.docx { width: 100% !important; min-height: auto !important; padding: 10mm !important; }
+}
 .doc-lb-word-loading { text-align: center; padding: 60px 20px; color: #999; }
 .doc-badge-restricted { background: #D4C4A8; color: #6B5B3E; }
 .doc-row-actions { display: flex; gap: 2px; }
