@@ -22,7 +22,38 @@ $famResidents = Db::fetchAll(
 .fam-file-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--cl-bg); border-radius: 6px; font-size: .85rem; }
 .fam-file-row .del { margin-left: auto; background: none; border: none; color: var(--cl-text-muted); cursor: pointer; }
 .fam-file-row .del:hover { color: #C53030; }
-.fam-item-card { background: var(--cl-surface, #fff); border: 1px solid var(--cl-border-light, #f0ede8); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+
+/* ── Album gallery modal ── */
+.fam-gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.fam-gal-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; cursor: pointer; background: var(--cl-bg, #F7F5F2); border: 1.5px solid var(--cl-border-light, #F0EDE8); transition: transform .15s; }
+.fam-gal-item:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.fam-gal-item img { width: 100%; height: 100%; object-fit: cover; }
+.fam-gal-item .fam-gal-del {
+    position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; border: none; font-size: .7rem; cursor: pointer;
+    display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background .15s;
+}
+.fam-gal-item:hover .fam-gal-del { display: flex; }
+.fam-gal-item .fam-gal-del:hover { background: #C53030; }
+.fam-gal-loading { text-align: center; padding: 40px; color: var(--cl-text-muted); }
+
+/* ── Lightbox fullscreen ── */
+.fam-lb { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; animation: famLbIn .2s; }
+.fam-lb-hidden { display: none !important; }
+.fam-lb img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; user-select: none; transition: transform .2s; }
+.fam-lb-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.12); border: none; color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.3rem; backdrop-filter: blur(6px); transition: background .2s; z-index: 2; }
+.fam-lb-btn:hover { background: rgba(255,255,255,.25); }
+.fam-lb-prev { left: 16px; }
+.fam-lb-next { right: 16px; }
+.fam-lb-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; backdrop-filter: blur(6px); z-index: 2; }
+.fam-lb-close:hover { background: rgba(255,255,255,.25); }
+.fam-lb-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: .78rem; backdrop-filter: blur(6px); }
+.fam-lb-zoom { position: absolute; bottom: 16px; right: 16px; display: flex; gap: 6px; }
+.fam-lb-zoom button { background: rgba(255,255,255,.12); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: .9rem; backdrop-filter: blur(6px); }
+.fam-lb-zoom button:hover { background: rgba(255,255,255,.25); }
+@keyframes famLbIn { from { opacity: 0; } to { opacity: 1; } }
+.fam-item-card { background: var(--cl-surface, #fff); border: 1px solid var(--cl-border-light, #f0ede8); border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all .15s; }
+.fam-item-card:hover { background: var(--cl-bg, #FAFAF7); border-color: var(--cl-border-hover, #d0d0c8); }
 .fam-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .fam-item-title { font-weight: 700; }
 .fam-item-date { font-size: .8rem; color: var(--cl-text-muted); }
@@ -135,6 +166,38 @@ $famResidents = Db::fetchAll(
     <button class="btn btn-dark btn-sm" id="famAlbSaveBtn">Enregistrer</button>
   </div>
 </div></div></div>
+
+<!-- Album Viewer Modal -->
+<div class="modal fade" id="famGalViewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="famGalViewTitle"><i class="bi bi-images me-2"></i>Album</h6>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" id="famGalViewBody">
+        <div class="fam-gal-loading"><span class="spinner-border spinner-border-sm"></span> Déchiffrement des photos...</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light btn-sm" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Lightbox -->
+<div id="famLightbox" class="fam-lb fam-lb-hidden">
+  <button class="fam-lb-close" id="famLbClose"><i class="bi bi-x-lg"></i></button>
+  <button class="fam-lb-btn fam-lb-prev" id="famLbPrev"><i class="bi bi-chevron-left"></i></button>
+  <button class="fam-lb-btn fam-lb-next" id="famLbNext"><i class="bi bi-chevron-right"></i></button>
+  <img id="famLbImg" src="" draggable="false">
+  <div class="fam-lb-counter" id="famLbCounter"></div>
+  <div class="fam-lb-zoom">
+    <button id="famLbZoomOut" title="Zoom -"><i class="bi bi-zoom-out"></i></button>
+    <button id="famLbZoomReset" title="Reset"><i class="bi bi-arrows-angle-contract"></i></button>
+    <button id="famLbZoomIn" title="Zoom +"><i class="bi bi-zoom-in"></i></button>
+  </div>
+</div>
 
 <script<?= nonce() ?> src="/zerdatime/website/assets/js/famille-crypto.js"></script>
 <script<?= nonce() ?>>
@@ -685,6 +748,144 @@ $famResidents = Db::fetchAll(
 
         loadGalerie();
     }
+
+    // ═══ ALBUM VIEWER ═════════════════════════════════════════════════════════
+    let viewerPhotos = []; // [{url, id}]
+    let viewerIndex = 0;
+
+    // Click on album card (not on buttons) → open viewer
+    document.getElementById('famGalList').addEventListener('click', (e) => {
+        // Skip if clicked on a button
+        if (e.target.closest('[data-fam-edit-alb]') || e.target.closest('[data-fam-upload-gal]') || e.target.closest('[data-fam-del-alb]')) return;
+        const card = e.target.closest('.fam-item-card');
+        if (!card) return;
+        // Find album id from the first button
+        const btn = card.querySelector('[data-fam-edit-alb]');
+        if (!btn) return;
+        const albumId = btn.dataset.famEditAlb;
+        const album = galerieCache.find(a => a.id === albumId);
+        if (album) openAlbumViewer(album);
+    });
+
+    async function openAlbumViewer(album) {
+        document.getElementById('famGalViewTitle').innerHTML = '<i class="bi bi-images me-2"></i>' + escapeHtml(album.titre);
+        const body = document.getElementById('famGalViewBody');
+        body.innerHTML = '<div class="fam-gal-loading"><span class="spinner-border spinner-border-sm"></span> Déchiffrement des photos...</div>';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('famGalViewModal')).show();
+
+        const photos = album.photos || [];
+        if (!photos.length) {
+            body.innerHTML = '<p class="text-muted text-center py-4">Aucune photo dans cet album</p>';
+            return;
+        }
+
+        const key = await getAesKey();
+        if (!key) { body.innerHTML = '<p class="text-danger text-center py-4">Impossible de déchiffrer (clé E2EE manquante)</p>'; return; }
+
+        viewerPhotos = [];
+        let grid = '<div class="fam-gal-grid">';
+
+        for (let i = 0; i < photos.length; i++) {
+            const p = photos[i];
+            try {
+                const res = await fetch('/zerdatime/admin/api.php?action=admin_famille_upload_galerie_photo&file=' + encodeURIComponent(p.file_name));
+                if (!res.ok) { viewerPhotos.push({ url: '', id: p.id }); grid += '<div class="fam-gal-item"><div class="text-center text-muted py-4"><i class="bi bi-image"></i></div></div>'; continue; }
+                const encData = await res.arrayBuffer();
+                const iv = hexToBytes(p.encrypted_iv);
+                const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encData);
+                const blob = new Blob([decrypted], { type: 'image/webp' });
+                const url = URL.createObjectURL(blob);
+                viewerPhotos.push({ url, id: p.id });
+                grid += '<div class="fam-gal-item" data-gal-idx="' + i + '">'
+                    + '<img src="' + url + '">'
+                    + '<button class="fam-gal-del" data-gal-del="' + p.id + '" title="Supprimer"><i class="bi bi-trash3"></i></button>'
+                    + '</div>';
+            } catch(e) {
+                viewerPhotos.push({ url: '', id: p.id });
+                grid += '<div class="fam-gal-item"><div class="text-center text-muted py-4" style="display:flex;align-items:center;justify-content:center;height:100%"><i class="bi bi-shield-exclamation"></i></div></div>';
+            }
+        }
+        grid += '</div>';
+        body.innerHTML = grid;
+
+        // Click photo → lightbox
+        body.querySelectorAll('[data-gal-idx]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.fam-gal-del')) return;
+                openFamLightbox(parseInt(el.dataset.galIdx));
+            });
+        });
+
+        // Delete photo
+        body.querySelectorAll('[data-gal-del]').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!confirm('Supprimer cette photo ?')) return;
+                const r = await adminApiPost('admin_famille_delete_photo', { id: btn.dataset.galDel });
+                if (r.success) {
+                    showToast('Photo supprimée', 'success');
+                    // Refresh album
+                    const res = await adminApiPost('admin_famille_get_galerie', { resident_id: selectedResident.id });
+                    if (res.success) {
+                        galerieCache = res.albums || [];
+                        renderGalerie(galerieCache);
+                        const updated = galerieCache.find(a => a.id === album.id);
+                        if (updated) openAlbumViewer(updated);
+                        else bootstrap.Modal.getInstance(document.getElementById('famGalViewModal'))?.hide();
+                    }
+                }
+            });
+        });
+    }
+
+    function hexToBytes(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        return bytes;
+    }
+
+    // ═══ LIGHTBOX ════════════════════════════════════════════════════════════
+    const lb = document.getElementById('famLightbox');
+    const lbImg = document.getElementById('famLbImg');
+    const lbCounter = document.getElementById('famLbCounter');
+    let lbZoom = 1;
+
+    function openFamLightbox(idx) {
+        viewerIndex = idx;
+        lbZoom = 1;
+        updateLightbox();
+        lb.classList.remove('fam-lb-hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFamLightbox() {
+        lb.classList.add('fam-lb-hidden');
+        document.body.style.overflow = '';
+    }
+
+    function updateLightbox() {
+        const p = viewerPhotos[viewerIndex];
+        if (!p || !p.url) return;
+        lbImg.src = p.url;
+        lbImg.style.transform = 'scale(' + lbZoom + ')';
+        lbCounter.textContent = (viewerIndex + 1) + ' / ' + viewerPhotos.length;
+        document.getElementById('famLbPrev').style.display = viewerIndex > 0 ? '' : 'none';
+        document.getElementById('famLbNext').style.display = viewerIndex < viewerPhotos.length - 1 ? '' : 'none';
+    }
+
+    document.getElementById('famLbClose').addEventListener('click', closeFamLightbox);
+    lb.addEventListener('click', (e) => { if (e.target === lb) closeFamLightbox(); });
+    document.getElementById('famLbPrev').addEventListener('click', () => { if (viewerIndex > 0) { viewerIndex--; lbZoom = 1; updateLightbox(); } });
+    document.getElementById('famLbNext').addEventListener('click', () => { if (viewerIndex < viewerPhotos.length - 1) { viewerIndex++; lbZoom = 1; updateLightbox(); } });
+    document.getElementById('famLbZoomIn').addEventListener('click', () => { lbZoom = Math.min(3, lbZoom + 0.25); updateLightbox(); });
+    document.getElementById('famLbZoomOut').addEventListener('click', () => { lbZoom = Math.max(0.25, lbZoom - 0.25); updateLightbox(); });
+    document.getElementById('famLbZoomReset').addEventListener('click', () => { lbZoom = 1; updateLightbox(); });
+    document.addEventListener('keydown', (e) => {
+        if (lb.classList.contains('fam-lb-hidden')) return;
+        if (e.key === 'Escape') closeFamLightbox();
+        if (e.key === 'ArrowLeft' && viewerIndex > 0) { viewerIndex--; lbZoom = 1; updateLightbox(); }
+        if (e.key === 'ArrowRight' && viewerIndex < viewerPhotos.length - 1) { viewerIndex++; lbZoom = 1; updateLightbox(); }
+    });
 
     window.initFamillePage = () => {};
 })();
