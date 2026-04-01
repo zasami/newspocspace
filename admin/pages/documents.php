@@ -78,25 +78,23 @@ $docServices = Db::fetchAll(
     background: var(--cl-bg, #F7F5F2);
 }
 .doc-lb-word-body .docx-wrapper,
-.doc-lb-word-body > div { background: var(--cl-bg, #F7F5F2) !important; padding: 20px !important; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.doc-lb-word-body > div { background: var(--cl-bg, #F7F5F2) !important; padding: 20px !important; display: flex; flex-direction: column; align-items: center; gap: 24px; }
 .doc-lb-word-body .docx-wrapper > section,
 .doc-lb-word-body .docx-wrapper section.docx,
-.docx-preview-body-wrapper > section,
-.docx-preview-body-wrapper > article {
-    background: #fff !important; box-shadow: 0 2px 10px rgba(0,0,0,.08) !important;
-    margin: 0 auto 20px !important; border-radius: 8px !important; border: none !important;
+.doc-lb-word-body section[style] {
+    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.1) !important;
+    margin: 0 auto !important; border-radius: 10px !important; border: none !important;
 }
 /* Kill any grey/dark wrapper from the lib */
 .doc-lb-word-body [style*="background"] { background: var(--cl-bg, #F7F5F2) !important; }
-.docx-preview-body-wrapper { background: var(--cl-bg, #F7F5F2) !important; }
-/* Zoom slider warm color */
+.doc-lb-word-body section[style*="background"] { background: #fff !important; }
+.doc-lb-word-footer {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-top: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
+}
 .doc-lb-word-footer input[type="range"] { accent-color: #bcd2cb; }
 .doc-lb-word-footer input[type="range"]::-webkit-slider-runnable-track { background: var(--cl-border-light, #E8E5E0); }
 .doc-lb-word-footer input[type="range"]::-moz-range-track { background: var(--cl-border-light, #E8E5E0); }
-.doc-lb-word-footer {
-    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-    padding: 10px 20px; border-top: 1px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
-}
 @media (max-width: 900px) {
     .doc-lb-word-wrap { width: 100vw; height: 100vh; border-radius: 0; }
 }
@@ -445,25 +443,104 @@ $docServices = Db::fetchAll(
             document.body.appendChild(lb);
         }
 
-        document.getElementById('docLbTitle').textContent = titre;
-        document.getElementById('docLbDl').href = url;
-        document.getElementById('docLbDl').setAttribute('target', '_blank');
+        const lbTitle = document.getElementById('docLbTitle');
+        const lbClose = lb.querySelector('.doc-lb-close');
+        const lbDl = document.getElementById('docLbDl');
+        const fsBtn = document.getElementById('docLbFs');
         const stage = document.getElementById('docLbStage');
 
-        const fsBtn = document.getElementById('docLbFs');
+        lbTitle.textContent = titre;
+        lbDl.href = url;
+        lbDl.setAttribute('target', '_blank');
+        // Show top controls by default
+        lbTitle.style.display = '';
+        lbClose.style.display = '';
+        lbDl.style.display = '';
 
         if (isImage) {
             stage.innerHTML = '<img src="' + url + '" alt="' + escapeHtml(titre) + '" draggable="false">';
             fsBtn.classList.add('d-none');
         } else if (isPdf) {
-            stage.innerHTML = '<iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
-            fsBtn.classList.remove('d-none');
+            stage.innerHTML = '<div class="doc-lb-word-wrap">'
+                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-pdf-fill" style="color:#7B3B2C"></i> ' + escapeHtml(titre) + '</h6>'
+                + '<button class="doc-lb-word-close" id="docLbWordClose"><i class="bi bi-x-lg"></i></button></div>'
+                + '<div style="flex:1;overflow:hidden"><iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" style="width:100%;height:100%;border:none"></iframe></div>'
+                + '<div class="doc-lb-word-footer">'
+                + '<div class="d-flex align-items-center gap-2 ms-auto">'
+                + '<a class="btn btn-sm btn-outline-secondary" href="' + url + '" download><i class="bi bi-download"></i> Télécharger</a>'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docLbPdfFs"><i class="bi bi-arrows-fullscreen"></i> Plein écran</button>'
+                + '<button class="btn btn-sm btn-light" id="docLbWordCloseFooter">Fermer</button></div>'
+                + '</div></div>';
+            fsBtn.classList.add('d-none');
+            lbTitle.style.display = 'none';
+            lbClose.style.display = 'none';
+            lbDl.style.display = 'none';
+
+            document.getElementById('docLbPdfFs')?.addEventListener('click', () => {
+                const iframe = document.getElementById('docLbIframe');
+                if (iframe?.requestFullscreen) iframe.requestFullscreen();
+                else if (iframe?.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+            });
         } else if (isWord) {
-            // Convert DOCX to PDF server-side and display in iframe
             const docId = new URLSearchParams(url.split('?')[1]).get('id');
-            const pdfUrl = '/zerdatime/admin/api.php?action=admin_convert_document_pdf&id=' + encodeURIComponent(docId);
-            stage.innerHTML = '<iframe id="docLbIframe" src="' + pdfUrl + '#toolbar=1&view=FitH" allowfullscreen style="border:none;width:100%;height:100%"></iframe>';
-            fsBtn.classList.remove('d-none');
+            stage.innerHTML = '<div class="doc-lb-word-wrap">'
+                + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-word-fill" style="color:#3B4F6B"></i> ' + escapeHtml(titre) + '</h6>'
+                + '<button class="doc-lb-word-close" id="docLbWordClose"><i class="bi bi-x-lg"></i></button></div>'
+                + '<div class="doc-lb-word-body" id="docWordBody"><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span> Chargement...</div></div>'
+                + '<div class="doc-lb-word-footer">'
+                + '<div class="d-flex align-items-center gap-2"><i class="bi bi-zoom-out small"></i><input type="range" min="50" max="200" value="100" step="10" id="docLbZoom" style="width:100px"><i class="bi bi-zoom-in small"></i><span class="small text-muted" id="docLbZoomVal">100%</span></div>'
+                + '<div class="d-flex align-items-center gap-2 ms-auto">'
+                + '<a class="btn btn-sm btn-outline-secondary" href="' + url + '" download><i class="bi bi-download"></i> Télécharger</a>'
+                + '<button class="btn btn-sm btn-outline-secondary" id="docLbExportPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter en PDF</button>'
+                + '<button class="btn btn-sm btn-light" id="docLbWordCloseFooter">Fermer</button></div>'
+                + '</div></div>';
+            fsBtn.classList.add('d-none');
+            // Hide top lightbox controls — word wrap has its own
+            lbTitle.style.display = 'none';
+            lbClose.style.display = 'none';
+            lbDl.style.display = 'none';
+
+            // Zoom slider
+            document.getElementById('docLbZoom')?.addEventListener('input', function() {
+                const z = this.value;
+                document.getElementById('docLbZoomVal').textContent = z + '%';
+                const wrapper = document.querySelector('#docWordBody .docx-wrapper') || document.querySelector('#docWordBody > div');
+                if (wrapper) { wrapper.style.transform = 'scale(' + (z/100) + ')'; wrapper.style.transformOrigin = 'top center'; }
+            });
+
+            // Export PDF
+            document.getElementById('docLbExportPdf')?.addEventListener('click', function() {
+                const pdfUrl = '/zerdatime/admin/api.php?action=admin_convert_document_pdf&id=' + encodeURIComponent(docId);
+                window.open(pdfUrl, '_blank');
+            });
+
+            // Load docx-preview
+            (async () => {
+                try {
+                    if (!window.JSZip) {
+                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/zerdatime/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                    }
+                    if (!window.docx) {
+                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/zerdatime/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                    }
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    const container = document.getElementById('docWordBody');
+                    container.innerHTML = '';
+                    await window.docx.renderAsync(blob, container, null, {
+                        className: 'docx-preview',
+                        inWrapper: true,
+                        ignoreWidth: false,
+                        ignoreHeight: false,
+                        ignoreFonts: false,
+                        breakPages: true,
+                        useBase64URL: true,
+                    });
+                } catch(e) {
+                    console.error('docx-preview error:', e);
+                    document.getElementById('docWordBody').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle"></i> Erreur de rendu — <a href="' + url + '" target="_blank">Télécharger le fichier</a></div>';
+                }
+            })();
         } else if (isText) {
             stage.innerHTML = '<div class="doc-lb-word-wrap"><div class="doc-lb-word-loading"><span class="spinner-border spinner-border-sm"></span></div></div>';
             fsBtn.classList.add('d-none');
@@ -482,6 +559,9 @@ $docServices = Db::fetchAll(
         lb.querySelector('.doc-lb-close').addEventListener('click', closeLb, sig);
         lb.querySelector('.doc-lb-overlay').addEventListener('click', closeLb, sig);
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); }, sig);
+        // Word wrap close buttons
+        document.getElementById('docLbWordClose')?.addEventListener('click', closeLb, sig);
+        document.getElementById('docLbWordCloseFooter')?.addEventListener('click', closeLb, sig);
         fsBtn.addEventListener('click', () => {
             const iframe = document.getElementById('docLbIframe');
             if (iframe) {
