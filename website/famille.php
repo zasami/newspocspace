@@ -9,17 +9,16 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Espace Famille — <?= h($emsNom) ?></title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/zerdatime/website/assets/css/website.css">
 <link rel="stylesheet" href="/zerdatime/website/assets/css/famille.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 </head>
 <body>
-<?php include __DIR__ . '/includes/navbar.php'; ?>
 <div class="fam-shell">
 <div class="fam-container">
+
+  <a href="/zerdatime/website/" class="fam-back"><i class="bi bi-arrow-left"></i> Retour au site</a>
 
   <!-- ═══ LOGIN ═══ -->
   <div id="famLogin" class="fam-login-wrap">
@@ -783,7 +782,6 @@ checkSession();
 })();
 </script>
 
-<?php include __DIR__ . '/includes/footer.php'; ?>
 
 </body>
 </html>

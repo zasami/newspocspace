@@ -35,7 +35,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--adm-bg); color: var(--adm-text); line-height: 1.7; }
 
 /* ── Shell ── */
-.adm-shell { max-width: 900px; margin: 0 auto; padding: 40px 20px 60px; }
+.adm-shell { max-width: 900px; margin: 0 auto; padding: 120px 20px 60px; }
 
 /* ── Hero ── */
 .adm-hero { text-align: center; margin-bottom: 48px; }

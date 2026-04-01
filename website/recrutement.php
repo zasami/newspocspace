@@ -93,7 +93,7 @@ body {
 }
 
 /* ── Shell ── */
-.rec-shell { min-height: 100vh; padding: 24px 16px 60px; }
+.rec-shell { min-height: 100vh; padding: 100px 16px 60px; }
 .rec-container { max-width: 960px; margin: 0 auto; }
 
 /* ── Back link ── */

@@ -40,11 +40,17 @@ function wsNavHref($target) {
 </nav>
 <script>
 (function(){
+  // Mobile toggle
   var t = document.getElementById('wsNavToggle');
   var l = document.getElementById('wsNavLinks');
   if (t && l) t.addEventListener('click', function() {
     l.classList.toggle('open');
     t.querySelector('i').className = l.classList.contains('open') ? 'bi bi-x-lg' : 'bi bi-list';
   });
+  // Scroll shrink logo
+  var nav = document.getElementById('wsNav');
+  if (nav) window.addEventListener('scroll', function() {
+    nav.classList.toggle('scrolled', window.scrollY > 30);
+  }, { passive: true });
 })();
 </script>
