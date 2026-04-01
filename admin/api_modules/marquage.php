@@ -50,7 +50,7 @@ function admin_get_marquages() {
     );
     if (!$stats) $stats = ['total'=>0,'en_cours'=>0,'marques'=>0,'termines'=>0,'residents_count'=>0,'chambres_count'=>0];
 
-    respond(['marquages' => $rows, 'stats' => $stats]);
+    respond(['success' => true, 'marquages' => $rows, 'stats' => $stats]);
 }
 
 function admin_create_marquage() {
@@ -74,7 +74,7 @@ function admin_create_marquage() {
         [$id, $residentId, $userId, $action, $quantite, $description]
     );
 
-    respond(['id' => $id, 'message' => 'Marquage créé']);
+    respond(['success' => true, 'id' => $id, 'message' => 'Marquage créé']);
 }
 
 function admin_upload_marquage_photo() {
@@ -128,7 +128,7 @@ function admin_upload_marquage_photo() {
     $newPath = implode(',', $existing);
     Db::exec("UPDATE marquages SET photo_path = ? WHERE id = ?", [$newPath, $id]);
 
-    respond(['message' => 'Photo téléversée', 'photo' => $filename, 'all_photos' => $existing]);
+    respond(['success' => true, 'message' => 'Photo téléversée', 'photo' => $filename, 'all_photos' => $existing]);
 }
 
 function admin_serve_marquage_photo() {
@@ -169,7 +169,7 @@ function admin_update_marquage_statut() {
         [$statut, $completedBy, $completedAt, $id]
     );
 
-    respond(['message' => 'Statut mis à jour']);
+    respond(['success' => true, 'message' => 'Statut mis à jour']);
 }
 
 function admin_delete_marquage() {
@@ -188,7 +188,7 @@ function admin_delete_marquage() {
     }
 
     Db::exec("DELETE FROM marquages WHERE id = ?", [$id]);
-    respond(['message' => 'Marquage supprimé']);
+    respond(['success' => true, 'message' => 'Marquage supprimé']);
 }
 
 function admin_get_marquage_history() {
@@ -217,5 +217,5 @@ function admin_get_marquage_history() {
         [$residentId]
     );
 
-    respond(['history' => $rows, 'stats' => $stats]);
+    respond(['success' => true, 'history' => $rows, 'stats' => $stats]);
 }

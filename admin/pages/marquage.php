@@ -491,6 +491,6 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && lbEl.style.display === 'flex') closeLightbox(); });
 
     // ── Init ──
-    load();
+    load().catch(e => { console.error('marquage init error', e); document.getElementById('mrkBody').innerHTML = '<tr><td colspan="10" class="text-center text-danger py-3">Erreur: ' + e.message + '</td></tr>'; });
 })();
 </script>
