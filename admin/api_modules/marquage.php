@@ -82,7 +82,7 @@ function admin_upload_marquage_photo() {
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $row = Db::fetch("SELECT id FROM marquages WHERE id = ?", [$id]);
+    $row = Db::fetch("SELECT id, photo_path FROM marquages WHERE id = ?", [$id]);
     if (!$row) not_found();
 
     if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
@@ -101,21 +101,30 @@ function admin_upload_marquage_photo() {
     if (!is_dir($dir)) mkdir($dir, 0755, true);
 
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-    $filename = $id . '_' . time() . '.' . $ext;
+    $filename = $id . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
     move_uploaded_file($file['tmp_name'], $dir . $filename);
 
-    Db::exec("UPDATE marquages SET photo_path = ? WHERE id = ?", [$filename, $id]);
+    // Append to existing photos (comma-separated)
+    $existing = $row['photo_path'] ? explode(',', $row['photo_path']) : [];
+    $existing[] = $filename;
+    $newPath = implode(',', $existing);
+    Db::exec("UPDATE marquages SET photo_path = ? WHERE id = ?", [$newPath, $id]);
 
-    respond(['message' => 'Photo téléversée', 'photo' => $filename]);
+    respond(['message' => 'Photo téléversée', 'photo' => $filename, 'all_photos' => $existing]);
 }
 
 function admin_serve_marquage_photo() {
     global $params;
-    $id = $params['id'] ?? '';
-    $row = Db::fetch("SELECT photo_path FROM marquages WHERE id = ?", [$id]);
-    if (!$row || !$row['photo_path']) not_found();
+    $file = basename($params['file'] ?? '');
+    if (!$file) {
+        // Fallback: serve first photo by marquage id
+        $id = $params['id'] ?? '';
+        $row = Db::fetch("SELECT photo_path FROM marquages WHERE id = ?", [$id]);
+        if (!$row || !$row['photo_path']) not_found();
+        $file = explode(',', $row['photo_path'])[0];
+    }
 
-    $path = __DIR__ . '/../../storage/marquage/' . $row['photo_path'];
+    $path = __DIR__ . '/../../storage/marquage/' . $file;
     if (!file_exists($path)) not_found();
 
     $mime = mime_content_type($path);
@@ -154,8 +163,10 @@ function admin_delete_marquage() {
     if (!$row) not_found();
 
     if ($row['photo_path']) {
-        $path = __DIR__ . '/../../storage/marquage/' . $row['photo_path'];
-        if (file_exists($path)) @unlink($path);
+        foreach (explode(',', $row['photo_path']) as $photo) {
+            $path = __DIR__ . '/../../storage/marquage/' . $photo;
+            if (file_exists($path)) @unlink($path);
+        }
     }
 
     Db::exec("DELETE FROM marquages WHERE id = ?", [$id]);

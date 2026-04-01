@@ -49,6 +49,36 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 .mrk-tl-dot-terminé   { background: #bcd2cb; }
 .mrk-tl-content { background: var(--cl-bg); border-radius: 10px; padding: 12px 14px; }
 .mrk-tl-photo { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; margin-top: 8px; cursor: pointer; }
+
+/* ── Drop zone ── */
+.mrk-drop-zone {
+    border: 2px dashed var(--cl-border, #E0DDD8); border-radius: 14px; padding: 24px 16px;
+    text-align: center; cursor: pointer; transition: all .2s;
+    color: var(--cl-text-muted); background: var(--cl-bg, #FAFAF8);
+}
+.mrk-drop-zone:hover, .mrk-drop-zone.dragover {
+    border-color: #bcd2cb; background: rgba(188,210,203,.08);
+}
+.mrk-drop-zone i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 6px; color: #bcd2cb; }
+.mrk-drop-zone:hover i { opacity: .6; }
+.mrk-drop-zone p { margin-bottom: 2px; font-size: .88rem; }
+.mrk-drop-zone small { font-size: .72rem; }
+
+/* ── Photo grid ── */
+.mrk-photo-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.mrk-photo-item {
+    width: 80px; height: 80px; border-radius: 10px; overflow: hidden;
+    position: relative; border: 1.5px solid var(--cl-border-light, #F0EDE8);
+    transition: transform .15s;
+}
+.mrk-photo-item:hover { transform: scale(1.05); }
+.mrk-photo-item img { width: 100%; height: 100%; object-fit: cover; }
+.mrk-photo-item .mrk-photo-del {
+    position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
+    border-radius: 50%; background: #E2B8AE; color: #7B3B2C; border: 2px solid #fff;
+    font-size: .55rem; cursor: pointer; display: none; align-items: center; justify-content: center;
+}
+.mrk-photo-item:hover .mrk-photo-del { display: flex; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -111,12 +141,14 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
           </div>
         </div>
         <div class="mb-3">
-          <label class="form-label small fw-bold">Photo</label>
-          <input type="file" class="form-control form-control-sm" id="mrkPhoto" accept="image/*" capture="environment">
-          <div class="form-text">Prenez une photo du vêtement</div>
-          <div id="mrkPhotoPreview" class="mt-2 d-none">
-            <img id="mrkPhotoImg" style="max-width:200px;border-radius:10px">
+          <label class="form-label small fw-bold">Photos</label>
+          <div class="mrk-drop-zone" id="mrkDropZone">
+            <input type="file" id="mrkPhotoInput" class="d-none" accept="image/*" multiple capture="environment">
+            <i class="bi bi-image"></i>
+            <p><strong>Glissez vos photos ici</strong> ou cliquez pour parcourir</p>
+            <small>JPG, PNG, WebP — max 10 Mo par photo</small>
           </div>
+          <div class="mrk-photo-grid" id="mrkPhotoGrid"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -160,19 +192,53 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
     const resEl = document.getElementById('mrkResident');
     if (resEl) zerdaSelect.init(resEl, resOpts, { search: true });
 
-    // ── Photo preview ──
-    document.getElementById('mrkPhoto')?.addEventListener('change', function() {
-        const f = this.files[0];
-        const prev = document.getElementById('mrkPhotoPreview');
-        const img = document.getElementById('mrkPhotoImg');
-        if (f) {
-            const reader = new FileReader();
-            reader.onload = e => { img.src = e.target.result; prev.classList.remove('d-none'); };
-            reader.readAsDataURL(f);
-        } else {
-            prev.classList.add('d-none');
-        }
+    // ── Photo drop zone + multi-photo ──
+    let pendingPhotos = []; // { file, dataUrl }
+
+    const dropZone = document.getElementById('mrkDropZone');
+    const photoInput = document.getElementById('mrkPhotoInput');
+    const photoGrid = document.getElementById('mrkPhotoGrid');
+
+    dropZone?.addEventListener('click', () => photoInput?.click());
+    dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone?.addEventListener('drop', e => {
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        addPhotos(Array.from(e.dataTransfer.files));
     });
+    photoInput?.addEventListener('change', () => {
+        addPhotos(Array.from(photoInput.files));
+        photoInput.value = '';
+    });
+
+    function addPhotos(files) {
+        files.forEach(f => {
+            if (!f.type.startsWith('image/')) return;
+            if (f.size > 10 * 1024 * 1024) { showToast('Photo trop volumineuse (max 10 Mo)', 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                pendingPhotos.push({ file: f, dataUrl: e.target.result });
+                renderPhotoGrid();
+            };
+            reader.readAsDataURL(f);
+        });
+    }
+
+    function renderPhotoGrid() {
+        photoGrid.innerHTML = pendingPhotos.map((p, i) =>
+            '<div class="mrk-photo-item">'
+            + '<img src="' + p.dataUrl + '">'
+            + '<div class="mrk-photo-del" data-rm="' + i + '"><i class="bi bi-x"></i></div>'
+            + '</div>'
+        ).join('');
+        photoGrid.querySelectorAll('[data-rm]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                pendingPhotos.splice(parseInt(btn.dataset.rm), 1);
+                renderPhotoGrid();
+            });
+        });
+    }
 
     // ── Load marquages ──
     async function load() {
@@ -215,10 +281,16 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             return;
         }
         tbody.innerHTML = rows.map(m => {
-            const photoUrl = m.photo_path ? '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&id=' + encodeURIComponent(m.id) : '';
-            const photoHtml = photoUrl
-                ? '<img src="' + photoUrl + '" class="mrk-photo-thumb" data-lightbox="' + photoUrl + '">'
-                : '<span class="text-muted small">—</span>';
+            const photos = m.photo_path ? m.photo_path.split(',') : [];
+            let photoHtml = '';
+            if (photos.length) {
+                photoHtml = photos.map(f => {
+                    const u = '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
+                    return '<img src="' + u + '" class="mrk-photo-thumb" data-lightbox="' + u + '" style="margin-right:2px">';
+                }).join('');
+            } else {
+                photoHtml = '<span class="text-muted small">—</span>';
+            }
             const dt = new Date(m.created_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
             return '<tr>'
                 + '<td>' + photoHtml + '</td>'
@@ -293,8 +365,8 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
         document.getElementById('mrkAction').value = 'marquer';
         document.getElementById('mrkQty').value = 1;
         document.getElementById('mrkDesc').value = '';
-        document.getElementById('mrkPhoto').value = '';
-        document.getElementById('mrkPhotoPreview').classList.add('d-none');
+        pendingPhotos = [];
+        renderPhotoGrid();
         zerdaSelect.setValue('#mrkResident', '');
         new bootstrap.Modal(document.getElementById('mrkNewModal')).show();
     });
@@ -316,13 +388,12 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 
         if (!r.success) { showToast(r.message || 'Erreur', 'error'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg"></i> Valider'; return; }
 
-        // Step 2: upload photo if any
-        const photoFile = document.getElementById('mrkPhoto').files[0];
-        if (photoFile && r.id) {
+        // Step 2: upload photos
+        for (const p of pendingPhotos) {
             const fd = new FormData();
             fd.append('action', 'admin_upload_marquage_photo');
             fd.append('id', r.id);
-            fd.append('photo', photoFile);
+            fd.append('photo', p.file);
             try {
                 const res = await fetch('/zerdatime/admin/api.php', {
                     method: 'POST',
@@ -364,7 +435,6 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             h += '<div class="mrk-timeline">';
             items.forEach(m => {
                 const dt = new Date(m.created_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                const photoUrl = m.photo_path ? '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&id=' + encodeURIComponent(m.id) : '';
                 h += '<div class="mrk-tl-item">'
                     + '<div class="mrk-tl-dot mrk-tl-dot-' + m.statut + '"></div>'
                     + '<div class="mrk-tl-content">'
@@ -377,8 +447,14 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
                 if (m.completed_by) {
                     h += '<div class="small text-muted">Complété par ' + escapeHtml((m.completed_prenom||'') + ' ' + (m.completed_nom||'')) + '</div>';
                 }
-                if (photoUrl) {
-                    h += '<img src="' + photoUrl + '" class="mrk-tl-photo" data-lightbox="' + photoUrl + '">';
+                const histPhotos = m.photo_path ? m.photo_path.split(',') : [];
+                if (histPhotos.length) {
+                    h += '<div class="d-flex gap-2 flex-wrap mt-1">';
+                    histPhotos.forEach(f => {
+                        const pu = '/zerdatime/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
+                        h += '<img src="' + pu + '" class="mrk-tl-photo" data-lightbox="' + pu + '">';
+                    });
+                    h += '</div>';
                 }
                 h += '</div></div>';
             });
