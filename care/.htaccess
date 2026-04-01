@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /zerdatime/care/
+
+# Skip real files/dirs
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Clean URLs: /care/pagename → index.php?page=pagename
+RewriteRule ^api\.php$ - [L]
+RewriteRule ^([a-z0-9-]+)/?$ index.php?page=$1 [L,QSA]
+RewriteRule ^([a-z0-9-]+)/([a-zA-Z0-9-]+)/?$ index.php?page=$1&id=$2 [L,QSA]

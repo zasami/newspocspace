@@ -1,0 +1,30 @@
+/* ══════════════════════════════════════
+   zerdaCare — Theme overrides
+   Teal-focused palette for care module
+   ══════════════════════════════════════ */
+
+:root {
+  --care-primary: #2d4a43;
+  --care-primary-light: #bcd2cb;
+  --care-accent: #3d6b5e;
+}
+
+/* Brand accent — teal instead of dark */
+.sidebar-link.active {
+  background: var(--care-primary-light) !important;
+  color: var(--care-primary) !important;
+}
+.sidebar-link.active i {
+  color: var(--care-primary) !important;
+}
+
+/* Topbar subtle teal accent line */
+.admin-topbar {
+  border-bottom-color: var(--care-primary-light);
+}
+
+/* Stat cards accent */
+.stat-icon.bg-care {
+  background: var(--care-primary-light);
+  color: var(--care-primary);
+}

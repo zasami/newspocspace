@@ -192,11 +192,6 @@ $sidebarCategories = [
             'users'    => ['label' => 'Collaborateurs',      'icon' => 'people'],
             'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
             'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
-            'residents' => ['label' => 'Résidents',          'icon' => 'person-badge'],
-            'marquage'  => ['label' => 'Marquage Lingerie',   'icon' => 'tags'],
-            'famille'   => ['label' => 'Espace Famille',     'icon' => 'house-heart'],
-            'cuisine'      => ['label' => 'Menus',               'icon' => 'egg-fried'],
-            'reservations' => ['label' => 'Réservations repas',  'icon' => 'calendar-check'],
         ],
     ],
     'outils' => [
@@ -290,6 +285,10 @@ $activeSection = match($page) {
     <?php endforeach; ?>
   </nav>
   <div class="sidebar-footer">
+    <a href="/zerdatime/care/" class="sidebar-link" title="zerdaCare — Résidents & Soins">
+      <i class="bi bi-heart-pulse" style="color:#2d4a43"></i>
+      <span class="nav-label">zerdaCare</span>
+    </a>
     <a href="/zerdatime/" class="sidebar-link" target="_blank" title="Portail collaborateur">
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
