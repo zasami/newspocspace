@@ -204,6 +204,80 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
     </div>
   </header>
 
+  <!-- Scripts needed BEFORE page content (pages use bootstrap.Modal, adminApiPost, etc.) -->
+  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>">
+  // Override AdminURL base for zerdaCare
+  (function(){
+      const BASE = '/zerdacare';
+      AdminURL.page = function(page, id, params) {
+          let url = (!page || page === 'dashboard') ? BASE + '/' : BASE + '/' + encodeURIComponent(page);
+          if (id) url += '/' + encodeURIComponent(id);
+          if (params && typeof params === 'object') { const qs = new URLSearchParams(params).toString(); if (qs) url += '?' + qs; }
+          return url;
+      };
+      AdminURL.currentPage = function() {
+          const path = window.location.pathname.replace(/\/+$/, '');
+          const relative = path.substring(BASE.length);
+          const parts = relative.split('/').filter(Boolean);
+          return parts[0] || 'dashboard';
+      };
+      AdminURL.currentId = function() {
+          const path = window.location.pathname.replace(/\/+$/, '');
+          const relative = path.substring(BASE.length);
+          const parts = relative.split('/').filter(Boolean);
+          return parts[1] || new URLSearchParams(window.location.search).get('id') || '';
+      };
+      AdminURL.go = function(page, id, params) { window.location.href = this.page(page, id, params); };
+  })();
+  </script>
+  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>">
+  window.__ZT_CARE__ = {
+      csrfToken: '<?= $csrfToken ?>',
+      userId: '<?= $user['id'] ?>',
+      userName: '<?= h($user['prenom'] . ' ' . $user['nom']) ?>',
+      role: '<?= $user['role'] ?>'
+  };
+  window.__ZT_ADMIN__ = window.__ZT_CARE__;
+  // Override adminApiPost to use admin API with care CSRF
+  window.careApiPost = async function(action, data = {}) {
+      data.action = action;
+      try {
+          const r = await fetch('/zerdatime/admin/api.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.__ZT_CARE__.csrfToken },
+              credentials: 'same-origin',
+              body: JSON.stringify(data)
+          });
+          const j = await r.json();
+          if (j.csrf) window.__ZT_CARE__.csrfToken = j.csrf;
+          return j;
+      } catch (e) { return { success: false, message: 'Erreur de connexion' }; }
+  };
+  window.adminApiPost = window.careApiPost;
+  window.adminConfirm = function(opts = {}) {
+      return new Promise(resolve => {
+          const m = document.getElementById('ztConfirmModal');
+          document.getElementById('ztConfirmIcon').innerHTML = '<i class="bi ' + (opts.icon||'bi-question-circle') + '"></i>';
+          document.getElementById('ztConfirmTitle').textContent = opts.title || 'Confirmer';
+          document.getElementById('ztConfirmText').innerHTML = opts.text || '';
+          const okBtn = document.getElementById('ztConfirmOk');
+          okBtn.className = 'btn btn-sm btn-' + (opts.type === 'danger' ? 'danger' : 'primary');
+          okBtn.textContent = opts.okText || 'Confirmer';
+          const modal = new bootstrap.Modal(m);
+          const cleanup = () => { okBtn.removeEventListener('click', onOk); m.removeEventListener('hidden.bs.modal', onHide); };
+          const onOk = () => { cleanup(); modal.hide(); resolve(true); };
+          const onHide = () => { cleanup(); resolve(false); };
+          okBtn.addEventListener('click', onOk);
+          m.addEventListener('hidden.bs.modal', onHide);
+          modal.show();
+      });
+  };
+  </script>
+
   <!-- PAGE CONTENT -->
   <div class="admin-content" id="pageContent">
     <?php include $pageFile; ?>
@@ -227,90 +301,6 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   </div>
 </div>
 
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>">
-// Override AdminURL base for zerdaCare
-(function(){
-    const BASE = '/zerdacare';
-    AdminURL.page = function(page, id, params) {
-        let url = (!page || page === 'dashboard') ? BASE + '/' : BASE + '/' + encodeURIComponent(page);
-        if (id) url += '/' + encodeURIComponent(id);
-        if (params && typeof params === 'object') { const qs = new URLSearchParams(params).toString(); if (qs) url += '?' + qs; }
-        return url;
-    };
-    AdminURL.currentPage = function() {
-        const path = window.location.pathname.replace(/\/+$/, '');
-        const relative = path.substring(BASE.length);
-        const parts = relative.split('/').filter(Boolean);
-        return parts[0] || 'dashboard';
-    };
-    AdminURL.currentId = function() {
-        const path = window.location.pathname.replace(/\/+$/, '');
-        const relative = path.substring(BASE.length);
-        const parts = relative.split('/').filter(Boolean);
-        return parts[1] || new URLSearchParams(window.location.search).get('id') || '';
-    };
-    AdminURL.go = function(page, id, params) { window.location.href = this.page(page, id, params); };
-})();
-</script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>">
-window.__ZT_CARE__ = {
-    csrfToken: '<?= $csrfToken ?>',
-    userId: '<?= $user['id'] ?>',
-    userName: '<?= h($user['prenom'] . ' ' . $user['nom']) ?>',
-    role: '<?= $user['role'] ?>'
-};
-// Alias for admin pages compatibility
-window.__ZT_ADMIN__ = window.__ZT_CARE__;
-
-// ── Care API helper (uses admin API for now) ──
-window.careApiPost = async function(action, data = {}) {
-    data.action = action;
-    try {
-        const r = await fetch('/zerdatime/admin/api.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': window.__ZT_CARE__.csrfToken
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(data)
-        });
-        const j = await r.json();
-        if (j.csrf) window.__ZT_CARE__.csrfToken = j.csrf;
-        return j;
-    } catch (e) {
-        return { success: false, message: 'Erreur de connexion' };
-    }
-};
-
-// Also expose as adminApiPost for page compatibility
-window.adminApiPost = window.careApiPost;
-</script>
 <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>">
-// ── Confirm modal helper ──
-window.adminConfirm = function(opts = {}) {
-    return new Promise(resolve => {
-        const m = document.getElementById('ztConfirmModal');
-        document.getElementById('ztConfirmIcon').innerHTML = '<i class="bi ' + (opts.icon||'bi-question-circle') + '"></i>';
-        document.getElementById('ztConfirmTitle').textContent = opts.title || 'Confirmer';
-        document.getElementById('ztConfirmText').innerHTML = opts.text || '';
-        const okBtn = document.getElementById('ztConfirmOk');
-        okBtn.className = 'btn btn-sm btn-' + (opts.type === 'danger' ? 'danger' : 'primary');
-        okBtn.textContent = opts.okText || 'Confirmer';
-        const modal = new bootstrap.Modal(m);
-        const cleanup = () => { okBtn.removeEventListener('click', onOk); m.removeEventListener('hidden.bs.modal', onHide); };
-        const onOk = () => { cleanup(); modal.hide(); resolve(true); };
-        const onHide = () => { cleanup(); resolve(false); };
-        okBtn.addEventListener('click', onOk);
-        m.addEventListener('hidden.bs.modal', onHide);
-        modal.show();
-    });
-};
-</script>
 </body>
 </html>
