@@ -2,12 +2,13 @@
 $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents WHERE is_active = 1 ORDER BY nom, prenom");
 ?>
 <style>
-/* ── Stat cards ── */
-.mrk-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.mrk-stat { border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
-.mrk-stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; }
-.mrk-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1; }
-.mrk-stat-label { font-size: .72rem; color: var(--cl-text-muted); margin-top: 2px; }
+/* ── Stat cards as filters ── */
+.mrk-stat-card { cursor: pointer; transition: all .2s; position: relative; }
+.mrk-stat-card.active { box-shadow: 0 0 0 2px var(--cl-accent, #2d4a43); }
+.mrk-stat-card.active::after {
+    content: '\F26E'; font-family: 'bootstrap-icons'; position: absolute; top: 8px; right: 10px;
+    font-size: .7rem; color: var(--cl-accent, #2d4a43); opacity: .7;
+}
 
 /* ── Table ── */
 .mrk-table-wrap { border-radius: 14px; overflow: hidden; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
@@ -33,11 +34,6 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
 .mrk-row-btn:hover { background: var(--cl-bg); color: var(--cl-text); }
 .mrk-row-btn.danger:hover { background: #E2B8AE; color: #7B3B2C; }
 
-/* ── Filter tabs ── */
-.mrk-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-.mrk-tab { padding: 6px 16px; border-radius: 10px; font-size: .82rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--cl-border-light, #F0EDE8); background: transparent; color: var(--cl-text-muted); transition: all .15s; }
-.mrk-tab:hover { border-color: var(--cl-border-hover); }
-.mrk-tab.active { background: var(--cl-surface); border-color: var(--cl-accent); color: var(--cl-text); }
 
 /* ── History timeline ── */
 .mrk-timeline { position: relative; padding-left: 24px; }
@@ -108,15 +104,13 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
   <button class="btn btn-primary btn-sm" id="mrkNewBtn"><i class="bi bi-plus-lg"></i> Nouveau marquage</button>
 </div>
 
-<!-- Stats -->
-<div class="mrk-stats" id="mrkStats"></div>
-
-<!-- Filter tabs -->
-<div class="mrk-tabs" id="mrkTabs">
-  <button class="mrk-tab active" data-filter="">Tous</button>
-  <button class="mrk-tab" data-filter="en_cours"><i class="bi bi-hourglass-split"></i> En cours</button>
-  <button class="mrk-tab" data-filter="marqué"><i class="bi bi-check-circle"></i> Marqués</button>
-  <button class="mrk-tab" data-filter="terminé"><i class="bi bi-check-all"></i> Terminés</button>
+<!-- Stat cards = filters -->
+<div class="row g-3 mb-4" id="mrkStats">
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card active" data-filter=""><div class="stat-icon bg-teal"><i class="bi bi-tags"></i></div><div><div class="stat-value" id="mrkStatTotal">—</div><div class="stat-label">Tous</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="en_cours"><div class="stat-icon bg-orange"><i class="bi bi-hourglass-split"></i></div><div><div class="stat-value" id="mrkStatEnCours">—</div><div class="stat-label">En cours</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="marqué"><div class="stat-icon bg-green"><i class="bi bi-check-circle"></i></div><div><div class="stat-value" id="mrkStatMarques">—</div><div class="stat-label">Marqués</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="terminé"><div class="stat-icon bg-teal"><i class="bi bi-check-all"></i></div><div><div class="stat-value" id="mrkStatTermines">—</div><div class="stat-label">Terminés</div></div></div></div>
+  <div class="col-6 col-lg"><div class="stat-card mrk-stat-card" data-filter="_residents"><div class="stat-icon bg-purple"><i class="bi bi-people"></i></div><div><div class="stat-value" id="mrkStatResidents">—</div><div class="stat-label">Résidents</div></div></div></div>
 </div>
 
 <!-- Table -->
@@ -152,15 +146,13 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             <option value="autre">Autre</option>
           </select>
         </div>
-        <div class="row mb-3">
-          <div class="col-4">
-            <label class="form-label small fw-bold">Quantité</label>
-            <input type="number" class="form-control form-control-sm" id="mrkQty" min="1" value="1">
-          </div>
-          <div class="col-8">
-            <label class="form-label small fw-bold">Description</label>
-            <input type="text" class="form-control form-control-sm" id="mrkDesc" maxlength="500" placeholder="Ex: Pantalon bleu, chemise blanche...">
-          </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Quantité</label>
+          <input type="number" class="form-control form-control-sm" id="mrkQty" min="1" value="1" style="max-width:100px">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Description</label>
+          <textarea class="form-control form-control-sm" id="mrkDesc" rows="3" maxlength="500" placeholder="Ex: 2 pantalons bleus, 1 chemise blanche, chaussettes..."></textarea>
         </div>
         <div class="mb-3">
           <label class="form-label small fw-bold">Photos</label>
@@ -280,18 +272,12 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
     }
 
     function renderStats(s) {
-        if (!s) return;
-        const data = [
-            { label: 'En cours', val: s.en_cours || 0, bg: '#D4C4A8', color: '#6B5B3E', icon: 'hourglass-split' },
-            { label: 'Marqués', val: s.marques || 0, bg: '#B8C9D4', color: '#3B4F6B', icon: 'check-circle' },
-            { label: 'Terminés', val: s.termines || 0, bg: '#bcd2cb', color: '#2d4a43', icon: 'check-all' },
-            { label: 'Résidents', val: s.residents_count || 0, bg: '#D0C4D8', color: '#5B4B6B', icon: 'people' },
-            { label: 'Chambres', val: s.chambres_count || 0, bg: '#E2B8AE', color: '#7B3B2C', icon: 'door-open' },
-        ];
-        document.getElementById('mrkStats').innerHTML = data.map(d =>
-            '<div class="mrk-stat"><div class="mrk-stat-icon" style="background:' + d.bg + ';color:' + d.color + '"><i class="bi bi-' + d.icon + '"></i></div>'
-            + '<div><div class="mrk-stat-val">' + d.val + '</div><div class="mrk-stat-label">' + d.label + '</div></div></div>'
-        ).join('');
+        if (!s) s = { total:0, en_cours:0, marques:0, termines:0, residents_count:0 };
+        document.getElementById('mrkStatTotal').textContent = s.total || 0;
+        document.getElementById('mrkStatEnCours').textContent = s.en_cours || 0;
+        document.getElementById('mrkStatMarques').textContent = s.marques || 0;
+        document.getElementById('mrkStatTermines').textContent = s.termines || 0;
+        document.getElementById('mrkStatResidents').textContent = s.residents_count || 0;
     }
 
     const actionLabels = { marquer: 'Marquer', laver: 'Laver', repasser: 'Repasser', reparer: 'Réparer', autre: 'Autre' };
@@ -369,13 +355,14 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
         }
     });
 
-    // ── Filter tabs ──
-    document.getElementById('mrkTabs')?.addEventListener('click', e => {
-        const tab = e.target.closest('.mrk-tab');
-        if (!tab) return;
-        document.querySelectorAll('.mrk-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentFilter = tab.dataset.filter || '';
+    // ── Stat card filters ──
+    document.getElementById('mrkStats')?.addEventListener('click', e => {
+        const card = e.target.closest('.mrk-stat-card');
+        if (!card) return;
+        document.querySelectorAll('.mrk-stat-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const f = card.dataset.filter || '';
+        currentFilter = f === '_residents' ? '' : f; // _residents just highlights, shows all
         load();
     });
 
