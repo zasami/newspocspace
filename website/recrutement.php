@@ -10,8 +10,10 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <title>Offres d'emploi — <?= h($emsNom) ?></title>
 <meta name="description" content="Offres d'emploi de l'EMS La Terrassière SA. Rejoignez notre équipe de soins à Genève.">
 <meta name="robots" content="index, follow">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/zerdatime/website/assets/css/website.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 <style>
 /* ── Variables ── */
@@ -353,24 +355,7 @@ body {
 </head>
 <body>
 
-<!-- ═══ NAVBAR ═══ -->
-<nav class="rec-nav">
-  <div class="rec-nav-inner">
-    <a href="/zerdatime/website/">
-      <img src="/zerdatime/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="<?= h($emsNom) ?>" class="rec-nav-logo">
-    </a>
-    <button class="rec-nav-toggle" id="recNavToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
-    <ul class="rec-nav-links" id="recNavLinks">
-      <li><a href="/zerdatime/website/">Accueil</a></li>
-      <li><a href="/zerdatime/website/#about">Notre mission</a></li>
-      <li><a href="/zerdatime/website/#team">Équipe</a></li>
-      <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
-      <li><a href="/zerdatime/website/#contact">Contact</a></li>
-      <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
-      <li><a href="/zerdatime/" class="rec-nav-btn"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>
-    </ul>
-  </div>
-</nav>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <div class="rec-shell">
 <div class="rec-container">

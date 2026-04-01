@@ -10,8 +10,10 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <title>Admissions — <?= h($emsNom) ?></title>
 <meta name="description" content="Informations sur les admissions, documents requis, conditions d'entrée et questions fréquentes sur l'EMS La Terrassière SA à Genève.">
 <meta name="robots" content="index, follow">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/zerdatime/website/assets/css/website.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 <style>
 :root {
@@ -31,21 +33,6 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--adm-bg); color: var(--adm-text); line-height: 1.7; }
-
-/* ── Nav (same as recrutement) ── */
-.adm-nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--adm-border); padding: 0 20px; }
-.adm-nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 60px; }
-.adm-nav-logo { height: 40px; }
-.adm-nav-links { display: flex; list-style: none; gap: 4px; margin: 0; padding: 0; }
-.adm-nav-links a { text-decoration: none; color: var(--adm-text-secondary); font-size: .88rem; font-weight: 500; padding: 8px 14px; border-radius: 8px; transition: all .15s; }
-.adm-nav-links a:hover { background: var(--adm-green-light); color: var(--adm-green); }
-.adm-nav-btn { background: var(--adm-green) !important; color: #fff !important; font-weight: 600 !important; border-radius: 8px !important; }
-.adm-nav-toggle { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--adm-text); }
-@media (max-width: 768px) {
-  .adm-nav-toggle { display: block; }
-  .adm-nav-links { display: none; position: absolute; top: 60px; left: 0; right: 0; background: #fff; flex-direction: column; padding: 12px 20px; border-bottom: 1px solid var(--adm-border); box-shadow: var(--adm-shadow-md); }
-  .adm-nav-links.open { display: flex; }
-}
 
 /* ── Shell ── */
 .adm-shell { max-width: 900px; margin: 0 auto; padding: 40px 20px 60px; }
@@ -104,22 +91,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 </head>
 <body>
 
-<!-- ═══ NAVBAR ═══ -->
-<nav class="adm-nav">
-  <div class="adm-nav-inner">
-    <a href="/zerdatime/website/">
-      <img src="/zerdatime/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="<?= h($emsNom) ?>" class="adm-nav-logo">
-    </a>
-    <button class="adm-nav-toggle" id="admNavToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
-    <ul class="adm-nav-links" id="admNavLinks">
-      <li><a href="/zerdatime/website/">Accueil</a></li>
-      <li><a href="/zerdatime/website/#about">Notre mission</a></li>
-      <li><a href="/zerdatime/website/recrutement.php">Emploi & Formation</a></li>
-      <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
-      <li><a href="/zerdatime/" class="adm-nav-btn"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>
-    </ul>
-  </div>
-</nav>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <div class="adm-shell">
 
@@ -261,10 +233,6 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 <!-- ═══ FOOTER ═══ -->
 <?php include __DIR__ . '/includes/footer.php'; ?>
 
-<script>
-document.getElementById('admNavToggle')?.addEventListener('click', () => {
-  document.getElementById('admNavLinks').classList.toggle('open');
-});
-</script>
+
 </body>
 </html>

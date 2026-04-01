@@ -36,29 +36,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </head>
 <body>
 
-<!-- ═══ NAVBAR ═══ -->
-<nav class="ws-nav" id="wsNav">
-  <div class="container">
-    <div class="ws-nav-inner">
-      <a href="#hero" class="ws-logo">
-        <img src="EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-logo-img">
-      </a>
-      <button class="ws-nav-toggle" id="wsNavToggle" aria-label="Menu">
-        <i class="bi bi-list"></i>
-      </button>
-      <ul class="ws-nav-links" id="wsNavLinks">
-        <li><a href="#hero">Accueil</a></li>
-        <li><a href="#about">Notre mission</a></li>
-        <li><a href="#services">Nos soins</a></li>
-        <li><a href="#life">Vie quotidienne</a></li>
-        <li><a href="#team">Équipe</a></li>
-        <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li><a href="/zerdatime/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Espace collaborateur</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <!-- ═══ HERO WITH VIDEO BACKGROUND ═══ -->
 <section class="ws-hero ws-hero-video" id="hero">
