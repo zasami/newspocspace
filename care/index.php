@@ -186,21 +186,23 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <div class="admin-main" id="adminMain">
   <!-- TOP BAR -->
   <header class="admin-topbar">
-    <div class="topbar-left">
-      <button class="topbar-btn d-lg-none" id="mobileMenuBtn" title="Menu"><i class="bi bi-list"></i></button>
-      <h5 class="topbar-title"><?= h($pageTitle) ?></h5>
-    </div>
-    <div class="topbar-center">
-      <div class="topbar-search">
-        <i class="bi bi-search"></i>
-        <input type="text" id="topbarSearchInput" placeholder="<?= h($topbarPlaceholder) ?>" autocomplete="off">
-      </div>
+    <button class="topbar-hamburger" id="mobileToggle" title="Menu">
+      <i class="bi bi-list"></i>
+    </button>
+    <h5 class="mb-0 topbar-title"><?= h($pageTitle) ?></h5>
+    <div class="topbar-search ms-auto me-3" id="topbarSearch">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="<?= h($topbarPlaceholder) ?>" autocomplete="off">
+      <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="topbar-right">
-      <div class="topbar-user">
+      <div class="topbar-user d-none d-sm-flex">
         <span class="topbar-user-name"><?= h($user['prenom'] . ' ' . $user['nom']) ?></span>
         <span class="topbar-user-role"><?= h($roleLabel) ?></span>
       </div>
+      <a href="/zerdatime/login?action=logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
+        <i class="bi bi-power"></i>
+      </a>
     </div>
   </header>
 
