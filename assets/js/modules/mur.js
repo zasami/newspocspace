@@ -372,8 +372,30 @@ function renderPost(post) {
         imagesHtml += '</div>';
     }
 
-    const likeBtn = wallConfig.allow_likes !== '0' ? `<button class="mur-action-btn mur-like-btn ${post.is_liked ? 'liked' : ''}" data-id="${post.id}"><i class="bi ${post.is_liked ? 'bi-heart-fill' : 'bi-heart'}"></i> <span>${post.is_liked ? 'Aimé' : 'Aimer'}</span> <span class="mur-like-count">${post.likes_count || 0}</span></button>` : '';
-    const commentBtn = wallConfig.allow_comments !== '0' ? `<button class="mur-action-btn mur-comment-toggle" data-id="${post.id}"><i class="bi bi-chat"></i> <span>Commenter</span> <span class="mur-comment-count">${post.comments_count || 0}</span></button>` : '';
+    // Engagement stats
+    const engagement = `<div class="mur-post-engagement">
+        <span><i class="bi bi-heart-fill" style="color:#e74c3c"></i> ${post.likes_count || 0} J'aime</span>
+        <span><i class="bi bi-chat"></i> ${post.comments_count || 0} Commentaires</span>
+    </div>`;
+
+    // Action buttons (like Zikzak: Like / Comment)
+    const likeBtn = wallConfig.allow_likes !== '0' ? `<button class="mur-action-btn mur-like-btn ${post.is_liked ? 'liked' : ''}" data-id="${post.id}"><i class="bi ${post.is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'}"></i> ${post.is_liked ? 'Aimé' : 'J\'aime'}</button>` : '';
+    const commentBtn = wallConfig.allow_comments !== '0' ? `<button class="mur-action-btn mur-comment-toggle" data-id="${post.id}"><i class="bi bi-chat-dots"></i> Commenter</button>` : '';
+
+    // Always-visible comment input
+    const commentInput = wallConfig.allow_comments !== '0' && user ? `<div class="mur-comments-section" data-post-id="${post.id}">
+        <div class="mur-comment-list" data-post-id="${post.id}"></div>
+        <div class="mur-comment-input">
+            <div class="mur-comment-input-wrap">
+                <input type="text" class="mur-comment-text" placeholder="Écrire un commentaire..." data-post-id="${post.id}">
+                <div class="mur-comment-icons">
+                    <button class="mur-comment-icon-btn" title="Photo"><i class="bi bi-image"></i></button>
+                    <button class="mur-comment-icon-btn" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                    <button class="mur-comment-icon-btn" title="Pièce jointe"><i class="bi bi-paperclip"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>` : '';
 
     return `<div class="mur-post" data-post-id="${post.id}">
         <div class="mur-post-header">
@@ -382,12 +404,13 @@ function renderPost(post) {
                 <div class="mur-post-name">${displayName}${post.fonction_nom ? ` <span class="mur-post-fonction">${escapeHtml(post.fonction_nom)}</span>` : ''}</div>
                 <div class="mur-post-time">${timeAgo(post.created_at)} ${post.is_pinned == 1 ? '<i class="bi bi-pin-fill mur-pin-icon"></i>' : ''} <span class="mur-post-cat" style="background:${catColor}20">${escapeHtml(CAT_LABELS[post.category] || post.category)}</span></div>
             </div>
-            ${isOwn ? `<div class="mur-post-actions"><button class="mur-action-btn mur-edit-btn" data-id="${post.id}"><i class="bi bi-three-dots"></i></button></div>` : ''}
+            ${isOwn ? `<div class="mur-post-actions"><button class="mur-action-btn mur-edit-btn" data-id="${post.id}" style="flex:unset;border:none"><i class="bi bi-three-dots"></i></button></div>` : ''}
         </div>
         ${post.body ? `<div class="mur-post-body">${escapeHtml(post.body)}</div>` : ''}
         ${imagesHtml}
+        ${engagement}
         <div class="mur-post-footer">${likeBtn}${commentBtn}</div>
-        <div class="mur-comments-section" data-post-id="${post.id}" style="display:none"></div>
+        ${commentInput}
     </div>`;
 }
 
@@ -409,14 +432,31 @@ function setupPostHandlers(container) {
         });
     });
 
-    // Comment toggle
+    // Comment toggle — load comments + focus input
     container.querySelectorAll('.mur-comment-toggle:not([data-bound])').forEach(btn => {
         btn.dataset.bound = '1';
         btn.addEventListener('click', () => {
-            const section = container.querySelector(`.mur-comments-section[data-post-id="${btn.dataset.id}"]`);
+            const postId = btn.dataset.id;
+            const section = container.querySelector(`.mur-comments-section[data-post-id="${postId}"]`);
             if (!section) return;
-            if (section.style.display === 'none') { section.style.display = ''; loadComments(btn.dataset.id, section); }
-            else section.style.display = 'none';
+            const list = section.querySelector('.mur-comment-list');
+            if (list && !list.dataset.loaded) {
+                list.dataset.loaded = '1';
+                loadCommentsInline(postId, list);
+            }
+            section.querySelector('.mur-comment-text')?.focus();
+        });
+    });
+
+    // Comment send (always-visible inputs)
+    container.querySelectorAll('.mur-comment-text:not([data-bound])').forEach(input => {
+        input.dataset.bound = '1';
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const postId = input.dataset.postId;
+                submitComment(postId, input);
+            }
         });
     });
 
@@ -475,6 +515,44 @@ function setupPostHandlers(container) {
 // ══════════════════════════════════════
 // COMMENTS
 // ══════════════════════════════════════
+async function loadCommentsInline(postId, listEl) {
+    listEl.innerHTML = '<div class="mur-loading" style="padding:8px"><span class="spinner spinner-sm"></span></div>';
+    const res = await apiPost('get_mur_comments', { post_id: postId });
+    if (!res.success) { listEl.innerHTML = ''; return; }
+
+    const comments = res.comments || [];
+    const user = window.__ZT__?.user;
+    listEl.innerHTML = comments.map(c => {
+        const initials = ((c.prenom || '')[0] || '') + ((c.nom || '')[0] || '');
+        const name = escapeHtml(((c.prenom || '') + ' ' + (c.nom || '')).trim() || 'Anonyme');
+        const isOwn = user?.id === c.user_id;
+        return `<div class="mur-comment"><div class="mur-comment-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : escapeHtml(initials || '?')}</div><div class="mur-comment-content"><div class="mur-comment-header"><span class="mur-comment-name">${name}</span><span class="mur-comment-time">${timeAgo(c.created_at)}</span>${isOwn ? `<button class="mur-comment-del" data-id="${c.id}" data-post-id="${postId}"><i class="bi bi-x"></i></button>` : ''}</div><div class="mur-comment-body">${escapeHtml(c.body)}</div></div></div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.mur-comment-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const r = await apiPost('delete_mur_comment', { id: btn.dataset.id });
+            if (r.success) { btn.closest('.mur-comment')?.remove(); updateCommentCount(btn.dataset.postId, -1); }
+        });
+    });
+}
+
+async function submitComment(postId, inputEl) {
+    const body = inputEl.value.trim();
+    if (!body) return;
+    const r = await apiPost('add_mur_comment', { post_id: postId, body });
+    if (r.success) {
+        inputEl.value = '';
+        toast('Commentaire ajouté');
+        // Reload comments inline
+        const listEl = inputEl.closest('.mur-comments-section')?.querySelector('.mur-comment-list');
+        if (listEl) loadCommentsInline(postId, listEl);
+        updateCommentCount(postId, 1);
+    } else {
+        toast(r.message || 'Erreur');
+    }
+}
+
 async function loadComments(postId, container) {
     container.innerHTML = '<div class="mur-loading"><span class="spinner spinner-sm"></span></div>';
     const res = await apiPost('get_mur_comments', { post_id: postId });

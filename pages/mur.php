@@ -1,6 +1,6 @@
 <div id="mur-page">
 
-    <!-- Hero banner (like profile cover) -->
+    <!-- Hero banner -->
     <div class="mur-hero" id="murHero">
         <div class="mur-hero-cover" id="murHeroCover"></div>
         <div class="mur-hero-overlay"></div>
@@ -13,18 +13,9 @@
                 <p id="murHeroSubtitle">Votre réseau interne</p>
             </div>
             <div class="mur-hero-stats">
-                <div class="mur-hero-stat">
-                    <strong id="murStatPosts">-</strong>
-                    <span>Posts</span>
-                </div>
-                <div class="mur-hero-stat">
-                    <strong id="murStatComments">-</strong>
-                    <span>Commentaires</span>
-                </div>
-                <div class="mur-hero-stat">
-                    <strong id="murStatContributors">-</strong>
-                    <span>Membres</span>
-                </div>
+                <div class="mur-hero-stat"><strong id="murStatPosts">-</strong><span>Posts</span></div>
+                <div class="mur-hero-stat"><strong id="murStatComments">-</strong><span>Commentaires</span></div>
+                <div class="mur-hero-stat"><strong id="murStatContributors">-</strong><span>Membres</span></div>
             </div>
         </div>
     </div>
@@ -33,7 +24,7 @@
     <div class="mur-3col">
 
         <!-- LEFT SIDEBAR -->
-        <aside class="mur-sidebar-left" id="murSidebarLeft">
+        <aside class="mur-sidebar-left">
             <div class="mur-sidebar-card">
                 <div class="mur-sidebar-title">Catégories</div>
                 <nav class="mur-cat-nav" id="murCatNav"></nav>
@@ -44,43 +35,40 @@
             </div>
         </aside>
 
-        <!-- CENTER: Composer + Feed -->
+        <!-- CENTER -->
         <div class="mur-center">
             <!-- Composer -->
             <div class="mur-composer" id="murComposer">
-                <div class="mur-composer-header">
+                <div class="mur-composer-row">
                     <div class="mur-composer-avatar" id="composerAvatar"></div>
-                    <textarea id="composerBody" class="mur-composer-input" placeholder="Quoi de neuf ?" rows="1"></textarea>
-                </div>
-                <div class="mur-composer-footer">
-                    <div class="mur-composer-options">
-                        <select id="composerCategory" class="mur-select"></select>
-                        <label class="mur-composer-media-btn" id="composerMediaBtn" title="Ajouter des images">
-                            <i class="bi bi-image"></i>
-                            <input type="file" id="composerFiles" multiple accept="image/*" style="display:none">
-                        </label>
-                        <label class="mur-composer-anon" id="composerAnonWrap" style="display:none">
-                            <input type="checkbox" id="composerAnon"> Anonyme
-                        </label>
+                    <div class="mur-composer-wrap">
+                        <textarea id="composerBody" class="mur-composer-input" placeholder="Quoi de neuf ?" rows="1"></textarea>
+                        <div class="mur-composer-icons">
+                            <label class="mur-composer-icon-btn" title="Photo"><i class="bi bi-camera"></i><input type="file" id="composerFiles" multiple accept="image/*" style="display:none"></label>
+                            <label class="mur-composer-icon-btn" title="Vidéo"><i class="bi bi-camera-video"></i></label>
+                            <label class="mur-composer-icon-btn" title="Pièce jointe"><i class="bi bi-paperclip"></i></label>
+                        </div>
                     </div>
-                    <button class="mur-btn-post" id="btnPost">
-                        <i class="bi bi-send-fill"></i> Publier
-                    </button>
                 </div>
                 <div class="mur-composer-preview" id="composerPreview" style="display:none"></div>
+                <div class="mur-composer-bottom">
+                    <select id="composerCategory" class="mur-select"></select>
+                    <label class="mur-composer-anon" id="composerAnonWrap" style="display:none">
+                        <input type="checkbox" id="composerAnon"> Anonyme
+                    </label>
+                    <button class="mur-btn-post" id="btnPost"><i class="bi bi-send-fill"></i> Publier</button>
+                </div>
             </div>
 
             <!-- Feed -->
-            <div id="murFeed">
-                <div class="mur-loading"><span class="spinner"></span></div>
-            </div>
+            <div id="murFeed"><div class="mur-loading"><span class="spinner"></span></div></div>
             <div id="murLoadMore" class="mur-load-more" style="display:none">
                 <button class="mur-btn-load-more" id="btnLoadMore">Voir plus</button>
             </div>
         </div>
 
         <!-- RIGHT SIDEBAR -->
-        <aside class="mur-sidebar-right" id="murSidebarRight">
+        <aside class="mur-sidebar-right">
             <div class="mur-sidebar-card">
                 <div class="mur-sidebar-title"><i class="bi bi-images"></i> Galerie média</div>
                 <div class="mur-gallery-grid" id="murGallery">
