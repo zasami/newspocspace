@@ -40,7 +40,17 @@ $produits = Db::fetchAll("SELECT * FROM hygiene_produits WHERE is_active = 1 ORD
 .hyg-quick-item i { font-size: 1.5rem; display: block; margin-bottom: 4px; }
 .hyg-quick-item span { font-size: .78rem; font-weight: 600; }
 
-.hyg-cat-labels { savon:'Savon', rasoir:'Rasoir', parfum:'Parfum', gel_douche:'Gel douche', apres_rasage:'Après-rasage', dentifrice:'Dentifrice', shampooing:'Shampooing', creme:'Crème', deodorant:'Déodorant', autre:'Autre' }
+/* ── Historique ── */
+.hyg-hist-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.hyg-hist-card { background: var(--cl-surface, #fff); border: 1.5px solid var(--cl-border-light); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+.hyg-hist-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.hyg-hist-date { font-size: .72rem; font-weight: 700; color: var(--cl-text-muted); background: var(--cl-bg); padding: 2px 10px; border-radius: 8px; }
+.hyg-hist-steps { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+.hyg-hist-step { display: flex; align-items: center; gap: 6px; font-size: .78rem; }
+.hyg-hist-step i { font-size: .7rem; }
+.hyg-hist-step .step-who { font-weight: 600; }
+.hyg-hist-step .step-when { color: var(--cl-text-muted); font-size: .7rem; }
+.hyg-hist-arrow { color: var(--cl-text-muted); font-size: .7rem; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -57,6 +67,7 @@ $produits = Db::fetchAll("SELECT * FROM hygiene_produits WHERE is_active = 1 ORD
   <button class="hyg-tab active" data-hyg-view="commande"><i class="bi bi-cart-plus"></i> Commander</button>
   <button class="hyg-tab" data-hyg-view="preparation"><i class="bi bi-box-seam"></i> Préparation</button>
   <button class="hyg-tab" data-hyg-view="distribution"><i class="bi bi-truck"></i> Distribution</button>
+  <button class="hyg-tab" data-hyg-view="historique"><i class="bi bi-clock-history"></i> Historique</button>
   <button class="hyg-tab" data-hyg-view="produits"><i class="bi bi-grid"></i> Catalogue</button>
 </div>
 
@@ -110,6 +121,7 @@ $produits = Db::fetchAll("SELECT * FROM hygiene_produits WHERE is_active = 1 ORD
 
     async function load() {
         if (currentView === 'produits') { await loadProduits(); return; }
+        if (currentView === 'historique') { await loadHistorique(); return; }
         await loadCommandes();
     }
 
@@ -265,6 +277,70 @@ $produits = Db::fetchAll("SELECT * FROM hygiene_produits WHERE is_active = 1 ORD
             const r = await adminApiPost('admin_deliver_hygiene_commandes', { ids });
             if (r.success) { showToast('Distribution confirmée', 'success'); loadCommandes(); }
         });
+    }
+
+    // ── Historique ──
+    async function loadHistorique() {
+        const el = document.getElementById('hygContent');
+        const today = new Date().toISOString().split('T')[0];
+        const weekAgo = new Date(Date.now() - 7*86400000).toISOString().split('T')[0];
+
+        let h = '<div class="hyg-hist-filters">'
+            + '<label class="small fw-bold">Du</label><input type="date" class="form-control form-control-sm" id="hygHistFrom" value="' + weekAgo + '" style="max-width:150px">'
+            + '<label class="small fw-bold">Au</label><input type="date" class="form-control form-control-sm" id="hygHistTo" value="' + today + '" style="max-width:150px">'
+            + '<input type="text" class="form-control form-control-sm" id="hygHistSearch" placeholder="Rechercher..." style="max-width:200px">'
+            + '<button class="btn btn-sm btn-outline-secondary" id="hygHistLoad"><i class="bi bi-search"></i></button>'
+            + '</div><div id="hygHistList"><div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div></div>';
+        el.innerHTML = h;
+
+        async function fetchHist() {
+            const r = await adminApiPost('admin_get_hygiene_historique', {
+                from: document.getElementById('hygHistFrom').value,
+                to: document.getElementById('hygHistTo').value,
+                search: document.getElementById('hygHistSearch').value
+            });
+            if (!r.success) return;
+            const items = r.historique || [];
+            const list = document.getElementById('hygHistList');
+            if (!items.length) { list.innerHTML = '<p class="text-muted text-center py-4">Aucun historique pour cette période.</p>'; return; }
+
+            list.innerHTML = items.map(c => {
+                const fmtTime = d => d ? new Date(d).toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}) : '';
+                const fmtDate = new Date(c.jour).toLocaleDateString('fr-CH',{weekday:'short',day:'numeric',month:'short'});
+
+                let steps = '<div class="hyg-hist-steps">';
+                // Step 1: Commandé
+                steps += '<div class="hyg-hist-step"><i class="bi bi-cart-plus" style="color:#6B5B3E"></i><span class="step-who">' + escapeHtml((c.cmd_prenom||'')+' '+(c.cmd_nom||'').charAt(0)+'.') + '</span><span class="step-when">' + fmtTime(c.created_at) + '</span></div>';
+                // Arrow
+                if (c.prepared_by) {
+                    steps += '<span class="hyg-hist-arrow"><i class="bi bi-arrow-right"></i></span>';
+                    steps += '<div class="hyg-hist-step"><i class="bi bi-box-seam" style="color:#3B4F6B"></i><span class="step-who">' + escapeHtml((c.prep_prenom||'')+' '+(c.prep_nom||'').charAt(0)+'.') + '</span><span class="step-when">' + fmtTime(c.prepared_at) + '</span></div>';
+                }
+                if (c.delivered_by) {
+                    steps += '<span class="hyg-hist-arrow"><i class="bi bi-arrow-right"></i></span>';
+                    steps += '<div class="hyg-hist-step"><i class="bi bi-check-all" style="color:#2d4a43"></i><span class="step-who">' + escapeHtml((c.dist_prenom||'')+' '+(c.dist_nom||'').charAt(0)+'.') + '</span><span class="step-when">' + fmtTime(c.delivered_at) + '</span></div>';
+                }
+                steps += '</div>';
+
+                return '<div class="hyg-hist-card">'
+                    + '<div class="hyg-hist-header">'
+                    + '<span class="hyg-hist-date">' + fmtDate + '</span>'
+                    + '<strong>' + escapeHtml(c.resident_nom + ' ' + c.resident_prenom) + '</strong>'
+                    + '<span class="small text-muted">Ch.' + escapeHtml(c.chambre||'?') + '</span>'
+                    + '<span class="hyg-badge hyg-badge-' + c.statut + '" style="margin-left:auto">' + c.statut.charAt(0).toUpperCase() + c.statut.slice(1) + '</span>'
+                    + '</div>'
+                    + '<div class="d-flex align-items-center gap-2"><span class="hyg-prod-dot" style="background:' + (c.couleur||'#3B4F6B') + '"></span><span class="small fw-bold">' + escapeHtml(c.produit_nom) + '</span><span class="small text-muted">x' + c.quantite + '</span>'
+                    + (c.urgence==1 ? '<span class="hyg-badge hyg-badge-urgent">URGENT</span>' : '')
+                    + (c.notes ? '<span class="small text-muted ms-2">' + escapeHtml(c.notes) + '</span>' : '')
+                    + '</div>'
+                    + steps
+                    + '</div>';
+            }).join('');
+        }
+
+        document.getElementById('hygHistLoad')?.addEventListener('click', fetchHist);
+        document.getElementById('hygHistSearch')?.addEventListener('keydown', e => { if (e.key === 'Enter') fetchHist(); });
+        fetchHist();
     }
 
     // ── Catalogue ──

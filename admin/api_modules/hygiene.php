@@ -109,6 +109,40 @@ function admin_deliver_hygiene_commandes() {
     respond(['success' => true, 'message' => 'Distributions confirmées']);
 }
 
+function admin_get_hygiene_historique() {
+    global $params;
+    $from = $params['from'] ?? date('Y-m-d', strtotime('-7 days'));
+    $to = $params['to'] ?? date('Y-m-d');
+    $search = $params['search'] ?? '';
+
+    $where = "c.jour BETWEEN ? AND ?";
+    $binds = [$from, $to];
+    if ($search) {
+        $where .= " AND (r.nom LIKE ? OR r.prenom LIKE ? OR p.nom LIKE ? OR r.chambre LIKE ?)";
+        $s = '%' . $search . '%';
+        $binds = array_merge($binds, [$s, $s, $s, $s]);
+    }
+
+    $rows = Db::fetchAll(
+        "SELECT c.*, p.nom AS produit_nom, p.categorie, p.couleur,
+                r.nom AS resident_nom, r.prenom AS resident_prenom, r.chambre, r.etage,
+                u.prenom AS cmd_prenom, u.nom AS cmd_nom,
+                pu.prenom AS prep_prenom, pu.nom AS prep_nom,
+                du.prenom AS dist_prenom, du.nom AS dist_nom
+         FROM hygiene_commandes c
+         JOIN hygiene_produits p ON p.id = c.produit_id
+         JOIN residents r ON r.id = c.resident_id
+         JOIN users u ON u.id = c.commandeur_id
+         LEFT JOIN users pu ON pu.id = c.prepared_by
+         LEFT JOIN users du ON du.id = c.delivered_by
+         WHERE $where
+         ORDER BY c.jour DESC, c.created_at DESC
+         LIMIT 500",
+        $binds
+    );
+    respond(['success' => true, 'historique' => $rows]);
+}
+
 function admin_delete_hygiene_commande() {
     global $params;
     Db::exec("DELETE FROM hygiene_commandes WHERE id = ?", [$params['id'] ?? '']);
