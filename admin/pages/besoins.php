@@ -301,39 +301,35 @@ function initBesoinsPage() {
 
     renderFteSummary(dayTotals, grandTotal);
 
-    // Event delegation on tbody
-    bindTableEvents(tbody);
-  }
-
-  function bindTableEvents(tbody) {
-    // Use event delegation for all tbody interactions
-    tbody.addEventListener('change', function(e) {
-      if (e.target.classList.contains('besoin-input')) {
-        handleInputChange(e);
-      }
-    });
-    tbody.addEventListener('focus', function(e) {
-      if (e.target.classList.contains('besoin-input')) {
-        e.target.select();
-      }
-    }, true);
-    tbody.addEventListener('click', function(e) {
-      // Reset module button (stop propagation to prevent mod-toggle)
-      const resetBtn = e.target.closest('[data-action="reset-mod"]');
-      if (resetBtn) {
-        e.stopPropagation();
-        resetModuleBesoins(resetBtn.dataset.modId, resetBtn.dataset.modName);
-        return;
-      }
-      // Module toggle
-      const toggleRow = e.target.closest('[data-mod-toggle]');
-      if (toggleRow) {
-        const modId = toggleRow.dataset.modToggle;
-        if (collapsedModules.has(modId)) collapsedModules.delete(modId);
-        else collapsedModules.add(modId);
-        renderGrid();
-      }
-    });
+    // Bind events once (not on every render)
+    if (!tbody.__evBound) {
+      tbody.__evBound = true;
+      tbody.addEventListener('change', function(e) {
+        if (e.target.classList.contains('besoin-input')) {
+          handleInputChange(e);
+        }
+      });
+      tbody.addEventListener('focus', function(e) {
+        if (e.target.classList.contains('besoin-input')) {
+          e.target.select();
+        }
+      }, true);
+      tbody.addEventListener('click', function(e) {
+        const resetBtn = e.target.closest('[data-action="reset-mod"]');
+        if (resetBtn) {
+          e.stopPropagation();
+          resetModuleBesoins(resetBtn.dataset.modId, resetBtn.dataset.modName);
+          return;
+        }
+        const toggleRow = e.target.closest('[data-mod-toggle]');
+        if (toggleRow) {
+          const modId = toggleRow.dataset.modToggle;
+          if (collapsedModules.has(modId)) collapsedModules.delete(modId);
+          else collapsedModules.add(modId);
+          renderGrid();
+        }
+      });
+    }
   }
 
   async function handleInputChange(e) {
