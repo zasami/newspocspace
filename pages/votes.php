@@ -1,5 +1,5 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
-$uid = $_SESSION['zt_user']['id'];
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['ss_user']['id'];
 $initProposals = Db::fetchAll(
     "SELECT pp.id, pp.mois_annee, pp.label, pp.statut, pp.votes_pour, pp.votes_contre, pp.created_at
      FROM planning_proposals pp
@@ -62,4 +62,4 @@ unset($p);
   </div>
 </div>
 
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['proposals' => $initProposals], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['proposals' => $initProposals], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

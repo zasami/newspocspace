@@ -6,7 +6,7 @@
         <div class="mur-hero-overlay"></div>
         <div class="mur-hero-inner">
             <div class="mur-hero-avatar" id="murHeroAvatar">
-                <img src="/zerdatime/logo.png" alt="" id="murHeroLogo">
+                <img src="/spocspace/logo.png" alt="" id="murHeroLogo">
             </div>
             <div class="mur-hero-info">
                 <h1 id="murHeroTitle">Mur social</h1>

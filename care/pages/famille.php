@@ -199,7 +199,7 @@ $famResidents = Db::fetchAll(
   </div>
 </div>
 
-<script<?= nonce() ?> src="/zerdatime/website/assets/js/famille-crypto.js"></script>
+<script<?= nonce() ?> src="/spocspace/website/assets/js/famille-crypto.js"></script>
 <script<?= nonce() ?>>
 (function() {
     const residents = <?= json_encode(array_values($famResidents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -358,8 +358,8 @@ $famResidents = Db::fetchAll(
         fd.append('file_name', file.name);
         Object.entries(extraFields || {}).forEach(([k, v]) => fd.append(k, v));
 
-        const csrfToken = (window.__ZT_ADMIN__?.csrfToken || '');
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const csrfToken = (window.__SS_ADMIN__?.csrfToken || '');
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': csrfToken },
             body: fd
@@ -788,7 +788,7 @@ $famResidents = Db::fetchAll(
         for (let i = 0; i < photos.length; i++) {
             const p = photos[i];
             try {
-                const res = await fetch('/zerdatime/admin/api.php?action=admin_famille_serve_galerie_photo&id=' + encodeURIComponent(p.id));
+                const res = await fetch('/spocspace/admin/api.php?action=admin_famille_serve_galerie_photo&id=' + encodeURIComponent(p.id));
                 if (!res.ok) { viewerPhotos.push({ url: '', id: p.id }); grid += '<div class="fam-gal-item"><div class="text-center text-muted py-4"><i class="bi bi-image"></i></div></div>'; continue; }
                 const encData = await res.arrayBuffer();
                 const iv = hexToBytes(p.encrypted_iv);

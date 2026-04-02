@@ -1,22 +1,22 @@
 # ============================================================
-# ZerdaTime - Installation complete : Vosk + Ollama + Mistral
+# SpocSpace - Installation complete : Vosk + Ollama + Mistral
 # ============================================================
 # Usage :
 #   Clic droit > Executer avec PowerShell
 #   ou : powershell -ExecutionPolicy Bypass -File install-whisper.ps1
 # ============================================================
-# Le script cherche ZerdaTime-IA-Install.zip dans le meme
+# Le script cherche SpocSpace-IA-Install.zip dans le meme
 # dossier ou dans Telechargements, le dezippe, puis installe.
 # ============================================================
 
 $ErrorActionPreference = "Stop"
-$WHISPER_DIR = "$env:LOCALAPPDATA\ZerdaTimeWhisper"
+$WHISPER_DIR = "$env:LOCALAPPDATA\SpocSpaceWhisper"
 $VENV_DIR    = "$WHISPER_DIR\venv"
 $SERVER_PY   = "$WHISPER_DIR\whisper_server.py"
 $PORT        = 5876
 
 # URL de base (fallback si fichiers locaux absents)
-$BASE_URL = "https://zkriva.com/zerdatime/whisper-local"
+$BASE_URL = "https://zkriva.com/spocspace/whisper-local"
 
 # -- Fonctions d'affichage (ASCII only) --
 function Write-Step($msg)  { Write-Host "`n> $msg" -ForegroundColor Cyan }
@@ -26,7 +26,7 @@ function Write-Err($msg)   { Write-Host "  [ERR] $msg" -ForegroundColor Red }
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor DarkCyan
-Write-Host "  ZerdaTime - Installation IA locale" -ForegroundColor DarkCyan
+Write-Host "  SpocSpace - Installation IA locale" -ForegroundColor DarkCyan
 Write-Host "  Vosk (transcription) + Ollama (structuration)" -ForegroundColor DarkCyan
 Write-Host "============================================" -ForegroundColor DarkCyan
 
@@ -79,7 +79,7 @@ if (-not $pythonCmd) {
         Copy-Item $localPythonZip $pythonZip -Force
         Write-Ok "Python copie depuis le dossier d installation"
     } else {
-        Write-Host "  Telechargement de Python portable depuis ZerdaTime..." -ForegroundColor Gray
+        Write-Host "  Telechargement de Python portable depuis SpocSpace..." -ForegroundColor Gray
         Invoke-WebRequest -Uri "$BASE_URL/downloads/python-3.11.9-embed-amd64.zip" -OutFile $pythonZip -UseBasicParsing
         Write-Ok "Python telecharge"
     }
@@ -137,7 +137,7 @@ if (Test-Path $srcServer) {
     Copy-Item $srcServer $SERVER_PY -Force
     Write-Ok "whisper_server.py copie"
 } else {
-    Write-Host "  Telechargement depuis ZerdaTime..." -ForegroundColor Gray
+    Write-Host "  Telechargement depuis SpocSpace..." -ForegroundColor Gray
     try {
         Invoke-WebRequest -Uri "$BASE_URL/whisper_server.py" -OutFile $SERVER_PY -UseBasicParsing
         Write-Ok "whisper_server.py telecharge"
@@ -183,9 +183,9 @@ Write-Step "Installation de faster-whisper (transcription haute precision)..."
 $wheelDir = $null
 foreach ($p in @(
     "$scriptDir\whisper-wheels",
-    "$scriptDir\ZerdaTime-IA\whisper-wheels",
+    "$scriptDir\SpocSpace-IA\whisper-wheels",
     "$PSScriptRoot\whisper-wheels",
-    "$PSScriptRoot\ZerdaTime-IA\whisper-wheels"
+    "$PSScriptRoot\SpocSpace-IA\whisper-wheels"
 )) {
     if (Test-Path "$p\faster_whisper*.whl") {
         $wheelDir = $p
@@ -211,9 +211,9 @@ if (Test-Path "$whisperModelDir\model.bin") {
     $whisperModelSource = $null
     $searchPaths = @(
         "$scriptDir\whisper-model-base",
-        "$scriptDir\ZerdaTime-IA\whisper-model-base",
+        "$scriptDir\SpocSpace-IA\whisper-model-base",
         "$PSScriptRoot\whisper-model-base",
-        "$PSScriptRoot\ZerdaTime-IA\whisper-model-base"
+        "$PSScriptRoot\SpocSpace-IA\whisper-model-base"
     )
     foreach ($p in $searchPaths) {
         if (Test-Path "$p\model.bin") {
@@ -272,7 +272,7 @@ if (-not $ffmpegOk) {
             Copy-Item $localFfmpegZip $ffmpegZip -Force
             Write-Ok "ffmpeg copie depuis le dossier d installation"
         } else {
-            Write-Host "  Telechargement de ffmpeg depuis ZerdaTime..." -ForegroundColor Gray
+            Write-Host "  Telechargement de ffmpeg depuis SpocSpace..." -ForegroundColor Gray
             Invoke-WebRequest -Uri "$BASE_URL/downloads/ffmpeg.zip" -OutFile $ffmpegZip -UseBasicParsing
             Write-Ok "ffmpeg telecharge"
         }
@@ -298,7 +298,7 @@ if (-not $ffmpegOk) {
         $env:Path = "$ffmpegDir;" + $env:Path
         Write-Ok "ffmpeg installe localement"
     } catch {
-        Write-Warn "Impossible de telecharger ffmpeg depuis ZerdaTime."
+        Write-Warn "Impossible de telecharger ffmpeg depuis SpocSpace."
         Write-Host "  Tentative via winget..." -ForegroundColor Gray
         try {
             winget install -e --id Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
@@ -320,9 +320,9 @@ if (Test-Path "$modelDir\conf\model.conf") {
     $voskSource = $null
     $searchPaths = @(
         "$scriptDir\vosk-model-fr-0.22",
-        "$scriptDir\ZerdaTime-IA\vosk-model-fr-0.22",
+        "$scriptDir\SpocSpace-IA\vosk-model-fr-0.22",
         "$PSScriptRoot\vosk-model-fr-0.22",
-        "$PSScriptRoot\ZerdaTime-IA\vosk-model-fr-0.22"
+        "$PSScriptRoot\SpocSpace-IA\vosk-model-fr-0.22"
     )
     foreach ($p in $searchPaths) {
         if (Test-Path "$p\conf\model.conf") {
@@ -572,8 +572,8 @@ if ($ollamaOk) {
 Write-Step "Creation des raccourcis..."
 
 # -- Raccourci unifie (Vosk + Ollama) --
-$shortcutPathIA = [Environment]::GetFolderPath("Desktop") + "\ZerdaTime IA.lnk"
-$batPathIA = "$WHISPER_DIR\start-zerdatime-ia.bat"
+$shortcutPathIA = [Environment]::GetFolderPath("Desktop") + "\SpocSpace IA.lnk"
+$batPathIA = "$WHISPER_DIR\start-spocspace-ia.bat"
 
 # Preparer le PATH ffmpeg dans le bat si installe localement
 $ffmpegPathLine = ""
@@ -583,10 +583,10 @@ if (Test-Path "$WHISPER_DIR\ffmpeg\ffmpeg.exe") {
 
 $batLinesIA = @(
     "@echo off",
-    "title ZerdaTime IA - Vosk + Ollama",
+    "title SpocSpace IA - Vosk + Ollama",
     "echo.",
     "echo  ============================================",
-    "echo   ZerdaTime IA - Serveurs locaux",
+    "echo   SpocSpace IA - Serveurs locaux",
     "echo   Vosk (transcription) + Ollama (structuration)",
     "echo   Ne fermez pas cette fenetre !",
     "echo  ============================================",
@@ -656,23 +656,23 @@ $batLinesIA += @(
     "pause >nul"
 )
 $batLinesIA -join "`r`n" | Set-Content -Path $batPathIA -Encoding ASCII
-Write-Ok "start-zerdatime-ia.bat cree"
+Write-Ok "start-spocspace-ia.bat cree"
 
 try {
     $WshShell = New-Object -ComObject WScript.Shell
     $shortcutIA = $WshShell.CreateShortcut($shortcutPathIA)
     $shortcutIA.TargetPath = $batPathIA
     $shortcutIA.WorkingDirectory = $WHISPER_DIR
-    $shortcutIA.Description = "Lancer Vosk + Ollama pour ZerdaTime"
+    $shortcutIA.Description = "Lancer Vosk + Ollama pour SpocSpace"
     $shortcutIA.Save()
-    Write-Ok "Raccourci cree sur le Bureau : ZerdaTime IA"
+    Write-Ok "Raccourci cree sur le Bureau : SpocSpace IA"
 } catch {
     Write-Warn "Impossible de creer le raccourci"
     Write-Host "  Lancez manuellement : $batPathIA" -ForegroundColor White
 }
 
 # Supprimer l ancien raccourci Vosk seul s il existe
-$oldVoskLnk = [Environment]::GetFolderPath("Desktop") + "\ZerdaTime Whisper.lnk"
+$oldVoskLnk = [Environment]::GetFolderPath("Desktop") + "\SpocSpace Whisper.lnk"
 if (Test-Path $oldVoskLnk) { Remove-Item $oldVoskLnk -Force -ErrorAction SilentlyContinue }
 
 # ============================================================
@@ -720,14 +720,14 @@ Write-Host "    - Ollama    : Serveur IA local (port 59876)" -ForegroundColor Wh
 Write-Host "    - Mistral   : Modele de structuration de texte" -ForegroundColor White
 Write-Host ""
 Write-Host "  Raccourci sur le Bureau :" -ForegroundColor White
-Write-Host "    - ZerdaTime IA : Lance Vosk + Ollama ensemble" -ForegroundColor White
+Write-Host "    - SpocSpace IA : Lance Vosk + Ollama ensemble" -ForegroundColor White
 Write-Host ""
 Write-Host "  Dossier d installation : $WHISPER_DIR" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Pour utiliser :" -ForegroundColor Cyan
-Write-Host "    1. Double-cliquez sur 'ZerdaTime IA' sur le Bureau" -ForegroundColor Cyan
+Write-Host "    1. Double-cliquez sur 'SpocSpace IA' sur le Bureau" -ForegroundColor Cyan
 Write-Host "    2. Attendez que la fenetre affiche 'Serveur demarre'" -ForegroundColor Cyan
-Write-Host "    3. Ouvrez ZerdaTime dans votre navigateur" -ForegroundColor Cyan
+Write-Host "    3. Ouvrez SpocSpace dans votre navigateur" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Le serveur Vosk va demarrer maintenant..." -ForegroundColor Gray
 Write-Host ""

@@ -140,7 +140,7 @@ $initResidents = Db::fetchAll(
   </div>
 </div>
 
-<script<?= nonce() ?> src="/zerdatime/website/assets/js/famille-crypto.js"></script>
+<script<?= nonce() ?> src="/spocspace/website/assets/js/famille-crypto.js"></script>
 <script<?= nonce() ?>>
 (function() {
     const ssrResidents = <?= json_encode(array_values($initResidents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -193,7 +193,7 @@ $initResidents = Db::fetchAll(
             const key = await getAesKeyForResident(r);
             if (!key) return;
 
-            const url = '/zerdatime/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id);
+            const url = '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id);
             const resp = await fetch(url, { credentials: 'same-origin' });
             if (!resp.ok) return;
             const encrypted = await resp.arrayBuffer();
@@ -375,8 +375,8 @@ $initResidents = Db::fetchAll(
             fd.append('encrypted_iv', encrypted.iv);
             fd.append('resident_id', resId);
 
-            const csrfToken = (window.__ZT_ADMIN__?.csrfToken || '');
-            const resp = await fetch('/zerdatime/admin/api.php', {
+            const csrfToken = (window.__SS_ADMIN__?.csrfToken || '');
+            const resp = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': csrfToken },
                 body: fd

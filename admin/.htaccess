@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /zerdatime/admin/
+  RewriteBase /spocspace/admin/
 
   # Don't rewrite actual files and directories
   RewriteCond %{REQUEST_FILENAME} !-f

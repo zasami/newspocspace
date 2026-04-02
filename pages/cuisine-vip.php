@@ -24,7 +24,7 @@
           <h5 class="modal-title"><i class="bi bi-star"></i> Planifier un repas VIP</h5>
           <small class="text-muted">Choisissez la date du prochain repas VIP</small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="flex:1;overflow-y:auto">
         <div class="mb-2">

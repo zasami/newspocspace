@@ -45,7 +45,7 @@ function admin_validate_absence()
 
     Db::exec(
         "UPDATE absences SET statut = ?, valide_par = ?, valide_at = NOW() WHERE id = ?",
-        [$statut, $_SESSION['zt_user']['id'], $id]
+        [$statut, $_SESSION['ss_user']['id'], $id]
     );
 
     // Notify user
@@ -128,7 +128,7 @@ function admin_upload_justificatif()
         bad_request('Erreur lors de l\'enregistrement du fichier');
     }
 
-    $path = '/zerdatime/storage/justificatifs/' . $filename;
+    $path = '/spocspace/storage/justificatifs/' . $filename;
     $originalName = basename($file['name']);
 
     Db::exec(
@@ -151,7 +151,7 @@ function admin_delete_justificatif()
     if (!$absence) not_found('Absence introuvable');
 
     if ($absence['justificatif_path']) {
-        $filePath = __DIR__ . '/../../' . ltrim($absence['justificatif_path'], '/zerdatime/');
+        $filePath = __DIR__ . '/../../' . ltrim($absence['justificatif_path'], '/spocspace/');
         if (file_exists($filePath)) @unlink($filePath);
     }
 

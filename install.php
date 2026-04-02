@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime — Installation Wizard
+ * SpocSpace — Installation Wizard
  *
  * Steps:
  *   1. Prerequisites check (PHP version, extensions, writable dirs)
@@ -14,7 +14,7 @@
 // Prevent access if already installed
 $lockFile = __DIR__ . '/storage/.installed';
 if (file_exists($lockFile)) {
-    header('Location: /zerdatime/login');
+    header('Location: /spocspace/login');
     exit;
 }
 
@@ -200,8 +200,8 @@ $allPassed = !in_array(false, $checks, true);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>zerdaTime — Installation</title>
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css">
+<title>SpocSpace — Installation</title>
+<link rel="stylesheet" href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#F7F5F2; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
@@ -244,8 +244,8 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 <div class="installer">
   <div class="installer-header">
-    <img src="/zerdatime/logo.png" alt="zerdaTime">
-    <h1>zerdaTime</h1>
+    <img src="/spocspace/logo.png" alt="SpocSpace">
+    <h1>SpocSpace</h1>
     <p>Assistant d'installation</p>
   </div>
 
@@ -311,7 +311,7 @@ function showStep(step) {
                 <div class="form-group"><label>Hôte</label><input id="dbHost" value="localhost"></div>
                 <div class="form-group"><label>Port</label><input id="dbPort" value="3306" type="number"></div>
             </div>
-            <div class="form-group"><label>Nom de la base</label><input id="dbName" placeholder="zerdatime_ems"></div>
+            <div class="form-group"><label>Nom de la base</label><input id="dbName" placeholder="spocspace_ems"></div>
             <div class="form-group"><label>Utilisateur</label><input id="dbUser"></div>
             <div class="form-group"><label>Mot de passe</label><input id="dbPass" type="password"></div>
             <div id="dbResult"></div>
@@ -381,8 +381,8 @@ function showStep(step) {
             <div style="text-align:center;padding:2rem 0">
                 <div style="width:64px;height:64px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:1rem"><i class="bi bi-check-lg"></i></div>
                 <h4 style="margin-bottom:0.5rem;font-weight:700">Installation terminée</h4>
-                <p style="color:#6B6B6B;margin-bottom:1.5rem">zerdaTime est prêt à être utilisé.</p>
-                <a href="/zerdatime/login" class="btn btn-primary" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i> Se connecter</a>
+                <p style="color:#6B6B6B;margin-bottom:1.5rem">SpocSpace est prêt à être utilisé.</p>
+                <a href="/spocspace/login" class="btn btn-primary" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i> Se connecter</a>
             </div>
         `;
         prevBtn.style.visibility = 'hidden';

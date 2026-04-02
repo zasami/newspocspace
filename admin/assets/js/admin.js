@@ -1,5 +1,5 @@
 /**
- * zerdaTime Admin - Main JS
+ * SpocSpace Admin - Main JS
  * Retractable sidebar + category collapse + page init
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileBtn = document.getElementById('mobileToggle');
 
     // ── Desktop: mini/full toggle with localStorage ──
-    const SIDEBAR_KEY = 'zt_sidebar_mini';
+    const SIDEBAR_KEY = 'ss_sidebar_mini';
     if (localStorage.getItem(SIDEBAR_KEY) === '1') {
         sidebar?.classList.add('mini');
     }
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Category collapse/expand ──
-    const CAT_KEY = 'zt_sidebar_cats';
+    const CAT_KEY = 'ss_sidebar_cats';
     const savedCats = JSON.parse(localStorage.getItem(CAT_KEY) || '{}');
 
     document.querySelectorAll('[data-cat-toggle]').forEach(catEl => {

@@ -77,7 +77,7 @@ function admin_create_proposal()
     Db::exec(
         "INSERT INTO planning_proposals (id, mois_annee, label, snapshot, created_by)
          VALUES (?, ?, ?, ?, ?)",
-        [$id, $mois, $label, json_encode($assignations), $_SESSION['zt_user']['id']]
+        [$id, $mois, $label, json_encode($assignations), $_SESSION['ss_user']['id']]
     );
 
     respond(['success' => true, 'id' => $id, 'message' => 'Proposition créée']);

@@ -1,6 +1,6 @@
 <!-- PV Recording Page -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/emoji-picker.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css?v=<?= APP_VERSION ?>">
 
 <style>
 /* Recording dot animation */
@@ -198,7 +198,7 @@
 
     // ── Initialize ──
     async function initPvrecordPage() {
-        editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+        editorModule = await import('/spocspace/assets/js/rich-editor.js');
 
         pvId = AdminURL.currentId();
         if (!pvId) { toast('PV non trouve', 'error'); window.history.back(); return; }
@@ -236,7 +236,7 @@
             participants.length > 0 ? participants.map(p => p.prenom + ' ' + p.nom).join(', ') : '—';
 
         if (pvData.audio_path) {
-            showAudioPlayback('/zerdatime/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
+            showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
         }
     }
 
@@ -250,11 +250,11 @@
     // ── Local AI (Transformers.js) ──
     async function initLocalAI() {
         try {
-            const { pipeline, env } = await import('/zerdatime/assets/ai/js/transformers.min.js');
+            const { pipeline, env } = await import('/spocspace/assets/ai/js/transformers.min.js');
             env.allowLocalModels = true;
             env.allowRemoteModels = false;
-            env.localModelPath = '/zerdatime/assets/ai/models/';
-            env.backends.onnx.wasm.wasmPaths = '/zerdatime/assets/ai/js/';
+            env.localModelPath = '/spocspace/assets/ai/models/';
+            env.backends.onnx.wasm.wasmPaths = '/spocspace/assets/ai/js/';
             transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
             isAiReady = true;
             console.log('Modele IA pret');
@@ -464,12 +464,12 @@
         fd.append('audio', blob, filename);
         try {
             const headers = {};
-            if (window.__ZT_ADMIN__?.csrfToken) headers['X-CSRF-Token'] = window.__ZT_ADMIN__.csrfToken;
-            const res = await fetch('/zerdatime/admin/api.php', { method: 'POST', headers, body: fd });
+            if (window.__SS_ADMIN__?.csrfToken) headers['X-CSRF-Token'] = window.__SS_ADMIN__.csrfToken;
+            const res = await fetch('/spocspace/admin/api.php', { method: 'POST', headers, body: fd });
             const json = await res.json();
-            if (json.csrf && window.__ZT_ADMIN__) window.__ZT_ADMIN__.csrfToken = json.csrf;
+            if (json.csrf && window.__SS_ADMIN__) window.__SS_ADMIN__.csrfToken = json.csrf;
             if (json.success) {
-                if (json.audio_path) showAudioPlayback('/zerdatime/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
+                if (json.audio_path) showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
                 return true;
             }
             toast('Erreur: ' + (json.message || 'Echec'), 'error');
@@ -521,7 +521,7 @@
               '.info{color:#666;font-size:0.85rem;margin-bottom:1.5rem}' +
               '@media print{body{margin:20px}}</style></head>' +
               '<body><h1>' + title + '</h1>' +
-              '<div class="info">Date: ' + new Date().toLocaleDateString('fr-CH') + ' — zerdaTime</div>' +
+              '<div class="info">Date: ' + new Date().toLocaleDateString('fr-CH') + ' — SpocSpace</div>' +
               content + '</body></html>';
         }
         document.getElementById('btnPrintPv')?.addEventListener('click', () => {

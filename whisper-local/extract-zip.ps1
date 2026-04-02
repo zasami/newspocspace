@@ -4,7 +4,7 @@ param(
 )
 
 # Couleurs
-$Host.UI.RawUI.WindowTitle = "ZerdaTime - Extraction en cours..."
+$Host.UI.RawUI.WindowTitle = "SpocSpace - Extraction en cours..."
 
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor Cyan
@@ -112,11 +112,11 @@ try {
             Write-Host "`r$line" -NoNewline -ForegroundColor Yellow
 
             # Write-Progress pour la barre PowerShell native aussi
-            Write-Progress -Activity "Extraction ZerdaTime" -Status "$pct% - $extracted/$totalFiles fichiers ($extractedMB Mo)" -PercentComplete ([math]::Min($pct, 100)) -CurrentOperation $entry.FullName
+            Write-Progress -Activity "Extraction SpocSpace" -Status "$pct% - $extracted/$totalFiles fichiers ($extractedMB Mo)" -PercentComplete ([math]::Min($pct, 100)) -CurrentOperation $entry.FullName
         }
     }
 
-    Write-Progress -Activity "Extraction ZerdaTime" -Completed
+    Write-Progress -Activity "Extraction SpocSpace" -Completed
     Write-Host ""
     Write-Host ""
 

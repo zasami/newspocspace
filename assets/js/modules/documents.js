@@ -89,7 +89,7 @@ async function loadDocuments() {
     grid.innerHTML = docs.map(d => {
         const fi = fileIcon(d.mime_type);
         const svc = services.find(s => s.id === d.service_id) || { nom: d.service_nom, icone: d.service_icone, couleur: d.service_couleur };
-        const viewUrl = `/zerdatime/api.php?action=serve_document&id=${encodeURIComponent(d.id)}`;
+        const viewUrl = `/spocspace/api.php?action=serve_document&id=${encodeURIComponent(d.id)}`;
 
         return `<div class="doc-card" data-id="${escapeHtml(d.id)}">
             <div class="doc-card-top">
@@ -129,7 +129,7 @@ export async function init() {
     });
 
     // Use SSR data on first load to avoid extra round-trip
-    const ssr = window.__ZT_PAGE_DATA__;
+    const ssr = window.__SS_PAGE_DATA__;
     if (ssr) {
         renderServices(ssr.services || []);
     } else {

@@ -3,7 +3,7 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px">
       <div>
         <div class="ws-footer-brand">
-          <img src="/zerdatime/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-footer-logo">
+          <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-footer-logo">
         </div>
         <p class="ws-footer-desc">
           Établissement médico-social au service des personnes âgées à Genève.
@@ -13,20 +13,20 @@
       <div>
         <h6>Navigation</h6>
         <ul class="ws-footer-links">
-          <li><a href="/zerdatime/website/">Accueil</a></li>
-          <li><a href="/zerdatime/website/#about">Notre mission</a></li>
-          <li><a href="/zerdatime/website/#services">Nos soins</a></li>
-          <li><a href="/zerdatime/website/#team">Équipe</a></li>
+          <li><a href="/spocspace/website/">Accueil</a></li>
+          <li><a href="/spocspace/website/#about">Notre mission</a></li>
+          <li><a href="/spocspace/website/#services">Nos soins</a></li>
+          <li><a href="/spocspace/website/#team">Équipe</a></li>
         </ul>
       </div>
       <div>
         <h6>Services</h6>
         <ul class="ws-footer-links">
-          <li><a href="/zerdatime/website/admissions.php">Admissions</a></li>
-          <li><a href="/zerdatime/website/recrutement.php">Recrutement</a></li>
-          <li><a href="/zerdatime/website/famille.php">Espace Famille</a></li>
-          <li><a href="/zerdatime/">Espace Collaborateur</a></li>
-          <li><a href="/zerdatime/website/#contact">Contact</a></li>
+          <li><a href="/spocspace/website/admissions.php">Admissions</a></li>
+          <li><a href="/spocspace/website/recrutement.php">Recrutement</a></li>
+          <li><a href="/spocspace/website/famille.php">Espace Famille</a></li>
+          <li><a href="/spocspace/">Espace Collaborateur</a></li>
+          <li><a href="/spocspace/website/#contact">Contact</a></li>
         </ul>
       </div>
       <div>

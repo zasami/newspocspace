@@ -150,18 +150,18 @@ function admin_create_user()
     }
 
     // Send welcome message via internal messaging
-    $adminId = $_SESSION['zt_user']['id'] ?? '';
+    $adminId = $_SESSION['ss_user']['id'] ?? '';
     $loginUrl = APP_URL . '/login';
-    $sujet = 'Bienvenue sur zerdaTime — Vos identifiants';
+    $sujet = 'Bienvenue sur SpocSpace — Vos identifiants';
     $contenu = "<p>Bonjour <strong>$prenom</strong>,</p>"
-        . "<p>Votre compte zerdaTime a été créé.</p>"
+        . "<p>Votre compte SpocSpace a été créé.</p>"
         . "<div style='background:#F7F5F2;border-radius:10px;padding:16px;margin:12px 0'>"
         . "<p style='margin:4px 0'><strong>N° Employé :</strong> $employeeId</p>"
         . "<p style='margin:4px 0'><strong>Email :</strong> $email</p>"
         . "<p style='margin:4px 0'><strong>Mot de passe temporaire :</strong> <code style='background:#E2B8AE;padding:2px 8px;border-radius:4px'>$tempPassword</code></p>"
         . "</div>"
         . "<p>⚠ Ce mot de passe expire dans <strong>24 heures</strong>. Connectez-vous et changez-le immédiatement depuis votre profil.</p>"
-        . "<p><a href='$loginUrl'>Se connecter à zerdaTime</a></p>";
+        . "<p><a href='$loginUrl'>Se connecter à SpocSpace</a></p>";
 
     try {
         $msgId = Uuid::v4();
@@ -302,7 +302,7 @@ function admin_upload_user_avatar()
     imagewebp($dest, $uploadDir . $filename, 85);
     imagedestroy($dest);
 
-    $photoUrl = '/zerdatime/storage/avatars/' . $filename;
+    $photoUrl = '/spocspace/storage/avatars/' . $filename;
     Db::exec("UPDATE users SET photo = ? WHERE id = ?", [$photoUrl, $userId]);
 
     respond(['success' => true, 'photo_url' => $photoUrl, 'message' => 'Photo mise à jour']);
@@ -321,7 +321,7 @@ function admin_delete_user_avatar()
 
     // Delete file if exists
     if ($user['photo']) {
-        $path = __DIR__ . '/../../' . ltrim($user['photo'], '/zerdatime/');
+        $path = __DIR__ . '/../../' . ltrim($user['photo'], '/spocspace/');
         if (file_exists($path)) unlink($path);
     }
 
@@ -378,14 +378,14 @@ function admin_reset_user_password()
 
     // Send email
     $prenom = $user['prenom'];
-    $subject = 'zerdaTime — Mot de passe temporaire';
+    $subject = 'SpocSpace — Mot de passe temporaire';
     $body = "Bonjour $prenom,\n\n"
           . "Un administrateur a réinitialisé votre mot de passe.\n\n"
           . "Votre mot de passe temporaire : $tempPassword\n\n"
           . "⚠ Ce mot de passe expire dans 24 heures.\n"
           . "Connectez-vous et changez-le immédiatement depuis votre profil.\n\n"
           . "Lien de connexion : " . APP_URL . "/login\n\n"
-          . "Cordialement,\nzerdaTime";
+          . "Cordialement,\nSpocSpace";
     $headers = "From: noreply@terrassiere.ch\r\nContent-Type: text/plain; charset=UTF-8";
     @mail($user['email'], $subject, $body, $headers);
 

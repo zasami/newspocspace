@@ -1,7 +1,7 @@
 @echo off
 echo.
 echo  ============================================
-echo   ZerdaTime - Installation IA locale
+echo   SpocSpace - Installation IA locale
 echo   Ne fermez pas cette fenetre !
 echo  ============================================
 echo.
@@ -17,24 +17,24 @@ if exist "%BATDIR%install-whisper.ps1" (
     goto FIN
 )
 
-:: Cas 2 : sous-dossier ZerdaTime-IA-Install
-if exist "%BATDIR%ZerdaTime-IA-Install\install-whisper.ps1" (
-    echo  [OK] install-whisper.ps1 trouve dans ZerdaTime-IA-Install\
-    powershell -ExecutionPolicy Bypass -File "%BATDIR%ZerdaTime-IA-Install\install-whisper.ps1"
+:: Cas 2 : sous-dossier SpocSpace-IA-Install
+if exist "%BATDIR%SpocSpace-IA-Install\install-whisper.ps1" (
+    echo  [OK] install-whisper.ps1 trouve dans SpocSpace-IA-Install\
+    powershell -ExecutionPolicy Bypass -File "%BATDIR%SpocSpace-IA-Install\install-whisper.ps1"
     goto FIN
 )
 
-:: Cas 3 : sous-dossier ZerdaTime-IA-Install\ZerdaTime-IA
-if exist "%BATDIR%ZerdaTime-IA-Install\ZerdaTime-IA\install-whisper.ps1" (
-    echo  [OK] install-whisper.ps1 trouve dans ZerdaTime-IA-Install\ZerdaTime-IA\
-    powershell -ExecutionPolicy Bypass -File "%BATDIR%ZerdaTime-IA-Install\ZerdaTime-IA\install-whisper.ps1"
+:: Cas 3 : sous-dossier SpocSpace-IA-Install\SpocSpace-IA
+if exist "%BATDIR%SpocSpace-IA-Install\SpocSpace-IA\install-whisper.ps1" (
+    echo  [OK] install-whisper.ps1 trouve dans SpocSpace-IA-Install\SpocSpace-IA\
+    powershell -ExecutionPolicy Bypass -File "%BATDIR%SpocSpace-IA-Install\SpocSpace-IA\install-whisper.ps1"
     goto FIN
 )
 
-:: Cas 4 : sous-dossier ZerdaTime-IA
-if exist "%BATDIR%ZerdaTime-IA\install-whisper.ps1" (
-    echo  [OK] install-whisper.ps1 trouve dans ZerdaTime-IA\
-    powershell -ExecutionPolicy Bypass -File "%BATDIR%ZerdaTime-IA\install-whisper.ps1"
+:: Cas 4 : sous-dossier SpocSpace-IA
+if exist "%BATDIR%SpocSpace-IA\install-whisper.ps1" (
+    echo  [OK] install-whisper.ps1 trouve dans SpocSpace-IA\
+    powershell -ExecutionPolicy Bypass -File "%BATDIR%SpocSpace-IA\install-whisper.ps1"
     goto FIN
 )
 
@@ -43,8 +43,8 @@ echo.
 echo  Assurez-vous d'avoir extrait le ZIP avant de lancer install.bat.
 echo  Le script cherche install-whisper.ps1 dans :
 echo    - %BATDIR%
-echo    - %BATDIR%ZerdaTime-IA-Install\
-echo    - %BATDIR%ZerdaTime-IA\
+echo    - %BATDIR%SpocSpace-IA-Install\
+echo    - %BATDIR%SpocSpace-IA\
 
 :FIN
 echo.

@@ -1,9 +1,9 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, nom");
 ?>
 <!-- PV Page - Split View (List + Detail) -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <div class="split-view">
 
 
@@ -46,16 +46,16 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 /* PV list items — use shared split-list-item */
 #pvListContainer .pv-item {
   padding: 12px 15px;
-  border-bottom: 1px solid var(--zt-border-light);
+  border-bottom: 1px solid var(--ss-border-light);
   cursor: pointer;
-  transition: background var(--zt-transition);
+  transition: background var(--ss-transition);
 }
 #pvListContainer .pv-item:hover {
-  background: var(--zt-accent-bg);
+  background: var(--ss-accent-bg);
 }
 #pvListContainer .pv-item.selected {
-  background: var(--zt-accent-bg);
-  border-left: 4px solid var(--zt-navy);
+  background: var(--ss-accent-bg);
+  border-left: 4px solid var(--ss-navy);
   padding-left: 11px;
 }
 .pv-item-title {
@@ -69,21 +69,21 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
   color: #999;
 }
 .pv-detail-card {
-  background: var(--zt-bg-card);
-  border-radius: var(--zt-radius-md);
+  background: var(--ss-bg-card);
+  border-radius: var(--ss-radius-md);
   padding: 25px;
-  box-shadow: var(--zt-shadow-md);
-  border: 1px solid var(--zt-border);
+  box-shadow: var(--ss-shadow-md);
+  border: 1px solid var(--ss-border);
 }
 .pv-detail-header {
-  border-bottom: 2px solid var(--zt-border-light);
+  border-bottom: 2px solid var(--ss-border-light);
   margin-bottom: 20px;
   padding-bottom: 15px;
 }
 .pv-detail-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--zt-text);
+  color: var(--ss-text);
   margin: 0 0 8px 0;
 }
 .pv-detail-status {
@@ -98,7 +98,7 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
   gap: 15px;
   margin-bottom: 20px;
   padding: 15px;
-  background: var(--zt-bg);
+  background: var(--ss-bg);
   border-radius: 6px;
   font-size: 0.9rem;
 }
@@ -123,12 +123,12 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
   letter-spacing: 0.5px;
 }
 .pv-content-box {
-  background: var(--zt-bg-card);
-  border: 1px solid var(--zt-border);
-  border-radius: var(--zt-radius-md);
+  background: var(--ss-bg-card);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius-md);
   padding: 12px;
   line-height: 1.6;
-  color: var(--zt-text);
+  color: var(--ss-text);
   white-space: pre-wrap;
   word-wrap: break-word;
   min-height: 100px;
@@ -141,12 +141,12 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 }
 .pv-participant-badge {
   display: inline-block;
-  background: var(--zt-accent-bg);
-  color: var(--zt-text);
+  background: var(--ss-accent-bg);
+  color: var(--ss-text);
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.8rem;
-  border-left: 3px solid var(--zt-navy);
+  border-left: 3px solid var(--ss-navy);
 }
 
 /* Rating & Comments */
@@ -187,7 +187,7 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 }
 .pv-comment-avatar-initials {
   width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-  background: var(--zt-bg-alt, #f0ede8); color: var(--zt-navy, #2a3b4d);
+  background: var(--ss-bg-alt, #f0ede8); color: var(--ss-navy, #2a3b4d);
   display: flex; align-items: center; justify-content: center;
   font-size: .7rem; font-weight: 700; border: 2px solid #f0ede8;
 }
@@ -200,7 +200,7 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 }
 .pv-comment-author {
   font-weight: 600;
-  color: var(--zt-navy);
+  color: var(--ss-navy);
 }
 .pv-comment-date {
   color: #999;
@@ -243,5 +243,5 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 }
 </style>
 
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['modules' => $pvRefModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['modules' => $pvRefModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
 

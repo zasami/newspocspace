@@ -7,13 +7,13 @@ require_once __DIR__ . '/../../../init.php';
 header('Content-Type: application/json; charset=utf-8');
 
 // Auth check
-if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['admin', 'direction', 'responsable'])) {
+if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Non autorisé']);
     exit;
 }
 
-$userId = $_SESSION['zt_user']['id'];
+$userId = $_SESSION['ss_user']['id'];
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $input['action'] ?? ($_GET['action'] ?? '');
 

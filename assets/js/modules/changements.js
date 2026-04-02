@@ -29,7 +29,7 @@ let confirmModal = null;
 let refusModalInstance = null;
 
 export function init() {
-    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    const ssrData = window.__SS_PAGE_DATA__ || {};
     const now = new Date();
     state.myMonth = ssrData.current_mois || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     state.colMonth = state.myMonth;
@@ -765,7 +765,7 @@ function renderChangements(items) {
         return;
     }
 
-    const userId = window.__ZT__?.user?.id;
+    const userId = window.__SS__?.user?.id;
 
     container.innerHTML = items.map(ch => {
         const iAmDemandeur = ch.demandeur_id === userId;

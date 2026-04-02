@@ -10,7 +10,7 @@ let modal = null;
 let canEdit = true;
 
 export function init() {
-    const denied = window.__ZT__?.deniedPerms || [];
+    const denied = window.__SS__?.deniedPerms || [];
     canEdit = !denied.includes('cuisine_saisie_menu');
     menuMonday = getMonday(new Date());
 

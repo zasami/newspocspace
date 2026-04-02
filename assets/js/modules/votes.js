@@ -8,7 +8,7 @@ const joursShort = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 let proposals = [];
 
 export async function init() {
-    const ssrProposals = window.__ZT_PAGE_DATA__?.proposals || [];
+    const ssrProposals = window.__SS_PAGE_DATA__?.proposals || [];
     proposals = ssrProposals;
     renderProposals(proposals);
 }

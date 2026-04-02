@@ -1,5 +1,5 @@
 /**
- * zerdaTime - Notifications module
+ * SpocSpace - Notifications module
  */
 import { apiPost, escapeHtml, toast } from '../helpers.js';
 
@@ -24,7 +24,7 @@ const TYPE_CONFIG = {
 
 export function init() {
     // Render from SSR data synchronously
-    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    const ssrData = window.__SS_PAGE_DATA__ || {};
     renderNotifications(ssrData.notifications || []);
 
     document.getElementById('markAllRead')?.addEventListener('click', async () => {

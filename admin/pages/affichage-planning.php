@@ -152,7 +152,7 @@ $apCfgRow = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = '
 .ap-tab-row .ap-label { font-weight: 600; min-width: 80px; }
 .ap-tab-row .ap-type { font-size: 0.75rem; color: var(--cl-text-muted); }
 .ap-tab-row .ap-value { font-size: 0.75rem; color: var(--cl-text-secondary); background: var(--cl-bg); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--cl-border); }
-.ap-tab-row .ap-remove { color: var(--zt-red); cursor: pointer; margin-left: auto; }
+.ap-tab-row .ap-remove { color: var(--ss-red); cursor: pointer; margin-left: auto; }
 .ap-tab-row.ap-fixed { background: var(--cl-accent-bg); border-color: rgba(25,25,24,0.2); }
 .ap-type-card {
   display: flex; flex-direction: column; align-items: center; gap: 4px;

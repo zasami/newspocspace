@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../init.php';
 
 // Accès admin uniquement
-if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['admin', 'direction'])) {
+if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction'])) {
     http_response_code(403);
     die('Accès interdit');
 }
@@ -14,7 +14,7 @@ if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['adm
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diagnostic Web Speech API</title>
-    <link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light p-5">
     <div class="container">

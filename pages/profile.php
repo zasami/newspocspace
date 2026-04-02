@@ -1,6 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['zt_user']['id'];
+$uid = $_SESSION['ss_user']['id'];
 $profUser = Db::fetch(
     "SELECT u.*, f.nom AS fonction_nom FROM users u LEFT JOIN fonctions f ON f.id = u.fonction_id WHERE u.id = ? AND u.is_active = 1",
     [$uid]
@@ -83,9 +83,9 @@ if ($profUser) {
 .pwd-field-wrap input { padding-right: 42px; }
 .pwd-eye {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    cursor: pointer; color: var(--zt-text-muted, #999); font-size: 1.1rem;
+    cursor: pointer; color: var(--ss-text-muted, #999); font-size: 1.1rem;
     line-height: 1; padding: 4px; user-select: none; z-index: 5;
 }
-.pwd-eye:hover { color: var(--zt-text, #333); }
+.pwd-eye:hover { color: var(--ss-text, #333); }
 </style>
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['user' => $profUser], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['user' => $profUser], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

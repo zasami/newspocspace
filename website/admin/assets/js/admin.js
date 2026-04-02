@@ -4,7 +4,7 @@
 (function() {
 'use strict';
 
-const API = '/zerdatime/website/admin/api/sections.php';
+const API = '/spocspace/website/admin/api/sections.php';
 let sections = window.__WA_SECTIONS || [];
 const TYPES = window.__WA_TYPES || {};
 let activeId = null;

@@ -38,15 +38,15 @@ $initAbsences = Db::fetchAll(
 .abs-row-clickable { cursor: pointer; }
 
 /* Status badges */
-.badge-zt-valid { background: #bcd2cb; color: #2d4a43; }
-.badge-zt-refuse { background: #E2B8AE; color: #7B3B2C; }
-.badge-zt-attente { background: #D4C4A8; color: #6B5B3E; }
+.badge-ss-valid { background: #bcd2cb; color: #2d4a43; }
+.badge-ss-refuse { background: #E2B8AE; color: #7B3B2C; }
+.badge-ss-attente { background: #D4C4A8; color: #6B5B3E; }
 
 /* Type badges */
-.badge-zt-vacances { background: #B8C9D4; color: #3B4F6B; }
-.badge-zt-maladie, .badge-zt-accident { background: #E2B8AE; color: #7B3B2C; }
-.badge-zt-conge_special { background: #D0C4D8; color: #5B4B6B; }
-.badge-zt-formation { background: #D4C4A8; color: #6B5B3E; }
+.badge-ss-vacances { background: #B8C9D4; color: #3B4F6B; }
+.badge-ss-maladie, .badge-ss-accident { background: #E2B8AE; color: #7B3B2C; }
+.badge-ss-conge_special { background: #D0C4D8; color: #5B4B6B; }
+.badge-ss-formation { background: #D4C4A8; color: #6B5B3E; }
 
 /* Avatar */
 .abs-avatar { border-radius: 50%; object-fit: cover; flex-shrink: 0; }
@@ -72,12 +72,12 @@ $initAbsences = Db::fetchAll(
 .abs-no-justif i { font-size: 1.5rem; }
 
 /* Lightbox toolbar separator */
-.zt-lb-sep { width: 1px; height: 24px; background: rgba(255,255,255,.25); margin: 0 4px; }
+.ss-lb-sep { width: 1px; height: 24px; background: rgba(255,255,255,.25); margin: 0 4px; }
 
 /* Lightbox fallback file view */
-.zt-lb-fallback { text-align: center; color: #fff; }
-.zt-lb-fallback i { font-size: 5rem; }
-.zt-lb-fallback a { color: #fff; text-decoration: underline; }
+.ss-lb-fallback { text-align: center; color: #fff; }
+.ss-lb-fallback i { font-size: 5rem; }
+.ss-lb-fallback a { color: #fff; text-decoration: underline; }
 
 /* Detail modal */
 .abs-detail-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--cl-border, #e5e7eb); font-size: .88rem; }
@@ -98,22 +98,22 @@ $initAbsences = Db::fetchAll(
 .abs-file-name i { font-size: .9rem; }
 
 /* Lightbox */
-.zt-lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: ztLbFadeIn .3s ease; }
-.zt-lightbox-hidden { display: none !important; }
-.zt-lightbox-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.8); backdrop-filter: blur(10px); }
-.zt-lightbox-content { position: relative; width: 100%; height: 100%; overflow: hidden; }
-.zt-lightbox-stage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: default; user-select: none; }
-.zt-lightbox-stage img { max-width: 90vw; max-height: calc(100vh - 120px); width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); will-change: transform; }
-.zt-lightbox-stage iframe { width: 85vw; height: calc(100vh - 120px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
-.zt-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,.1); border: none; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .3s; backdrop-filter: blur(10px); z-index: 10; font-size: 24px; }
-.zt-lightbox-close:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
-.zt-lightbox-title { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.15); color: #fff; padding: 10px 24px; border-radius: 24px; font-size: 15px; font-weight: 600; backdrop-filter: blur(10px); z-index: 11; }
-.zt-lightbox-toolbar { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: rgba(30,30,30,.85); backdrop-filter: blur(12px); border-radius: 999px; padding: 6px 16px; z-index: 12; }
-.zt-lb-btn { width: 40px; height: 40px; border: none; background: transparent; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: background .2s; }
-.zt-lb-btn:hover { background: rgba(255,255,255,.15); }
-.zt-lb-zoom { color: #fff; font-size: 14px; font-weight: 600; min-width: 48px; text-align: center; user-select: none; }
-.zt-lightbox-stage.zt-zoomed { cursor: grab; }
-.zt-lightbox-stage.zt-dragging { cursor: grabbing !important; }
+.ss-lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: ztLbFadeIn .3s ease; }
+.ss-lightbox-hidden { display: none !important; }
+.ss-lightbox-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.8); backdrop-filter: blur(10px); }
+.ss-lightbox-content { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.ss-lightbox-stage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: default; user-select: none; }
+.ss-lightbox-stage img { max-width: 90vw; max-height: calc(100vh - 120px); width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); will-change: transform; }
+.ss-lightbox-stage iframe { width: 85vw; height: calc(100vh - 120px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
+.ss-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,.1); border: none; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .3s; backdrop-filter: blur(10px); z-index: 10; font-size: 24px; }
+.ss-lightbox-close:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
+.ss-lightbox-title { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.15); color: #fff; padding: 10px 24px; border-radius: 24px; font-size: 15px; font-weight: 600; backdrop-filter: blur(10px); z-index: 11; }
+.ss-lightbox-toolbar { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: rgba(30,30,30,.85); backdrop-filter: blur(12px); border-radius: 999px; padding: 6px 16px; z-index: 12; }
+.ss-lb-btn { width: 40px; height: 40px; border: none; background: transparent; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: background .2s; }
+.ss-lb-btn:hover { background: rgba(255,255,255,.15); }
+.ss-lb-zoom { color: #fff; font-size: 14px; font-weight: 600; min-width: 48px; text-align: center; user-select: none; }
+.ss-lightbox-stage.ss-zoomed { cursor: grab; }
+.ss-lightbox-stage.ss-dragging { cursor: grabbing !important; }
 @keyframes ztLbFadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
@@ -145,8 +145,8 @@ $initAbsences = Db::fetchAll(
         <tr><td colspan="9" class="text-center py-4 text-muted">Aucune absence en attente</td></tr>
         <?php else: ?>
         <?php foreach ($initAbsences as $idx => $a):
-            $sCls = ['valide'=>'badge-zt-valid','refuse'=>'badge-zt-refuse','en_attente'=>'badge-zt-attente'][$a['statut']] ?? 'badge-zt-attente';
-            $tCls = ['vacances'=>'badge-zt-vacances','maladie'=>'badge-zt-maladie','accident'=>'badge-zt-accident','conge_special'=>'badge-zt-conge_special','formation'=>'badge-zt-formation'][$a['type']] ?? 'badge-zt-attente';
+            $sCls = ['valide'=>'badge-ss-valid','refuse'=>'badge-ss-refuse','en_attente'=>'badge-ss-attente'][$a['statut']] ?? 'badge-ss-attente';
+            $tCls = ['vacances'=>'badge-ss-vacances','maladie'=>'badge-ss-maladie','accident'=>'badge-ss-accident','conge_special'=>'badge-ss-conge_special','formation'=>'badge-ss-formation'][$a['type']] ?? 'badge-ss-attente';
             $sLbl = ['valide'=>'Validé','refuse'=>'Refusé','en_attente'=>'En attente'][$a['statut']] ?? h($a['statut']);
             $initials = mb_strtoupper(mb_substr($a['prenom']??'',0,1).mb_substr($a['nom']??'',0,1));
             $rempl = $a['remplacement_type']
@@ -209,18 +209,18 @@ $initAbsences = Db::fetchAll(
 </div>
 
 <!-- Lightbox -->
-<div id="ztLightbox" class="zt-lightbox zt-lightbox-hidden">
-  <div class="zt-lightbox-overlay"></div>
-  <div class="zt-lightbox-content">
-    <button class="zt-lightbox-close" type="button"><i class="bi bi-x-lg"></i></button>
-    <div class="zt-lightbox-title" id="ztLbTitle"></div>
-    <div class="zt-lightbox-stage" id="ztLbStage"></div>
-    <div class="zt-lightbox-toolbar zt-lightbox-hidden" id="ztLbToolbar">
-      <button type="button" class="zt-lb-btn" id="ztLbZoomOut"><i class="bi bi-zoom-out"></i></button>
-      <span class="zt-lb-zoom" id="ztLbZoomLevel">100%</span>
-      <button type="button" class="zt-lb-btn" id="ztLbZoomIn"><i class="bi bi-zoom-in"></i></button>
-      <span class="zt-lb-sep"></span>
-      <button type="button" class="zt-lb-btn" id="ztLbReset"><i class="bi bi-arrows-angle-contract"></i></button>
+<div id="ztLightbox" class="ss-lightbox ss-lightbox-hidden">
+  <div class="ss-lightbox-overlay"></div>
+  <div class="ss-lightbox-content">
+    <button class="ss-lightbox-close" type="button"><i class="bi bi-x-lg"></i></button>
+    <div class="ss-lightbox-title" id="ztLbTitle"></div>
+    <div class="ss-lightbox-stage" id="ztLbStage"></div>
+    <div class="ss-lightbox-toolbar ss-lightbox-hidden" id="ztLbToolbar">
+      <button type="button" class="ss-lb-btn" id="ztLbZoomOut"><i class="bi bi-zoom-out"></i></button>
+      <span class="ss-lb-zoom" id="ztLbZoomLevel">100%</span>
+      <button type="button" class="ss-lb-btn" id="ztLbZoomIn"><i class="bi bi-zoom-in"></i></button>
+      <span class="ss-lb-sep"></span>
+      <button type="button" class="ss-lb-btn" id="ztLbReset"><i class="bi bi-arrows-angle-contract"></i></button>
     </div>
   </div>
 </div>
@@ -230,9 +230,9 @@ $initAbsences = Db::fetchAll(
 let absData = <?= json_encode(array_values($initAbsences), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 let absDetailModalInstance = null;
 
-const statusClasses = { valide: 'badge-zt-valid', refuse: 'badge-zt-refuse', en_attente: 'badge-zt-attente' };
+const statusClasses = { valide: 'badge-ss-valid', refuse: 'badge-ss-refuse', en_attente: 'badge-ss-attente' };
 const statusLabels = { valide: 'Valid\u00e9', refuse: 'Refus\u00e9', en_attente: 'En attente' };
-const typeClasses = { vacances: 'badge-zt-vacances', maladie: 'badge-zt-maladie', accident: 'badge-zt-accident', conge_special: 'badge-zt-conge_special', formation: 'badge-zt-formation' };
+const typeClasses = { vacances: 'badge-ss-vacances', maladie: 'badge-ss-maladie', accident: 'badge-ss-accident', conge_special: 'badge-ss-conge_special', formation: 'badge-ss-formation' };
 
 function makeBadge(text, cls) { return `<span class="badge ${cls}">${escapeHtml(text)}</span>`; }
 
@@ -290,7 +290,7 @@ async function loadAbsences() {
 
     tbody.innerHTML = absData.map((a, idx) => {
         const sCls = statusClasses[a.statut] || statusClasses.en_attente;
-        const tCls = typeClasses[a.type] || 'badge-zt-attente';
+        const tCls = typeClasses[a.type] || 'badge-ss-attente';
         const rempl = a.remplacement_type
             ? (a.remplacement_type === 'collegue' ? `${escapeHtml(a.rempl_prenom || '')} ${escapeHtml(a.rempl_nom || '')}` : a.remplacement_type)
             : '\u2014';
@@ -321,7 +321,7 @@ function openAbsDetail(idx) {
     if (!a) return;
 
     const sCls = statusClasses[a.statut] || statusClasses.en_attente;
-    const tCls = typeClasses[a.type] || 'badge-zt-attente';
+    const tCls = typeClasses[a.type] || 'badge-ss-attente';
     const rempl = a.remplacement_type
         ? (a.remplacement_type === 'collegue' ? `${escapeHtml(a.rempl_prenom || '')} ${escapeHtml(a.rempl_nom || '')}` : escapeHtml(a.remplacement_type))
         : '\u2014';
@@ -405,10 +405,10 @@ async function uploadJustificatif(e) {
     fd.append('absence_id', id);
     fd.append('file', file);
     try {
-        const csrfToken = window.__ZT_ADMIN__?.csrfToken || '';
-        const resp = await fetch('/zerdatime/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: fd });
+        const csrfToken = window.__SS_ADMIN__?.csrfToken || '';
+        const resp = await fetch('/spocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: fd });
         const res = await resp.json();
-        if (res.csrf) window.__ZT_ADMIN__.csrfToken = res.csrf;
+        if (res.csrf) window.__SS_ADMIN__.csrfToken = res.csrf;
         if (res.success) {
             showToast('Justificatif ajout\u00e9', 'success');
             absDetailModalInstance.hide();
@@ -456,13 +456,13 @@ function openFileViewer(url, name, type) {
     if (type === 'image') {
         stage.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" draggable="false">`;
         imgEl = stage.querySelector('img');
-        toolbar.classList.remove('zt-lightbox-hidden');
+        toolbar.classList.remove('ss-lightbox-hidden');
     } else if (type === 'pdf') {
         stage.innerHTML = `<iframe src="${url}#toolbar=1"></iframe>`;
-        toolbar.classList.add('zt-lightbox-hidden');
+        toolbar.classList.add('ss-lightbox-hidden');
     } else {
-        stage.innerHTML = `<div class="zt-lb-fallback"><i class="bi bi-file-earmark"></i><br><a href="${url}" target="_blank">T\u00e9l\u00e9charger le fichier</a></div>`;
-        toolbar.classList.add('zt-lightbox-hidden');
+        stage.innerHTML = `<div class="ss-lb-fallback"><i class="bi bi-file-earmark"></i><br><a href="${url}" target="_blank">T\u00e9l\u00e9charger le fichier</a></div>`;
+        toolbar.classList.add('ss-lightbox-hidden');
     }
 
     function apply() {
@@ -470,7 +470,7 @@ function openFileViewer(url, name, type) {
         requestAnimationFrame(() => {
             imgEl.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
             document.getElementById('ztLbZoomLevel').textContent = Math.round(scale * 100) + '%';
-            stage.classList.toggle('zt-zoomed', scale > 1.01);
+            stage.classList.toggle('ss-zoomed', scale > 1.01);
         });
     }
     function resetZoom() { scale = 1; tx = 0; ty = 0; apply(); }
@@ -487,22 +487,22 @@ function openFileViewer(url, name, type) {
     }
     function zoomBy(d) { const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, scale + d); }
     function closeLb() {
-        lb.classList.add('zt-lightbox-hidden');
+        lb.classList.add('ss-lightbox-hidden');
         document.body.style.overflow = '';
-        stage.classList.remove('zt-zoomed', 'zt-dragging');
+        stage.classList.remove('ss-zoomed', 'ss-dragging');
         _lbRemoveAll();
     }
 
-    lb.classList.remove('zt-lightbox-hidden');
+    lb.classList.remove('ss-lightbox-hidden');
     document.body.style.overflow = 'hidden';
 
-    _lbAdd(lb.querySelector('.zt-lightbox-close'), 'click', closeLb);
-    _lbAdd(lb.querySelector('.zt-lightbox-overlay'), 'click', closeLb);
+    _lbAdd(lb.querySelector('.ss-lightbox-close'), 'click', closeLb);
+    _lbAdd(lb.querySelector('.ss-lightbox-overlay'), 'click', closeLb);
     _lbAdd(document.getElementById('ztLbZoomIn'), 'click', () => zoomBy(.25));
     _lbAdd(document.getElementById('ztLbZoomOut'), 'click', () => zoomBy(-.25));
     _lbAdd(document.getElementById('ztLbReset'), 'click', resetZoom);
     _lbAdd(document, 'keydown', (e) => {
-        if (lb.classList.contains('zt-lightbox-hidden')) return;
+        if (lb.classList.contains('ss-lightbox-hidden')) return;
         if (e.key === 'Escape') closeLb();
         else if (e.key === '+' || e.key === '=') zoomBy(.25);
         else if (e.key === '-') zoomBy(-.25);
@@ -511,9 +511,9 @@ function openFileViewer(url, name, type) {
 
     if (imgEl) {
         _lbAdd(stage, 'wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, scale * (1 + (e.deltaY > 0 ? -.15 : .15))); }, { passive: false });
-        _lbAdd(stage, 'mousedown', (e) => { if (e.button !== 0 || scale <= 1.01) return; dragging = true; lastX = e.clientX; lastY = e.clientY; stage.classList.add('zt-dragging'); e.preventDefault(); });
+        _lbAdd(stage, 'mousedown', (e) => { if (e.button !== 0 || scale <= 1.01) return; dragging = true; lastX = e.clientX; lastY = e.clientY; stage.classList.add('ss-dragging'); e.preventDefault(); });
         _lbAdd(document, 'mousemove', (e) => { if (!dragging) return; tx += e.clientX - lastX; ty += e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; apply(); });
-        _lbAdd(document, 'mouseup', () => { if (dragging) { dragging = false; stage.classList.remove('zt-dragging'); } });
+        _lbAdd(document, 'mouseup', () => { if (dragging) { dragging = false; stage.classList.remove('ss-dragging'); } });
         _lbAdd(stage, 'dblclick', (e) => { if (scale > 1.01) resetZoom(); else zoomAt(e.clientX, e.clientY, 2.5); });
     }
 }

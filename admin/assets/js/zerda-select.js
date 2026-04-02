@@ -1,5 +1,5 @@
 /**
- * zerdaSelect — Custom dropdown component for zerdaTime admin
+ * zerdaSelect — Custom dropdown component for SpocSpace admin
  *
  * Usage:
  *   <div class="zs-select" data-name="fieldName" data-placeholder="Choisir...">

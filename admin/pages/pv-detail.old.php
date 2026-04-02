@@ -183,7 +183,7 @@
               '.info{color:#666;font-size:0.85rem;margin-bottom:1.5rem}' +
               '@media print{body{margin:20px}}</style></head>' +
               '<body><h1>' + title + '</h1>' +
-              '<div class="info">Date: ' + new Date(pvData.created_at).toLocaleDateString('fr-CH') + ' — zerdaTime</div>' +
+              '<div class="info">Date: ' + new Date(pvData.created_at).toLocaleDateString('fr-CH') + ' — SpocSpace</div>' +
               '<pre style="white-space:pre-wrap;font-family:inherit">' + escapeHtml(content) + '</pre></body></html>');
             win.document.close();
             win.print();

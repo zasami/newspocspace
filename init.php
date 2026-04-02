@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime - Bootstrap
+ * SpocSpace - Bootstrap
  */
 
 require_once __DIR__ . '/config/config.php';
@@ -28,20 +28,20 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Server-side session timeout (30 min idle)
 $sessionIdleTimeout = 1800;
-if (!empty($_SESSION['zt_user'])) {
-    $lastActivity = $_SESSION['zt_last_activity'] ?? 0;
+if (!empty($_SESSION['ss_user'])) {
+    $lastActivity = $_SESSION['ss_last_activity'] ?? 0;
     if ($lastActivity && (time() - $lastActivity) > $sessionIdleTimeout) {
         session_unset();
         session_destroy();
         session_start();
     } else {
-        $_SESSION['zt_last_activity'] = time();
+        $_SESSION['ss_last_activity'] = time();
     }
 }
 
 // CSRF token
-if (empty($_SESSION['zt_csrf_token'])) {
-    $_SESSION['zt_csrf_token'] = bin2hex(random_bytes(32));
+if (empty($_SESSION['ss_csrf_token'])) {
+    $_SESSION['ss_csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // Security headers
@@ -82,10 +82,10 @@ function h(?string $val): string
 
 function require_auth(): array
 {
-    if (empty($_SESSION['zt_user'])) {
+    if (empty($_SESSION['ss_user'])) {
         unauthorized('Veuillez vous connecter');
     }
-    return $_SESSION['zt_user'];
+    return $_SESSION['ss_user'];
 }
 
 function require_responsable(): array
@@ -109,7 +109,7 @@ function require_admin(): array
 function require_permission(string $key): array
 {
     $user = require_auth();
-    $denied = $_SESSION['zt_user']['denied_perms'] ?? [];
+    $denied = $_SESSION['ss_user']['denied_perms'] ?? [];
     if (in_array($key, $denied)) {
         forbidden('Accès non autorisé');
     }

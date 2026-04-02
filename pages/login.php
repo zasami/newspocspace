@@ -1,9 +1,9 @@
 <div class="login-page">
   <div class="login-card">
     <div class="login-header">
-      <img src="/zerdatime/logo.png" alt="zerdaTime" class="login-logo-img">
+      <img src="/spocspace/logo.png" alt="SpocSpace" class="login-logo-img">
       <h1>Bienvenue</h1>
-      <p>Connectez-vous à zerdaTime</p>
+      <p>Connectez-vous à SpocSpace</p>
     </div>
     <div class="login-error" id="loginError"></div>
     <form id="loginForm" autocomplete="on">
@@ -26,6 +26,6 @@
     <div class="login-footer">
       <a href="#" id="forgotPasswordLink">Mot de passe oublié ?</a>
     </div>
-    <div class="login-brand">zerdaTime — Genève</div>
+    <div class="login-brand">SpocSpace — Genève</div>
   </div>
 </div>

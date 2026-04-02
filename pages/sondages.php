@@ -1,5 +1,5 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
-$uid = $_SESSION['zt_user']['id'];
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['ss_user']['id'];
 $initSondages = Db::fetchAll(
     "SELECT s.id, s.titre, s.description, s.is_anonymous, s.created_at,
             u.prenom, u.nom,
@@ -43,4 +43,4 @@ $initSondages = Db::fetchAll(
 
 </div>
 
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['list' => $initSondages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['list' => $initSondages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime — Delta sync for offline-first
+ * SpocSpace — Delta sync for offline-first
  */
 
 function sync_delta()

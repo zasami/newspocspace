@@ -124,7 +124,7 @@ function admin_save_protection_comptage() {
     $produitId = $params['produit_id'] ?? '';
     $qteRestante = max(0, (int)($params['quantite_restante'] ?? 0));
     $semaine = $params['semaine'] ?? date('Y-m-d', strtotime('monday this week'));
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
 
     if (!$residentId || !$produitId) bad_request('Résident et produit requis');
 
@@ -148,7 +148,7 @@ function admin_validate_protection_comptages() {
     global $params;
     $semaine = $params['semaine'] ?? '';
     $ids = $params['ids'] ?? [];
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
 
     if ($ids && is_array($ids)) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -165,7 +165,7 @@ function admin_deliver_protection_comptages() {
     global $params;
     $semaine = $params['semaine'] ?? '';
     $ids = $params['ids'] ?? [];
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
 
     if ($ids && is_array($ids)) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));

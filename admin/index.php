@@ -1,17 +1,17 @@
 <?php
 /**
- * zerdaTime Admin Panel - Server-rendered with retractable sidebar
+ * SpocSpace Admin Panel - Server-rendered with retractable sidebar
  */
 require_once __DIR__ . '/../init.php';
 
 /**
  * Build a clean admin URL
- * @param string $page  Page name (empty or 'dashboard' → /zerdatime/admin/)
+ * @param string $page  Page name (empty or 'dashboard' → /spocspace/admin/)
  * @param string $id    Optional ID segment
  * @param array  $extra Optional query parameters
  */
 function admin_url(string $page = '', string $id = '', array $extra = []): string {
-    $base = '/zerdatime/admin';
+    $base = '/spocspace/admin';
     if (!$page || $page === 'dashboard') {
         $url = $base . '/';
     } else {
@@ -23,13 +23,13 @@ function admin_url(string $page = '', string $id = '', array $extra = []): strin
 }
 
 // Auth check
-if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['admin', 'direction', 'responsable'])) {
-    header('Location: /zerdatime/login');
+if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
+    header('Location: /spocspace/login');
     exit;
 }
 
-$admin = $_SESSION['zt_user'];
-$csrfToken = $_SESSION['zt_csrf_token'] ?? '';
+$admin = $_SESSION['ss_user'];
+$csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 
 // CSP nonce for inline scripts
 $cspNonce = base64_encode(random_bytes(16));
@@ -39,7 +39,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$
 
 // Load EMS logo + name for sidebar
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
-$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 
 
 // Redirect old-style URLs (index.php?page=…) → clean URLs
@@ -67,7 +67,7 @@ $globalComposeContacts = Db::fetchAll(
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
-    header('Location: /zerdatime/login');
+    header('Location: /spocspace/login');
     exit;
 }
 
@@ -161,7 +161,7 @@ if (!empty($_GET['_spa'])) {
     echo json_encode([
         'html' => $html,
         'page' => $page,
-        'title' => ($pageLabels[$page] ?? 'Admin') . ' — zerdaTime',
+        'title' => ($pageLabels[$page] ?? 'Admin') . ' — SpocSpace',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -247,14 +247,14 @@ $activeSection = match($page) {
 <meta name="theme-color" content="#1A1A1A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/zerdatime/manifest.json">
-<link rel="apple-touch-icon" href="/zerdatime/assets/icons/icon-192x192.png">
-<base href="/zerdatime/admin/">
-<title>Admin — zerdaTime</title>
-<link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
-<link href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="manifest" href="/spocspace/manifest.json">
+<link rel="apple-touch-icon" href="/spocspace/assets/icons/icon-192x192.png">
+<base href="/spocspace/admin/">
+<title>Admin — SpocSpace</title>
+<link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 </head>
 <body>
 
@@ -265,7 +265,7 @@ $activeSection = match($page) {
 <aside class="admin-sidebar" id="adminSidebar">
   <div class="sidebar-header">
     <a href="<?= admin_url() ?>" class="sidebar-brand-link">
-      <img src="/zerdatime/logo.png" alt="" class="brand-logo">
+      <img src="/spocspace/logo.png" alt="" class="brand-logo">
       <span class="brand-text"><?= h($emsNom) ?></span>
     </a>
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Réduire le menu">
@@ -291,16 +291,16 @@ $activeSection = match($page) {
     <?php endforeach; ?>
   </nav>
   <div class="sidebar-footer">
-    <a href="/zerdacare/" class="sidebar-link" title="zerdaCare — Résidents & Soins">
+    <a href="/spoccare/" class="sidebar-link" title="SpocCare — Résidents & Soins">
       <i class="bi bi-heart-pulse" style="color:#2d4a43"></i>
-      <span class="nav-label">zerdaCare</span>
+      <span class="nav-label">SpocCare</span>
     </a>
-    <a href="/zerdatime/" class="sidebar-link" target="_blank" title="Portail collaborateur">
+    <a href="/spocspace/" class="sidebar-link" target="_blank" title="Portail collaborateur">
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
     </a>
-    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--zt-text-muted,#999);opacity:.7;display:flex;align-items:center;justify-content:space-between">
-      <span class="nav-label">zerdaTime v<?= APP_SEMVER ?></span>
+    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--ss-text-muted,#999);opacity:.7;display:flex;align-items:center;justify-content:space-between">
+      <span class="nav-label">SpocSpace v<?= APP_SEMVER ?></span>
       <button class="sidebar-shortcuts-btn" id="sidebarShortcutsBtn" title="Raccourcis clavier"><i class="bi bi-keyboard"></i></button>
     </div>
   </div>
@@ -355,12 +355,12 @@ $activeSection = match($page) {
     </div>
   </header>
 
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>">
-window.__ZT_ADMIN__ = {
+window.__SS_ADMIN__ = {
   csrfToken: '<?= $csrfToken ?>',
   adminId: '<?= h($admin['id']) ?>',
   adminName: '<?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?>'
@@ -391,16 +391,16 @@ window.__ZT_ADMIN__ = {
 
 <script nonce="<?= $cspNonce ?>">
 // Extend with extra properties
-window.__ZT_ADMIN__.mustChangePassword = <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>;
-window.__ZT_ADMIN__.tempPasswordExpires = <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>;
+window.__SS_ADMIN__.mustChangePassword = <?= !empty($_SESSION['ss_must_change_password']) ? 'true' : 'false' ?>;
+window.__SS_ADMIN__.tempPasswordExpires = <?= !empty($_SESSION['ss_temp_password_expires']) ? "'" . h($_SESSION['ss_temp_password_expires']) . "'" : 'null' ?>;
 
 // Temp password banner (admin)
-if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordExpires) {
-    const exp = new Date(window.__ZT_ADMIN__.tempPasswordExpires.replace(' ', 'T'));
+if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordExpires) {
+    const exp = new Date(window.__SS_ADMIN__.tempPasswordExpires.replace(' ', 'T'));
     const banner = document.createElement('div');
     banner.id = 'tempPwdBanner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#9B2C2C;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:.88rem;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-    banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>Vous utilisez un mot de passe temporaire. Changez-le avant <strong id="tempPwdCountdown"></strong></span><a href="/zerdatime/profile" style="color:#fff;background:rgba(255,255,255,.2);padding:4px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:.82rem;white-space:nowrap;"><i class="bi bi-key"></i> Modifier</a>';
+    banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>Vous utilisez un mot de passe temporaire. Changez-le avant <strong id="tempPwdCountdown"></strong></span><a href="/spocspace/profile" style="color:#fff;background:rgba(255,255,255,.2);padding:4px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:.82rem;white-space:nowrap;"><i class="bi bi-key"></i> Modifier</a>';
     document.body.prepend(banner);
     document.body.style.paddingTop = banner.offsetHeight + 'px';
     function updateCountdown() {
@@ -463,10 +463,10 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     if (fsBtn) fsBtn.addEventListener('click', function() {
         if (document.fullscreenElement) {
             document.exitFullscreen().catch(function(){});
-            localStorage.removeItem('zt_fullscreen');
+            localStorage.removeItem('ss_fullscreen');
         } else {
             document.documentElement.requestFullscreen().catch(function(){});
-            localStorage.setItem('zt_fullscreen', '1');
+            localStorage.setItem('ss_fullscreen', '1');
         }
     });
 
@@ -476,7 +476,7 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
     // ── SPA Router — navigation AJAX, fullscreen persists ──
     var contentEl = document.getElementById('adminContent');
     var titleEl = document.querySelector('.topbar-title');
-    var BASE = '/zerdatime/admin/';
+    var BASE = '/spocspace/admin/';
     var spaActive = false; // only SPA-navigate after first click (initial page loads normally)
 
     function pageFromUrl(url) {
@@ -627,9 +627,9 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
   display: flex; align-items: center; justify-content: center;
   font-size: 1.4rem; flex-shrink: 0;
 }
-.confirm-modal-icon.icon-danger  { background: rgba(220,38,38,0.08); color: var(--zt-red); }
-.confirm-modal-icon.icon-warning { background: rgba(234,139,45,0.08); color: var(--zt-orange); }
-.confirm-modal-icon.icon-success { background: rgba(22,163,74,0.08); color: var(--zt-green); }
+.confirm-modal-icon.icon-danger  { background: rgba(220,38,38,0.08); color: var(--ss-red); }
+.confirm-modal-icon.icon-warning { background: rgba(234,139,45,0.08); color: var(--ss-orange); }
+.confirm-modal-icon.icon-success { background: rgba(22,163,74,0.08); color: var(--ss-green); }
 .confirm-modal-icon.icon-info    { background: var(--cl-accent-bg); color: var(--cl-accent); }
 .confirm-modal-icon.icon-primary { background: var(--cl-accent-bg); color: var(--cl-accent); }
 #confirmModalBody { font-size: 0.9rem; color: var(--cl-text-secondary); }
@@ -654,7 +654,7 @@ if (window.__ZT_ADMIN__.mustChangePassword && window.__ZT_ADMIN__.tempPasswordEx
 #confirmModal, #promptModal { z-index: 1070 !important; }
 
 /* Dim overlay on modals behind confirm/prompt */
-.zt-dim-overlay {
+.ss-dim-overlay {
   position: absolute; inset: 0; z-index: 10;
   background: rgba(0,0,0,.45);
   border-radius: inherit;
@@ -741,15 +741,15 @@ function adminConfirm(opts = {}) {
     // Dim modals behind the confirm
     const confirmEl = document.getElementById('confirmModal');
     document.querySelectorAll('.modal.show').forEach(m => {
-      if (m !== confirmEl && !m.querySelector('.zt-dim-overlay')) {
+      if (m !== confirmEl && !m.querySelector('.ss-dim-overlay')) {
         const ov = document.createElement('div');
-        ov.className = 'zt-dim-overlay';
+        ov.className = 'ss-dim-overlay';
         m.appendChild(ov);
       }
     });
     confirmEl.addEventListener('hidden.bs.modal', function onHide() {
       confirmEl.removeEventListener('hidden.bs.modal', onHide);
-      document.querySelectorAll('.zt-dim-overlay').forEach(ov => ov.remove());
+      document.querySelectorAll('.ss-dim-overlay').forEach(ov => ov.remove());
     });
 
     confirmEl.addEventListener('shown.bs.modal', function onShown() {
@@ -810,16 +810,16 @@ function adminPrompt(opts = {}) {
     // Dim modals behind
     const promptEl = document.getElementById('promptModal');
     document.querySelectorAll('.modal.show').forEach(m => {
-      if (m !== promptEl && !m.querySelector('.zt-dim-overlay')) {
+      if (m !== promptEl && !m.querySelector('.ss-dim-overlay')) {
         const ov = document.createElement('div');
-        ov.className = 'zt-dim-overlay';
+        ov.className = 'ss-dim-overlay';
         m.appendChild(ov);
       }
     });
 
     promptEl.addEventListener('hidden.bs.modal', function onHide() {
       promptEl.removeEventListener('hidden.bs.modal', onHide);
-      document.querySelectorAll('.zt-dim-overlay').forEach(ov => ov.remove());
+      document.querySelectorAll('.ss-dim-overlay').forEach(ov => ov.remove());
       if (!resolved) { resolved = true; resolve(null); }
     });
 
@@ -839,7 +839,7 @@ function adminPrompt(opts = {}) {
 }
 </script>
 
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 
 <!-- ═══ GLOBAL COMPOSE PANEL ═══ -->
 <div class="compose-panel" id="globalComposePanel">
@@ -890,7 +890,7 @@ function adminPrompt(opts = {}) {
     let initialized = false;
 
     async function getEditorModule() {
-        if (!editorModule) editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+        if (!editorModule) editorModule = await import('/spocspace/assets/js/rich-editor.js');
         return editorModule;
     }
 
@@ -1054,9 +1054,9 @@ function adminPrompt(opts = {}) {
             const fd = new FormData();
             fd.append('action', 'admin_upload_message_attachment');
             fd.append('file', file);
-            const resp = await fetch('/zerdatime/admin/api.php', {
+            const resp = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd
             });
             const r = await resp.json();
@@ -1126,7 +1126,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 // Keyboard Shortcuts System
 // ═══════════════════════════════════════════════════════════════════════════════
 (function() {
-    const STORAGE_KEY = 'zt_shortcuts';
+    const STORAGE_KEY = 'ss_shortcuts';
 
     // Navigate: use SPA router in fullscreen, normal otherwise
     function goTo(url) {
@@ -1140,23 +1140,23 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
     // ── Default shortcuts definition ──
     const SHORTCUTS_DEF = [
         { group: 'Navigation', items: [
-            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/zerdatime/admin/') },
-            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/zerdatime/admin/planning') },
-            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/zerdatime/admin/users') },
-            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => goTo('/zerdatime/admin/residents') },
-            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => goTo('/zerdatime/admin/absences') },
-            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => goTo('/zerdatime/admin/desirs') },
-            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => goTo('/zerdatime/admin/vacances') },
-            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/zerdatime/admin/messages') },
-            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/zerdatime/admin/famille') },
-            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/zerdatime/admin/documents') },
+            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/spocspace/admin/') },
+            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/spocspace/admin/planning') },
+            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/spocspace/admin/users') },
+            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => goTo('/spocspace/admin/residents') },
+            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => goTo('/spocspace/admin/absences') },
+            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => goTo('/spocspace/admin/desirs') },
+            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => goTo('/spocspace/admin/vacances') },
+            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/spocspace/admin/messages') },
+            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/spocspace/admin/famille') },
+            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/spocspace/admin/documents') },
         ]},
         { group: 'Outils', items: [
-            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/zerdatime/admin/todos') },
-            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/zerdatime/admin/notes') },
-            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/zerdatime/admin/pv') },
-            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/zerdatime/admin/sondages') },
-            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/zerdatime/admin/stats') },
+            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/spocspace/admin/todos') },
+            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/spocspace/admin/notes') },
+            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/spocspace/admin/pv') },
+            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/spocspace/admin/sondages') },
+            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/spocspace/admin/stats') },
         ]},
         { group: 'Actions rapides', items: [
             { id: 'act_email',        label: 'Nouveau message (email)', default: 'Alt+E', action: openComposeEmail },
@@ -1399,7 +1399,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 </script>
 
 <!-- ═══ PWA: Update Modal ═══ -->
-<style<?= nonce() ?>>@keyframes zt-update-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}#ztUpdateNow:hover{background:#a8c4bb!important}#ztUpdateLater:hover{background:#f7f5f2!important;border-color:#bcd2cb!important}</style>
+<style<?= nonce() ?>>@keyframes ss-update-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}#ztUpdateNow:hover{background:#a8c4bb!important}#ztUpdateLater:hover{background:#f7f5f2!important;border-color:#bcd2cb!important}</style>
 <div id="ztUpdateOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);transition:opacity .3s;opacity:0">
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:18px;padding:32px 36px;width:380px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center">
     <div id="ztUpdateIcon" style="width:56px;height:56px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem">
@@ -1454,7 +1454,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
             btns.style.display = 'none';
             progress.style.display = '';
             text.textContent = 'Installation en cours...';
-            icon.innerHTML = '<i class="bi bi-arrow-repeat" style="animation:zt-update-spin 1s linear infinite"></i>';
+            icon.innerHTML = '<i class="bi bi-arrow-repeat" style="animation:ss-update-spin 1s linear infinite"></i>';
 
             // Simulate progress (SW activation is nearly instant but we make it feel smooth)
             let pct = 0;
@@ -1490,7 +1490,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/zerdatime/sw.js', { scope: '/zerdatime/' })
+        navigator.serviceWorker.register('/spocspace/sw.js', { scope: '/spocspace/' })
             .then(reg => {
                 console.log('[PWA] SW registered:', reg.scope);
                 // Check for updates
@@ -1529,10 +1529,10 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
             if (!deferredInstallPrompt) {
                 // Fallback: show instructions
                 await adminConfirm({
-                    title: 'Installer zerdaTime',
+                    title: 'Installer SpocSpace',
                     text: '<div style="text-align:left;font-size:.88rem">'
                         + '<p><strong>Chrome / Edge :</strong></p>'
-                        + '<ol style="margin:8px 0 16px 20px"><li>Cliquez sur le menu <kbd>⋮</kbd> en haut à droite</li><li>Sélectionnez <strong>"Installer zerdaTime"</strong></li></ol>'
+                        + '<ol style="margin:8px 0 16px 20px"><li>Cliquez sur le menu <kbd>⋮</kbd> en haut à droite</li><li>Sélectionnez <strong>"Installer SpocSpace"</strong></li></ol>'
                         + '<p><strong>Safari (Mac) :</strong></p>'
                         + '<ol style="margin:8px 0 16px 20px"><li>Menu <strong>Fichier → Ajouter au Dock</strong></li></ol>'
                         + '<p><strong>iPhone / iPad :</strong></p>'

@@ -121,7 +121,7 @@ function admin_create_sondage()
     if (empty($titre)) bad_request('Titre requis');
 
     $id = Uuid::v4();
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $description = Sanitize::text($params['description'] ?? null);
     $isAnonymous = isset($params['is_anonymous']) ? (int)(bool)$params['is_anonymous'] : 0;
 
@@ -385,7 +385,7 @@ function admin_generate_sondage_questions()
             "INSERT INTO ia_usage_log (id, planning_id, mois_annee, provider, model, tokens_in, tokens_out, admin_id)
              VALUES (?, '', 'sondage', ?, ?, ?, ?, ?)",
             [Uuid::v4(), $aiProvider, $aiModel,
-             strlen($prompt), strlen($raw ?? ''), $_SESSION['zt_user']['id']]
+             strlen($prompt), strlen($raw ?? ''), $_SESSION['ss_user']['id']]
         );
     } catch (\Exception $e) {
         // Non-critical — don't block the response if logging fails

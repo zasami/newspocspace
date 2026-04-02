@@ -1,8 +1,8 @@
 /**
- * zerdaTime - Fiches de salaire (employee view)
+ * SpocSpace - Fiches de salaire (employee view)
  */
 import { apiPost, escapeHtml, toast } from '../helpers.js';
-const BASE = '/zerdatime';
+const BASE = '/spocspace';
 
 const MOIS = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 let currentYear = new Date().getFullYear();
@@ -22,7 +22,7 @@ export function init() {
     });
 
     // Render from SSR data synchronously
-    const ssrFiches = window.__ZT_PAGE_DATA__?.fiches || [];
+    const ssrFiches = window.__SS_PAGE_DATA__?.fiches || [];
     renderFiches(ssrFiches);
 }
 
@@ -60,7 +60,7 @@ function renderFiches(allFiches) {
                     <div class="fiche-icon"><i class="bi bi-file-pdf"></i></div>
                     <div>
                         <div style="font-weight:600;font-size:0.95rem">${MOIS[m]} ${currentYear}</div>
-                        <div style="font-size:0.78rem;color:var(--zt-text-muted)">Non disponible</div>
+                        <div style="font-size:0.78rem;color:var(--ss-text-muted)">Non disponible</div>
                     </div>
                 </div>
             </div>`;

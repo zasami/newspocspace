@@ -16,7 +16,7 @@ export async function init() {
     });
 
     // Auto-fill from URL params (demo access)
-    const urlParams = window.__ZT_INITIAL_PARAMS__ || new URLSearchParams(window.location.search);
+    const urlParams = window.__SS_INITIAL_PARAMS__ || new URLSearchParams(window.location.search);
     const autoEmail = urlParams.get('email');
     const autoPwd = urlParams.get('pwd');
     if (autoEmail) document.getElementById('loginEmail').value = autoEmail;
@@ -43,8 +43,8 @@ export async function init() {
         const res = await apiPost('login', { email, password });
 
         if (res.success) {
-            window.__ZT__.user = res.user;
-            if (res.csrf) window.__ZT__.csrfToken = res.csrf;
+            window.__SS__.user = res.user;
+            if (res.csrf) window.__SS__.csrfToken = res.csrf;
             // Check for redirect param
             const urlParams = new URLSearchParams(window.location.search);
             const redirect = urlParams.get('redirect');
@@ -53,9 +53,9 @@ export async function init() {
             } else {
                 const role = res.user?.role;
                 if (role === 'admin' || role === 'direction') {
-                    window.location.href = '/zerdatime/admin/';
+                    window.location.href = '/spocspace/admin/';
                 } else {
-                    window.location.href = '/zerdatime/home';
+                    window.location.href = '/spocspace/home';
                 }
             }
         } else {

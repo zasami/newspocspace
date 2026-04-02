@@ -1,14 +1,14 @@
 @echo off
-title ZerdaTime IA - Vosk + Ollama
+title SpocSpace IA - Vosk + Ollama
 echo.
 echo  ============================================
-echo   ZerdaTime IA - Serveurs locaux
+echo   SpocSpace IA - Serveurs locaux
 echo   Vosk (transcription) + Ollama (structuration)
 echo   Ne fermez pas cette fenetre !
 echo  ============================================
 echo.
 
-set "WHISPER_DIR=%LOCALAPPDATA%\ZerdaTimeWhisper"
+set "WHISPER_DIR=%LOCALAPPDATA%\SpocSpaceWhisper"
 
 :: Forcer Ollama sur le port 59876 (eviter conflit VS Code)
 set "OLLAMA_HOST=127.0.0.1:59876"
@@ -114,13 +114,13 @@ if exist "%VOSK_MODEL_DIR%\conf\model.conf" goto VOSK_OK
 set "VOSK_FOUND="
 set "BATDIR=%~dp0"
 if exist "%BATDIR%vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%BATDIR%ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%ZerdaTime-IA\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%BATDIR%ZerdaTime-IA-Install\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%ZerdaTime-IA-Install\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%BATDIR%ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Downloads\ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Downloads\ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Downloads\ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Downloads\ZerdaTime-IA\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Desktop\ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Desktop\ZerdaTime-IA\vosk-model-fr-0.22"
-if "%VOSK_FOUND%"=="" if exist "%WHISPER_DIR%\ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%WHISPER_DIR%\ZerdaTime-IA-Install\ZerdaTime-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%BATDIR%SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%SpocSpace-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%BATDIR%SpocSpace-IA-Install\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%SpocSpace-IA-Install\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%BATDIR%SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%BATDIR%SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Downloads\SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Downloads\SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Downloads\SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Downloads\SpocSpace-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%USERPROFILE%\Desktop\SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%USERPROFILE%\Desktop\SpocSpace-IA\vosk-model-fr-0.22"
+if "%VOSK_FOUND%"=="" if exist "%WHISPER_DIR%\SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22\conf\model.conf" set "VOSK_FOUND=%WHISPER_DIR%\SpocSpace-IA-Install\SpocSpace-IA\vosk-model-fr-0.22"
 
 if not "%VOSK_FOUND%"=="" (
     echo        Modele Vosk trouve dans %VOSK_FOUND%

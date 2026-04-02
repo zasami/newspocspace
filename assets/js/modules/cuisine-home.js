@@ -14,8 +14,8 @@ let canEdit = true;
 let reuseSource = null; // menu data to copy
 
 export async function init() {
-    const user = window.__ZT__?.user;
-    const denied = window.__ZT__?.deniedPerms || [];
+    const user = window.__SS__?.user;
+    const denied = window.__SS__?.deniedPerms || [];
     canEdit = !denied.includes('cuisine_saisie_menu');
 
     const nameEl = document.getElementById('chUserName');
@@ -54,7 +54,7 @@ export async function init() {
     initCmdModalEvents();
 
     // Use SSR data on first load to avoid waterfall requests
-    const ssr = window.__ZT_PAGE_DATA__;
+    const ssr = window.__SS_PAGE_DATA__;
     if (ssr) {
         renderMenuCards(ssr);
         renderCommandes(ssr);
@@ -372,17 +372,17 @@ function openCmdModal() {
     const menuRadio = document.querySelector('#chCmdModal input[name="chCmdChoix"][value="menu"]');
     if (menuRadio) menuRadio.checked = true;
     document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(o => {
-        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+        o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
     });
-    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--zt-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--zt-accent-bg)'; }
+    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--ss-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--ss-accent-bg)'; }
 
     // Reset paiement radio
     const salRadio = document.querySelector('#chCmdModal input[name="chCmdPaiement"][value="salaire"]');
     if (salRadio) salRadio.checked = true;
     document.querySelectorAll('#chCmdModal .menu-pay-option').forEach(o => {
-        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+        o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
     });
-    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)'; }
+    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--ss-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--ss-accent-bg)'; }
 
     // Reset quick tags
     document.querySelectorAll('#chCmdModal .ch-quick-tag').forEach(b => {
@@ -397,20 +397,20 @@ function initCmdModalEvents() {
     document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(opt => {
         opt.querySelector('input')?.addEventListener('change', () => {
             document.querySelectorAll('#chCmdModal .menu-choix-option').forEach(o => {
-                o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+                o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
             });
-            opt.style.borderColor = 'var(--zt-teal)'; opt.style.background = 'var(--zt-accent-bg)';
+            opt.style.borderColor = 'var(--ss-teal)'; opt.style.background = 'var(--ss-accent-bg)';
         });
     });
     // Paiement toggle
     document.querySelectorAll('#chCmdModal input[name="chCmdPaiement"]').forEach(radio => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('#chCmdModal .menu-pay-option').forEach(el => {
-                el.style.borderColor = 'var(--zt-border)'; el.style.background = '';
+                el.style.borderColor = 'var(--ss-border)'; el.style.background = '';
             });
             if (radio.checked) {
-                radio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)';
-                radio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)';
+                radio.closest('.menu-pay-option').style.borderColor = 'var(--ss-teal)';
+                radio.closest('.menu-pay-option').style.background = 'var(--ss-accent-bg)';
             }
         });
     });
@@ -422,7 +422,7 @@ function initCmdModalEvents() {
             const tag = btn.dataset.tag;
             if (input.value.toLowerCase().includes(tag.toLowerCase())) return;
             input.value = input.value.trim() ? input.value.trim() + ', ' + tag : tag;
-            btn.style.background = 'var(--zt-accent-bg)'; btn.style.borderColor = 'var(--zt-teal)';
+            btn.style.background = 'var(--ss-accent-bg)'; btn.style.borderColor = 'var(--ss-teal)';
         });
     });
 }
@@ -445,13 +445,13 @@ async function searchCmdUsers() {
         if (u.photo) {
             item.innerHTML = '<img src="' + escapeHtml(u.photo) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">';
         } else {
-            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--zt-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
+            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--ss-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
         }
 
         // Name + fonction
         const info = document.createElement('div');
         info.innerHTML = '<div style="font-weight:600;font-size:0.88rem">' + escapeHtml(u.prenom + ' ' + u.nom) + '</div>'
-            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--zt-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
+            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--ss-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
         item.appendChild(info);
 
         item.addEventListener('click', () => {

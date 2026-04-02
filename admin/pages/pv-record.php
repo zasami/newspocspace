@@ -26,8 +26,8 @@ $pvRecordCfg = [];
 foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_value']; }
 ?>
 <!-- PV Recording Page -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <style>
 /* Server status badges */
 .srv-badge {
@@ -1185,7 +1185,7 @@ async function initPvrecordPage() {
   setInterval(checkServers, 8000);
 
   try {
-    editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+    editorModule = await import('/spocspace/assets/js/rich-editor.js');
     console.log('[PV-INIT] Editor module loaded');
   } catch (e) {
     console.error('[PV-INIT] Editor import error:', e);
@@ -1206,9 +1206,9 @@ async function initPvrecordPage() {
   if (editorModule) {
     try {
       // Si contenu sauvegardé dans localStorage (rechargement pendant blur), le restaurer
-      const lsSaved = localStorage.getItem('zt_pv_blur_saved');
+      const lsSaved = localStorage.getItem('ss_pv_blur_saved');
       const editorContent = lsSaved || pvData.contenu || pvData.transcription_brute || '';
-      if (lsSaved) localStorage.removeItem('zt_pv_blur_saved');
+      if (lsSaved) localStorage.removeItem('ss_pv_blur_saved');
       editorInstance = await editorModule.createEditor(document.getElementById('pvEditorContainer'), {
           placeholder: "Le texte transcrit s'affichera ici en temps réel. Vous pouvez corriger les éventuelles erreurs manuellement...",
           content: editorContent,
@@ -1256,7 +1256,7 @@ function updatePvInfo() {
     participants.length > 0 ? participants.map(p => p.prenom + ' ' + p.nom).join(', ') : '—';
     
   if (pvData.audio_path) {
-      showAudioPlayback('/zerdatime/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
+      showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
   }
 }
 
@@ -1275,12 +1275,12 @@ function showAudioPlayback(url) {
 /*
 async function initLocalAI_WASM() {
     try {
-        const { pipeline, env } = await import('/zerdatime/assets/ai/js/transformers.min.js');
+        const { pipeline, env } = await import('/spocspace/assets/ai/js/transformers.min.js');
 
         env.allowLocalModels = true;
         env.allowRemoteModels = false;
-        env.localModelPath = '/zerdatime/assets/ai/models/';
-        env.backends.onnx.wasm.wasmPaths = '/zerdatime/assets/ai/js/';
+        env.localModelPath = '/spocspace/assets/ai/models/';
+        env.backends.onnx.wasm.wasmPaths = '/spocspace/assets/ai/js/';
 
         console.log("Chargement du modèle Whisper en mémoire...");
 
@@ -1440,9 +1440,9 @@ async function transcribeFullAudioBlob(blob) {
             formData.append('action', 'admin_transcribe_external');
             formData.append('audio', blob, 'audio.webm');
 
-            const res = await fetch('/zerdatime/admin/api.php', {
+            const res = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: formData,
                 signal,
             });
@@ -1531,7 +1531,7 @@ function showWhisperAlert() {
               <i class="bi bi-terminal"></i> Comment démarrer :
             </p>
             <ol class="pv-whisper-steps">
-              <li>Double-cliquez sur le raccourci <strong>« ZerdaTime Whisper »</strong> sur votre Bureau</li>
+              <li>Double-cliquez sur le raccourci <strong>« SpocSpace Whisper »</strong> sur votre Bureau</li>
               <li>Attendez que la fenêtre affiche <code>Serveur démarré</code></li>
               <li>Revenez ici et cliquez à nouveau sur <strong>Démarrer la dictée</strong></li>
             </ol>
@@ -1719,7 +1719,7 @@ const _twNodes = [
 ];
 let _twTimer = null;
 let _twIdx = 0;
-const _LS_KEY = 'zt_pv_blur_saved';
+const _LS_KEY = 'ss_pv_blur_saved';
 
 function startEditorBlur() {
     const container = document.getElementById('pvEditorContainer');
@@ -2568,21 +2568,21 @@ async function uploadAudioBlob(blob, filename) {
 
     try {
         const headers = {};
-        if (window.__ZT_ADMIN__?.csrfToken) {
-            headers['X-CSRF-Token'] = window.__ZT_ADMIN__.csrfToken;
+        if (window.__SS_ADMIN__?.csrfToken) {
+            headers['X-CSRF-Token'] = window.__SS_ADMIN__.csrfToken;
         }
 
-        const res = await fetch('/zerdatime/admin/api.php', {
+        const res = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: headers,
             body: formData
         });
 
         const json = await res.json();
-        if (json.csrf && window.__ZT_ADMIN__) window.__ZT_ADMIN__.csrfToken = json.csrf;
+        if (json.csrf && window.__SS_ADMIN__) window.__SS_ADMIN__.csrfToken = json.csrf;
 
         if (json.success) {
-            if (json.audio_path) showAudioPlayback('/zerdatime/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
+            if (json.audio_path) showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
             return true;
         } else {
             toast('Erreur: ' + (json.message || 'Échec de la sauvegarde audio'), 'error');
@@ -2685,17 +2685,17 @@ async function structurePv() {
         startProgress('Structuration IA cloud…', estSec, '#D0C4D8');
 
         try {
-            const res = await fetch('/zerdatime/admin/api.php', {
+            const res = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '',
+                    'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '',
                 },
                 body: JSON.stringify({ action: 'admin_structure_pv_external', text: rawText, prompt }),
                 signal,
             });
             const data = await res.json();
-            if (data.csrf) window.__ZT_ADMIN__.csrfToken = data.csrf;
+            if (data.csrf) window.__SS_ADMIN__.csrfToken = data.csrf;
 
             if (data.success && data.html && data.html.length > 20) {
                 editorInstance.commands.setContent(data.html);
@@ -2729,7 +2729,7 @@ async function structurePv() {
     } catch (e) {}
 
     if (!ollamaOk) {
-        toast('Ollama hors ligne — lancez le raccourci « ZerdaTime IA » sur votre Bureau.', 'error');
+        toast('Ollama hors ligne — lancez le raccourci « SpocSpace IA » sur votre Bureau.', 'error');
         _restoreSavedContent();
         stopEditorBlur();
         btn.disabled = false;

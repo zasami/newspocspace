@@ -8,7 +8,7 @@ $initialNotes = Db::fetchAll(
 );
 ?>
 <!-- Notes Page -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <style>
 .note-cat { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
@@ -186,7 +186,7 @@ const CAT_OPTIONS = Object.entries(CAT_LABELS).map(([v, l]) => ({ value: v, labe
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (async function initNotesPage() {
-    editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+    editorModule = await import('/spocspace/assets/js/rich-editor.js');
     zerdaSelect.init('#noteCategorie', CAT_OPTIONS, { value: 'autre' });
 
     // Sliding pill filter tabs

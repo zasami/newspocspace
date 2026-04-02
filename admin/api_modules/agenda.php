@@ -6,7 +6,7 @@ function admin_get_agenda_events() {
     $end = $params['end'] ?? date('Y-m-t');
     $category = $params['category'] ?? '';
     $search = $params['search'] ?? '';
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     $where = "(e.start_at BETWEEN ? AND ? OR e.end_at BETWEEN ? AND ?)";
     $binds = [$start . ' 00:00:00', $end . ' 23:59:59', $start . ' 00:00:00', $end . ' 23:59:59'];
@@ -54,7 +54,7 @@ function admin_get_agenda_events() {
 
 function admin_create_agenda_event() {
     global $params;
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     $title = trim($params['title'] ?? '');
     if (!$title) bad_request('Titre requis');

@@ -60,7 +60,7 @@ function admin_create_marquage() {
     $action = $params['action_type'] ?? 'marquer';
     $quantite = max(1, intval($params['quantite'] ?? 1));
     $description = trim($params['description'] ?? '');
-    $userId = $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? $_SESSION['admin']['id'] ?? '';
 
     if (!$residentId) bad_request('Résident requis');
 
@@ -162,7 +162,7 @@ function admin_update_marquage_statut() {
     $allowed = ['déposé','récupéré','marqué','livré'];
     if (!in_array($statut, $allowed)) bad_request('Statut invalide');
 
-    $userId = $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? null;
+    $userId = $_SESSION['ss_user']['id'] ?? $_SESSION['admin']['id'] ?? null;
     $completedBy = in_array($statut, ['marqué','livré']) ? $userId : null;
     $completedAt = in_array($statut, ['marqué','livré']) ? date('Y-m-d H:i:s') : null;
 

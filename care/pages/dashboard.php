@@ -23,7 +23,7 @@ $totalChambres = (int) Db::getOne("SELECT COUNT(DISTINCT chambre) FROM residents
 </style>
 
 <div class="care-welcome">
-  <h3><i class="bi bi-heart-pulse" style="color:#2d4a43"></i> Bienvenue sur zerdaCare</h3>
+  <h3><i class="bi bi-heart-pulse" style="color:#2d4a43"></i> Bienvenue sur SpocCare</h3>
   <p>Module soins & vie quotidienne — <?= h($user['prenom']) ?>, <?= date('l j F Y') ?></p>
 </div>
 

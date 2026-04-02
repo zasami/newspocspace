@@ -46,7 +46,7 @@ function admin_validate_desir()
 
     Db::exec(
         "UPDATE desirs SET statut = ?, commentaire_chef = ?, valide_par = ?, valide_at = NOW() WHERE id = ?",
-        [$statut, $commentaire, $_SESSION['zt_user']['id'], $id]
+        [$statut, $commentaire, $_SESSION['ss_user']['id'], $id]
     );
 
     respond(['success' => true, 'message' => 'Désir ' . ($statut === 'valide' ? 'validé' : 'refusé')]);
@@ -114,7 +114,7 @@ function admin_validate_permanent()
         // Activate the new permanent
         Db::exec(
             "UPDATE desirs_permanents SET statut = 'valide', is_active = 1, valide_par = ?, valide_at = NOW(), commentaire_chef = ? WHERE id = ?",
-            [$_SESSION['zt_user']['id'], $commentaire ?: null, $id]
+            [$_SESSION['ss_user']['id'], $commentaire ?: null, $id]
         );
 
         // If this is a modification, deactivate the old permanent
@@ -130,7 +130,7 @@ function admin_validate_permanent()
         // Refuse: delete the proposal, old one stays as-is
         Db::exec(
             "UPDATE desirs_permanents SET statut = 'refuse', valide_par = ?, valide_at = NOW(), commentaire_chef = ? WHERE id = ?",
-            [$_SESSION['zt_user']['id'], $commentaire ?: null, $id]
+            [$_SESSION['ss_user']['id'], $commentaire ?: null, $id]
         );
 
         $message = $perm['replaces_id'] ? 'Modification refusée — ancien désir maintenu' : 'Désir permanent refusé';

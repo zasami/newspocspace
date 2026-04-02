@@ -8,18 +8,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-zerdaTime is an EMS (care home) staff scheduling application for EMS in Geneva. PHP+vanilla JS SPA for employees, server-rendered Bootstrap admin panel for managers. No build tools, no framework — plain PHP backend, ES modules frontend.
+SpocSpace is an EMS (care home) staff scheduling application for EMS in Geneva. PHP+vanilla JS SPA for employees, server-rendered Bootstrap admin panel for managers. No build tools, no framework — plain PHP backend, ES modules frontend.
 
 ## Architecture
 
 ### Two separate apps sharing one backend
 
-1. **Employee SPA** (`/zerdatime/`) — `index.php` shell + SPA router in `assets/js/app.js`
+1. **Employee SPA** (`/spocspace/`) — `index.php` shell + SPA router in `assets/js/app.js`
    - Pages loaded via `fetch()` from `pages/*.php`, JS modules from `assets/js/modules/*.js`
    - Each module exports `init()` and `destroy()`, dynamically imported via `moduleMap` in `app.js`
    - API calls go to `api.php` → `api_modules/_routes.php` → action function in module file
 
-2. **Admin panel** (`/zerdatime/admin/`) — server-rendered, `index.php?page=dashboard`
+2. **Admin panel** (`/spocspace/admin/`) — server-rendered, `index.php?page=dashboard`
    - Uses Bootstrap 5, pages in `admin/pages/*.php`
    - API calls go to `admin/api.php` → `admin/api_modules/_routes.php` → action function
    - Admin actions prefixed `admin_*` (e.g. `admin_get_users`, `admin_save_assignation`)
@@ -27,7 +27,7 @@ zerdaTime is an EMS (care home) staff scheduling application for EMS in Geneva. 
 ### Request flow
 
 ```
-POST /zerdatime/api.php  { action: "get_planning_hebdo", ... }
+POST /spocspace/api.php  { action: "get_planning_hebdo", ... }
   → api.php reads _routes.php to find module file
   → requires api_modules/{module}.php
   → calls the function named $action()
@@ -43,7 +43,7 @@ POST /zerdatime/api.php  { action: "get_planning_hebdo", ... }
 - **Sanitization**: `Sanitize::email()`, `Sanitize::text()`, `Sanitize::date()`, `Sanitize::int()`, etc.
 - **HTML escaping**: `h($val)` (alias for `htmlspecialchars`)
 - **CSRF**: Auto-sent via `X-CSRF-Token` header; `get_*` actions and auth flow are exempt
-- **Session prefix**: `$_SESSION['zt_user']`, `$_SESSION['zt_csrf_token']`, `$_SESSION['zt_last_activity']`
+- **Session prefix**: `$_SESSION['ss_user']`, `$_SESSION['ss_csrf_token']`, `$_SESSION['ss_last_activity']`
 
 ### JS helpers
 
@@ -104,7 +104,7 @@ Actions dans `admin/api_modules/planning.php` :
 
 ### Admin sidebar
 
-Sidebar rétractable style zasamix : bouton hamburger desktop + mobile. État mini/full persisté dans `localStorage` (`zt_sidebar_mini`). Catégories collapsibles avec persistence (`zt_sidebar_cats`). Sur mobile : sidebar off-canvas + overlay.
+Sidebar rétractable style zasamix : bouton hamburger desktop + mobile. État mini/full persisté dans `localStorage` (`ss_sidebar_mini`). Catégories collapsibles avec persistence (`ss_sidebar_cats`). Sur mobile : sidebar off-canvas + overlay.
 
 ### Config EMS
 

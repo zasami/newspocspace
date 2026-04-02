@@ -77,7 +77,7 @@ class Mailer
     private static function getEncryptionKey(): string
     {
         // Use a stable key derived from DB credentials
-        return hash('sha256', DB_PASS . DB_NAME . 'zt_mailer_key', true);
+        return hash('sha256', DB_PASS . DB_NAME . 'ss_mailer_key', true);
     }
 
     public static function encryptPassword(string $password): array

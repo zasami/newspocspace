@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime - Notification helper
+ * SpocSpace - Notification helper
  */
 class Notification
 {

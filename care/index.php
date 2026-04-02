@@ -1,18 +1,18 @@
 <?php
 /**
- * zerdaCare — Module soins & vie quotidienne
+ * SpocCare — Module soins & vie quotidienne
  * Sidebar + shell for resident-focused features
  */
 require_once __DIR__ . '/../init.php';
 
-// Auth check — all roles can access zerdaCare
-if (empty($_SESSION['zt_user'])) {
-    header('Location: /zerdatime/login?redirect=/zerdacare/');
+// Auth check — all roles can access SpocCare
+if (empty($_SESSION['ss_user'])) {
+    header('Location: /spocspace/login?redirect=/spoccare/');
     exit;
 }
 
-$user = $_SESSION['zt_user'];
-$csrfToken = $_SESSION['zt_csrf_token'] ?? '';
+$user = $_SESSION['ss_user'];
+$csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 
 // CSP nonce
 $cspNonce = base64_encode(random_bytes(16));
@@ -22,7 +22,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$
 
 // EMS config
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
-$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaCare';
+$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocCare';
 
 // ── Routing ────────────────────────────────────────────
 $page = $_GET['page'] ?? 'dashboard';
@@ -61,7 +61,7 @@ if (!file_exists($pageFile)) {
     $pageFile = __DIR__ . '/pages/dashboard.php';
 }
 
-$pageTitle = $pageLabels[$page] ?? 'zerdaCare';
+$pageTitle = $pageLabels[$page] ?? 'SpocCare';
 $activeSection = $page;
 
 // ── Sidebar categories ────────────────────────────────
@@ -100,14 +100,14 @@ if (!empty($_GET['_spa'])) {
     echo json_encode([
         'html'  => $html,
         'page'  => $page,
-        'title' => $pageTitle . ' — zerdaCare',
+        'title' => $pageTitle . ' — SpocCare',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Helper for clean URLs
 function care_url(string $page = '', string $id = ''): string {
-    $base = '/zerdacare/';
+    $base = '/spoccare/';
     if (!$page) return $base;
     if ($id) return $base . $page . '/' . $id;
     return $base . $page;
@@ -124,12 +124,12 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2d4a43">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<base href="/zerdacare/">
-<title><?= h($pageTitle) ?> — zerdaCare</title>
-<link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
-<link href="/zerdatime/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/zerdatime/care/assets/css/care.css?v=<?= APP_VERSION ?>">
+<base href="/spoccare/">
+<title><?= h($pageTitle) ?> — SpocCare</title>
+<link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/care/assets/css/care.css?v=<?= APP_VERSION ?>">
 </head>
 <body>
 
@@ -143,9 +143,9 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <?php if ($emsLogo): ?>
         <img src="<?= h($emsLogo) ?>" alt="" class="brand-logo">
       <?php else: ?>
-        <img src="/zerdatime/logo.png" alt="" class="brand-logo">
+        <img src="/spocspace/logo.png" alt="" class="brand-logo">
       <?php endif; ?>
-      <span class="brand-text">zerdaCare</span>
+      <span class="brand-text">SpocCare</span>
     </a>
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Réduire le menu">
       <i class="bi bi-layout-sidebar-inset"></i>
@@ -169,17 +169,17 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   </nav>
   <div class="sidebar-footer">
     <?php if (in_array($user['role'], ['admin','direction','responsable'])): ?>
-    <a href="/zerdatime/admin/" class="sidebar-link" title="Administration">
+    <a href="/spocspace/admin/" class="sidebar-link" title="Administration">
       <i class="bi bi-gear"></i>
       <span class="nav-label">Administration</span>
     </a>
     <?php endif; ?>
-    <a href="/zerdatime/" class="sidebar-link" title="Portail collaborateur">
+    <a href="/spocspace/" class="sidebar-link" title="Portail collaborateur">
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
     </a>
-    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--zt-text-muted,#999);opacity:.7">
-      <span class="nav-label">zerdaCare v<?= APP_SEMVER ?></span>
+    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--ss-text-muted,#999);opacity:.7">
+      <span class="nav-label">SpocCare v<?= APP_SEMVER ?></span>
     </div>
   </div>
 </aside>
@@ -202,19 +202,19 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
         <span class="topbar-user-name"><?= h($user['prenom'] . ' ' . $user['nom']) ?></span>
         <span class="topbar-user-role"><?= h($roleLabel) ?></span>
       </div>
-      <a href="/zerdatime/login?action=logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
+      <a href="/spocspace/login?action=logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
         <i class="bi bi-power"></i>
       </a>
     </div>
   </header>
 
   <!-- Scripts needed BEFORE page content (pages use bootstrap.Modal, adminApiPost, etc.) -->
-  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
-  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
   <script nonce="<?= $cspNonce ?>">
-  // Override AdminURL base for zerdaCare
+  // Override AdminURL base for SpocCare
   (function(){
-      const BASE = '/zerdacare';
+      const BASE = '/spoccare';
       AdminURL.page = function(page, id, params) {
           let url = (!page || page === 'dashboard') ? BASE + '/' : BASE + '/' + encodeURIComponent(page);
           if (id) url += '/' + encodeURIComponent(id);
@@ -236,28 +236,28 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       AdminURL.go = function(page, id, params) { window.location.href = this.page(page, id, params); };
   })();
   </script>
-  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
-  <script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
   <script nonce="<?= $cspNonce ?>">
-  window.__ZT_CARE__ = {
+  window.__SS_CARE__ = {
       csrfToken: '<?= $csrfToken ?>',
       userId: '<?= $user['id'] ?>',
       userName: '<?= h($user['prenom'] . ' ' . $user['nom']) ?>',
       role: '<?= $user['role'] ?>'
   };
-  window.__ZT_ADMIN__ = window.__ZT_CARE__;
+  window.__SS_ADMIN__ = window.__SS_CARE__;
   // Override adminApiPost to use admin API with care CSRF
   window.careApiPost = async function(action, data = {}) {
       data.action = action;
       try {
-          const r = await fetch('/zerdatime/admin/api.php', {
+          const r = await fetch('/spocspace/admin/api.php', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.__ZT_CARE__.csrfToken },
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.__SS_CARE__.csrfToken },
               credentials: 'same-origin',
               body: JSON.stringify(data)
           });
           const j = await r.json();
-          if (j.csrf) window.__ZT_CARE__.csrfToken = j.csrf;
+          if (j.csrf) window.__SS_CARE__.csrfToken = j.csrf;
           return j;
       } catch (e) { return { success: false, message: 'Erreur de connexion' }; }
   };
@@ -305,6 +305,6 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   </div>
 </div>
 
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 </body>
 </html>

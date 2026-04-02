@@ -1,6 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['zt_user']['id'];
+$uid = $_SESSION['ss_user']['id'];
 $vacYear = (int) date('Y');
 $vacDebut = "$vacYear-01-01";
 $vacFin = "$vacYear-12-31";
@@ -181,7 +181,7 @@ $vacJoursUtilises = (int) Db::getOne(
 .vac-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
 .vac-header-left{display:flex;align-items:center;gap:.75rem}
 .vac-header-right{display:flex;align-items:center;gap:.75rem}
-.vac-title{font-size:1.1rem;font-weight:700;margin:0;color:var(--zt-navy,#1B2A4A)}
+.vac-title{font-size:1.1rem;font-weight:700;margin:0;color:var(--ss-navy,#1B2A4A)}
 
 /* Solde */
 .vac-solde{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-radius:8px;padding:5px 12px;text-align:center}
@@ -193,12 +193,12 @@ $vacJoursUtilises = (int) Db::getOne(
 .vac-solde.low .vac-solde-label,.vac-solde.low .vac-solde-detail{color:#bf360c}
 
 .vac-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.4rem}
-.vac-current-month{font-size:1rem;font-weight:700;min-width:140px;text-align:center;color:var(--zt-navy,#1B2A4A)}
+.vac-current-month{font-size:1rem;font-weight:700;min-width:140px;text-align:center;color:var(--ss-navy,#1B2A4A)}
 
 .vac-month-pills{display:flex;gap:3px;margin-bottom:.5rem;overflow-x:auto;padding:2px 0}
 .vac-month-pill{border:1px solid #dee2e6;background:#fff;border-radius:4px;padding:2px 9px;font-size:.68rem;font-weight:600;cursor:pointer;white-space:nowrap}
 .vac-month-pill:hover{background:#e3f2fd;border-color:#90caf9}
-.vac-month-pill.active{background:var(--zt-navy,#1B2A4A);color:#fff;border-color:var(--zt-navy,#1B2A4A)}
+.vac-month-pill.active{background:var(--ss-navy,#1B2A4A);color:#fff;border-color:var(--ss-navy,#1B2A4A)}
 
 /* ══ Section: Ma ligne ══ */
 .vac-my-section{background:#f5f4ed;border:2px solid #eceae2;border-radius:10px;padding:10px 12px 8px;margin-bottom:12px}
@@ -234,9 +234,9 @@ $vacJoursUtilises = (int) Db::getOne(
 /* ══ Section: Équipe ══ */
 .vac-team-section{margin-bottom:8px}
 .vac-team-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap}
-.vac-team-label{font-size:.85rem;font-weight:700;color:var(--zt-navy,#1B2A4A)}
+.vac-team-label{font-size:.85rem;font-weight:700;color:var(--ss-navy,#1B2A4A)}
 .vac-size-btn{font-size:.85rem;padding:.25rem .4rem}
-.vac-size-btn.active{background:var(--zt-navy,#1B2A4A);color:#fff;border-color:var(--zt-navy,#1B2A4A)}
+.vac-size-btn.active{background:var(--ss-navy,#1B2A4A);color:#fff;border-color:var(--ss-navy,#1B2A4A)}
 .vac-team-wrap{overflow-x:auto;border:1px solid #e0e0e0;border-radius:6px;max-height:calc(100vh - 280px);overflow-y:auto}
 .vac-team-table{border-collapse:separate;border-spacing:0;width:100%;font-size:.72rem;user-select:none;-webkit-user-select:none}
 .vac-team-table th,.vac-team-table td{border:1px solid #ececec;padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:middle}
@@ -282,7 +282,7 @@ $vacJoursUtilises = (int) Db::getOne(
   .vac-team-table .col-user{min-width:100px;max-width:120px}
 }
 </style>
-<script type="application/json" id="__zt_ssr__"><?= json_encode([
+<script type="application/json" id="__ss_ssr__"><?= json_encode([
     'success'        => true,
     'annee'          => $vacYear,
     'users'          => $vacUsers,

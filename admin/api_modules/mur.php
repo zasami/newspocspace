@@ -172,7 +172,7 @@ function admin_upload_mur_hero() {
     imagewebp($img, $destPath, 82);
     imagedestroy($img);
 
-    $url = '/zerdatime/storage/mur/' . $filename;
+    $url = '/spocspace/storage/mur/' . $filename;
     Db::exec(
         "INSERT INTO mur_config (config_key, config_value) VALUES ('hero_image', ?)
          ON DUPLICATE KEY UPDATE config_value = ?",
@@ -268,7 +268,7 @@ function admin_save_pixabay_image() {
     imagewebp($img, $uploadDir . $filename, 82);
     imagedestroy($img);
 
-    $url = '/zerdatime/storage/mur/' . $filename;
+    $url = '/spocspace/storage/mur/' . $filename;
     Db::exec(
         "INSERT INTO mur_config (config_key, config_value) VALUES ('hero_image', ?)
          ON DUPLICATE KEY UPDATE config_value = ?",

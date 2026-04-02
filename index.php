@@ -1,12 +1,12 @@
 <?php
 /**
- * zerdaTime - SPA Shell (Frontend collaborateurs)
+ * SpocSpace - SPA Shell (Frontend collaborateurs)
  * Sidebar layout — same pattern as admin panel
  */
 require_once __DIR__ . '/init.php';
 
-$csrfToken = $_SESSION['zt_csrf_token'] ?? '';
-$user = $_SESSION['zt_user'] ?? null;
+$csrfToken = $_SESSION['ss_csrf_token'] ?? '';
+$user = $_SESSION['ss_user'] ?? null;
 $v = APP_VERSION;
 
 // CSP nonce
@@ -15,7 +15,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$
 
 // Load EMS config for logo + name
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
-$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 
 // Éligibilité changements : l'utilisateur doit avoir au moins un collègue actif de même fonction
 // CSS mode (classic or tailwind)
@@ -29,11 +29,11 @@ $canChangement = $user && !empty($user['fonction_id']) && (bool) Db::getOne(
 // Backfill type_employe in session if missing (post-migration)
 if ($user && !isset($user['type_employe'])) {
     $user['type_employe'] = Db::getOne("SELECT type_employe FROM users WHERE id = ?", [$user['id']]) ?: 'interne';
-    $_SESSION['zt_user']['type_employe'] = $user['type_employe'];
+    $_SESSION['ss_user']['type_employe'] = $user['type_employe'];
 }
 
 // Per-user denied permissions
-$deniedPerms = $user ? ($_SESSION['zt_user']['denied_perms'] ?? []) : [];
+$deniedPerms = $user ? ($_SESSION['ss_user']['denied_perms'] ?? []) : [];
 
 $sidebarNav = [
     'main' => [
@@ -110,20 +110,20 @@ if ($user && !empty($deniedPerms)) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>zerdaTime — Gestion des Plannings</title>
-<meta name="description" content="Application de gestion des plannings - zerdaTime, Genève">
+<title>SpocSpace — Gestion des Plannings</title>
+<meta name="description" content="Application de gestion des plannings - SpocSpace, Genève">
 <meta name="theme-color" content="#1A1A1A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/zerdatime/manifest.json">
-<link rel="apple-touch-icon" href="/zerdatime/assets/icons/icon-192x192.png">
-<link rel="icon" href="/zerdatime/assets/icons/icon-96x96.png" type="image/png">
+<link rel="manifest" href="/spocspace/manifest.json">
+<link rel="apple-touch-icon" href="/spocspace/assets/icons/icon-192x192.png">
+<link rel="icon" href="/spocspace/assets/icons/icon-96x96.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/zerdatime.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/css/spocspace.css?v=<?= $v ?>">
 <?php if ($cssMode === 'tailwind'): ?>
-<script nonce="<?= $cspNonce ?>" src="/zerdatime/assets/js/vendor/tailwind-browser.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/spocspace/assets/js/vendor/tailwind-browser.min.js"></script>
 <style type="text/tailwindcss">
 @theme { --prefix: tw; }
 </style>
@@ -138,7 +138,7 @@ if ($user && !empty($deniedPerms)) {
 <!-- SIDEBAR -->
 <aside class="fe-sidebar" id="feSidebar">
   <div class="fe-sidebar-header">
-    <a href="/zerdatime/profile" class="fe-sidebar-brand" data-link="profile" title="Voir mon profil">
+    <a href="/spocspace/profile" class="fe-sidebar-brand" data-link="profile" title="Voir mon profil">
       <?php
         $avatarUrl = $user['photo'] ?? '';
         $initials = h(mb_substr($user['prenom'] ?? '', 0, 1) . mb_substr($user['nom'] ?? '', 0, 1));
@@ -163,7 +163,7 @@ if ($user && !empty($deniedPerms)) {
     <div class="fe-sidebar-cat-items" data-cat-body="<?= $catId ?>">
       <?php foreach ($cat['items'] as $key => $item):
             $isDisabled = ($key === 'changements' && !$canChangement); ?>
-      <a href="/zerdatime/<?= $key ?>"
+      <a href="/spocspace/<?= $key ?>"
          class="fe-sidebar-link<?= $isDisabled ? ' fe-sidebar-link--disabled' : '' ?>"
          data-link="<?= $key ?>"
          <?= $isDisabled ? 'data-disabled="1" aria-disabled="true"' : '' ?>
@@ -181,7 +181,7 @@ if ($user && !empty($deniedPerms)) {
 
   <div class="fe-sidebar-footer">
     <?php if (in_array($user['role'], ['admin', 'direction', 'responsable'])): ?>
-    <a href="/zerdatime/admin/" class="fe-sidebar-link fe-sidebar-admin-link" title="Administration">
+    <a href="/spocspace/admin/" class="fe-sidebar-link fe-sidebar-admin-link" title="Administration">
       <i class="bi bi-shield-lock"></i>
       <span class="fe-nav-label">Administration</span>
     </a>
@@ -201,8 +201,8 @@ if ($user && !empty($deniedPerms)) {
       <button class="fe-topbar-hamburger" id="mobileToggle" title="Menu">
         <i class="bi bi-list"></i>
       </button>
-      <a href="/zerdatime/home" data-link="home" class="fe-topbar-brand" title="Accueil">
-        <img src="/zerdatime/logo.png" alt="zerdaTime" class="fe-topbar-brand-logo">
+      <a href="/spocspace/home" data-link="home" class="fe-topbar-brand" title="Accueil">
+        <img src="/spocspace/logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
         <span class="fe-conn-status" id="feConnStatus" title="En ligne">
           <span class="fe-conn-dot fe-conn-online"></span>
           <span class="fe-conn-count" id="feConnPending" style="display:none"></span>
@@ -217,12 +217,12 @@ if ($user && !empty($deniedPerms)) {
       <div class="fe-search-results" id="feSearchResults"></div>
     </div>
     <div class="fe-topbar-right">
-      <a href="/zerdatime/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
+      <a href="/spocspace/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
         <i class="bi bi-bell"></i>
         <span class="fe-topbar-notif" style="display:none"></span>
       </a>
       <?php if (!in_array('page_emails', $deniedPerms)): ?>
-      <a href="/zerdatime/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
+      <a href="/spocspace/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
         <i class="bi bi-chat-dots"></i>
         <span class="fe-topbar-notif" id="msgBadge" style="display:none"></span>
       </a>
@@ -261,12 +261,12 @@ if ($user && !empty($deniedPerms)) {
 
 <!-- App Config -->
 <script nonce="<?= $cspNonce ?>">
-window.__ZT__ = {
+window.__SS__ = {
   csrfToken: '<?= $csrfToken ?>',
   user: <?= $user ? json_encode(['id' => $user['id'], 'prenom' => $user['prenom'], 'nom' => $user['nom'], 'email' => $user['email'], 'role' => $user['role'], 'taux' => $user['taux'], 'fonction_id' => $user['fonction_id'], 'type_employe' => $user['type_employe'] ?? 'interne'], JSON_HEX_TAG) : 'null' ?>,
   canChangement: <?= $canChangement ? 'true' : 'false' ?>,
-  mustChangePassword: <?= !empty($_SESSION['zt_must_change_password']) ? 'true' : 'false' ?>,
-  tempPasswordExpires: <?= !empty($_SESSION['zt_temp_password_expires']) ? "'" . h($_SESSION['zt_temp_password_expires']) . "'" : 'null' ?>,
+  mustChangePassword: <?= !empty($_SESSION['ss_must_change_password']) ? 'true' : 'false' ?>,
+  tempPasswordExpires: <?= !empty($_SESSION['ss_temp_password_expires']) ? "'" . h($_SESSION['ss_temp_password_expires']) . "'" : 'null' ?>,
   appUrl: '<?= APP_URL ?>',
   deniedPerms: <?= json_encode($deniedPerms, JSON_HEX_TAG) ?>,
   pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine', 'cuisine-home' => 'Tableau de bord cuisine'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
@@ -277,7 +277,7 @@ window.__ZT__ = {
 <script nonce="<?= $cspNonce ?>" type="module" src="assets/js/app.js?v=<?= $v ?>"></script>
 <script nonce="<?= $cspNonce ?>">
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/zerdatime/sw.js', { scope: '/zerdatime/' }).catch(() => {});
+    navigator.serviceWorker.register('/spocspace/sw.js', { scope: '/spocspace/' }).catch(() => {});
 }
 </script>
 </body>

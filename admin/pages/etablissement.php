@@ -34,10 +34,10 @@ $etabGeoPays    = Db::fetchAll("SELECT code, nom FROM geo_pays ORDER BY sort_ord
 $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions ORDER BY pays_code, sort_order");
 ?>
 <style>
-.feature-toggle-card{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;border:1px solid var(--zt-border-light,#e5e7eb);border-radius:8px;background:var(--zt-bg-card,#fff);transition:border-color .2s,box-shadow .2s}
-.feature-toggle-card:hover{border-color:var(--zt-teal,#00b4a0);box-shadow:0 2px 8px rgba(0,180,160,.08)}
+.feature-toggle-card{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;border:1px solid var(--ss-border-light,#e5e7eb);border-radius:8px;background:var(--ss-bg-card,#fff);transition:border-color .2s,box-shadow .2s}
+.feature-toggle-card:hover{border-color:var(--ss-teal,#00b4a0);box-shadow:0 2px 8px rgba(0,180,160,.08)}
 .feature-toggle-info{display:flex;align-items:center;gap:0.75rem}
-.feature-toggle-info>i{font-size:1.3rem;color:var(--zt-teal,#00b4a0);min-width:24px;text-align:center}
+.feature-toggle-info>i{font-size:1.3rem;color:var(--ss-teal,#00b4a0);min-width:24px;text-align:center}
 .feature-toggle-label{font-weight:600;font-size:0.9rem}
 .ems-logo-wrapper{width:200px;height:200px;border-radius:14px;border:2.5px dashed #D4C4A8;display:flex;align-items:center;justify-content:center;overflow:visible;background:#FAFAF8;position:relative;flex-shrink:0;cursor:pointer;transition:all .2s ease}
 .ems-logo-wrapper:hover{border-color:#2d4a43;background:#F0EDE4}
@@ -674,9 +674,9 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
             fd.append('logo', file);
             fd.append('action', 'admin_upload_logo');
             try {
-                const res = await fetch('/zerdatime/admin/api.php', {
+                const res = await fetch('/spocspace/admin/api.php', {
                     method: 'POST',
-                    headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                    headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                     body: fd
                 });
                 const json = await res.json();

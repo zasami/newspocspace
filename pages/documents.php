@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . "/../init.php";
-if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 
 // SSR: fetch document services
 $ssrServices = Db::fetchAll(
@@ -29,12 +29,12 @@ $ssrData = ['services' => $ssrServices];
 /* ─── Document service filter pills ─── */
 .doc-filter-pill {
     display:inline-flex; align-items:center; gap:.4rem; padding:.4rem .85rem;
-    border-radius:2rem; border:1px solid var(--zt-border-light); background:var(--zt-bg);
+    border-radius:2rem; border:1px solid var(--ss-border-light); background:var(--ss-bg);
     cursor:pointer; font-size:.82rem; font-weight:500; transition:all .2s;
     white-space:nowrap;
 }
-.doc-filter-pill:hover { border-color:var(--zt-accent); }
-.doc-filter-pill.active { background:var(--zt-accent); color:#fff; border-color:var(--zt-accent); }
+.doc-filter-pill:hover { border-color:var(--ss-accent); }
+.doc-filter-pill.active { background:var(--ss-accent); color:#fff; border-color:var(--ss-accent); }
 .doc-filter-pill .pill-icon { font-size:.9rem; }
 .doc-filter-pill .pill-count { font-size:.72rem; opacity:.7; margin-left:.15rem; }
 
@@ -43,10 +43,10 @@ $ssrData = ['services' => $ssrServices];
 
 /* ─── Document card ─── */
 .doc-card {
-    background:var(--zt-card-bg, #fff); border:1px solid var(--zt-border-light); border-radius:.75rem;
+    background:var(--ss-card-bg, #fff); border:1px solid var(--ss-border-light); border-radius:.75rem;
     padding:1.25rem; transition:all .2s; cursor:pointer; position:relative; overflow:hidden;
 }
-.doc-card:hover { border-color:var(--zt-accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,.06); }
+.doc-card:hover { border-color:var(--ss-accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,.06); }
 .doc-card .doc-card-top { display:flex; align-items:flex-start; gap:.75rem; margin-bottom:.75rem; }
 .doc-card .doc-icon-box {
     width:48px; height:48px; border-radius:.6rem; display:flex; align-items:center; justify-content:center;
@@ -60,25 +60,25 @@ $ssrData = ['services' => $ssrServices];
 .doc-card .doc-icon-box.other { background:rgba(108,117,125,.1); color:#6c757d; }
 
 .doc-card .doc-card-title { font-weight:600; font-size:.9rem; line-height:1.3; margin-bottom:.15rem; }
-.doc-card .doc-card-filename { font-size:.75rem; color:var(--zt-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.doc-card .doc-card-filename { font-size:.75rem; color:var(--ss-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
 
-.doc-card .doc-card-desc { font-size:.8rem; color:var(--zt-text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:.75rem; min-height:2.2rem; }
+.doc-card .doc-card-desc { font-size:.8rem; color:var(--ss-text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:.75rem; min-height:2.2rem; }
 
 .doc-card .doc-card-footer { display:flex; align-items:center; justify-content:space-between; }
-.doc-card .doc-card-meta { font-size:.72rem; color:var(--zt-text-muted); display:flex; align-items:center; gap:.75rem; }
+.doc-card .doc-card-meta { font-size:.72rem; color:var(--ss-text-muted); display:flex; align-items:center; gap:.75rem; }
 .doc-card .doc-service-badge {
     display:inline-flex; align-items:center; gap:.25rem; font-size:.7rem; padding:.15rem .5rem;
     border-radius:.3rem; font-weight:500;
 }
 .doc-card .doc-card-actions { display:flex; gap:.35rem; }
 .doc-card .doc-action-btn {
-    width:30px; height:30px; border-radius:.35rem; border:1px solid var(--zt-border-light);
+    width:30px; height:30px; border-radius:.35rem; border:1px solid var(--ss-border-light);
     background:transparent; display:flex; align-items:center; justify-content:center;
-    font-size:.85rem; color:var(--zt-text-secondary); cursor:pointer; transition:all .15s;
+    font-size:.85rem; color:var(--ss-text-secondary); cursor:pointer; transition:all .15s;
 }
-.doc-card .doc-action-btn:hover { background:var(--zt-accent); color:#fff; border-color:var(--zt-accent); }
+.doc-card .doc-action-btn:hover { background:var(--ss-accent); color:#fff; border-color:var(--ss-accent); }
 
-.doc-empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--zt-text-muted); }
+.doc-empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--ss-text-muted); }
 .doc-empty-state i { font-size:3rem; display:block; margin-bottom:.5rem; opacity:.4; }
 </style>
-<script type="application/json" id="__zt_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>
+<script type="application/json" id="__ss_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>

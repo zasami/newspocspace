@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
 $colleguesAbsences = Db::fetchAll(
     "SELECT a.id, u.prenom, u.nom, a.date_debut, a.date_fin, a.type, a.statut,
@@ -39,4 +39,4 @@ $colleguesAbsences = Db::fetchAll(
     </div>
   </div>
 </div>
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['absences' => $colleguesAbsences], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['absences' => $colleguesAbsences], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

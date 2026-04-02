@@ -51,7 +51,7 @@
   color: #92400E;
 }
 /**
- * zerdaTime Admin — Theme Claude
+ * SpocSpace Admin — Theme Claude
  * Clean, warm, minimal design inspired by claude.ai
  */
 
@@ -79,16 +79,16 @@
   --cl-shadow-md: 0 4px 12px rgba(0,0,0,0.06);
   --cl-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   /* Keep legacy vars for grid */
-  --zt-navy: #1B2A4A;
-  --zt-navy-light: #253755;
-  --zt-navy-dark: #111D35;
-  --zt-teal: #191918;
-  --zt-teal-light: #3D3D3C;
-  --zt-green: #16A34A;
-  --zt-orange: #EA8B2D;
-  --zt-red: #DC2626;
-  --zt-sidebar-w: 260px;
-  --zt-sidebar-mini: 68px;
+  --ss-navy: #1B2A4A;
+  --ss-navy-light: #253755;
+  --ss-navy-dark: #111D35;
+  --ss-teal: #191918;
+  --ss-teal-light: #3D3D3C;
+  --ss-green: #16A34A;
+  --ss-orange: #EA8B2D;
+  --ss-red: #DC2626;
+  --ss-sidebar-w: 260px;
+  --ss-sidebar-mini: 68px;
 }
 
 /* ── Claude modals + table scrollbars ── */
@@ -284,7 +284,7 @@ body {
   top: 0;
   left: 0;
   bottom: 0;
-  width: var(--zt-sidebar-w);
+  width: var(--ss-sidebar-w);
   background: var(--cl-sidebar-bg);
   border-right: 1px solid var(--cl-border);
   color: var(--cl-text);
@@ -444,7 +444,7 @@ body {
    SIDEBAR MINI STATE
    ══════════════════════════════════════ */
 .admin-sidebar.mini {
-  width: var(--zt-sidebar-mini);
+  width: var(--ss-sidebar-mini);
 }
 .admin-sidebar.mini .brand-text,
 .admin-sidebar.mini .nav-label,
@@ -480,14 +480,14 @@ body {
   margin: 0;
 }
 .admin-sidebar.mini ~ .admin-main {
-  margin-left: var(--zt-sidebar-mini);
+  margin-left: var(--ss-sidebar-mini);
 }
 
 /* ══════════════════════════════════════
    MAIN CONTENT
    ══════════════════════════════════════ */
 .admin-main {
-  margin-left: var(--zt-sidebar-w);
+  margin-left: var(--ss-sidebar-w);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -748,9 +748,9 @@ body {
 
 @media (max-width: 991.98px) {
   .admin-sidebar {
-    left: calc(-1 * var(--zt-sidebar-w));
+    left: calc(-1 * var(--ss-sidebar-w));
     transition: left 0.25s ease, width 0.25s ease;
-    width: var(--zt-sidebar-w) !important;
+    width: var(--ss-sidebar-w) !important;
     box-shadow: var(--cl-shadow-md);
   }
   .admin-sidebar.open { left: 0; }
@@ -1213,20 +1213,20 @@ body:has(.fullscreen-active) > .modal-backdrop {
    IMMERSIVE MODE (CSS-only, persists across pages)
    Hides sidebar + topbar shrinks, content takes full width
    ══════════════════════════════════════ */
-body.zt-immersive .admin-sidebar {
+body.ss-immersive .admin-sidebar {
   transform: translateX(-100%);
   pointer-events: none;
 }
-body.zt-immersive .admin-main {
+body.ss-immersive .admin-main {
   margin-left: 0 !important;
 }
-body.zt-immersive .admin-topbar {
+body.ss-immersive .admin-topbar {
   padding-left: 52px;
 }
-body.zt-immersive .sidebar-overlay { display: none !important; }
+body.ss-immersive .sidebar-overlay { display: none !important; }
 
 /* Restore pill — small icon fixed top-left */
-.zt-immersive-pill {
+.ss-immersive-pill {
   display: none;
   position: fixed;
   top: 10px;
@@ -1246,11 +1246,11 @@ body.zt-immersive .sidebar-overlay { display: none !important; }
   transition: transform .2s, opacity .2s;
   opacity: .5;
 }
-.zt-immersive-pill:hover {
+.ss-immersive-pill:hover {
   opacity: 1;
   transform: scale(1.1);
 }
-body.zt-immersive .zt-immersive-pill {
+body.ss-immersive .ss-immersive-pill {
   display: flex;
 }
 
@@ -1408,7 +1408,7 @@ body.zt-immersive .zt-immersive-pill {
   min-width: 30px;
   max-width: 30px;
   font-size: 0.72rem;
-  color: var(--zt-green);
+  color: var(--ss-green);
 }
 .tr-grid thead .col-taux { z-index: 15; background: rgba(22,163,74,0.08); }
 .tr-grid .col-total {
@@ -1482,13 +1482,13 @@ body.zt-immersive .zt-immersive-pill {
   font-weight: 600;
   background: var(--cl-bg);
 }
-.coverage-ok   { color: var(--zt-green); }
-.coverage-warn { color: var(--zt-orange); }
-.coverage-bad  { color: var(--zt-red); font-weight: 700; }
+.coverage-ok   { color: var(--ss-green); }
+.coverage-warn { color: var(--ss-orange); }
+.coverage-bad  { color: var(--ss-red); font-weight: 700; }
 /* Hours */
-.hours-over  { color: var(--zt-red); }
-.hours-under { color: var(--zt-orange); }
-.hours-ok    { color: var(--zt-green); }
+.hours-over  { color: var(--ss-red); }
+.hours-under { color: var(--ss-orange); }
+.hours-ok    { color: var(--ss-green); }
 
 @media (max-width: 768px) {
   .tr-grid { font-size: 0.68rem; }
@@ -2351,15 +2351,15 @@ thead .chg-user-col:hover {
 }
 
 /* ── Info bar (warm neutral alert) ── */
-.zt-info-bar {
+.ss-info-bar {
   background: #f5f3f0;
   border: 1px solid #e8e5e0;
   border-radius: 8px;
   padding: 0.65rem 1rem;
   color: #3d3d3c;
 }
-.zt-info-bar i { color: #9b9b9b; }
-.zt-info-bar strong { color: #1a1a1a; }
+.ss-info-bar i { color: #9b9b9b; }
+.ss-info-bar strong { color: #1a1a1a; }
 
 /* ── Form check alignment fix ── */
 .form-check:not(.form-switch) {

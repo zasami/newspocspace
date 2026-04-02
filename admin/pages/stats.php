@@ -237,7 +237,7 @@ $statTotalUsers = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active =
   </div>
 </div>
 
-<script<?= nonce() ?> src="/zerdatime/assets/js/vendor/chart.umd.min.js"></script>
+<script<?= nonce() ?> src="/spocspace/assets/js/vendor/chart.umd.min.js"></script>
 <script<?= nonce() ?>>
 (function() {
     let currentPeriod = 'month';

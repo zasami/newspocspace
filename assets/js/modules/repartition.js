@@ -1,5 +1,5 @@
 /**
- * zerdaTime — Repartition module (employee view)
+ * SpocSpace — Repartition module (employee view)
  * Weekly staffing grid per module with tabs
  */
 import { apiPost, escapeHtml } from '../helpers.js';
@@ -19,13 +19,13 @@ export async function init() {
     document.getElementById('repInfoBtn')?.addEventListener('click', showHorairesModal);
 
     // Default to user's principal module
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     if (user?.modules?.length) {
         const principal = user.modules.find(m => m.is_principal) || user.modules[0];
         if (principal) activeModuleId = principal.module_id || principal.id;
     }
 
-    const ssrData = window.__ZT_PAGE_DATA__;
+    const ssrData = window.__SS_PAGE_DATA__;
     if (ssrData?.success) {
         data = ssrData;
         weekStart = ssrData.week_start;
@@ -159,11 +159,11 @@ function renderGrid() {
 
     // Header
     const head = document.getElementById('repHead');
-    let headHtml = '<tr><th style="min-width:150px;position:sticky;left:0;background:var(--zt-bg-card, #fff);z-index:1">Collaborateur</th>';
+    let headHtml = '<tr><th style="min-width:150px;position:sticky;left:0;background:var(--ss-bg-card, #fff);z-index:1">Collaborateur</th>';
     for (const day of days) {
         const isToday = day.date === today;
         const isWe = day.is_weekend;
-        headHtml += `<th style="text-align:center;min-width:80px;${isToday ? 'background:var(--zt-accent-bg);font-weight:700' : ''}${isWe ? ';color:var(--zt-text-muted)' : ''}">${escapeHtml(day.label)}</th>`;
+        headHtml += `<th style="text-align:center;min-width:80px;${isToday ? 'background:var(--ss-accent-bg);font-weight:700' : ''}${isWe ? ';color:var(--ss-text-muted)' : ''}">${escapeHtml(day.label)}</th>`;
     }
     headHtml += '</tr>';
     head.innerHTML = headHtml;
@@ -178,31 +178,31 @@ function renderGrid() {
     let html = '';
     for (const group of groups) {
         // Fonction header row
-        html += `<tr><td colspan="${days.length + 1}" style="background:var(--zt-accent-bg);font-weight:600;font-size:0.82rem;padding:0.4rem 0.75rem;color:var(--zt-text);border-bottom:1px solid var(--zt-border)">${escapeHtml(group.label)}</td></tr>`;
+        html += `<tr><td colspan="${days.length + 1}" style="background:var(--ss-accent-bg);font-weight:600;font-size:0.82rem;padding:0.4rem 0.75rem;color:var(--ss-text);border-bottom:1px solid var(--ss-border)">${escapeHtml(group.label)}</td></tr>`;
 
         for (const user of group.users) {
             const isExternal = user.home_module_id !== activeModuleId;
             html += '<tr>';
-            html += `<td style="position:sticky;left:0;background:var(--zt-bg-card, #fff);z-index:1;white-space:nowrap;padding:0.4rem 0.75rem">
-                <span${isExternal ? ' style="font-style:italic;color:var(--zt-text-secondary)"' : ''}>${escapeHtml(user.prenom)} ${escapeHtml(user.nom)}</span>
-                ${isExternal ? `<small style="margin-left:0.3rem;padding:0.1rem 0.35rem;border-radius:4px;background:var(--zt-accent-bg);font-size:0.68rem;color:var(--zt-text-muted)" title="Module principal: ${escapeHtml(user.home_module_code || '?')}">${escapeHtml(user.home_module_code || '?')}</small>` : ''}
+            html += `<td style="position:sticky;left:0;background:var(--ss-bg-card, #fff);z-index:1;white-space:nowrap;padding:0.4rem 0.75rem">
+                <span${isExternal ? ' style="font-style:italic;color:var(--ss-text-secondary)"' : ''}>${escapeHtml(user.prenom)} ${escapeHtml(user.nom)}</span>
+                ${isExternal ? `<small style="margin-left:0.3rem;padding:0.1rem 0.35rem;border-radius:4px;background:var(--ss-accent-bg);font-size:0.68rem;color:var(--ss-text-muted)" title="Module principal: ${escapeHtml(user.home_module_code || '?')}">${escapeHtml(user.home_module_code || '?')}</small>` : ''}
             </td>`;
 
             for (const day of days) {
                 const isToday = day.date === today;
                 const a = assignIdx[user.id + '_' + day.date];
                 let cellStyle = 'text-align:center;padding:0.3rem;';
-                if (isToday) cellStyle += 'background:var(--zt-accent-bg);';
+                if (isToday) cellStyle += 'background:var(--ss-accent-bg);';
 
                 if (a) {
                     const color = a.horaire_couleur || '#1a1a1a';
                     const inThisModule = a.module_id === activeModuleId;
                     html += `<td style="${cellStyle}">
                         <span style="display:inline-block;padding:0.15rem 0.45rem;border-radius:5px;font-weight:600;font-size:0.78rem;background:${escapeHtml(color)};color:#fff;${!inThisModule ? 'opacity:0.5;' : ''}" title="${escapeHtml(a.horaire_code)} ${a.heure_debut?.slice(0,5) || ''}–${a.heure_fin?.slice(0,5) || ''}${!inThisModule ? ' (' + escapeHtml(a.module_code || '') + ')' : ''}">${escapeHtml(a.horaire_code)}</span>
-                        ${!inThisModule ? `<div style="font-size:0.6rem;color:var(--zt-text-muted);margin-top:1px">${escapeHtml(a.module_code || '')}</div>` : ''}
+                        ${!inThisModule ? `<div style="font-size:0.6rem;color:var(--ss-text-muted);margin-top:1px">${escapeHtml(a.module_code || '')}</div>` : ''}
                     </td>`;
                 } else {
-                    html += `<td style="${cellStyle}"><span style="color:var(--zt-text-muted);font-size:0.75rem">—</span></td>`;
+                    html += `<td style="${cellStyle}"><span style="color:var(--ss-text-muted);font-size:0.75rem">—</span></td>`;
                 }
             }
 
@@ -223,16 +223,16 @@ function showHorairesModal() {
         const color = h.couleur || '#1a1a1a';
         const debut = h.heure_debut?.slice(0, 5) || '';
         const fin = h.heure_fin?.slice(0, 5) || '';
-        const bg = i % 2 === 0 ? 'var(--zt-bg, #F7F5F2)' : 'var(--zt-bg-card, #fff)';
+        const bg = i % 2 === 0 ? 'var(--ss-bg, #F7F5F2)' : 'var(--ss-bg-card, #fff)';
 
         html += `
-        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1.25rem;background:${bg};border-bottom:1px solid var(--zt-border-light)">
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1.25rem;background:${bg};border-bottom:1px solid var(--ss-border-light)">
             <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:${escapeHtml(color)};color:#fff;font-weight:700;font-size:0.95rem;flex-shrink:0">${escapeHtml(h.code)}</span>
             <div style="flex:1;min-width:0">
-                <div style="font-weight:600;font-size:0.92rem;color:var(--zt-text)">${escapeHtml(h.code)}</div>
+                <div style="font-weight:600;font-size:0.92rem;color:var(--ss-text)">${escapeHtml(h.code)}</div>
                 <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.15rem">
-                    <span style="font-size:0.82rem;color:var(--zt-text-secondary)"><i class="bi bi-clock" style="font-size:0.72rem;margin-right:0.2rem"></i>${debut} — ${fin}</span>
-                    ${h.duree_effective ? `<span style="font-size:0.78rem;color:var(--zt-text-muted)"><i class="bi bi-hourglass-split" style="font-size:0.68rem;margin-right:0.15rem"></i>${escapeHtml(h.duree_effective)}h eff.</span>` : ''}
+                    <span style="font-size:0.82rem;color:var(--ss-text-secondary)"><i class="bi bi-clock" style="font-size:0.72rem;margin-right:0.2rem"></i>${debut} — ${fin}</span>
+                    ${h.duree_effective ? `<span style="font-size:0.78rem;color:var(--ss-text-muted)"><i class="bi bi-hourglass-split" style="font-size:0.68rem;margin-right:0.15rem"></i>${escapeHtml(h.duree_effective)}h eff.</span>` : ''}
                 </div>
             </div>
             <div style="width:12px;height:12px;border-radius:50%;background:${escapeHtml(color)};flex-shrink:0"></div>

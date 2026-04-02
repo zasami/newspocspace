@@ -1,8 +1,8 @@
 /**
- * zerdaTime — Offline-first module
- * Uses IndexedDB (zt-db) for local cache, delta sync with server.
+ * SpocSpace — Offline-first module
+ * Uses IndexedDB (ss-db) for local cache, delta sync with server.
  */
-import * as db from '../zt-db.js';
+import * as db from '../ss-db.js';
 
 const SYNC_INTERVAL = 5 * 60 * 1000; // 5 min
 let _syncTimer = null;
@@ -32,7 +32,7 @@ let offlineBar = null;
 function showOfflineBar() {
     if (offlineBar) return;
     offlineBar = document.createElement('div');
-    offlineBar.className = 'zt-offline-bar';
+    offlineBar.className = 'ss-offline-bar';
     offlineBar.innerHTML = '<i class="bi bi-wifi-off"></i> Mode hors-ligne — les donnees seront synchronisees au retour';
     document.body.appendChild(offlineBar);
     requestAnimationFrame(() => offlineBar.classList.add('show'));
@@ -47,10 +47,10 @@ function hideOfflineBar() {
 // ── Sync bar UI ──
 function showSyncBar(total) {
     const bar = document.createElement('div');
-    bar.className = 'zt-sync-bar show';
+    bar.className = 'ss-sync-bar show';
     bar.innerHTML = `
-        <div class="zt-sync-text"><i class="bi bi-arrow-repeat"></i> Synchronisation en cours...</div>
-        <div class="zt-sync-progress"><div class="zt-sync-progress-fill" id="ztSyncFill"></div></div>`;
+        <div class="ss-sync-text"><i class="bi bi-arrow-repeat"></i> Synchronisation en cours...</div>
+        <div class="ss-sync-progress"><div class="ss-sync-progress-fill" id="ztSyncFill"></div></div>`;
     document.body.appendChild(bar);
     return {
         update(current) {
@@ -58,14 +58,14 @@ function showSyncBar(total) {
             if (fill) fill.style.width = Math.round((current / total) * 100) + '%';
         },
         done(success, failed) {
-            const text = bar.querySelector('.zt-sync-text');
+            const text = bar.querySelector('.ss-sync-text');
             if (text) {
                 if (failed > 0) {
                     text.innerHTML = `<i class="bi bi-exclamation-circle"></i> ${success} OK, ${failed} erreur(s)`;
-                    bar.classList.add('zt-sync-warning');
+                    bar.classList.add('ss-sync-warning');
                 } else {
                     text.innerHTML = `<i class="bi bi-check-circle"></i> ${success} action(s) synchronisee(s)`;
-                    bar.classList.add('zt-sync-success');
+                    bar.classList.add('ss-sync-success');
                 }
             }
             const fill = bar.querySelector('#ztSyncFill');

@@ -7,7 +7,7 @@ import { apiPost, escapeHtml, toast } from '../helpers.js';
 
 const MO = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DJ = ['D','L','M','M','J','V','S'];
-const ME = window.__ZT__?.user?.id || '';
+const ME = window.__SS__?.user?.id || '';
 
 let year, month, data = null, modFilter = '';
 let dragging = false, dStart = null, dEnd = null;
@@ -22,7 +22,7 @@ export function init() {
     month = now.getMonth();
 
     // Load cell size preference
-    cellSize = parseInt(localStorage.getItem('zt_vac_cellsize') || '0');
+    cellSize = parseInt(localStorage.getItem('ss_vac_cellsize') || '0');
     updateSizeButtons();
 
     const fmEl = document.getElementById('vacFormModal');
@@ -55,7 +55,7 @@ export function init() {
     on(document.getElementById('vacSize-1'), 'click', () => setSizeAndRender(1));
 
     // Initial render from SSR data
-    const ssrData = window.__ZT_PAGE_DATA__;
+    const ssrData = window.__SS_PAGE_DATA__;
     if (ssrData?.success) {
         data = ssrData;
         renderFromData();
@@ -303,7 +303,7 @@ function scrollToMyRow() {
 
 function setSizeAndRender(size) {
     cellSize = size;
-    localStorage.setItem('zt_vac_cellsize', size);
+    localStorage.setItem('ss_vac_cellsize', size);
     updateSizeButtons();
     applyGridSize();
 }

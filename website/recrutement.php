@@ -11,9 +11,9 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <meta name="description" content="Offres d'emploi de l'EMS La Terrassière SA. Rejoignez notre équipe de soins à Genève.">
 <meta name="robots" content="index, follow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap.min.css">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/zerdatime/website/assets/css/website.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap.min.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/spocspace/website/assets/css/website.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 <style>
 /* ── Variables ── */
@@ -576,7 +576,7 @@ body {
 
 <script>
 (function() {
-  const API_URL = '/zerdatime/website/api.php';
+  const API_URL = '/spocspace/website/api.php';
 
   // ── Helpers ──
   function escHtml(s) {

@@ -148,9 +148,9 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
       </div>
     </div>
 
-    <!-- Accès zerdaTime -->
+    <!-- Accès SpocSpace -->
     <div class="card mb-3">
-      <div class="card-header"><h6 class="mb-0"><i class="bi bi-shield-check"></i> Accès zerdaTime</h6></div>
+      <div class="card-header"><h6 class="mb-0"><i class="bi bi-shield-check"></i> Accès SpocSpace</h6></div>
       <div class="card-body">
         <p class="small text-muted mb-2">Gérez les pages et fonctionnalités accessibles par ce collaborateur.</p>
         <button class="btn btn-outline-primary btn-sm" id="openPermBtn"><i class="bi bi-sliders"></i> Configurer les accès</button>
@@ -162,7 +162,7 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
       <div class="modal-dialog modal-dialog-centered" style="max-width:620px">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès zerdaTime</h5>
+            <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès SpocSpace</h5>
             <button type="button" class="confirm-close-btn" data-bs-dismiss="modal" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
           </div>
           <div class="modal-body" id="uePermBody">
@@ -282,7 +282,7 @@ async function initUsereditPage() {
         const btn = document.getElementById('toggleUserBtn');
         const txt = document.getElementById('userStatusText');
         if (active) {
-            txt.textContent = 'Ce collaborateur est actif. La désactivation bloquera son accès à zerdaTime.';
+            txt.textContent = 'Ce collaborateur est actif. La désactivation bloquera son accès à SpocSpace.';
             label.textContent = 'Désactiver le compte';
             btn.innerHTML = '<i class="bi bi-person-slash"></i> ' + label.textContent;
             btn.classList.remove('btn-outline-success');
@@ -300,7 +300,7 @@ async function initUsereditPage() {
     document.getElementById('toggleUserBtn')?.addEventListener('click', async () => {
         const currentlyActive = document.getElementById('toggleUserLabel').textContent.includes('Désactiver');
         const confirmOpts = currentlyActive
-            ? { title: 'Désactiver ce collaborateur ?', text: 'Il ne pourra plus se connecter à zerdaTime.', icon: 'bi-person-slash', type: 'danger', okText: 'Désactiver' }
+            ? { title: 'Désactiver ce collaborateur ?', text: 'Il ne pourra plus se connecter à SpocSpace.', icon: 'bi-person-slash', type: 'danger', okText: 'Désactiver' }
             : { title: 'Réactiver ce collaborateur ?', text: 'Il pourra à nouveau se connecter.', icon: 'bi-person-check', type: 'success', okText: 'Réactiver' };
         if (!await adminConfirm(confirmOpts)) return;
         const res = await adminApiPost('admin_toggle_user', { id });
@@ -355,9 +355,9 @@ async function initUsereditPage() {
         fd.append('avatar', file);
 
         try {
-            const resp = await fetch('/zerdatime/admin/api.php', {
+            const resp = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd,
             });
             const res2 = await resp.json();
@@ -545,7 +545,7 @@ window.initUsereditPage = initUsereditPage;
 <style>
 .ue-avatar-preview {
     width: 96px; height: 96px; border-radius: 50%; margin: 0 auto;
-    background: var(--zt-teal, #2a9d8f); display: flex; align-items: center; justify-content: center;
+    background: var(--ss-teal, #2a9d8f); display: flex; align-items: center; justify-content: center;
     overflow: hidden; border: 3px solid var(--cl-border, #e0e0e0);
 }
 .ue-avatar-preview .ue-avatar-img { width: 100%; height: 100%; object-fit: cover; }

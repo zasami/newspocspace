@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../init.php';
-$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+$emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -10,15 +10,15 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <title>Espace Famille — <?= h($emsNom) ?></title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/zerdatime/website/assets/css/famille.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/spocspace/website/assets/css/famille.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 </head>
 <body>
 <div class="fam-shell">
 <div class="fam-container">
 
-  <a href="/zerdatime/website/" class="fam-back"><i class="bi bi-arrow-left"></i> Retour au site</a>
+  <a href="/spocspace/website/" class="fam-back"><i class="bi bi-arrow-left"></i> Retour au site</a>
 
   <!-- ═══ LOGIN ═══ -->
   <div id="famLogin" class="fam-login-wrap">
@@ -173,12 +173,12 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
   </div>
 </div>
 
-<script src="/zerdatime/website/assets/js/famille-crypto.js"></script>
+<script src="/spocspace/website/assets/js/famille-crypto.js"></script>
 <script>
 (function() {
 'use strict';
 
-const API = '/zerdatime/website/api.php';
+const API = '/spocspace/website/api.php';
 let token = localStorage.getItem('fam_token') || '';
 let resident = null;
 let aesKey = null; // decrypted AES key

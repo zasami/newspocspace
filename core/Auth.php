@@ -6,22 +6,22 @@ class Auth
 {
     public static function check(): bool
     {
-        return !empty($_SESSION['zt_user']);
+        return !empty($_SESSION['ss_user']);
     }
 
     public static function user(): ?array
     {
-        return $_SESSION['zt_user'] ?? null;
+        return $_SESSION['ss_user'] ?? null;
     }
 
     public static function userId(): ?string
     {
-        return $_SESSION['zt_user']['id'] ?? null;
+        return $_SESSION['ss_user']['id'] ?? null;
     }
 
     public static function role(): ?string
     {
-        return $_SESSION['zt_user']['role'] ?? null;
+        return $_SESSION['ss_user']['role'] ?? null;
     }
 
     public static function isAdmin(): bool
@@ -76,7 +76,7 @@ class Auth
         Db::exec("UPDATE users SET last_login = NOW() WHERE id = ?", [$user['id']]);
 
         // Set session
-        $_SESSION['zt_user'] = [
+        $_SESSION['ss_user'] = [
             'id'         => $user['id'],
             'email'      => $user['email'],
             'nom'        => $user['nom'],
@@ -88,14 +88,14 @@ class Auth
             'type_employe' => $user['type_employe'] ?? 'interne',
             'denied_perms' => Permission::getDenied($user['id']),
         ];
-        $_SESSION['zt_last_activity'] = time();
+        $_SESSION['ss_last_activity'] = time();
 
         if ($mustChangePassword) {
-            $_SESSION['zt_must_change_password'] = true;
-            $_SESSION['zt_temp_password_expires'] = $user['password_temp_expires'];
+            $_SESSION['ss_must_change_password'] = true;
+            $_SESSION['ss_temp_password_expires'] = $user['password_temp_expires'];
         }
 
-        $result = ['success' => true, 'user' => $_SESSION['zt_user']];
+        $result = ['success' => true, 'user' => $_SESSION['ss_user']];
         if ($mustChangePassword) {
             $result['must_change_password'] = true;
             $result['temp_password_expires'] = $user['password_temp_expires'];
@@ -105,7 +105,7 @@ class Auth
 
     public static function logout(): void
     {
-        unset($_SESSION['zt_user'], $_SESSION['zt_last_activity']);
+        unset($_SESSION['ss_user'], $_SESSION['ss_last_activity']);
     }
 
     public static function me(): ?array
@@ -140,11 +140,11 @@ class Auth
 
         // Envoi de l'email de réinitialisation
         $resetUrl = APP_URL . '/login?reset=' . $token;
-        $subject = 'Réinitialisation de votre mot de passe — zerdaTime';
+        $subject = 'Réinitialisation de votre mot de passe — SpocSpace';
         $body = "Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe.\n\n"
                . "Cliquez sur le lien suivant (valable 1 heure) :\n" . $resetUrl . "\n\n"
                . "Si vous n'avez pas fait cette demande, ignorez cet email.\n\n"
-               . "Cordialement,\nzerdaTime";
+               . "Cordialement,\nSpocSpace";
         $headers = "From: noreply@terrassiere.ch\r\nContent-Type: text/plain; charset=UTF-8";
         @mail($email, $subject, $body, $headers);
 

@@ -1,5 +1,5 @@
 /**
- * zerdaTime - Home module - Dashboard
+ * SpocSpace - Home module - Dashboard
  */
 import { apiPost, escapeHtml, formatDateShort, formatDayName } from '../helpers.js';
 
@@ -17,7 +17,7 @@ const CHOIX_LABELS = { menu: 'Menu', salade: 'Salade' };
 const PAIEMENT_LABELS = { salaire: 'Salaire', caisse: 'Cash', carte: 'Carte' };
 
 export async function init() {
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     const nameEl = document.getElementById('homeUserName');
     if (nameEl && user) nameEl.textContent = user.prenom || '';
 
@@ -33,7 +33,7 @@ export async function init() {
     const modalEl = document.getElementById('menuReservationModal');
     if (modalEl) resModal = new bootstrap.Modal(modalEl);
 
-    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    const ssrData = window.__SS_PAGE_DATA__ || {};
     const desirCount = ssrData.desir_count || 0;
     const maxDesirs = ssrData.max_desirs || 4;
     document.getElementById('statDesirs').textContent = desirCount + '/' + maxDesirs;
@@ -165,14 +165,14 @@ function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
         const isDimmed = isCurrentWeek && !isSelected;
         const isWeekend = (() => { const d = new Date(dateStr + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; })();
         const todayStyle = isSelected
-            ? 'background:var(--zt-accent-bg, rgba(0,180,160,0.06));border-left:3px solid var(--zt-teal)'
-            : (isToday ? 'background:var(--zt-accent-bg, rgba(0,180,160,0.03));border-left:3px solid #ccc' : '');
+            ? 'background:var(--ss-accent-bg, rgba(0,180,160,0.06));border-left:3px solid var(--ss-teal)'
+            : (isToday ? 'background:var(--ss-accent-bg, rgba(0,180,160,0.03));border-left:3px solid #ccc' : '');
         const dimStyle = isDimmed ? 'opacity:0.38;' : '';
 
         if (a) {
             const color = a.couleur || '#1a1a1a';
             html += `
-              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}${dimStyle}">
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}${dimStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -187,7 +187,7 @@ function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
               </div>`;
         } else {
             html += `
-              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--zt-border-light);${todayStyle}${dimStyle}">
+              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}${dimStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -242,11 +242,11 @@ function renderMenus() {
         const isPast = dateStr < today;
         const canReserve = dateStr >= today && dateStr <= maxDate;
         const isWeekend = (() => { const d = new Date(dateStr + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; })();
-        const todayBg = isToday ? 'background:var(--zt-accent-bg);border-left:3px solid var(--zt-teal);' : '';
+        const todayBg = isToday ? 'background:var(--ss-accent-bg);border-left:3px solid var(--ss-teal);' : '';
         const pastOpacity = isPast ? 'opacity:0.45;' : '';
 
         html += `
-        <div class="home-menu-row" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.75rem;border-bottom:1px solid var(--zt-border-light);${todayBg}${pastOpacity}cursor:${menu ? 'pointer' : 'default'};transition:background 0.15s"${menu ? ` data-menu-id="${escapeHtml(menu.id)}"` : ''}>
+        <div class="home-menu-row" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.75rem;border-bottom:1px solid var(--ss-border-light);${todayBg}${pastOpacity}cursor:${menu ? 'pointer' : 'default'};transition:background 0.15s"${menu ? ` data-menu-id="${escapeHtml(menu.id)}"` : ''}>
           <div style="min-width:65px">
             <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
             <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -257,10 +257,10 @@ function renderMenus() {
             html += `
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              <i class="bi bi-egg-fried" style="font-size:0.75rem;color:var(--zt-orange);margin-right:0.2rem"></i>
+              <i class="bi bi-egg-fried" style="font-size:0.75rem;color:var(--ss-orange);margin-right:0.2rem"></i>
               ${escapeHtml(menu.plat)}
             </div>
-            ${menu.salade ? `<div style="font-size:0.78rem;color:var(--zt-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${menu.salade ? `<div style="font-size:0.78rem;color:var(--ss-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
               <i class="bi bi-flower1" style="font-size:0.65rem;color:#16A34A;margin-right:0.2rem"></i>
               ${escapeHtml(menu.salade)}
             </div>` : ''}
@@ -327,7 +327,7 @@ function openMenuDetail(menuId) {
     if (menu.salade) detail += menuLine('Salade', menu.salade, 'bi-flower1');
     if (menu.accompagnement) detail += menuLine('Accompagnement', menu.accompagnement, 'bi-grid-3x3');
     if (menu.dessert) detail += menuLine('Dessert', menu.dessert, 'bi-cake2');
-    if (menu.remarques) detail += `<div style="padding:0.5rem 0.75rem;background:var(--zt-accent-bg);border-radius:6px;font-size:0.85rem;color:var(--zt-text-secondary)"><i class="bi bi-info-circle"></i> ${escapeHtml(menu.remarques)}</div>`;
+    if (menu.remarques) detail += `<div style="padding:0.5rem 0.75rem;background:var(--ss-accent-bg);border-radius:6px;font-size:0.85rem;color:var(--ss-text-secondary)"><i class="bi bi-info-circle"></i> ${escapeHtml(menu.remarques)}</div>`;
     detail += '</div>';
     document.getElementById('menuDetailContent').innerHTML = detail;
 
@@ -347,7 +347,7 @@ function openMenuDetail(menuId) {
 
 function menuLine(label, value, icon, bold) {
     return `<div>
-        <small style="font-weight:600;color:var(--zt-text-muted);text-transform:uppercase;font-size:0.68rem;letter-spacing:0.5px"><i class="bi ${icon}" style="font-size:0.65rem"></i> ${label}</small>
+        <small style="font-weight:600;color:var(--ss-text-muted);text-transform:uppercase;font-size:0.68rem;letter-spacing:0.5px"><i class="bi ${icon}" style="font-size:0.65rem"></i> ${label}</small>
         <div style="font-size:${bold ? '1.02rem' : '0.93rem'};${bold ? 'font-weight:600' : ''}">${escapeHtml(value)}</div>
     </div>`;
 }
@@ -360,7 +360,7 @@ function buildExistingReservationView(form, footer, menu, myRes) {
                 <i class="bi bi-check-circle-fill" style="color:#2d4a43;font-size:1.1rem"></i>
                 <strong style="color:#2d4a43">Commande confirmée</strong>
             </div>
-            <div style="font-size:0.88rem;color:var(--zt-text-secondary);display:flex;flex-wrap:wrap;gap:0.5rem 1.2rem">
+            <div style="font-size:0.88rem;color:var(--ss-text-secondary);display:flex;flex-wrap:wrap;gap:0.5rem 1.2rem">
                 <span><i class="bi ${myRes.choix === 'salade' ? 'bi-flower1' : 'bi-egg-fried'}"></i> ${escapeHtml(CHOIX_LABELS[myRes.choix] || 'Menu')}</span>
                 <span><i class="bi bi-people"></i> ${myRes.nb_personnes > 1 ? myRes.nb_personnes + ' pers.' : '1 pers.'}</span>
                 <span><i class="bi bi-wallet2"></i> ${escapeHtml(PAIEMENT_LABELS[myRes.paiement] || myRes.paiement)}</span>
@@ -398,13 +398,13 @@ function buildReservationForm(form, footer, menu) {
         <div style="margin-bottom:1rem">
             <label class="form-label" style="font-weight:600">Votre choix</label>
             <div style="display:flex;gap:0.5rem">
-                <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--zt-teal);border-radius:10px;cursor:pointer;transition:all 0.15s;background:var(--zt-accent-bg)">
+                <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-teal);border-radius:10px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
                     <input type="radio" name="resChoix" value="menu" checked style="display:none">
-                    <i class="bi bi-egg-fried" style="font-size:1.2rem;color:var(--zt-orange)"></i>
+                    <i class="bi bi-egg-fried" style="font-size:1.2rem;color:var(--ss-orange)"></i>
                     <div><div style="font-weight:700;font-size:0.9rem">Menu du jour</div><small class="text-muted" style="font-size:0.78rem">${escapeHtml(menu.plat)}</small></div>
                 </label>
                 ${hasSalade ? `
-                <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--zt-border);border-radius:10px;cursor:pointer;transition:all 0.15s">
+                <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-border);border-radius:10px;cursor:pointer;transition:all 0.15s">
                     <input type="radio" name="resChoix" value="salade" style="display:none">
                     <i class="bi bi-flower1" style="font-size:1.2rem;color:#16A34A"></i>
                     <div><div style="font-weight:700;font-size:0.9rem">Salade</div><small class="text-muted" style="font-size:0.78rem">${escapeHtml(menu.salade)}</small></div>
@@ -420,14 +420,14 @@ function buildReservationForm(form, footer, menu) {
         <div style="margin-bottom:1rem">
             <label class="form-label" style="font-weight:600">Mode de paiement</label>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-teal);border-radius:8px;cursor:pointer;transition:all 0.15s;background:var(--zt-accent-bg)">
-                    <input type="radio" name="resPaiement" value="salaire" checked style="accent-color:var(--zt-teal)"> <i class="bi bi-wallet2"></i> Retenue salaire
+                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-teal);border-radius:8px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
+                    <input type="radio" name="resPaiement" value="salaire" checked style="accent-color:var(--ss-teal)"> <i class="bi bi-wallet2"></i> Retenue salaire
                 </label>
-                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-                    <input type="radio" name="resPaiement" value="caisse" style="accent-color:var(--zt-teal)"> <i class="bi bi-cash-coin"></i> Cash caisse
+                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
+                    <input type="radio" name="resPaiement" value="caisse" style="accent-color:var(--ss-teal)"> <i class="bi bi-cash-coin"></i> Cash caisse
                 </label>
-                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-                    <input type="radio" name="resPaiement" value="carte" style="accent-color:var(--zt-teal)"> <i class="bi bi-credit-card"></i> Carte
+                <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
+                    <input type="radio" name="resPaiement" value="carte" style="accent-color:var(--ss-teal)"> <i class="bi bi-credit-card"></i> Carte
                 </label>
             </div>
         </div>
@@ -453,14 +453,14 @@ function buildReservationForm(form, footer, menu) {
 
     form.querySelectorAll('.menu-choix-option').forEach(opt => {
         opt.querySelector('input').addEventListener('change', () => {
-            form.querySelectorAll('.menu-choix-option').forEach(o => { o.style.borderColor = 'var(--zt-border)'; o.style.background = ''; });
-            opt.style.borderColor = 'var(--zt-teal)'; opt.style.background = 'var(--zt-accent-bg)';
+            form.querySelectorAll('.menu-choix-option').forEach(o => { o.style.borderColor = 'var(--ss-border)'; o.style.background = ''; });
+            opt.style.borderColor = 'var(--ss-teal)'; opt.style.background = 'var(--ss-accent-bg)';
         });
     });
     form.querySelectorAll('input[name="resPaiement"]').forEach(radio => {
         radio.addEventListener('change', () => {
-            form.querySelectorAll('.menu-pay-option').forEach(el => { el.style.borderColor = 'var(--zt-border)'; el.style.background = ''; });
-            if (radio.checked) { radio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)'; radio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)'; }
+            form.querySelectorAll('.menu-pay-option').forEach(el => { el.style.borderColor = 'var(--ss-border)'; el.style.background = ''; });
+            if (radio.checked) { radio.closest('.menu-pay-option').style.borderColor = 'var(--ss-teal)'; radio.closest('.menu-pay-option').style.background = 'var(--ss-accent-bg)'; }
         });
     });
     form.querySelectorAll('.menu-quick-tag').forEach(btn => {
@@ -470,7 +470,7 @@ function buildReservationForm(form, footer, menu) {
             const tag = btn.dataset.tag;
             if (input.value.toLowerCase().includes(tag.toLowerCase())) return;
             input.value = input.value.trim() ? input.value.trim() + ', ' + tag : tag;
-            btn.style.background = 'var(--zt-accent-bg)'; btn.style.borderColor = 'var(--zt-teal)';
+            btn.style.background = 'var(--ss-accent-bg)'; btn.style.borderColor = 'var(--ss-teal)';
         });
     });
     footer.querySelector('#resSubmitBtn')?.addEventListener('click', () => {

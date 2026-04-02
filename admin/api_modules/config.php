@@ -87,7 +87,7 @@ function admin_save_config()
         'css_mode',
     ];
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $stmt = Db::connect()->prepare(
         "INSERT INTO ems_config (config_key, config_value, updated_by)
          VALUES (?, ?, ?)
@@ -153,8 +153,8 @@ function admin_upload_logo()
     }
 
     // Save URL in config
-    $logoUrl = '/zerdatime/storage/logos/' . $filename;
-    $userId = $_SESSION['zt_user']['id'];
+    $logoUrl = '/spocspace/storage/logos/' . $filename;
+    $userId = $_SESSION['ss_user']['id'];
     Db::exec(
         "INSERT INTO ems_config (config_key, config_value, updated_by) VALUES ('ems_logo_url', ?, ?)
          ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)",
@@ -281,7 +281,7 @@ function admin_generate_structure()
         }
 
         // Save counts in config
-        $userId = $_SESSION['zt_user']['id'];
+        $userId = $_SESSION['ss_user']['id'];
         $stmtCfg = $pdo->prepare(
             "INSERT INTO ems_config (config_key, config_value, updated_by) VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)"
@@ -579,7 +579,7 @@ function admin_create_ia_rule()
     }
 
     $id = Uuid::v4();
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     Db::exec(
         "INSERT INTO ia_human_rules (id, titre, description, importance, actif, created_by, rule_type, rule_params, target_mode, target_fonction_code)

@@ -9,7 +9,7 @@ function get_sondages_ouverts()
     global $params;
     require_auth();
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     $list = Db::fetchAll(
         "SELECT s.id, s.titre, s.description, s.is_anonymous, s.created_at,
@@ -57,7 +57,7 @@ function get_sondage_detail()
     }
 
     // User's existing answers
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $mesReponses = Db::fetchAll(
         "SELECT question_id, reponse FROM sondage_reponses WHERE sondage_id = ? AND user_id = ?",
         [$id, $userId]
@@ -87,7 +87,7 @@ function submit_sondage_reponses()
     $sondage = Db::fetch("SELECT * FROM sondages WHERE id = ? AND statut = 'ouvert'", [$sondageId]);
     if (!$sondage) bad_request('Ce sondage n\'est pas ouvert');
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $reponses = $params['reponses'] ?? [];
 
     if (empty($reponses)) bad_request('Aucune réponse fournie');

@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime - API entry point
+ * SpocSpace - API entry point
  */
 require_once __DIR__ . '/init.php';
 
@@ -21,7 +21,7 @@ $csrfExempt = ['login', 'request_reset', 'reset_password', 'me'];
 $isReadOnly = str_starts_with($action, 'get_') || str_starts_with($action, 'serve_') || in_array($action, $csrfExempt, true);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isReadOnly) {
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (empty($_SESSION['zt_csrf_token']) || !$token || !hash_equals($_SESSION['zt_csrf_token'], $token)) {
+    if (empty($_SESSION['ss_csrf_token']) || !$token || !hash_equals($_SESSION['ss_csrf_token'], $token)) {
         forbidden('Invalid or missing CSRF token');
     }
 }
@@ -56,6 +56,6 @@ if (!function_exists($action)) {
 try {
     $action();
 } catch (\Throwable $e) {
-    error_log('zerdaTime API error [' . $action . ']: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    error_log('SpocSpace API error [' . $action . ']: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     error_response('Une erreur interne est survenue', 500);
 }

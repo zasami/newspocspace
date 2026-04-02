@@ -647,8 +647,8 @@ async function uploadAudioBlob(blob, filename) {
 
     try {
         const headers = {};
-        if (window.__ZT_ADMIN__?.csrfToken) {
-            headers['X-CSRF-Token'] = window.__ZT_ADMIN__.csrfToken;
+        if (window.__SS_ADMIN__?.csrfToken) {
+            headers['X-CSRF-Token'] = window.__SS_ADMIN__.csrfToken;
         }
 
         const res = await fetch('/terrassiere/admin/api.php', {
@@ -658,7 +658,7 @@ async function uploadAudioBlob(blob, filename) {
         });
 
         const json = await res.json();
-        if (json.csrf && window.__ZT_ADMIN__) window.__ZT_ADMIN__.csrfToken = json.csrf;
+        if (json.csrf && window.__SS_ADMIN__) window.__SS_ADMIN__.csrfToken = json.csrf;
 
         if (json.success) {
             if (json.audio_path) showAudioPlayback('/terrassiere/admin/api.php?action=admin_serve_pv_audio&id=' + currentPvId);

@@ -227,7 +227,7 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
             <div class="zs-select" id="alertTargetValue" data-placeholder="Valeur"></div>
           </div>
         </div>
-        <div class="zt-info-bar small al-hidden" id="alertHauteInfo">
+        <div class="ss-info-bar small al-hidden" id="alertHauteInfo">
           <i class="bi bi-exclamation-triangle"></i>
           Les alertes de <strong>haute importance</strong> affichent un modal rouge obligatoire à chaque connexion.
         </div>

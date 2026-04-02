@@ -1,6 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['zt_user']['id'];
+$uid = $_SESSION['ss_user']['id'];
 $desirsInitMois = date('Y-m');
 $desirsInitData = Db::fetchAll(
     "SELECT d.*, u2.prenom AS valide_par_prenom, u2.nom AS valide_par_nom,
@@ -210,7 +210,7 @@ $desirsPermanents = array_map(function($p) use ($_desirsPendingIds) {
     </div>
   </div>
 </div>
-<script type="application/json" id="__zt_ssr__"><?= json_encode([
+<script type="application/json" id="__ss_ssr__"><?= json_encode([
     'desirs' => $desirsInitData,
     'permanents' => $desirsPermanents,
     'horaires' => $desirsHoraires,

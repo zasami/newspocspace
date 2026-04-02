@@ -1,5 +1,5 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
-$uid = $_SESSION['zt_user']['id'];
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['ss_user']['id'];
 $initMessages = Db::fetchAll(
     "SELECT m.id, m.sujet, m.contenu, m.from_user_id, m.created_at,
             uf.prenom AS from_prenom, uf.nom AS from_nom,
@@ -54,4 +54,4 @@ $initMessages = Db::fetchAll(
   </div>
 </div>
 
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['messages' => $initMessages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['messages' => $initMessages], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

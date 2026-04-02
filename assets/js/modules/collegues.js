@@ -4,7 +4,7 @@
 import { escapeHtml, formatDate, absenceTypeBadge, statusBadge } from '../helpers.js';
 
 export function init() {
-    const absences = window.__ZT_PAGE_DATA__?.absences || [];
+    const absences = window.__SS_PAGE_DATA__?.absences || [];
     const tbody = document.getElementById('colleguesTableBody');
     if (!tbody) return;
 

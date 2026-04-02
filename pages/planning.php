@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 $planModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
 ?>
 <!-- Planning Toolbar -->
@@ -48,7 +48,7 @@ $planModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY o
 <!-- Filter Modal -->
 <div class="modal fade" id="planFilterModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
-    <div class="modal-content" style="border-radius:var(--zt-radius, 12px);overflow:hidden">
+    <div class="modal-content" style="border-radius:var(--ss-radius, 12px);overflow:hidden">
       <div class="modal-header">
         <h6 class="modal-title"><i class="bi bi-funnel"></i> Filtrer les collègues</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -90,7 +90,7 @@ $planModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY o
 <!-- Email Modal -->
 <div class="modal fade" id="planEmailModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content" style="border-radius:var(--zt-radius, 12px);overflow:hidden">
+    <div class="modal-content" style="border-radius:var(--ss-radius, 12px);overflow:hidden">
       <div class="modal-header"><h6 class="modal-title"><i class="bi bi-envelope"></i> Envoyer le planning</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         <div class="mb-3">
@@ -653,4 +653,4 @@ $planModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY o
 }
 </style>
 
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['modules' => $planModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['modules' => $planModules], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

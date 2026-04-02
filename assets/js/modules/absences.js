@@ -39,7 +39,7 @@ export function init() {
     });
 
     // Initial render from SSR data
-    const ssrAbsences = window.__ZT_PAGE_DATA__?.absences || [];
+    const ssrAbsences = window.__SS_PAGE_DATA__?.absences || [];
     renderAbsences(ssrAbsences);
 }
 
@@ -119,7 +119,7 @@ async function uploadJustificatif(absenceId, file) {
         const headers = {};
         if (csrfMeta) headers['X-CSRF-Token'] = csrfMeta.content;
 
-        const resp = await fetch('/zerdatime/api.php', {
+        const resp = await fetch('/spocspace/api.php', {
             method: 'POST',
             headers,
             body: fd
@@ -208,7 +208,7 @@ function openFileViewer(url, name, type) {
         requestAnimationFrame(() => {
             imgEl.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
             document.getElementById('ztLbZoomLevel').textContent = Math.round(scale * 100) + '%';
-            stage.classList.toggle('zt-zoomed', scale > 1.01);
+            stage.classList.toggle('ss-zoomed', scale > 1.01);
         });
     }
     function resetZoom() { scale = 1; tx = 0; ty = 0; apply(); }
@@ -226,23 +226,23 @@ function openFileViewer(url, name, type) {
     function zoomBy(d) { const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, scale + d); }
 
     function closeLb() {
-        lb.classList.add('zt-lightbox-hidden');
+        lb.classList.add('ss-lightbox-hidden');
         document.body.style.overflow = '';
-        stage.classList.remove('zt-zoomed', 'zt-dragging');
+        stage.classList.remove('ss-zoomed', 'ss-dragging');
         _lbRemoveAll();
     }
 
-    lb.classList.remove('zt-lightbox-hidden');
+    lb.classList.remove('ss-lightbox-hidden');
     document.body.style.overflow = 'hidden';
 
-    _lbAdd(lb.querySelector('.zt-lightbox-close'), 'click', closeLb);
-    _lbAdd(lb.querySelector('.zt-lightbox-overlay'), 'click', closeLb);
+    _lbAdd(lb.querySelector('.ss-lightbox-close'), 'click', closeLb);
+    _lbAdd(lb.querySelector('.ss-lightbox-overlay'), 'click', closeLb);
     _lbAdd(document.getElementById('ztLbZoomIn'), 'click', () => zoomBy(.25));
     _lbAdd(document.getElementById('ztLbZoomOut'), 'click', () => zoomBy(-.25));
     _lbAdd(document.getElementById('ztLbReset'), 'click', resetZoom);
 
     _lbAdd(document, 'keydown', (e) => {
-        if (lb.classList.contains('zt-lightbox-hidden')) return;
+        if (lb.classList.contains('ss-lightbox-hidden')) return;
         if (e.key === 'Escape') closeLb();
         else if (e.key === '+' || e.key === '=') zoomBy(.25);
         else if (e.key === '-') zoomBy(-.25);
@@ -251,9 +251,9 @@ function openFileViewer(url, name, type) {
 
     if (imgEl) {
         _lbAdd(stage, 'wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, scale * (1 + (e.deltaY > 0 ? -.15 : .15))); }, { passive: false });
-        _lbAdd(stage, 'mousedown', (e) => { if (e.button !== 0 || scale <= 1.01) return; dragging = true; lastX = e.clientX; lastY = e.clientY; stage.classList.add('zt-dragging'); e.preventDefault(); });
+        _lbAdd(stage, 'mousedown', (e) => { if (e.button !== 0 || scale <= 1.01) return; dragging = true; lastX = e.clientX; lastY = e.clientY; stage.classList.add('ss-dragging'); e.preventDefault(); });
         _lbAdd(document, 'mousemove', (e) => { if (!dragging) return; tx += e.clientX - lastX; ty += e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; apply(); });
-        _lbAdd(document, 'mouseup', () => { if (dragging) { dragging = false; stage.classList.remove('zt-dragging'); } });
+        _lbAdd(document, 'mouseup', () => { if (dragging) { dragging = false; stage.classList.remove('ss-dragging'); } });
         _lbAdd(stage, 'dblclick', (e) => { if (scale > 1.01) resetZoom(); else zoomAt(e.clientX, e.clientY, 2.5); });
     }
 }
@@ -262,6 +262,6 @@ export function destroy() {
     _lbRemoveAll();
     selectedFile = null;
     const lb = document.getElementById('ztLightbox');
-    if (lb) lb.classList.add('zt-lightbox-hidden');
+    if (lb) lb.classList.add('ss-lightbox-hidden');
     document.body.style.overflow = '';
 }

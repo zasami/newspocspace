@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; } ?>
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; } ?>
 <div class="page-header">
   <h1><i class="bi bi-egg-fried"></i> Cuisine</h1>
   <p>Gestion des menus, réservations et table VIP</p>
@@ -106,7 +106,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="cuisFamilleModalTitle">Nouvelle réservation famille</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body">
         <form id="cuisFamilleForm">
@@ -166,7 +166,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Ajouter un résident VIP</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body">
         <input type="text" class="form-control" id="cuisVipResidentSearch" placeholder="Rechercher un résident..." autocomplete="off">

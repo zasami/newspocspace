@@ -7,7 +7,7 @@ function get_proposals_ouvertes()
 {
     require_auth();
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     // Get proposals that are open for voting
     $proposals = Db::fetchAll(
@@ -55,7 +55,7 @@ function get_proposal_planning()
     $proposalId = $params['proposal_id'] ?? '';
     if (!$proposalId) bad_request('proposal_id requis');
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     $proposal = Db::fetch("SELECT * FROM planning_proposals WHERE id = ?", [$proposalId]);
     if (!$proposal) not_found('Proposition non trouvée');
@@ -111,7 +111,7 @@ function submit_vote()
 
     if (!$proposalId || !in_array($vote, ['pour', 'contre'])) bad_request('Paramètres invalides');
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     // Check proposal is open
     $proposal = Db::fetch("SELECT statut FROM planning_proposals WHERE id = ?", [$proposalId]);

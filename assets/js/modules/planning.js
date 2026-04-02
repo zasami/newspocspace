@@ -14,7 +14,7 @@ let selectedUserIds = null;
 let filterTempSelection = new Set();
 let activeFonctionTags = new Set();
 let activeModuleTabs = new Set();
-const myUserId = window.__ZT__?.user?.id || '';
+const myUserId = window.__SS__?.user?.id || '';
 
 // Context menu state
 let ctxMenuEl = null;
@@ -52,7 +52,7 @@ export async function init() {
     document.getElementById('planEmailSend')?.addEventListener('click', sendEmail);
     document.getElementById('planRowsFilter')?.addEventListener('change', () => renderGrid());
 
-    allModules = window.__ZT_PAGE_DATA__?.modules || [];
+    allModules = window.__SS_PAGE_DATA__?.modules || [];
 
     setupContextMenu();
     await loadData();
@@ -635,17 +635,17 @@ function setupContextMenu() {
     ctxStyleEl = document.createElement('style');
     ctxStyleEl.id = 'planCtxStyle';
     ctxStyleEl.textContent = `
-.plan-ctx-menu{position:fixed;z-index:9999;background:var(--zt-bg-card,#fff);border:1px solid var(--zt-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);min-width:210px;overflow:hidden;padding:4px 0;font-size:.86rem}
-.plan-ctx-header{padding:.35rem 1rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--zt-text-muted,#888);font-weight:600;border-bottom:1px solid var(--zt-border-light,#f0ede8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.plan-ctx-item{display:flex;align-items:center;gap:.6rem;padding:.5rem 1rem;cursor:pointer;color:var(--zt-text,#1a1a1a);transition:background .12s;white-space:nowrap}
-.plan-ctx-item:hover{background:var(--zt-accent-bg,#f5f3ee)}
-.plan-ctx-item i{font-size:.9rem;color:var(--zt-text-muted,#888);width:1.1em;text-align:center}
-.plan-ctx-divider{height:1px;background:var(--zt-border-light,#f0ede8);margin:3px 0}
+.plan-ctx-menu{position:fixed;z-index:9999;background:var(--ss-bg-card,#fff);border:1px solid var(--ss-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);min-width:210px;overflow:hidden;padding:4px 0;font-size:.86rem}
+.plan-ctx-header{padding:.35rem 1rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--ss-text-muted,#888);font-weight:600;border-bottom:1px solid var(--ss-border-light,#f0ede8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.plan-ctx-item{display:flex;align-items:center;gap:.6rem;padding:.5rem 1rem;cursor:pointer;color:var(--ss-text,#1a1a1a);transition:background .12s;white-space:nowrap}
+.plan-ctx-item:hover{background:var(--ss-accent-bg,#f5f3ee)}
+.plan-ctx-item i{font-size:.9rem;color:var(--ss-text-muted,#888);width:1.1em;text-align:center}
+.plan-ctx-divider{height:1px;background:var(--ss-border-light,#f0ede8);margin:3px 0}
 td[data-date]{cursor:context-menu !important}
-.plan-detail-pop{position:fixed;z-index:9998;background:var(--zt-bg-card,#fff);border:1px solid var(--zt-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.12);padding:.8rem 1rem;min-width:210px;max-width:260px;font-size:.84rem}
+.plan-detail-pop{position:fixed;z-index:9998;background:var(--ss-bg-card,#fff);border:1px solid var(--ss-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.12);padding:.8rem 1rem;min-width:210px;max-width:260px;font-size:.84rem}
 .plan-detail-pop h6{font-size:.85rem;font-weight:700;margin:0 0 .45rem}
-.plan-detail-row{display:flex;align-items:center;gap:.4rem;margin:.22rem 0;font-size:.8rem;color:var(--zt-text-secondary,#555)}
-.plan-detail-row i{font-size:.82rem;color:var(--zt-text-muted,#888);width:1em}
+.plan-detail-row{display:flex;align-items:center;gap:.4rem;margin:.22rem 0;font-size:.8rem;color:var(--ss-text-secondary,#555)}
+.plan-detail-row i{font-size:.82rem;color:var(--ss-text-muted,#888);width:1em}
 `;
     document.head.appendChild(ctxStyleEl);
 
@@ -712,7 +712,7 @@ td[data-date]{cursor:context-menu !important}
 </div>
 ${ctxData.hmod ? `<div class="plan-detail-row"><i class="bi bi-building"></i> ${escapeHtml(ctxData.hmod)}</div>` : ''}
 <div style="margin-top:.6rem;text-align:right">
-  <button style="padding:2px 12px;font-size:.76rem;border:1px solid var(--zt-border,#e5e7eb);border-radius:5px;background:transparent;cursor:pointer" id="planDetailCloseBtn">Fermer</button>
+  <button style="padding:2px 12px;font-size:.76rem;border:1px solid var(--ss-border,#e5e7eb);border-radius:5px;background:transparent;cursor:pointer" id="planDetailCloseBtn">Fermer</button>
 </div>`;
 
         const tdRect = e.target.closest('td')?.getBoundingClientRect() || { right: e.clientX, top: e.clientY };

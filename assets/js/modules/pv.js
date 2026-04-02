@@ -13,7 +13,7 @@ let commentEditor = null;
 
 export async function init() {
     // Load references from SSR data
-    refs = { success: true, modules: window.__ZT_PAGE_DATA__?.modules || [] };
+    refs = { success: true, modules: window.__SS_PAGE_DATA__?.modules || [] };
 
     // Fill module filter (clear first to avoid duplicates on SPA re-init)
     const modFilter = document.getElementById('pvModuleFilter');
@@ -276,7 +276,7 @@ async function displayPvDetail(pv, comments) {
           .info{color:#666;font-size:0.85rem;margin-bottom:1.5rem}
           @media print{body{margin:20px}}</style></head>
           <body><h1>${title}</h1>
-          <div class="info">Date: ${new Date(pv.created_at).toLocaleDateString('fr-CH')} — zerdaTime</div>
+          <div class="info">Date: ${new Date(pv.created_at).toLocaleDateString('fr-CH')} — SpocSpace</div>
           ${content}</body></html>`);
         win.document.close();
         win.print();

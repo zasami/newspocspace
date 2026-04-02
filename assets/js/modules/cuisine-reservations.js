@@ -24,20 +24,20 @@ export function init() {
     document.querySelectorAll('#crModal .menu-choix-option').forEach(opt => {
         opt.querySelector('input')?.addEventListener('change', () => {
             document.querySelectorAll('#crModal .menu-choix-option').forEach(o => {
-                o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+                o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
             });
-            opt.style.borderColor = 'var(--zt-teal)'; opt.style.background = 'var(--zt-accent-bg)';
+            opt.style.borderColor = 'var(--ss-teal)'; opt.style.background = 'var(--ss-accent-bg)';
         });
     });
     // Paiement toggle
     document.querySelectorAll('#crModal input[name="crPaiement"]').forEach(radio => {
         radio.addEventListener('change', () => {
             document.querySelectorAll('#crModal .menu-pay-option').forEach(el => {
-                el.style.borderColor = 'var(--zt-border)'; el.style.background = '';
+                el.style.borderColor = 'var(--ss-border)'; el.style.background = '';
             });
             if (radio.checked) {
-                radio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)';
-                radio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)';
+                radio.closest('.menu-pay-option').style.borderColor = 'var(--ss-teal)';
+                radio.closest('.menu-pay-option').style.background = 'var(--ss-accent-bg)';
             }
         });
     });
@@ -188,17 +188,17 @@ function openAddModal() {
     const menuRadio = document.querySelector('#crModal input[name="crChoix"][value="menu"]');
     if (menuRadio) menuRadio.checked = true;
     document.querySelectorAll('#crModal .menu-choix-option').forEach(o => {
-        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+        o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
     });
-    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--zt-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--zt-accent-bg)'; }
+    if (menuRadio) { menuRadio.closest('.menu-choix-option').style.borderColor = 'var(--ss-teal)'; menuRadio.closest('.menu-choix-option').style.background = 'var(--ss-accent-bg)'; }
 
     // Reset paiement
     const salRadio = document.querySelector('#crModal input[name="crPaiement"][value="salaire"]');
     if (salRadio) salRadio.checked = true;
     document.querySelectorAll('#crModal .menu-pay-option').forEach(o => {
-        o.style.borderColor = 'var(--zt-border)'; o.style.background = '';
+        o.style.borderColor = 'var(--ss-border)'; o.style.background = '';
     });
-    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--zt-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--zt-accent-bg)'; }
+    if (salRadio) { salRadio.closest('.menu-pay-option').style.borderColor = 'var(--ss-teal)'; salRadio.closest('.menu-pay-option').style.background = 'var(--ss-accent-bg)'; }
 
     // Reset quick tags
     document.querySelectorAll('#crModal .cr-quick-tag').forEach(b => {
@@ -226,12 +226,12 @@ async function searchUsers() {
         if (u.photo) {
             item.innerHTML = '<img src="' + escapeHtml(u.photo) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">';
         } else {
-            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--zt-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
+            item.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:var(--ss-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">' + escapeHtml(initials) + '</div>';
         }
 
         const info = document.createElement('div');
         info.innerHTML = '<div style="font-weight:600;font-size:0.88rem">' + escapeHtml(u.prenom + ' ' + u.nom) + '</div>'
-            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--zt-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
+            + (u.fonction_nom ? '<div style="font-size:0.75rem;color:var(--ss-text-muted)">' + escapeHtml(u.fonction_nom) + '</div>' : '');
         item.appendChild(info);
 
         item.addEventListener('click', () => {

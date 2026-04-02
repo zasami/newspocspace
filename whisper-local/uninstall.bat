@@ -1,8 +1,8 @@
 @echo off
-title ZerdaTime IA - Desinstallation
+title SpocSpace IA - Desinstallation
 echo.
 echo  ============================================
-echo   ZerdaTime IA - Desinstallation complete
+echo   SpocSpace IA - Desinstallation complete
 echo   Cela va supprimer TOUS les composants IA
 echo  ============================================
 echo.
@@ -29,8 +29,8 @@ timeout /t 3 /nobreak >nul
 echo  [OK] Processus arretes
 
 echo.
-echo  [2/6] Suppression de ZerdaTimeWhisper...
-set "WHISPER_DIR=%LOCALAPPDATA%\ZerdaTimeWhisper"
+echo  [2/6] Suppression de SpocSpaceWhisper...
+set "WHISPER_DIR=%LOCALAPPDATA%\SpocSpaceWhisper"
 if exist "%WHISPER_DIR%" (
     rmdir /S /Q "%WHISPER_DIR%"
     echo  [OK] %WHISPER_DIR% supprime
@@ -69,13 +69,13 @@ if exist "%LOCALAPPDATA%\Ollama" (
 
 echo.
 echo  [5/6] Suppression des raccourcis Bureau...
-if exist "%USERPROFILE%\Desktop\ZerdaTime IA.lnk" (
-    del /F "%USERPROFILE%\Desktop\ZerdaTime IA.lnk"
-    echo  [OK] Raccourci ZerdaTime IA supprime
+if exist "%USERPROFILE%\Desktop\SpocSpace IA.lnk" (
+    del /F "%USERPROFILE%\Desktop\SpocSpace IA.lnk"
+    echo  [OK] Raccourci SpocSpace IA supprime
 )
-if exist "%USERPROFILE%\Desktop\ZerdaTime Whisper.lnk" (
-    del /F "%USERPROFILE%\Desktop\ZerdaTime Whisper.lnk"
-    echo  [OK] Raccourci ZerdaTime Whisper supprime
+if exist "%USERPROFILE%\Desktop\SpocSpace Whisper.lnk" (
+    del /F "%USERPROFILE%\Desktop\SpocSpace Whisper.lnk"
+    echo  [OK] Raccourci SpocSpace Whisper supprime
 )
 
 echo.

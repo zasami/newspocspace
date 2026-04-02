@@ -1,17 +1,17 @@
 <?php
 /**
  * Website Admin — Gestionnaire du site vitrine EMS La Terrassière
- * Auth: réutilise la session zerdaTime (admin/direction/responsable)
+ * Auth: réutilise la session SpocSpace (admin/direction/responsable)
  */
 require_once __DIR__ . '/../../init.php';
 
-// Auth check — mêmes rôles que l'admin zerdaTime
-if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['admin', 'direction', 'responsable'])) {
-    header('Location: /zerdatime/login');
+// Auth check — mêmes rôles que l'admin SpocSpace
+if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
+    header('Location: /spocspace/login');
     exit;
 }
 
-$user = $_SESSION['zt_user'];
+$user = $_SESSION['ss_user'];
 
 // Charger les sections
 $sections = Db::fetchAll(
@@ -38,7 +38,7 @@ $sectionTypes = [
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Site Vitrine EMS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
@@ -46,7 +46,7 @@ $sectionTypes = [
 <!-- Topbar -->
 <header class="wa-topbar">
     <div class="wa-topbar-left">
-        <a href="/zerdatime/website/" class="wa-logo" target="_blank">
+        <a href="/spocspace/website/" class="wa-logo" target="_blank">
             <i class="bi bi-globe2"></i>
             <span>Site Vitrine</span>
         </a>
@@ -54,11 +54,11 @@ $sectionTypes = [
         <h1 class="wa-topbar-title">Gestionnaire de contenu</h1>
     </div>
     <div class="wa-topbar-right">
-        <a href="/zerdatime/website/" class="wa-btn wa-btn-ghost" target="_blank">
+        <a href="/spocspace/website/" class="wa-btn wa-btn-ghost" target="_blank">
             <i class="bi bi-eye"></i> Voir le site
         </a>
-        <a href="/zerdatime/admin/" class="wa-btn wa-btn-ghost">
-            <i class="bi bi-arrow-left"></i> Admin zerdaTime
+        <a href="/spocspace/admin/" class="wa-btn wa-btn-ghost">
+            <i class="bi bi-arrow-left"></i> Admin SpocSpace
         </a>
         <div class="wa-user">
             <div class="wa-user-avatar"><?= strtoupper(substr($user['prenom'] ?? '', 0, 1) . substr($user['nom'] ?? '', 0, 1)) ?></div>

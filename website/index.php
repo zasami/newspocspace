@@ -1,5 +1,5 @@
 <?php
-// Load zerdaTime DB to fetch dynamic menus + CMS sections
+// Load SpocSpace DB to fetch dynamic menus + CMS sections
 require_once __DIR__ . '/../init.php';
 require_once __DIR__ . '/includes/cms.php';
 
@@ -317,7 +317,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <script>
 (function() {
     const DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-    const API = '/zerdatime/website/api.php';
+    const API = '/spocspace/website/api.php';
     let authCache = null; // { email, password, resident }
 
     // ── Menus cache indexé par "date_repas" ──
@@ -927,7 +927,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         <h5 style="font-size:1rem;font-weight:700;margin:0 0 2px;display:flex;align-items:center;gap:8px"><i class="bi bi-feather" style="color:var(--ws-green)"></i> Rejoignez notre équipe</h5>
         <p style="font-size:.85rem;margin:0;color:var(--ws-text-muted)">Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
       </div>
-      <a href="/zerdatime/website/recrutement.php" class="ws-btn-outline-sm" style="flex-shrink:0">
+      <a href="/spocspace/website/recrutement.php" class="ws-btn-outline-sm" style="flex-shrink:0">
         <i class="bi bi-send"></i> Voir les offres
       </a>
     </div>
@@ -1114,7 +1114,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     <i class="bi bi-calendar-event"></i>
     <span class="ws-sw-label">Programme animation</span>
   </a>
-  <a href="/zerdatime/website/famille.php" class="ws-sw-btn" title="Espace Famille">
+  <a href="/spocspace/website/famille.php" class="ws-sw-btn" title="Espace Famille">
     <i class="bi bi-house-heart-fill"></i>
     <span class="ws-sw-label">Espace Famille</span>
   </a>

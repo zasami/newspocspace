@@ -22,7 +22,7 @@ function admin_get_dashboard_stats()
     $totalUsers = Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
     $totalAbsences = Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
     $totalDesirs = Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     $totalMessages = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
 
     $absencesParType = Db::fetchAll(

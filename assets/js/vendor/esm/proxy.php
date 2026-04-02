@@ -100,7 +100,7 @@ if ($content === false) {
 }
 
 // Rewrite imports to go through this proxy
-$proxyBase = '/zerdatime/assets/js/vendor/esm/proxy.php?m=';
+$proxyBase = '/spocspace/assets/js/vendor/esm/proxy.php?m=';
 
 $modulePattern = '(\/npm\/[^"\']+|prosemirror-[^"\']+|w3c-keyname[^"\']*|rope-sequence[^"\']*|orderedmap[^"\']*|crelt[^"\']*)';
 

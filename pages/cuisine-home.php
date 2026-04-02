@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . "/../init.php";
-if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 
 $today = date('Y-m-d');
 $dt = new DateTime($today);
@@ -136,7 +136,7 @@ $ssrData = [
           <h5 class="modal-title" id="chModalTitle">Menu</h5>
           <small class="text-muted" id="chModalSubtitle"></small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="flex:1;overflow-y:auto">
         <input type="hidden" id="chEditDate">
@@ -185,7 +185,7 @@ $ssrData = [
           <h5 class="modal-title"><i class="bi bi-arrow-repeat"></i> Réutiliser ce menu</h5>
           <small class="text-muted">Copier le menu vers un autre jour</small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="flex:1;overflow-y:auto">
         <div class="mb-2">
@@ -217,7 +217,7 @@ $ssrData = [
           <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Ajouter une commande</h5>
           <small class="text-muted" id="chCmdSubtitle">Saisir une commande pour un collaborateur</small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="flex:1;overflow-y:auto">
         <!-- Recherche collaborateur -->
@@ -231,12 +231,12 @@ $ssrData = [
         <div style="margin-bottom:1rem">
           <label class="form-label" style="font-weight:600">Choix du repas</label>
           <div style="display:flex;gap:0.5rem">
-            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--zt-teal);border-radius:10px;cursor:pointer;transition:all 0.15s;background:var(--zt-accent-bg)">
+            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-teal);border-radius:10px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
               <input type="radio" name="chCmdChoix" value="menu" checked style="display:none">
-              <i class="bi bi-egg-fried" style="font-size:1.2rem;color:var(--zt-orange)"></i>
+              <i class="bi bi-egg-fried" style="font-size:1.2rem;color:var(--ss-orange)"></i>
               <div><div style="font-weight:700;font-size:0.9rem">Menu du jour</div></div>
             </label>
-            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--zt-border);border-radius:10px;cursor:pointer;transition:all 0.15s">
+            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-border);border-radius:10px;cursor:pointer;transition:all 0.15s">
               <input type="radio" name="chCmdChoix" value="salade" style="display:none">
               <i class="bi bi-flower1" style="font-size:1.2rem;color:#16A34A"></i>
               <div><div style="font-weight:700;font-size:0.9rem">Salade</div></div>
@@ -254,14 +254,14 @@ $ssrData = [
         <div style="margin-bottom:1rem">
           <label class="form-label" style="font-weight:600">Mode de paiement</label>
           <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-teal);border-radius:8px;cursor:pointer;transition:all 0.15s;background:var(--zt-accent-bg)">
-              <input type="radio" name="chCmdPaiement" value="salaire" checked style="accent-color:var(--zt-teal)"> <i class="bi bi-wallet2"></i> Retenue salaire
+            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-teal);border-radius:8px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
+              <input type="radio" name="chCmdPaiement" value="salaire" checked style="accent-color:var(--ss-teal)"> <i class="bi bi-wallet2"></i> Retenue salaire
             </label>
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-              <input type="radio" name="chCmdPaiement" value="caisse" style="accent-color:var(--zt-teal)"> <i class="bi bi-cash-coin"></i> Cash caisse
+            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
+              <input type="radio" name="chCmdPaiement" value="caisse" style="accent-color:var(--ss-teal)"> <i class="bi bi-cash-coin"></i> Cash caisse
             </label>
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--zt-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-              <input type="radio" name="chCmdPaiement" value="carte" style="accent-color:var(--zt-teal)"> <i class="bi bi-credit-card"></i> Carte
+            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
+              <input type="radio" name="chCmdPaiement" value="carte" style="accent-color:var(--ss-teal)"> <i class="bi bi-credit-card"></i> Carte
             </label>
           </div>
         </div>
@@ -293,19 +293,19 @@ $ssrData = [
   gap: 0.75rem;
 }
 .ch-day-card {
-  background: var(--zt-bg-card);
-  border: 1px solid var(--zt-border-light);
-  border-radius: var(--zt-radius-md);
+  background: var(--ss-bg-card);
+  border: 1px solid var(--ss-border-light);
+  border-radius: var(--ss-radius-md);
   padding: 1rem;
-  box-shadow: var(--zt-shadow-sm);
+  box-shadow: var(--ss-shadow-sm);
   transition: box-shadow 0.15s, transform 0.15s;
   position: relative;
 }
-.ch-day-card:hover { box-shadow: var(--zt-shadow-md); transform: translateY(-1px); }
-.ch-day-card.is-today { border-left: 3px solid var(--zt-teal); }
+.ch-day-card:hover { box-shadow: var(--ss-shadow-md); transform: translateY(-1px); }
+.ch-day-card.is-today { border-left: 3px solid var(--ss-teal); }
 .ch-day-card--empty {
   background: transparent;
-  border: 2px dashed var(--zt-border);
+  border: 2px dashed var(--ss-border);
   box-shadow: none;
   display: flex;
   flex-direction: column;
@@ -316,13 +316,13 @@ $ssrData = [
   transition: border-color 0.15s, background 0.15s;
 }
 .ch-day-card--empty:hover {
-  border-color: var(--zt-teal);
-  background: var(--zt-accent-bg);
+  border-color: var(--ss-teal);
+  background: var(--ss-accent-bg);
 }
-.ch-day-card--empty:hover .ch-add-icon { color: var(--zt-teal); }
+.ch-day-card--empty:hover .ch-add-icon { color: var(--ss-teal); }
 .ch-add-icon {
   font-size: 2rem;
-  color: var(--zt-text-muted);
+  color: var(--ss-text-muted);
   transition: color 0.15s;
 }
 .ch-day-header {
@@ -337,11 +337,11 @@ $ssrData = [
 }
 .ch-day-date {
   font-size: 0.75rem;
-  color: var(--zt-text-muted);
+  color: var(--ss-text-muted);
 }
 .ch-repas-block {
   padding: 0.4rem 0;
-  border-top: 1px solid var(--zt-border-light);
+  border-top: 1px solid var(--ss-border-light);
 }
 .ch-repas-block:first-of-type { border-top: none; }
 .ch-repas-tag {
@@ -357,7 +357,7 @@ $ssrData = [
 .ch-repas-tag.midi { background: #fef3c7; color: #92400e; }
 .ch-repas-tag.soir { background: #1e293b; color: #e2e8f0; }
 .ch-menu-plat { font-weight: 600; font-size: 0.88rem; margin-bottom: 0.15rem; }
-.ch-menu-detail { font-size: 0.78rem; color: var(--zt-text-secondary); }
+.ch-menu-detail { font-size: 0.78rem; color: var(--ss-text-secondary); }
 .ch-menu-actions {
   display: flex;
   gap: 0.25rem;
@@ -368,9 +368,9 @@ $ssrData = [
   font-size: 0.68rem;
   padding: 0.1rem 0.45rem;
   border-radius: 10px;
-  background: var(--zt-accent-bg);
-  color: var(--zt-text-secondary);
-  border: 1px solid var(--zt-border-light);
+  background: var(--ss-accent-bg);
+  color: var(--ss-text-secondary);
+  border: 1px solid var(--ss-border-light);
 }
 </style>
-<script type="application/json" id="__zt_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>
+<script type="application/json" id="__ss_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>

@@ -1,6 +1,6 @@
 <?php
 /**
- * zerdaTime - Minimal Bootstrap (for install wizard)
+ * SpocSpace - Minimal Bootstrap (for install wizard)
  * Loads config + DB connection only — no session, auth, or security headers.
  */
 

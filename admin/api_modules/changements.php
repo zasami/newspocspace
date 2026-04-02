@@ -135,7 +135,7 @@ function admin_valider_changement()
 
         Db::exec(
             "UPDATE changements_horaire SET statut = 'valide', traite_par = ?, traite_at = NOW() WHERE id = ?",
-            [$_SESSION['zt_user']['id'], $id]
+            [$_SESSION['ss_user']['id'], $id]
         );
 
         // Notify both users
@@ -148,7 +148,7 @@ function admin_valider_changement()
     } else {
         Db::exec(
             "UPDATE changements_horaire SET statut = 'refuse', refuse_par = 'admin', raison_refus = ?, traite_par = ?, traite_at = NOW() WHERE id = ?",
-            [$raison ?: null, $_SESSION['zt_user']['id'], $id]
+            [$raison ?: null, $_SESSION['ss_user']['id'], $id]
         );
 
         Notification::create($ch['demandeur_id'], 'changement_refuse', 'Changement refusé',

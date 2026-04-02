@@ -48,7 +48,7 @@ function admin_create_offre()
             Sanitize::email($params['contact_email'] ?? '') ?: null,
             1,
             Sanitize::int($params['ordre'] ?? 0),
-            $_SESSION['zt_user']['id'],
+            $_SESSION['ss_user']['id'],
         ]
     );
 
@@ -363,7 +363,7 @@ function admin_create_formation()
             $params['max_participants'] ? (int) $params['max_participants'] : null,
             !empty($params['is_obligatoire']) ? 1 : 0,
             'planifiee',
-            $_SESSION['zt_user']['id'],
+            $_SESSION['ss_user']['id'],
         ]
     );
 

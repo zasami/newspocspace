@@ -1,19 +1,19 @@
 /**
- * AdminURL — Clean URL manager for zerdaTime Admin
+ * AdminURL — Clean URL manager for SpocSpace Admin
  * Centralizes all URL generation and parsing for the admin panel.
  *
  * Usage:
- *   AdminURL.page('desirs')              → /zerdatime/admin/desirs
- *   AdminURL.page('user-edit', uuid)     → /zerdatime/admin/user-edit/<uuid>
- *   AdminURL.page('sondages', null, {selected: id}) → /zerdatime/admin/sondages?selected=<id>
+ *   AdminURL.page('desirs')              → /spocspace/admin/desirs
+ *   AdminURL.page('user-edit', uuid)     → /spocspace/admin/user-edit/<uuid>
+ *   AdminURL.page('sondages', null, {selected: id}) → /spocspace/admin/sondages?selected=<id>
  *   AdminURL.currentPage()               → 'desirs'
  *   AdminURL.currentId()                 → '<uuid>' (from path or ?id=)
- *   AdminURL.go('pv')                    → navigates to /zerdatime/admin/pv
+ *   AdminURL.go('pv')                    → navigates to /spocspace/admin/pv
  */
 (function () {
     'use strict';
 
-    const BASE = '/zerdatime/admin';
+    const BASE = '/spocspace/admin';
 
     const AdminURL = {
 

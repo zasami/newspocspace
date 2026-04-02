@@ -106,7 +106,7 @@ function admin_create_pv()
     if (empty($titre)) bad_request('Titre requis');
 
     $id = Uuid::v4();
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $description = Sanitize::text($params['description'] ?? null);
     $moduleId = !empty($params['module_id']) ? Sanitize::text($params['module_id']) : null;
     $etageId = !empty($params['etage_id']) ? Sanitize::text($params['etage_id']) : null;
@@ -331,7 +331,7 @@ function admin_validate_pv()
     if (!$pv) not_found('PV non trouvé ou pas en attente de validation');
 
     // Vérifier que l'utilisateur a le rôle requis
-    $userRole = $_SESSION['zt_user']['role'] ?? '';
+    $userRole = $_SESSION['ss_user']['role'] ?? '';
     $requiredRole = $pv['validation_role'] ?? 'responsable';
     $allowedRoles = ['admin', 'direction'];
     if ($requiredRole === 'responsable') $allowedRoles[] = 'responsable';
@@ -339,7 +339,7 @@ function admin_validate_pv()
         forbidden('Vous n\'avez pas le rôle requis pour valider ce PV');
     }
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     Db::exec(
         "UPDATE pv SET statut = 'finalisé', validated_by = ?, validated_at = NOW() WHERE id = ?",
         [$userId, $pvId]
@@ -374,7 +374,7 @@ function admin_reject_pv()
     $pv = Db::fetch("SELECT * FROM pv WHERE id = ? AND statut = 'en_validation'", [$pvId]);
     if (!$pv) not_found('PV non trouvé ou pas en attente de validation');
 
-    $userRole = $_SESSION['zt_user']['role'] ?? '';
+    $userRole = $_SESSION['ss_user']['role'] ?? '';
     $requiredRole = $pv['validation_role'] ?? 'responsable';
     $allowedRoles = ['admin', 'direction'];
     if ($requiredRole === 'responsable') $allowedRoles[] = 'responsable';
@@ -383,7 +383,7 @@ function admin_reject_pv()
     }
 
     $motif = Sanitize::text($params['motif'] ?? '');
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     Db::exec("UPDATE pv SET statut = 'brouillon', validated_by = NULL, validated_at = NULL WHERE id = ?", [$pvId]);
 
@@ -421,7 +421,7 @@ function admin_send_pv_email()
         bad_request('Destinataires et sujet requis');
     }
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $emailId = Uuid::v4();
     $threadId = $emailId;
 
@@ -586,7 +586,7 @@ function admin_upload_pv_audio()
     if (!empty($pv['audio_path'])) {
         $oldPath = $storageDir . basename($pv['audio_path']);
         if (file_exists($oldPath) && !unlink($oldPath)) {
-            error_log('zerdaTime: impossible de supprimer ancien audio PV: ' . $oldPath);
+            error_log('SpocSpace: impossible de supprimer ancien audio PV: ' . $oldPath);
         }
     }
 
@@ -868,7 +868,7 @@ function admin_structure_pv_external()
         Db::exec(
             "INSERT INTO ia_usage_log (id, admin_id, mois_annee, provider, model, tokens_in, tokens_out, cost_usd, nb_assignations, nb_conflicts, duration_ms, created_at)
              VALUES (?, ?, 'pv', ?, ?, ?, ?, ?, 0, 0, 0, NOW())",
-            [Uuid::v4(), $_SESSION['zt_user']['id'], $aiProvider, $aiModel, $iaTokensIn, $iaTokensOut, $iaCostUsd]
+            [Uuid::v4(), $_SESSION['ss_user']['id'], $aiProvider, $aiModel, $iaTokensIn, $iaTokensOut, $iaCostUsd]
         );
     } catch (\Exception $e) {
         // Non-critical

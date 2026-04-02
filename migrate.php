@@ -4,7 +4,7 @@
  */
 require_once __DIR__ . '/init.php';
 
-echo "=== zerdaTime Database Migrations ===\n\n";
+echo "=== SpocSpace Database Migrations ===\n\n";
 
 try {
     $pdo = Db::connect();

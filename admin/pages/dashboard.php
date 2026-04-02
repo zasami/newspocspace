@@ -3,7 +3,7 @@
 $totalUsers    = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
 $pendingAbs    = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
 $pendingDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
-$currentUserId = $_SESSION['zt_user']['id'] ?? '';
+$currentUserId = $_SESSION['ss_user']['id'] ?? '';
 $unreadMsgs    = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$currentUserId]);
 
 $recentAbsences = Db::fetchAll(
@@ -15,15 +15,15 @@ $recentAbsences = Db::fetchAll(
 );
 
 $absTypeCls = [
-    'vacances'   => 'badge-zt-type-vacances',
-    'maladie'    => 'badge-zt-type-maladie',
-    'accident'   => 'badge-zt-type-accident',
-    'formation'  => 'badge-zt-type-formation',
+    'vacances'   => 'badge-ss-type-vacances',
+    'maladie'    => 'badge-ss-type-maladie',
+    'accident'   => 'badge-ss-type-accident',
+    'formation'  => 'badge-ss-type-formation',
 ];
 $absStatusCls = [
-    'valide'     => 'badge-zt-valid',
-    'refuse'     => 'badge-zt-refuse',
-    'en_attente' => 'badge-zt-attente',
+    'valide'     => 'badge-ss-valid',
+    'refuse'     => 'badge-ss-refuse',
+    'en_attente' => 'badge-ss-attente',
 ];
 $absStatusLbl = [
     'valide'     => 'Validé',
@@ -39,14 +39,14 @@ $absStatusLbl = [
 .btn-desir-valider:hover { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
 .btn-desir-refuser:hover { background: #E2B8AE; color: #7B3B2C; border-color: #E2B8AE; }
 
-.badge-zt-valid          { background: #bcd2cb !important; color: #2d4a43 !important; }
-.badge-zt-refuse         { background: #E2B8AE !important; color: #7B3B2C !important; }
-.badge-zt-attente        { background: #D4C4A8 !important; color: #6B5B3E !important; }
-.badge-zt-type-vacances  { background: #B8C9D4; color: #3B4F6B; }
-.badge-zt-type-maladie   { background: #E2B8AE; color: #7B3B2C; }
-.badge-zt-type-accident  { background: #D4C4A8; color: #6B5B3E; }
-.badge-zt-type-formation { background: #D0C4D8; color: #5B4B6B; }
-.badge-zt-type-default   { background: #B8C9D4; color: #3B4F6B; }
+.badge-ss-valid          { background: #bcd2cb !important; color: #2d4a43 !important; }
+.badge-ss-refuse         { background: #E2B8AE !important; color: #7B3B2C !important; }
+.badge-ss-attente        { background: #D4C4A8 !important; color: #6B5B3E !important; }
+.badge-ss-type-vacances  { background: #B8C9D4; color: #3B4F6B; }
+.badge-ss-type-maladie   { background: #E2B8AE; color: #7B3B2C; }
+.badge-ss-type-accident  { background: #D4C4A8; color: #6B5B3E; }
+.badge-ss-type-formation { background: #D0C4D8; color: #5B4B6B; }
+.badge-ss-type-default   { background: #B8C9D4; color: #3B4F6B; }
 
 .dash-avatar          { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
 .dash-avatar-initials {
@@ -121,8 +121,8 @@ $absStatusLbl = [
         <?php else: ?>
         <?php foreach ($recentAbsences as $a):
             $initials = mb_strtoupper(mb_substr($a['prenom'] ?? '', 0, 1) . mb_substr($a['nom'] ?? '', 0, 1));
-            $tc = $absTypeCls[$a['type']] ?? 'badge-zt-type-default';
-            $sc = $absStatusCls[$a['statut']] ?? 'badge-zt-attente';
+            $tc = $absTypeCls[$a['type']] ?? 'badge-ss-type-default';
+            $sc = $absStatusCls[$a['statut']] ?? 'badge-ss-attente';
             $sl = $absStatusLbl[$a['statut']] ?? h($a['statut']);
         ?>
         <tr>

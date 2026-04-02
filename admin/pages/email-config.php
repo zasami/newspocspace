@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../core/Mailer.php';
 $providers = Mailer::getProviders();
-$userId = $_SESSION['zt_user']['id'] ?? '';
+$userId = $_SESSION['ss_user']['id'] ?? '';
 $existingConfig = Db::fetch(
     "SELECT id, provider, email_address, display_name, imap_host, imap_port, imap_encryption,
             smtp_host, smtp_port, smtp_encryption, username, signature, is_active, last_sync

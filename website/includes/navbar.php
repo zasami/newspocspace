@@ -8,9 +8,9 @@ function wsNavActive($page) {
 }
 function wsNavHref($target) {
     global $wsIsHome;
-    // For anchor links, prefix with /zerdatime/website/ if not on home
+    // For anchor links, prefix with /spocspace/website/ if not on home
     if (str_starts_with($target, '#')) {
-        return $wsIsHome ? $target : '/zerdatime/website/' . $target;
+        return $wsIsHome ? $target : '/spocspace/website/' . $target;
     }
     return $target;
 }
@@ -18,8 +18,8 @@ function wsNavHref($target) {
 <nav class="ws-nav" id="wsNav">
   <div class="container">
     <div class="ws-nav-inner">
-      <a href="/zerdatime/website/" class="ws-logo">
-        <img src="/zerdatime/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-logo-img">
+      <a href="/spocspace/website/" class="ws-logo">
+        <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-logo-img">
       </a>
       <button class="ws-nav-toggle" id="wsNavToggle" aria-label="Menu">
         <i class="bi bi-list"></i>
@@ -29,11 +29,11 @@ function wsNavHref($target) {
         <li><a href="<?= wsNavHref('#about') ?>">Notre mission</a></li>
         <li><a href="<?= wsNavHref('#services') ?>">Nos soins</a></li>
         <li><a href="<?= wsNavHref('#team') ?>">Équipe</a></li>
-        <li><a href="/zerdatime/website/admissions.php" class="<?= wsNavActive('admissions') ?>">Admissions</a></li>
-        <li><a href="/zerdatime/website/recrutement.php" class="<?= wsNavActive('recrutement') ?>">Emploi</a></li>
-        <li><a href="/zerdatime/website/famille.php" class="<?= wsNavActive('famille') ?>">Famille</a></li>
+        <li><a href="/spocspace/website/admissions.php" class="<?= wsNavActive('admissions') ?>">Admissions</a></li>
+        <li><a href="/spocspace/website/recrutement.php" class="<?= wsNavActive('recrutement') ?>">Emploi</a></li>
+        <li><a href="/spocspace/website/famille.php" class="<?= wsNavActive('famille') ?>">Famille</a></li>
         <li><a href="<?= wsNavHref('#contact') ?>">Contact</a></li>
-        <li><a href="/zerdatime/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>
+        <li><a href="/spocspace/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Collaborateur</a></li>
       </ul>
     </div>
   </div>

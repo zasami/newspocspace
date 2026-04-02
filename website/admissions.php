@@ -11,9 +11,9 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <meta name="description" content="Informations sur les admissions, documents requis, conditions d'entrée et questions fréquentes sur l'EMS La Terrassière SA à Genève.">
 <meta name="robots" content="index, follow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap.min.css">
-<link rel="stylesheet" href="/zerdatime/assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/zerdatime/website/assets/css/website.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap.min.css">
+<link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/spocspace/website/assets/css/website.css">
 <?php include __DIR__ . '/includes/footer-styles.php'; ?>
 <style>
 :root {
@@ -145,7 +145,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
       <div class="adm-faq-item">
         <h6><i class="bi bi-building"></i> Puis-je visiter l'etablissement ?</h6>
-        <p>Certainement ! Vous trouverez nos coordonnees en cliquant ici : <a href="/zerdatime/website/#contact">Contactez-nous</a></p>
+        <p>Certainement ! Vous trouverez nos coordonnees en cliquant ici : <a href="/spocspace/website/#contact">Contactez-nous</a></p>
       </div>
 
       <div class="adm-faq-item">

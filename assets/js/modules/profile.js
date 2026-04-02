@@ -5,7 +5,7 @@ import { apiPost, toast, escapeHtml } from '../helpers.js';
 
 export function init() {
     // Profile data injected by PHP
-    const user = window.__ZT_PAGE_DATA__?.user;
+    const user = window.__SS_PAGE_DATA__?.user;
     if (user) {
         renderProfileHero(user);
         renderProfile(user);
@@ -85,7 +85,7 @@ export function init() {
             if (banner) {
                 banner.remove();
                 document.body.style.paddingTop = '';
-                window.__ZT__.mustChangePassword = false;
+                window.__SS__.mustChangePassword = false;
             }
         } else {
             toast(res.message || 'Erreur lors de la sauvegarde', 'error');
@@ -100,17 +100,17 @@ function renderProfile(user) {
     if (!container) return;
 
     const modules = (user.modules || []).map(m =>
-        `<span style="display:inline-block;background:var(--zt-accent-bg);color:var(--zt-teal);padding:2px 10px;border-radius:12px;font-size:.8rem;font-weight:500;border:1px solid var(--zt-border)">${escapeHtml(m.nom)}</span>`
+        `<span style="display:inline-block;background:var(--ss-accent-bg);color:var(--ss-teal);padding:2px 10px;border-radius:12px;font-size:.8rem;font-weight:500;border:1px solid var(--ss-border)">${escapeHtml(m.nom)}</span>`
     ).join(' ') || '<span class="text-muted">—</span>';
 
     const row = (icon, label, value) => `
-        <div style="display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--zt-border-light)">
-            <div style="width:32px;height:32px;border-radius:8px;background:var(--zt-accent-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i class="bi ${icon}" style="color:var(--zt-teal);font-size:.95rem"></i>
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--ss-border-light)">
+            <div style="width:32px;height:32px;border-radius:8px;background:var(--ss-accent-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="bi ${icon}" style="color:var(--ss-teal);font-size:.95rem"></i>
             </div>
             <div style="flex:1;min-width:0">
-                <div style="font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--zt-text-muted);margin-bottom:2px">${label}</div>
-                <div style="font-size:.92rem;color:var(--zt-text)">${value}</div>
+                <div style="font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ss-text-muted);margin-bottom:2px">${label}</div>
+                <div style="font-size:.92rem;color:var(--ss-text)">${value}</div>
             </div>
         </div>`;
 
@@ -120,7 +120,7 @@ function renderProfile(user) {
             ${row('bi-telephone', 'Téléphone', escapeHtml(user.telephone || '—'))}
             ${row('bi-briefcase', 'Fonction', escapeHtml(user.fonction_nom || user.role || '—'))}
             ${row('bi-file-text', 'Type de contrat', escapeHtml(user.type_contrat || '—'))}
-            ${row('bi-speedometer2', 'Taux d\'activité', `<span style="font-weight:600;color:var(--zt-teal)">${Math.round(user.taux)}%</span>`)}
+            ${row('bi-speedometer2', 'Taux d\'activité', `<span style="font-weight:600;color:var(--ss-teal)">${Math.round(user.taux)}%</span>`)}
             ${row('bi-building', 'Module(s)', `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${modules}</div>`)}
             ${row('bi-sun', 'Solde vacances', `<span style="font-weight:600">${user.solde_vacances || 0}</span> jours`)}
         </div>
@@ -135,12 +135,12 @@ function renderProfileHero(user) {
     const roleColors = {
         admin: '#dc3545', direction: '#6f42c1', responsable: '#0d6efd', collaborateur: '#198754'
     };
-    const roleColor = roleColors[user.role] || 'var(--zt-teal)';
+    const roleColor = roleColors[user.role] || 'var(--ss-teal)';
     const roleLabel = { admin: 'Administrateur', direction: 'Direction', responsable: 'Responsable', collaborateur: 'Collaborateur' }[user.role] || user.role;
 
     const avatarHtml = user.photo
         ? `<img src="${escapeHtml(user.photo)}?t=${Date.now()}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer" id="profileAvatarImg" title="Cliquer pour changer">`
-        : `<div style="width:72px;height:72px;border-radius:50%;background:var(--zt-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;position:relative" id="profileAvatarImg" title="Cliquer pour ajouter une photo">${initials}<i class="bi bi-camera-fill" style="position:absolute;bottom:0;right:0;background:#fff;border-radius:50%;padding:3px;font-size:0.65rem;color:var(--zt-teal);box-shadow:0 1px 4px rgba(0,0,0,.2)"></i></div>`;
+        : `<div style="width:72px;height:72px;border-radius:50%;background:var(--ss-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;position:relative" id="profileAvatarImg" title="Cliquer pour ajouter une photo">${initials}<i class="bi bi-camera-fill" style="position:absolute;bottom:0;right:0;background:#fff;border-radius:50%;padding:3px;font-size:0.65rem;color:var(--ss-teal);box-shadow:0 1px 4px rgba(0,0,0,.2)"></i></div>`;
 
     hero.innerHTML = `
         <div class="card-body" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;padding:1.5rem 2rem">
@@ -152,8 +152,8 @@ function renderProfileHero(user) {
                     <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;background:${roleColor}18;color:${roleColor};border:1px solid ${roleColor}40">
                         <i class="bi bi-shield-check"></i> ${roleLabel}
                     </span>
-                    ${user.fonction_nom ? `<span style="font-size:.85rem;color:var(--zt-text-secondary)"><i class="bi bi-person-badge me-1"></i>${escapeHtml(user.fonction_nom)}</span>` : ''}
-                    <span style="font-size:.85rem;color:var(--zt-text-secondary)"><i class="bi bi-speedometer2 me-1"></i>${Math.round(user.taux)}%</span>
+                    ${user.fonction_nom ? `<span style="font-size:.85rem;color:var(--ss-text-secondary)"><i class="bi bi-person-badge me-1"></i>${escapeHtml(user.fonction_nom)}</span>` : ''}
+                    <span style="font-size:.85rem;color:var(--ss-text-secondary)"><i class="bi bi-speedometer2 me-1"></i>${Math.round(user.taux)}%</span>
                 </div>
             </div>
         </div>
@@ -172,9 +172,9 @@ function renderProfileHero(user) {
         fd.append('avatar', file);
         fd.append('action', 'upload_avatar');
         try {
-            const res = await fetch('/zerdatime/api.php', {
+            const res = await fetch('/spocspace/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__SS__?.csrfToken || '' },
                 body: fd
             });
             const json = await res.json();
@@ -187,7 +187,7 @@ function renderProfileHero(user) {
                     img.outerHTML = `<img src="${json.photo_url}?t=${Date.now()}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)" id="profileAvatarImg">`;
                 }
                 // Update session
-                if (window.__ZT__?.user) window.__ZT__.user.photo = json.photo_url;
+                if (window.__SS__?.user) window.__SS__.user.photo = json.photo_url;
                 // Update topbar avatar
                 const topbar = document.getElementById('topbarAvatar');
                 if (topbar) {

@@ -258,7 +258,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
           <div class="mb-3">
             <h6 class="fw-medium mb-2">Installation requise :</h6>
             <div class="badge mb-2 px-3 py-2 ia-badge-lg ia-bg-beige ia-text-beige">
-              <i class="bi bi-usb-drive me-2"></i> Clé USB ZerdaTime IA — exécution unique par poste
+              <i class="bi bi-usb-drive me-2"></i> Clé USB SpocSpace IA — exécution unique par poste
             </div>
             <p class="small text-muted mb-3">Chaque ordinateur qui fera de la transcription doit exécuter l'installation une seule fois depuis la clé USB fournie. Elle installe Vosk (transcription), Ollama + 3 modèles IA (structuration) et crée un raccourci Bureau.</p>
 
@@ -268,7 +268,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
               <div class="d-flex flex-column gap-1 ia-fs-md">
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge rounded-pill ia-badge-pill ia-bg-green ia-text-green">ZIP</span>
-                  <code>ZerdaTime-IA-Install.zip</code> <span class="text-muted">— ~11 Go (tout inclus)</span>
+                  <code>SpocSpace-IA-Install.zip</code> <span class="text-muted">— ~11 Go (tout inclus)</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge rounded-pill ia-badge-pill ia-bg-beige ia-text-beige">BAT</span>
@@ -276,7 +276,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge rounded-pill ia-badge-pill ia-bg-violet ia-text-violet">BAT</span>
-                  <code>start-zerdatime-ia.bat</code> <span class="text-muted">— lanceur serveurs (copié auto)</span>
+                  <code>start-spocspace-ia.bat</code> <span class="text-muted">— lanceur serveurs (copié auto)</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge rounded-pill ia-badge-pill ia-bg-red ia-text-red">BAT</span>
@@ -289,9 +289,9 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             <div class="ia-box ia-box-neutral mb-3">
               <p class="small fw-semibold mb-2 ia-heading-dark"><i class="bi bi-play-circle me-1"></i> Installation (une seule fois par poste) :</p>
               <ol class="small text-muted ps-3 mb-0 ia-fs-md">
-                <li class="mb-1">Branchez la <strong>clé USB ZerdaTime IA</strong> sur le poste</li>
+                <li class="mb-1">Branchez la <strong>clé USB SpocSpace IA</strong> sur le poste</li>
                 <li class="mb-1">Double-cliquez sur <code>install.bat</code> directement depuis la clé</li>
-                <li>Attendez la fin — un raccourci <strong>« ZerdaTime IA »</strong> apparaît sur le Bureau</li>
+                <li>Attendez la fin — un raccourci <strong>« SpocSpace IA »</strong> apparaît sur le Bureau</li>
               </ol>
             </div>
 
@@ -299,9 +299,9 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             <div class="ia-box ia-box-green mb-3">
               <p class="small fw-semibold mb-2 ia-text-green"><i class="bi bi-arrow-repeat me-1"></i> Utilisation quotidienne :</p>
               <ol class="small text-muted ps-3 mb-0 ia-fs-md">
-                <li class="mb-1">Double-cliquez sur le raccourci <strong>« ZerdaTime IA »</strong> sur le Bureau</li>
+                <li class="mb-1">Double-cliquez sur le raccourci <strong>« SpocSpace IA »</strong> sur le Bureau</li>
                 <li class="mb-1">Les serveurs Vosk + Ollama démarrent automatiquement</li>
-                <li>Ouvrez ZerdaTime dans le navigateur et commencez la dictée</li>
+                <li>Ouvrez SpocSpace dans le navigateur et commencez la dictée</li>
               </ol>
               <p class="small text-muted mb-0 mt-2 ia-fs-sm"><i class="bi bi-info-circle me-1"></i> La clé USB n'est <strong>plus nécessaire</strong> après l'installation. Conservez-la pour installer d'autres postes ou réinstaller.</p>
             </div>
@@ -311,7 +311,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
               <p class="small fw-semibold mb-2 ia-text-red"><i class="bi bi-trash3 me-1"></i> Désinstallation complète :</p>
               <p class="small text-muted mb-2 ia-fs-md">Supprime Ollama, les 3 modèles IA, Vosk, Python et les raccourcis Bureau.</p>
               <ol class="small text-muted ps-3 mb-2 ia-fs-md">
-                <li class="mb-1">Branchez la clé USB ou <a href="/zerdatime/whisper-local/download.php?file=uninstall.bat" class="fw-medium ia-text-red">téléchargez uninstall.bat</a></li>
+                <li class="mb-1">Branchez la clé USB ou <a href="/spocspace/whisper-local/download.php?file=uninstall.bat" class="fw-medium ia-text-red">téléchargez uninstall.bat</a></li>
                 <li>Double-cliquez sur <code>uninstall.bat</code> et confirmez avec <strong>O</strong></li>
               </ol>
               <p class="small text-muted mb-0 ia-fs-sm">Pour réinstaller après désinstallation, relancez <code>install.bat</code> depuis la clé USB.</p>
@@ -320,8 +320,8 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             <!-- Dépannage -->
             <div class="ia-box-warn-alt">
               <p class="small fw-semibold mb-2 ia-text-beige-dark"><i class="bi bi-wrench me-1"></i> Dépannage — Le raccourci Bureau ne démarre pas ?</p>
-              <p class="small text-muted mb-2 ia-fs-md">Téléchargez ce fichier et copiez-le dans <code>%LOCALAPPDATA%\ZerdaTimeWhisper\</code> pour remplacer l'ancien :</p>
-              <a href="/zerdatime/whisper-local/download.php?file=start-zerdatime-ia.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> start-zerdatime-ia.bat</a>
+              <p class="small text-muted mb-2 ia-fs-md">Téléchargez ce fichier et copiez-le dans <code>%LOCALAPPDATA%\SpocSpaceWhisper\</code> pour remplacer l'ancien :</p>
+              <a href="/spocspace/whisper-local/download.php?file=start-spocspace-ia.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> start-spocspace-ia.bat</a>
             </div>
 
             <!-- Téléchargements admin -->
@@ -337,19 +337,19 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>ZerdaTime-IA-Install.zip</strong><br><small class="text-muted">Scripts, Ollama, 3 modèles IA, Vosk, Python, ffmpeg</small></td>
+                    <td><strong>SpocSpace-IA-Install.zip</strong><br><small class="text-muted">Scripts, Ollama, 3 modèles IA, Vosk, Python, ffmpeg</small></td>
                     <td class="text-end text-muted">~11 Go</td>
-                    <td class="text-center"><a href="/zerdatime/whisper-local/download.php?file=ZerdaTime-IA-Install.zip" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-green"><i class="bi bi-download"></i> ZIP</a></td>
+                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=SpocSpace-IA-Install.zip" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-green"><i class="bi bi-download"></i> ZIP</a></td>
                   </tr>
                   <tr>
                     <td><strong>install.bat</strong><br><small class="text-muted">Lanceur d'installation</small></td>
                     <td class="text-end text-muted">~1 Ko</td>
-                    <td class="text-center"><a href="/zerdatime/whisper-local/download.php?file=install.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-terminal"></i> BAT</a></td>
+                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=install.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-terminal"></i> BAT</a></td>
                   </tr>
                   <tr>
                     <td><strong>uninstall.bat</strong><br><small class="text-muted">Désinstallation complète</small></td>
                     <td class="text-end text-muted">~1 Ko</td>
-                    <td class="text-center"><a href="/zerdatime/whisper-local/download.php?file=uninstall.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-red"><i class="bi bi-trash3"></i> BAT</a></td>
+                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=uninstall.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-red"><i class="bi bi-trash3"></i> BAT</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -380,7 +380,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
               <code class="ia-code">localhost:59876</code>
               <span class="badge ia-badge-sm-violet">Ollama</span>
             </div>
-            <p class="small text-muted mb-0">Les serveurs doivent être lancés avant de commencer une dictée. Le raccourci « ZerdaTime IA » lance les deux ensemble.</p>
+            <p class="small text-muted mb-0">Les serveurs doivent être lancés avant de commencer une dictée. Le raccourci « SpocSpace IA » lance les deux ensemble.</p>
           </div>
         </div>
       </div>
@@ -517,8 +517,8 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
         <div class="card-body small text-muted">
           <h6 class="fw-semibold text-dark mb-2">Comment ça marche ?</h6>
           <ol class="ps-3 mb-3">
-            <li class="mb-2">L'administrateur prépare une <strong>clé USB ZerdaTime IA</strong> avec le ZIP extrait + <code>install.bat</code> + <code>uninstall.bat</code>.</li>
-            <li class="mb-2">Sur chaque poste, brancher la clé et double-cliquer sur <code>install.bat</code> — tout s'installe automatiquement (Python, ffmpeg, Ollama, 3 modèles IA, Vosk). Un raccourci <strong>« ZerdaTime IA »</strong> est créé sur le Bureau.</li>
+            <li class="mb-2">L'administrateur prépare une <strong>clé USB SpocSpace IA</strong> avec le ZIP extrait + <code>install.bat</code> + <code>uninstall.bat</code>.</li>
+            <li class="mb-2">Sur chaque poste, brancher la clé et double-cliquer sur <code>install.bat</code> — tout s'installe automatiquement (Python, ffmpeg, Ollama, 3 modèles IA, Vosk). Un raccourci <strong>« SpocSpace IA »</strong> est créé sur le Bureau.</li>
             <li class="mb-2">Retirer la clé USB — elle n'est plus nécessaire. La conserver pour les prochaines installations.</li>
             <li class="mb-2">Avant de dicter, l'utilisateur double-clique sur le raccourci Bureau — les deux serveurs démarrent automatiquement.</li>
             <li class="mb-2">L'enregistrement capture l'audio, Vosk transcrit en temps réel, le texte s'affiche dans l'éditeur.</li>
@@ -541,7 +541,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             <div class="mb-1"><code>📁 Clé USB/</code></div>
             <div class="mb-1 ps-3"><code>install.bat</code> — Lance l'installation</div>
             <div class="mb-1 ps-3"><code>uninstall.bat</code> — Désinstallation complète</div>
-            <div class="mb-1 ps-3"><code>📁 ZerdaTime-IA/</code> — Dossier extrait du ZIP</div>
+            <div class="mb-1 ps-3"><code>📁 SpocSpace-IA/</code> — Dossier extrait du ZIP</div>
             <div class="mb-1 ps-4"><code>install-whisper.ps1</code> — Script PowerShell</div>
             <div class="mb-1 ps-4"><code>whisper_server.py</code> — Serveur Vosk</div>
             <div class="mb-1 ps-4"><code>OllamaSetup.exe</code> — Installeur Ollama</div>
@@ -553,7 +553,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
           <hr class="my-2">
           <div class="text-muted ia-usb-tree">
             <div class="fw-medium mb-1 ia-heading-dark">Après installation sur le poste :</div>
-            <div><code>%LOCALAPPDATA%\ZerdaTimeWhisper\</code> — Tout est copié ici</div>
+            <div><code>%LOCALAPPDATA%\SpocSpaceWhisper\</code> — Tout est copié ici</div>
           </div>
         </div>
       </div>
@@ -2144,7 +2144,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
 
         const online = await checkOllamaStatus();
         if (!online) {
-            showToast('Ollama hors ligne. Lancez le raccourci « ZerdaTime IA » sur votre Bureau.', 'error');
+            showToast('Ollama hors ligne. Lancez le raccourci « SpocSpace IA » sur votre Bureau.', 'error');
             return;
         }
 

@@ -372,7 +372,7 @@ async function uploadSingle() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Upload...';
 
     try {
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,
@@ -413,7 +413,7 @@ async function uploadBulk() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Import...';
 
     try {
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,
@@ -443,7 +443,7 @@ async function uploadBulk() {
 }
 
 function viewFiche(id) {
-    window.open(`/zerdatime/admin/api.php?action=admin_serve_fiche_salaire&id=${id}`, '_blank');
+    window.open(`/spocspace/admin/api.php?action=admin_serve_fiche_salaire&id=${id}`, '_blank');
 }
 
 async function deleteFiche(id) {

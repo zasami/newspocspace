@@ -9,7 +9,7 @@
  */
 require_once __DIR__ . '/../init.php';
 
-if (empty($_SESSION['zt_user']) || !in_array($_SESSION['zt_user']['role'], ['admin', 'direction', 'responsable'])) {
+if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
     http_response_code(403);
     exit('Accès refusé');
 }

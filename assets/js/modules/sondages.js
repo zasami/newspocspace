@@ -9,7 +9,7 @@ function on(el, ev, fn, o) { if (!el) return; el.addEventListener(ev, fn, o); _c
 let selectedId = null;
 
 export async function init() {
-    const ssrList = window.__ZT_PAGE_DATA__?.list || [];
+    const ssrList = window.__SS_PAGE_DATA__?.list || [];
     renderList(ssrList);
     if (!selectedId && ssrList.length > 0) {
         selectSondage(ssrList[0].id);

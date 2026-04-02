@@ -1,8 +1,8 @@
 /**
- * zerdaTime — IndexedDB local database
+ * SpocSpace — IndexedDB local database
  * Cache temporaire de travail — la source de verite est le serveur
  */
-const DB_NAME = 'zt_local';
+const DB_NAME = 'ss_local';
 const DB_VERSION = 1;
 
 const STORES = {

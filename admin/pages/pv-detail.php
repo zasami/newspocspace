@@ -23,7 +23,7 @@ if ($pvDetailId) {
 }
 ?>
 <!-- PV Detail Page -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <style>
 .pv-editor-card { display: flex; flex-direction: column; overflow: hidden; }
@@ -781,7 +781,7 @@ let pvData = null;
 const ssrPvData = <?= $pvDetailData ? json_encode($pvDetailData, JSON_HEX_TAG | JSON_HEX_APOS) : 'null' ?>;
 
 async function initPvdetailPage() {
-  editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+  editorModule = await import('/spocspace/assets/js/rich-editor.js');
 
   pvId = AdminURL.currentId();
   if (!pvId) {
@@ -798,9 +798,9 @@ async function initPvdetailPage() {
   pvData = ssrPvData;
 
   // Si contenu sauvegardé dans localStorage (rechargement pendant blur), le restaurer
-  const lsSaved = localStorage.getItem('zt_pv_blur_saved');
+  const lsSaved = localStorage.getItem('ss_pv_blur_saved');
   const editorContent = lsSaved || pvData.contenu || pvData.transcription_brute || '';
-  if (lsSaved) localStorage.removeItem('zt_pv_blur_saved');
+  if (lsSaved) localStorage.removeItem('ss_pv_blur_saved');
   editorInstance = await editorModule.createEditor(document.getElementById('pvEditorContainer'), {
     placeholder: 'Contenu du PV...',
     content: editorContent,
@@ -833,7 +833,7 @@ async function initPvdetailPage() {
     var audioCard = document.getElementById('cardAudioOriginal');
     var audioPlayer = document.getElementById('pvAudioPlayer');
     audioCard.classList.remove('pv-hidden');
-    audioPlayer.src = '/zerdatime/admin/api.php?action=admin_serve_pv_audio&id=' + pvId + '&t=' + Date.now();
+    audioPlayer.src = '/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId + '&t=' + Date.now();
   }
 
   // Button handlers
@@ -1165,7 +1165,7 @@ const _twNodes = [
 ];
 let _twTimer = null;
 let _twIdx = 0;
-const _LS_KEY = 'zt_pv_blur_saved';
+const _LS_KEY = 'ss_pv_blur_saved';
 
 function _startEditorBlur() {
     const container = document.getElementById('pvEditorContainer');
@@ -1262,7 +1262,7 @@ async function structureWithIA() {
     }
 
     if (!ollamaOnline) {
-        toast('Mistral hors ligne — lancez le raccourci « ZerdaTime IA » sur votre Bureau.', 'error');
+        toast('Mistral hors ligne — lancez le raccourci « SpocSpace IA » sur votre Bureau.', 'error');
         return;
     }
 

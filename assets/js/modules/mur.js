@@ -16,7 +16,7 @@ const CAT_LABELS = { general: 'Général', info: 'Info', evenement: 'Événement
 const CAT_COLORS = { general: '#bcd2cb', info: '#B8C9D4', evenement: '#D4C4A8', social: '#D0C4D8' };
 
 export async function init() {
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     if (!user) return;
 
     const [cfgRes, statsRes] = await Promise.all([
@@ -310,11 +310,11 @@ async function submitPost() {
         fd.append('action', 'upload_mur_media');
         fd.append('post_id', res.id);
         pendingFiles.forEach((f, i) => fd.append(`file_${i}`, f));
-        if (window.__ZT__?.csrfToken) fd.append('_csrf', window.__ZT__.csrfToken);
+        if (window.__SS__?.csrfToken) fd.append('_csrf', window.__SS__.csrfToken);
 
-        await fetch('/zerdatime/api.php', {
+        await fetch('/spocspace/api.php', {
             method: 'POST',
-            headers: { 'X-CSRF-Token': window.__ZT__?.csrfToken || '' },
+            headers: { 'X-CSRF-Token': window.__SS__?.csrfToken || '' },
             body: fd,
         });
     }
@@ -371,7 +371,7 @@ async function loadFeed(append) {
 // POST RENDERING
 // ══════════════════════════════════════
 function renderPost(post) {
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     const isOwn = user?.id === post.user_id;
     const initials = ((post.prenom || '')[0] || '') + ((post.nom || '')[0] || '');
     const displayName = escapeHtml((post.prenom || '') + ' ' + (post.nom || '')).trim() || 'Anonyme';
@@ -601,7 +601,7 @@ async function loadCommentsInline(postId, listEl) {
     if (!res.success) { listEl.innerHTML = ''; return; }
 
     const comments = res.comments || [];
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     listEl.innerHTML = comments.map(c => {
         const initials = ((c.prenom || '')[0] || '') + ((c.nom || '')[0] || '');
         const name = escapeHtml(((c.prenom || '') + ' ' + (c.nom || '')).trim() || 'Anonyme');
@@ -705,7 +705,7 @@ async function loadComments(postId, container) {
     if (!res.success) { container.innerHTML = '<div class="mur-comment-error">Erreur</div>'; return; }
 
     const comments = res.comments || [];
-    const user = window.__ZT__?.user;
+    const user = window.__SS__?.user;
     const allowAnon = wallConfig.allow_anonymous_comments === '1';
 
     let html = '<div class="mur-comment-list">' + comments.map(c => {

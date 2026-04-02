@@ -1,29 +1,29 @@
 /**
- * zerdaTime — Service Worker
+ * SpocSpace — Service Worker
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'zt-v3';
+const CACHE_VERSION = 'ss-v3';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
-const SYNC_QUEUE = 'zt-sync-queue';
+const SYNC_QUEUE = 'ss-sync-queue';
 
 // Static assets to pre-cache on install (employee SPA)
 const PRECACHE_URLS = [
-  '/zerdatime/',
-  '/zerdatime/login',
-  '/zerdatime/logo.png',
-  '/zerdatime/manifest.json',
-  '/zerdatime/assets/css/vendor/bootstrap.min.css',
-  '/zerdatime/assets/css/vendor/bootstrap-icons.min.css',
-  '/zerdatime/assets/css/zerdatime.css',
-  '/zerdatime/assets/js/vendor/bootstrap.bundle.min.js',
-  '/zerdatime/assets/js/app.js',
-  '/zerdatime/assets/js/helpers.js',
-  '/zerdatime/assets/js/zt-db.js',
-  '/zerdatime/assets/js/zerda-select.js',
-  '/zerdatime/assets/icons/icon-192x192.png',
+  '/spocspace/',
+  '/spocspace/login',
+  '/spocspace/logo.png',
+  '/spocspace/manifest.json',
+  '/spocspace/assets/css/vendor/bootstrap.min.css',
+  '/spocspace/assets/css/vendor/bootstrap-icons.min.css',
+  '/spocspace/assets/css/spocspace.css',
+  '/spocspace/assets/js/vendor/bootstrap.bundle.min.js',
+  '/spocspace/assets/js/app.js',
+  '/spocspace/assets/js/helpers.js',
+  '/spocspace/assets/js/ss-db.js',
+  '/spocspace/assets/js/zerda-select.js',
+  '/spocspace/assets/icons/icon-192x192.png',
 ];
 
 // API actions that can be cached for offline reading
@@ -88,7 +88,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k.startsWith('zt-') && k !== STATIC_CACHE && k !== DYNAMIC_CACHE && k !== API_CACHE)
+        keys.filter(k => k.startsWith('ss-') && k !== STATIC_CACHE && k !== DYNAMIC_CACHE && k !== API_CACHE)
           .map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
@@ -122,7 +122,7 @@ self.addEventListener('fetch', event => {
   }
 
   // SPA page fragments (pages/*.php fetched by app.js)
-  if (url.pathname.match(/\/zerdatime\/pages\/.*\.php/)) {
+  if (url.pathname.match(/\/spocspace\/pages\/.*\.php/)) {
     event.respondWith(networkFirst(event.request, DYNAMIC_CACHE));
     return;
   }
@@ -170,8 +170,8 @@ async function handleNavigate(request) {
       cache.put(request, response.clone());
       // Cache the SPA shell for offline fallback
       const p = new URL(request.url).pathname;
-      if (p.startsWith('/zerdatime/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
-        cache.put(new Request('/zerdatime/'), response.clone());
+      if (p.startsWith('/spocspace/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
+        cache.put(new Request('/spocspace/'), response.clone());
       }
     }
     return response;
@@ -179,7 +179,7 @@ async function handleNavigate(request) {
     // Offline: try exact match first, then shell, then offline page
     const cached = await caches.match(request);
     if (cached) return cached;
-    const shell = await caches.match('/zerdatime/');
+    const shell = await caches.match('/spocspace/');
     if (shell) return shell;
     return new Response(offlinePage(), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -267,7 +267,7 @@ async function handleApiRequest(request) {
 
 function openSyncDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('zt_sync', 1);
+    const req = indexedDB.open('ss_sync', 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('queue')) {
@@ -287,7 +287,7 @@ async function queueForSync(data) {
     tx.oncomplete = () => {
       resolve();
       // Try to register background sync
-      self.registration.sync?.register('zt-sync').catch(() => {});
+      self.registration.sync?.register('ss-sync').catch(() => {});
     };
     tx.onerror = () => reject(tx.error);
   });
@@ -350,7 +350,7 @@ async function processQueue() {
 async function getCSRFToken() {
   try {
     const cache = await caches.open(DYNAMIC_CACHE);
-    const response = await cache.match('/zerdatime/');
+    const response = await cache.match('/spocspace/');
     if (response) {
       const html = await response.text();
       const match = html.match(/csrfToken:\s*'([^']+)'/);
@@ -365,7 +365,7 @@ async function getCSRFToken() {
 // ══════════════════════════════════════════════════════════════
 
 self.addEventListener('sync', event => {
-  if (event.tag === 'zt-sync') {
+  if (event.tag === 'ss-sync') {
     event.waitUntil(processQueue());
   }
 });
@@ -390,7 +390,7 @@ function offlinePage() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>zerdaTime — Hors ligne</title>
+<title>SpocSpace — Hors ligne</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F7F5F2; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }

@@ -28,7 +28,7 @@
           <h5 class="modal-title" id="cmModalTitle">Menu</h5>
           <small class="text-muted" id="cmModalSub"></small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="flex:1;overflow-y:auto">
         <input type="hidden" id="cmDate">
@@ -76,7 +76,7 @@
 }
 /* Card — same as admin .card */
 .cm-card {
-  background: var(--zt-bg-card, #fff);
+  background: var(--ss-bg-card, #fff);
   border: 1px solid #E8E5E0;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);

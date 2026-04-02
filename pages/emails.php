@@ -1,5 +1,5 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
-$uid = $_SESSION['zt_user']['id'];
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+$uid = $_SESSION['ss_user']['id'];
 $emailContacts = Db::fetchAll(
     "SELECT u.id, u.prenom, u.nom, u.email, COALESCE(f.nom, '') AS fonction_nom,
             COALESCE(m.nom, 'Sans module') AS module_nom,
@@ -14,14 +14,14 @@ $emailContacts = Db::fetchAll(
 );
 ?>
 <!-- Messagerie interne — Split-view client -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 <style>
-.colleague-dropdown{position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1px solid var(--zt-border);border-radius:0 0 6px 6px;max-height:220px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.colleague-dropdown{position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1px solid var(--ss-border);border-radius:0 0 6px 6px;max-height:220px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.12)}
 .colleague-dropdown.open{display:block}
 .colleague-dropdown .cd-item{padding:0.45rem 0.75rem;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:0.5rem}
-.colleague-dropdown .cd-item:hover,.colleague-dropdown .cd-item.active{background:var(--zt-accent-bg,rgba(0,180,160,.08))}
-.colleague-dropdown .cd-group{padding:0.3rem 0.75rem;font-weight:700;font-size:0.75rem;color:var(--zt-text-muted);text-transform:uppercase;letter-spacing:0.03em}
-.colleague-dropdown .cd-empty{padding:0.6rem 0.75rem;color:var(--zt-text-muted);font-size:0.85rem;text-align:center}
+.colleague-dropdown .cd-item:hover,.colleague-dropdown .cd-item.active{background:var(--ss-accent-bg,rgba(0,180,160,.08))}
+.colleague-dropdown .cd-group{padding:0.3rem 0.75rem;font-weight:700;font-size:0.75rem;color:var(--ss-text-muted);text-transform:uppercase;letter-spacing:0.03em}
+.colleague-dropdown .cd-empty{padding:0.6rem 0.75rem;color:var(--ss-text-muted);font-size:0.85rem;text-align:center}
 </style>
 <div class="adm-email-split">
 
@@ -113,4 +113,4 @@ $emailContacts = Db::fetchAll(
     </div>
   </div>
 </div>
-<script type="application/json" id="__zt_ssr__"><?= json_encode(['contacts' => $emailContacts], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>
+<script type="application/json" id="__ss_ssr__"><?= json_encode(['contacts' => $emailContacts], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

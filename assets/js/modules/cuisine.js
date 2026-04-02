@@ -8,7 +8,7 @@ let menuMonday = null;
 let familleModal = null, vipModal = null;
 
 export function init() {
-    const denied = window.__ZT__?.deniedPerms || [];
+    const denied = window.__SS__?.deniedPerms || [];
 
     // Hide tabs the user can't access
     document.querySelectorAll('[data-cuis-perm]').forEach(li => {

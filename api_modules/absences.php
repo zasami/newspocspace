@@ -103,7 +103,7 @@ function upload_absence_justificatif()
         bad_request('Erreur lors de l\'enregistrement');
     }
 
-    $path = '/zerdatime/storage/justificatifs/' . $filename;
+    $path = '/spocspace/storage/justificatifs/' . $filename;
     $originalName = basename($file['name']);
 
     Db::exec(

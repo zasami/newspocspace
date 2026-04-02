@@ -63,14 +63,14 @@ $fonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY o
 .tr-clickable { cursor: pointer; }
 
 /* Role badges */
-.badge-zt-admin { background: #E2B8AE; color: #7B3B2C; }
-.badge-zt-direction { background: #D0C4D8; color: #5B4B6B; }
-.badge-zt-responsable { background: #D4C4A8; color: #6B5B3E; }
-.badge-zt-collaborateur { background: #B8C9D4; color: #3B4F6B; }
+.badge-ss-admin { background: #E2B8AE; color: #7B3B2C; }
+.badge-ss-direction { background: #D0C4D8; color: #5B4B6B; }
+.badge-ss-responsable { background: #D4C4A8; color: #6B5B3E; }
+.badge-ss-collaborateur { background: #B8C9D4; color: #3B4F6B; }
 
 /* Status icons */
-.text-zt-green { color: #2d4a43; }
-.text-zt-red { color: #7B3B2C; }
+.text-ss-green { color: #2d4a43; }
+.text-ss-red { color: #7B3B2C; }
 </style>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
@@ -433,7 +433,7 @@ function renderAvatar(user) {
 }
 
 function roleBadgeClass(role) {
-    const map = { admin: 'badge-zt-admin', direction: 'badge-zt-direction', responsable: 'badge-zt-responsable', collaborateur: 'badge-zt-collaborateur' };
+    const map = { admin: 'badge-ss-admin', direction: 'badge-ss-direction', responsable: 'badge-ss-responsable', collaborateur: 'badge-ss-collaborateur' };
     return map[role] || map.collaborateur;
 }
 
@@ -461,7 +461,7 @@ function renderUsers(users) {
           <td>${Math.round(u.taux)}%</td>
           <td><small>${escapeHtml(modules)}</small></td>
           <td><span class="badge ${roleBadgeClass(u.role)}">${escapeHtml(u.role)}</span></td>
-          <td>${u.is_active ? '<i class="bi bi-check-lg text-zt-green"></i>' : '<i class="bi bi-x-lg text-zt-red"></i>'}</td>
+          <td>${u.is_active ? '<i class="bi bi-check-lg text-ss-green"></i>' : '<i class="bi bi-x-lg text-ss-red"></i>'}</td>
           <td>
             <div class="d-flex gap-1">
               <a href="${AdminURL.page('user-edit', u.id)}" class="btn btn-sm btn-user-edit" title="Modifier"><i class="bi bi-pencil"></i></a>

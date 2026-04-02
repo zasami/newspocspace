@@ -91,7 +91,7 @@ function admin_validate_vacances()
 
     Db::exec(
         "UPDATE absences SET statut = ?, valide_par = ?, valide_at = NOW() WHERE id = ?",
-        [$statut, $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? null, $id]
+        [$statut, $_SESSION['ss_user']['id'] ?? $_SESSION['admin']['id'] ?? null, $id]
     );
 
     $label = $statut === 'valide' ? 'validée' : 'refusée';
@@ -120,7 +120,7 @@ function admin_bulk_validate_vacances()
         bad_request('IDs et statut requis');
     }
 
-    $adminId = $_SESSION['zt_user']['id'] ?? $_SESSION['admin']['id'] ?? null;
+    $adminId = $_SESSION['ss_user']['id'] ?? $_SESSION['admin']['id'] ?? null;
     $count = 0;
     $type = $statut === 'valide' ? 'vacances_valide' : 'vacances_refuse';
     $title = $statut === 'valide' ? 'Vacances validées' : 'Vacances refusées';
@@ -178,7 +178,7 @@ function admin_add_periode_bloquee()
     $id = Uuid::v4();
     Db::exec(
         "INSERT INTO periodes_bloquees (id, date_debut, date_fin, motif, created_by) VALUES (?, ?, ?, ?, ?)",
-        [$id, $dateDebut, $dateFin, $motif, $_SESSION['zt_user']['id'] ?? null]
+        [$id, $dateDebut, $dateFin, $motif, $_SESSION['ss_user']['id'] ?? null]
     );
 
     respond(['success' => true, 'message' => 'Période bloquée ajoutée', 'id' => $id]);

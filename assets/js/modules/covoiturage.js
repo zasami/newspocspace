@@ -1,5 +1,5 @@
 /**
- * zerdaTime - Covoiturage (carpooling match finder)
+ * SpocSpace - Covoiturage (carpooling match finder)
  * Users pick their carpool buddies, then see schedule overlaps.
  */
 import { apiPost, escapeHtml, toast, debounce } from '../helpers.js';
@@ -39,7 +39,7 @@ export async function init() {
 
     // Load buddy count first, then week
     // Use SSR data on first load to avoid waterfall requests
-    const ssr = window.__ZT_PAGE_DATA__;
+    const ssr = window.__SS_PAGE_DATA__;
     if (ssr) {
         const count = ssr.buddy_count ?? 0;
         document.getElementById('covBuddyCount').textContent = count;
@@ -87,7 +87,7 @@ async function loadBuddies() {
 
     if (!buddies.length) {
         list.innerHTML = `<div class="text-center py-3">
-            <i class="bi bi-people" style="font-size:1.5rem;color:var(--zt-text-muted);display:block;margin-bottom:6px;"></i>
+            <i class="bi bi-people" style="font-size:1.5rem;color:var(--ss-text-muted);display:block;margin-bottom:6px;"></i>
             <div class="text-muted small">Aucun collègue ajouté.<br>Recherchez un nom ci-dessus pour en ajouter.</div>
         </div>`;
         return;
@@ -96,10 +96,10 @@ async function loadBuddies() {
     list.innerHTML = buddies.map(b => {
         const initials = ((b.prenom?.[0] || '') + (b.nom?.[0] || '')).toUpperCase();
         return `<div class="cov-buddy-item">
-            <div class="cov-avatar" style="background:var(--zt-accent-bg);color:var(--zt-text)">${escapeHtml(initials)}</div>
+            <div class="cov-avatar" style="background:var(--ss-accent-bg);color:var(--ss-text)">${escapeHtml(initials)}</div>
             <div style="flex:1;min-width:0">
                 <div style="font-weight:600;font-size:0.9rem">${escapeHtml(b.prenom)} ${escapeHtml(b.nom)}</div>
-                <div style="font-size:0.78rem;color:var(--zt-text-muted)">${escapeHtml(b.fonction_nom || '')}${b.module_nom ? ' · ' + escapeHtml(b.module_nom) : ''}</div>
+                <div style="font-size:0.78rem;color:var(--ss-text-muted)">${escapeHtml(b.fonction_nom || '')}${b.module_nom ? ' · ' + escapeHtml(b.module_nom) : ''}</div>
             </div>
             <button class="btn btn-sm btn-light" data-remove-buddy="${escapeHtml(b.buddy_id)}" title="Retirer">
                 <i class="bi bi-x-lg" style="font-size:0.7rem;"></i>
@@ -137,13 +137,13 @@ async function searchUsers(q) {
     resultsEl.innerHTML = res.users.map(u => {
         const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
         return `<div class="cov-search-item ${u.is_buddy ? 'is-buddy' : ''}" data-add-buddy="${escapeHtml(u.id)}">
-            <div class="cov-avatar" style="width:32px;height:32px;font-size:0.7rem;background:var(--zt-accent-bg);color:var(--zt-text)">${escapeHtml(initials)}</div>
+            <div class="cov-avatar" style="width:32px;height:32px;font-size:0.7rem;background:var(--ss-accent-bg);color:var(--ss-text)">${escapeHtml(initials)}</div>
             <div style="flex:1;min-width:0">
                 <span style="font-weight:500;font-size:0.88rem">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</span>
-                <span style="font-size:0.75rem;color:var(--zt-text-muted);margin-left:6px">${escapeHtml(u.fonction_nom || '')}</span>
+                <span style="font-size:0.75rem;color:var(--ss-text-muted);margin-left:6px">${escapeHtml(u.fonction_nom || '')}</span>
             </div>
             ${u.is_buddy
-                ? '<span class="badge" style="background:var(--zt-accent-bg);color:var(--zt-text-muted);font-size:.7rem">Déjà ajouté</span>'
+                ? '<span class="badge" style="background:var(--ss-accent-bg);color:var(--ss-text-muted);font-size:.7rem">Déjà ajouté</span>'
                 : '<button class="btn btn-sm" style="background:#e8f5e9;color:#2e7d32;font-size:.75rem;"><i class="bi bi-plus-lg"></i></button>'
             }
         </div>`;
@@ -220,9 +220,9 @@ function renderWeek(res) {
                 <div class="cov-day-name">${JOURS[i]}${isToday ? ' *' : ''}</div>
                 <div class="cov-day-date">${d.getDate()}</div>
                 ${dayData ? `
-                    <div class="cov-day-shift" style="background:var(--zt-accent-bg)">${escapeHtml(dayData.horaire || '-')} ${escapeHtml(dayData.debut || '')}–${escapeHtml(dayData.fin || '')}</div>
+                    <div class="cov-day-shift" style="background:var(--ss-accent-bg)">${escapeHtml(dayData.horaire || '-')} ${escapeHtml(dayData.debut || '')}–${escapeHtml(dayData.fin || '')}</div>
                     <div class="cov-day-count">${dayData.same_shift_count} collègue${dayData.same_shift_count !== 1 ? 's' : ''}</div>
-                ` : `<div class="cov-day-shift" style="background:var(--zt-border-light);color:var(--zt-text-muted)">Repos</div>`}
+                ` : `<div class="cov-day-shift" style="background:var(--ss-border-light);color:var(--ss-text-muted)">Repos</div>`}
             </div>
         </div>`;
     }
@@ -292,7 +292,7 @@ async function loadDayDetail(date) {
         matchList.innerHTML = `<div class="text-center py-4 text-muted">
             <i class="bi bi-people" style="font-size:1.5rem;display:block;margin-bottom:0.5rem"></i>
             Ajoutez des collègues pour voir les croisements d'horaires
-            <div class="mt-2"><button class="btn btn-sm" id="covAddBuddyCta" style="background:var(--zt-accent-bg);color:var(--zt-text);font-weight:500;"><i class="bi bi-plus-lg"></i> Ajouter des collègues</button></div>
+            <div class="mt-2"><button class="btn btn-sm" id="covAddBuddyCta" style="background:var(--ss-accent-bg);color:var(--ss-text);font-weight:500;"><i class="bi bi-plus-lg"></i> Ajouter des collègues</button></div>
         </div>`;
         document.getElementById('covAddBuddyCta')?.addEventListener('click', () => {
             document.getElementById('covBuddyPanel').style.display = 'block';
@@ -322,7 +322,7 @@ async function loadDayDetail(date) {
             <div class="cov-avatar" style="background:${escapeHtml(bgColor)}20;color:${escapeHtml(bgColor)}">${escapeHtml(initials)}</div>
             <div style="flex:1;min-width:0">
                 <div style="font-weight:600;font-size:0.9rem">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</div>
-                <div style="font-size:0.78rem;color:var(--zt-text-muted)">${escapeHtml(m.fonction_nom || '')} ${m.module_nom ? '· ' + escapeHtml(m.module_nom) : ''}</div>
+                <div style="font-size:0.78rem;color:var(--ss-text-muted)">${escapeHtml(m.fonction_nom || '')} ${m.module_nom ? '· ' + escapeHtml(m.module_nom) : ''}</div>
             </div>
             <div>
                 <span class="cov-match-badge ${m.matchClass}">${m.matchLabel}</span>

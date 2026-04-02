@@ -2486,7 +2486,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
         const win = window.open('', '_blank');
         win.document.write(`<!DOCTYPE html><html><head><title>Planning ${mois}</title>
-        <link href="/zerdatime/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+        <link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
         <style>
           body { font-size: 10px; padding: 10px; }
           table { width: 100%; border-collapse: collapse; }

@@ -32,7 +32,7 @@
         <li><a href="#life">Vie quotidienne</a></li>
         <li><a href="#team">Équipe</a></li>
         <li><a href="#contact">Contact</a></li>
-        <li><a href="/zerdatime/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Espace collaborateur</a></li>
+        <li><a href="/spocspace/" class="ws-btn-nav"><i class="bi bi-box-arrow-in-right"></i> Espace collaborateur</a></li>
       </ul>
     </div>
   </div>

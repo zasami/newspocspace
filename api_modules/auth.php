@@ -19,8 +19,8 @@ function login()
     $result = Auth::login($email, $password);
     if ($result['success']) {
         // Regenerate CSRF
-        $_SESSION['zt_csrf_token'] = bin2hex(random_bytes(32));
-        $result['csrf'] = $_SESSION['zt_csrf_token'];
+        $_SESSION['ss_csrf_token'] = bin2hex(random_bytes(32));
+        $result['csrf'] = $_SESSION['ss_csrf_token'];
 
         // Log connexion
         Db::exec(
@@ -124,7 +124,7 @@ function update_password()
     );
 
     // Clear session flags
-    unset($_SESSION['zt_must_change_password'], $_SESSION['zt_temp_password_expires']);
+    unset($_SESSION['ss_must_change_password'], $_SESSION['ss_temp_password_expires']);
 
     respond(['success' => true, 'message' => 'Mot de passe mis à jour']);
 }
@@ -176,15 +176,15 @@ function upload_avatar()
     // Delete old avatar if exists
     $oldPhoto = Db::getOne("SELECT photo FROM users WHERE id = ?", [$user['id']]);
     if ($oldPhoto) {
-        $oldPath = __DIR__ . '/../' . ltrim($oldPhoto, '/zerdatime/');
+        $oldPath = __DIR__ . '/../' . ltrim($oldPhoto, '/spocspace/');
         if (file_exists($oldPath)) @unlink($oldPath);
     }
 
-    $photoUrl = '/zerdatime/storage/avatars/' . $filename;
+    $photoUrl = '/spocspace/storage/avatars/' . $filename;
     Db::exec("UPDATE users SET photo = ? WHERE id = ?", [$photoUrl, $user['id']]);
 
     // Update session
-    $_SESSION['zt_user']['photo'] = $photoUrl;
+    $_SESSION['ss_user']['photo'] = $photoUrl;
 
     respond(['success' => true, 'photo_url' => $photoUrl, 'message' => 'Photo mise à jour']);
 }

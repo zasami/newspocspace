@@ -1,11 +1,11 @@
 /**
- * zerdaTime - SPA Router + Sidebar + Search
+ * SpocSpace - SPA Router + Sidebar + Search
  */
 
-const BASE = '/zerdatime';
+const BASE = '/spocspace';
 
 // Save initial URL params before SPA routing replaces them
-window.__ZT_INITIAL_PARAMS__ = new URLSearchParams(window.location.search);
+window.__SS_INITIAL_PARAMS__ = new URLSearchParams(window.location.search);
 
 const moduleMap = {
     'home':       () => import('./modules/home.js'),
@@ -45,13 +45,13 @@ async function loadPage(pageId, params = {}) {
     const content = document.getElementById('app-content');
     if (!content) return;
 
-    if (!window.__ZT__?.user && pageId !== 'login') {
+    if (!window.__SS__?.user && pageId !== 'login') {
         pageId = 'login';
         history.replaceState({}, '', `${BASE}/login`);
     }
 
     // External employees: home → cuisine-home
-    if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
+    if (pageId === 'home' && window.__SS__?.user?.type_employe === 'externe') {
         pageId = 'cuisine-home';
         history.replaceState({}, '', `${BASE}/cuisine-home`);
     }
@@ -73,8 +73,8 @@ async function loadPage(pageId, params = {}) {
         }
         content.innerHTML = await res.text();
         // Extract SSR data injected by PHP pages
-        const ssrEl = content.querySelector('script[type="application/json"][id="__zt_ssr__"]');
-        window.__ZT_PAGE_DATA__ = ssrEl ? JSON.parse(ssrEl.textContent) : null;
+        const ssrEl = content.querySelector('script[type="application/json"][id="__ss_ssr__"]');
+        window.__SS_PAGE_DATA__ = ssrEl ? JSON.parse(ssrEl.textContent) : null;
     } catch (e) {
         content.innerHTML = '<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Erreur de chargement</p></div>';
         return;
@@ -125,7 +125,7 @@ function updateSearchPlaceholder(pageId) {
 function updateTopbarTitle(pageId) {
     const el = document.getElementById('feTopbarTitle');
     if (!el) return;
-    const labels = window.__ZT__?.pageLabels || {};
+    const labels = window.__SS__?.pageLabels || {};
     el.textContent = labels[pageId] || pageId;
 }
 
@@ -140,7 +140,7 @@ function parseRoute() {
     let pageId = parts[0] || 'home';
 
     // External employees: redirect home → cuisine-home (dashboard cuisine)
-    if (pageId === 'home' && window.__ZT__?.user?.type_employe === 'externe') {
+    if (pageId === 'home' && window.__SS__?.user?.type_employe === 'externe') {
         pageId = 'cuisine-home';
     }
     const params = {};
@@ -179,8 +179,8 @@ function setupLinks() {
 
 /* ── Sidebar toggle (desktop mini/full) ── */
 
-const SIDEBAR_KEY = 'zt_fe_sidebar_mini';
-const CAT_KEY = 'zt_fe_sidebar_cats';
+const SIDEBAR_KEY = 'ss_fe_sidebar_mini';
+const CAT_KEY = 'ss_fe_sidebar_cats';
 
 function setupSidebar() {
     const sidebar = document.getElementById('feSidebar');
@@ -253,7 +253,7 @@ function setupLogout() {
     const doLogout = async () => {
         const { apiPost } = await import('./helpers.js');
         await apiPost('logout');
-        window.__ZT__.user = null;
+        window.__SS__.user = null;
         window.location.href = `${BASE}/login`;
     };
 
@@ -325,7 +325,7 @@ async function runSearch(q, container) {
     const items = [];
 
     // Search pages
-    const labels = window.__ZT__?.pageLabels || {};
+    const labels = window.__SS__?.pageLabels || {};
     for (const [key, label] of Object.entries(labels)) {
         if (label.toLowerCase().includes(q) || key.toLowerCase().includes(q)) {
             items.push({ type: 'page', key, label });
@@ -351,7 +351,7 @@ async function runSearch(q, container) {
     // Search residents — on cuisine pages or with @ prefix or digits
     const residentPages = ['cuisine-vip', 'cuisine-famille', 'cuisine-home'];
     const isResidentPage = residentPages.includes(currentPage);
-    if (isResidentPage || window.__ZT__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
+    if (isResidentPage || window.__SS__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
         try {
             const { apiPost } = await import('./helpers.js');
             const resRes = await apiPost('cuisine_get_residents', { search: q });
@@ -441,7 +441,7 @@ function escapeHtml(str) {
 
 /* ── Temp password banner ── */
 function showTempPasswordBanner() {
-    const expires = window.__ZT__.tempPasswordExpires;
+    const expires = window.__SS__.tempPasswordExpires;
     if (!expires) return;
 
     const banner = document.createElement('div');
@@ -494,7 +494,7 @@ function init() {
     window.__trNavigate = navigateTo;
 
     // Poll notification badge + check alerts + offline support
-    if (window.__ZT__?.user) {
+    if (window.__SS__?.user) {
         pollNotifBadge();
         setInterval(pollNotifBadge, 60000); // every 60s
         checkPendingAlerts();
@@ -530,7 +530,7 @@ function init() {
             } catch {}
         }, 10000);
         initFullscreen();
-        if (window.__ZT__.mustChangePassword) showTempPasswordBanner();
+        if (window.__SS__.mustChangePassword) showTempPasswordBanner();
     }
 }
 
@@ -552,10 +552,10 @@ function initFullscreen() {
 
     btn.addEventListener('click', () => {
         if (document.fullscreenElement) {
-            sessionStorage.removeItem('zt_fullscreen');
+            sessionStorage.removeItem('ss_fullscreen');
             document.exitFullscreen().catch(() => {});
         } else {
-            sessionStorage.setItem('zt_fullscreen', '1');
+            sessionStorage.setItem('ss_fullscreen', '1');
             document.documentElement.requestFullscreen().catch(() => {});
         }
     });
@@ -564,14 +564,14 @@ function initFullscreen() {
         updateIcon();
         // Si l'utilisateur quitte via Escape, on désactive le mode persistant
         if (!document.fullscreenElement) {
-            sessionStorage.removeItem('zt_fullscreen');
+            sessionStorage.removeItem('ss_fullscreen');
         }
     });
 
     // Restaurer le fullscreen si actif en session (changement de page SPA)
-    if (sessionStorage.getItem('zt_fullscreen') === '1' && !document.fullscreenElement) {
+    if (sessionStorage.getItem('ss_fullscreen') === '1' && !document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {
-            sessionStorage.removeItem('zt_fullscreen');
+            sessionStorage.removeItem('ss_fullscreen');
         });
     }
 
@@ -626,26 +626,26 @@ function showAlertModal(alert) {
     return new Promise(resolve => {
         const isHaute = alert.priority === 'haute';
         const overlay = document.createElement('div');
-        overlay.className = 'zt-alert-overlay';
+        overlay.className = 'ss-alert-overlay';
         overlay.innerHTML = `
-            <div class="zt-alert-modal ${isHaute ? 'zt-alert-haute' : ''}">
-                <div class="zt-alert-header">
-                    <div class="zt-alert-header-icon ${isHaute ? 'zt-alert-header-icon--danger' : ''}">
+            <div class="ss-alert-modal ${isHaute ? 'ss-alert-haute' : ''}">
+                <div class="ss-alert-header">
+                    <div class="ss-alert-header-icon ${isHaute ? 'ss-alert-header-icon--danger' : ''}">
                         <i class="bi ${isHaute ? 'bi-exclamation-triangle-fill' : 'bi-megaphone-fill'}"></i>
                     </div>
                     <div>
-                        <h5 class="zt-alert-title">${escapeHtml(alert.title)}</h5>
-                        <span class="zt-alert-meta">${escapeHtml(alert.creator_prenom + ' ' + alert.creator_nom)} · ${new Date(alert.created_at).toLocaleDateString('fr-FR')}</span>
+                        <h5 class="ss-alert-title">${escapeHtml(alert.title)}</h5>
+                        <span class="ss-alert-meta">${escapeHtml(alert.creator_prenom + ' ' + alert.creator_nom)} · ${new Date(alert.created_at).toLocaleDateString('fr-FR')}</span>
                     </div>
                 </div>
-                <div class="zt-alert-content">
-                    <div class="zt-alert-message ${isHaute ? 'zt-alert-message--danger' : ''}">
-                        <i class="bi ${isHaute ? 'bi-exclamation-circle' : 'bi-info-circle'} zt-alert-message-icon"></i>
-                        <div class="zt-alert-message-text">${escapeHtml(alert.message)}</div>
+                <div class="ss-alert-content">
+                    <div class="ss-alert-message ${isHaute ? 'ss-alert-message--danger' : ''}">
+                        <i class="bi ${isHaute ? 'bi-exclamation-circle' : 'bi-info-circle'} ss-alert-message-icon"></i>
+                        <div class="ss-alert-message-text">${escapeHtml(alert.message)}</div>
                     </div>
                 </div>
-                <div class="zt-alert-footer">
-                    <button class="zt-alert-btn ${isHaute ? 'zt-alert-btn-danger' : ''}">
+                <div class="ss-alert-footer">
+                    <button class="ss-alert-btn ${isHaute ? 'ss-alert-btn-danger' : ''}">
                         <i class="bi bi-check-lg"></i> J'ai pris connaissance
                     </button>
                 </div>
@@ -654,7 +654,7 @@ function showAlertModal(alert) {
         document.body.appendChild(overlay);
         requestAnimationFrame(() => overlay.classList.add('show'));
 
-        overlay.querySelector('.zt-alert-btn').addEventListener('click', () => {
+        overlay.querySelector('.ss-alert-btn').addEventListener('click', () => {
             overlay.classList.remove('show');
             setTimeout(() => { overlay.remove(); resolve(); }, 300);
         });

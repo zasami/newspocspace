@@ -1,5 +1,5 @@
 -- Migration 026: Todos & Notes modules
--- zerdaTime admin
+-- SpocSpace admin
 
 -- ── TODOS ──
 CREATE TABLE IF NOT EXISTS admin_todos (

@@ -19,7 +19,7 @@ function get_pv_list()
     $bindings = [];
 
     // Hide brouillon PVs for non-admin users
-    $user = $_SESSION['zt_user'];
+    $user = $_SESSION['ss_user'];
     if (!in_array($user['role'], ['admin', 'direction', 'responsable'])) {
         $filters[] = "pv.statut != 'brouillon'";
     }
@@ -93,7 +93,7 @@ function get_pv()
          LEFT JOIN fonctions f ON f.id = u.fonction_id
          LEFT JOIN modules m ON m.id = pv.module_id
          WHERE pv.id = ? AND (pv.is_public = 1 OR pv.created_by = ?)",
-        [$pvId, $_SESSION['zt_user']['id']]
+        [$pvId, $_SESSION['ss_user']['id']]
     );
 
     if (!$pv) not_found('PV non trouvé');
@@ -114,7 +114,7 @@ function get_pv()
     );
 
     // Add likes for each comment
-    $currentUserId = $_SESSION['zt_user']['id'];
+    $currentUserId = $_SESSION['ss_user']['id'];
     foreach ($comments as &$c) {
         $c['likes'] = Db::fetchAll(
             "SELECT l.user_id, u.prenom, u.nom, u.photo
@@ -191,7 +191,7 @@ function comment_pv()
     if (!$pv['allow_comments']) bad_request('Commentaires désactivés');
 
     $id = Uuid::v4();
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     Db::exec(
         "INSERT INTO pv_comments (id, pv_id, user_id, contenu) VALUES (?, ?, ?, ?)",
@@ -220,7 +220,7 @@ function toggle_pv_comment_like()
     $commentId = $params['comment_id'] ?? '';
     if (!$commentId) bad_request('comment_id requis');
 
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
 
     $existing = Db::fetch("SELECT id FROM pv_comment_likes WHERE comment_id = ? AND user_id = ?", [$commentId, $userId]);
     if ($existing) {

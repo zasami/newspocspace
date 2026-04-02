@@ -28,7 +28,7 @@ if ($userId) {
 /* User detail page classes */
 .ud-width-auto { width: auto; }
 .ud-avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.ud-avatar-initials { width: 56px; height: 56px; border-radius: 50%; background: var(--zt-teal); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
+.ud-avatar-initials { width: 56px; height: 56px; border-radius: 50%; background: var(--ss-teal); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
 .ud-text-sm { font-size: 0.82rem; }
 .ud-badge-horaire-special { background: #9B51E0; }
 .ud-badge-permanent { background: rgba(255,193,7,0.15); color: #d4a017; font-size: 0.7rem; border: 1px solid rgba(255,193,7,0.3); }
@@ -75,7 +75,7 @@ if ($userId) {
     <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès zerdaTime</h5>
+          <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès SpocSpace</h5>
           <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
         </div>
         <div class="modal-body" id="udPermBody">

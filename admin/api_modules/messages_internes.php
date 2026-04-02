@@ -7,7 +7,7 @@ function admin_get_all_messages()
 {
     require_responsable();
     global $params;
-    $adminId = $_SESSION['zt_user']['id'];
+    $adminId = $_SESSION['ss_user']['id'];
     $page = max(1, (int)($params['page'] ?? 1));
     $search = Sanitize::text($params['search'] ?? '', 100);
     $tab = $params['tab'] ?? 'all'; // all | inbox | sent
@@ -73,7 +73,7 @@ function admin_get_message_detail()
     if (!$email) not_found('Email non trouvé');
 
     // Mark as read for the current admin user
-    $adminId = $_SESSION['zt_user']['id'];
+    $adminId = $_SESSION['ss_user']['id'];
     Db::exec(
         "UPDATE message_recipients SET lu = 1, lu_at = NOW() WHERE email_id = ? AND user_id = ? AND lu = 0",
         [$id, $adminId]
@@ -220,7 +220,7 @@ function admin_get_message_stats()
     $total = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
     $today = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
     $week = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     $unread = (int)Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
     $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
 

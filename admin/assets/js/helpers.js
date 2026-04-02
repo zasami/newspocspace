@@ -7,14 +7,14 @@ window.adminApiPost = async function adminApiPost(action, data = {}) {
     const headers = { 'Content-Type': 'application/json' };
 
     const readOnly = action.startsWith('get_') || action.startsWith('admin_get_');
-    if (!readOnly && window.__ZT_ADMIN__?.csrfToken) {
-        headers['X-CSRF-Token'] = window.__ZT_ADMIN__.csrfToken;
+    if (!readOnly && window.__SS_ADMIN__?.csrfToken) {
+        headers['X-CSRF-Token'] = window.__SS_ADMIN__.csrfToken;
     }
 
     try {
-        const res = await fetch('/zerdatime/admin/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
+        const res = await fetch('/spocspace/admin/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
         const json = await res.json();
-        if (json.csrf) window.__ZT_ADMIN__.csrfToken = json.csrf;
+        if (json.csrf) window.__SS_ADMIN__.csrfToken = json.csrf;
         if (!res.ok && !json.message) json.message = `Erreur ${res.status}`;
         return json;
     } catch (err) {

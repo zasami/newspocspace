@@ -273,7 +273,7 @@ function admin_import_polypoint()
     if (!$planning) {
         $planningId = Uuid::v4();
         Db::exec("INSERT INTO plannings (id, mois_annee, statut, created_by) VALUES (?, ?, 'brouillon', ?)",
-            [$planningId, $mois, $_SESSION['zt_user']['id']]);
+            [$planningId, $mois, $_SESSION['ss_user']['id']]);
     } else {
         $planningId = $planning['id'];
     }

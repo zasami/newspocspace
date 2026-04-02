@@ -241,7 +241,7 @@ function admin_delete_document()
     } else {
         // Soft delete: archive
         Db::exec("UPDATE documents SET archived_at = NOW(), archived_by = ?, visible = 0 WHERE id = ?",
-            [$_SESSION['zt_user']['id'], $id]);
+            [$_SESSION['ss_user']['id'], $id]);
         respond(['success' => true, 'message' => 'Document archivé']);
     }
 }
@@ -253,7 +253,7 @@ function admin_archive_document()
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
     Db::exec("UPDATE documents SET archived_at = NOW(), archived_by = ?, visible = 0 WHERE id = ?",
-        [$_SESSION['zt_user']['id'], $id]);
+        [$_SESSION['ss_user']['id'], $id]);
     respond(['success' => true, 'message' => 'Document archivé']);
 }
 

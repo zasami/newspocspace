@@ -16,7 +16,7 @@ let editingDesirId = null;
 let editingPermanentId = null;
 
 export function init() {
-    const ssrData = window.__ZT_PAGE_DATA__ || {};
+    const ssrData = window.__SS_PAGE_DATA__ || {};
 
     // Compute target month (next month)
     const now = new Date();

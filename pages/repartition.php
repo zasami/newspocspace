@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
 $repDto = new DateTime();
 $repDow = (int)$repDto->format('N');
@@ -84,7 +84,7 @@ for ($repI = 0; $repI < 7; $repI++) {
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-clock"></i> Horaires types</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--zt-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto" id="repHorairesBody"></div>
       <div class="modal-footer">
@@ -105,7 +105,7 @@ for ($repI = 0; $repI < 7; $repI++) {
     </table>
   </div>
 </div>
-<script type="application/json" id="__zt_ssr__"><?= json_encode([
+<script type="application/json" id="__ss_ssr__"><?= json_encode([
     'success'     => true,
     'week_start'  => $repWeekStart,
     'week_end'    => $repWeekEnd,

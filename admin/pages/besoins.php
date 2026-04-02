@@ -45,11 +45,11 @@ $besoinsFonctions = Db::fetchAll("SELECT id, code, nom FROM fonctions ORDER BY o
   background: rgba(25,25,24,0.04);
 }
 .b-input--success {
-  border-color: var(--zt-green);
+  border-color: var(--ss-green);
   background: rgba(22,163,74,0.06);
 }
 .b-input--error {
-  border-color: var(--zt-red);
+  border-color: var(--ss-red);
   background: rgba(220,38,38,0.06);
 }
 </style>

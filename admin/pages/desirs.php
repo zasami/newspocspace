@@ -49,13 +49,13 @@ $initPermanents = Db::fetchAll(
 /* ── Badges ── */
 .badge-permanent { background: rgba(25,25,24,0.1); color: var(--cl-accent); font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(25,25,24,0.25); border-radius: 20px; }
 .badge-modif { background: #D4C4A8; color: #6B5B3E; font-size: 0.72rem; font-weight: 600; border: 1px solid #D4C4A8; border-radius: 20px; }
-.badge-zt-valid { background: #bcd2cb; color: #2d4a43; }
-.badge-zt-refuse { background: #E2B8AE; color: #7B3B2C; }
-.badge-zt-attente { background: #D4C4A8; color: #6B5B3E; }
-.badge-zt-jour-off { background: #B8C9D4; color: #3B4F6B; }
-.badge-zt-horaire-special { background: #D0C4D8; color: #5B4B6B; }
-.badge-zt-horaire-dynamic { color: #fff; font-size: 0.82rem; letter-spacing: 0.5px; }
-.badge-zt-status-lg { font-size: 0.85rem; }
+.badge-ss-valid { background: #bcd2cb; color: #2d4a43; }
+.badge-ss-refuse { background: #E2B8AE; color: #7B3B2C; }
+.badge-ss-attente { background: #D4C4A8; color: #6B5B3E; }
+.badge-ss-jour-off { background: #B8C9D4; color: #3B4F6B; }
+.badge-ss-horaire-special { background: #D0C4D8; color: #5B4B6B; }
+.badge-ss-horaire-dynamic { color: #fff; font-size: 0.82rem; letter-spacing: 0.5px; }
+.badge-ss-status-lg { font-size: 0.85rem; }
 
 /* ── Perm comparison ── */
 .perm-ancien { background: #f8f9fa; border-radius: 6px; padding: 0.4rem 0.6rem; font-size: 0.82rem; border-left: 3px solid #7B3B2C; margin-bottom: 0.3rem; }
@@ -128,7 +128,7 @@ $initPermanents = Db::fetchAll(
         <tr><td colspan="7" class="text-center py-4 text-muted">Aucun désir pour cette période</td></tr>
         <?php else: ?>
         <?php foreach ($initDesirs as $idx => $d):
-            $statusCls = $d['statut'] === 'valide' ? 'zt-valid' : ($d['statut'] === 'refuse' ? 'zt-refuse' : 'zt-attente');
+            $statusCls = $d['statut'] === 'valide' ? 'ss-valid' : ($d['statut'] === 'refuse' ? 'ss-refuse' : 'ss-attente');
             $statusLabel = $d['statut'] === 'valide' ? 'Validé' : ($d['statut'] === 'refuse' ? 'Refusé' : 'En attente');
             $isPermanent = !empty($d['permanent_id']);
             $initials = mb_strtoupper(mb_substr($d['prenom']??'',0,1).mb_substr($d['nom']??'',0,1));
@@ -149,12 +149,12 @@ $initPermanents = Db::fetchAll(
           </td>
           <td class="desir-click"><?= h($d['date_souhaitee']) ?></td>
           <td class="desir-click">
-            <?= $d['type'] === 'jour_off' ? '<span class="badge badge-zt-jour-off">Jour off</span>' : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>' ?>
+            <?= $d['type'] === 'jour_off' ? '<span class="badge badge-ss-jour-off">Jour off</span>' : '<span class="badge badge-ss-horaire-special">Horaire spécial</span>' ?>
             <?php if ($isPermanent): ?><span class="badge badge-permanent" title="Désir permanent"><i class="bi bi-pin-angle-fill"></i> Permanent</span><?php endif; ?>
           </td>
           <td class="desir-click">
             <?php if ($d['type'] === 'horaire_special' && !empty($d['horaire_code'])): ?>
-              <span class="badge badge-zt-horaire-dynamic" style="background:<?= h($d['horaire_couleur']??'#9B51E0') ?>"><?= h($d['horaire_code']) ?></span>
+              <span class="badge badge-ss-horaire-dynamic" style="background:<?= h($d['horaire_couleur']??'#9B51E0') ?>"><?= h($d['horaire_code']) ?></span>
             <?php else: ?><span class="text-muted">—</span><?php endif; ?>
           </td>
           <td class="desir-click"><?= !empty($d['detail']) ? '<small>'.h($d['detail']).'</small>' : '' ?></td>
@@ -211,11 +211,11 @@ $initPermanents = Db::fetchAll(
                 </div>
               </div>
             </td>
-            <td><?= $p['type'] === 'jour_off' ? '<span class="badge badge-zt-jour-off">Jour off</span>' : '<span class="badge badge-zt-horaire-special">Horaire spécial</span>' ?></td>
+            <td><?= $p['type'] === 'jour_off' ? '<span class="badge badge-ss-jour-off">Jour off</span>' : '<span class="badge badge-ss-horaire-special">Horaire spécial</span>' ?></td>
             <td><strong><?= h($jour) ?></strong></td>
             <td>
               <?php if (!empty($p['horaire_code'])): ?>
-                <span class="badge badge-zt-horaire-dynamic" style="background:<?= h($p['horaire_couleur']??'#9B51E0') ?>"><?= h($p['horaire_code']) ?></span>
+                <span class="badge badge-ss-horaire-dynamic" style="background:<?= h($p['horaire_couleur']??'#9B51E0') ?>"><?= h($p['horaire_code']) ?></span>
               <?php else: ?><span class="text-muted">—</span><?php endif; ?>
             </td>
             <td>
@@ -344,7 +344,7 @@ $initPermanents = Db::fetchAll(
         }
 
         tbody.innerHTML = desirsData.map((d, idx) => {
-            const statusCls = d.statut === 'valide' ? 'zt-valid' : d.statut === 'refuse' ? 'zt-refuse' : 'zt-attente';
+            const statusCls = d.statut === 'valide' ? 'ss-valid' : d.statut === 'refuse' ? 'ss-refuse' : 'ss-attente';
             const statusLabel = d.statut === 'valide' ? 'Valid\u00e9' : d.statut === 'refuse' ? 'Refus\u00e9' : 'En attente';
             const isPermanent = !!d.permanent_id;
             const initials = ((d.prenom?.[0] || '') + (d.nom?.[0] || '')).toUpperCase();
@@ -353,13 +353,13 @@ $initPermanents = Db::fetchAll(
                 : `<div class="desir-avatar-initials">${initials}</div>`;
 
             const typeBadge = d.type === 'jour_off'
-                ? '<span class="badge badge-zt-jour-off">Jour off</span>'
-                : '<span class="badge badge-zt-horaire-special">Horaire sp\u00e9cial</span>';
+                ? '<span class="badge badge-ss-jour-off">Jour off</span>'
+                : '<span class="badge badge-ss-horaire-special">Horaire sp\u00e9cial</span>';
 
             let horaireCell = '<span class="text-muted">\u2014</span>';
             if (d.type === 'horaire_special' && d.horaire_code) {
                 const couleur = d.horaire_couleur || '#9B51E0';
-                horaireCell = `<span class="badge badge-zt-horaire-dynamic" style="background:${escapeHtml(couleur)}">${escapeHtml(d.horaire_code)}</span>`;
+                horaireCell = `<span class="badge badge-ss-horaire-dynamic" style="background:${escapeHtml(couleur)}">${escapeHtml(d.horaire_code)}</span>`;
             }
 
             const detailCell = d.detail ? `<small>${escapeHtml(d.detail)}</small>` : '';
@@ -391,7 +391,7 @@ $initPermanents = Db::fetchAll(
         const d = desirsData[idx];
         if (!d) return;
 
-        const statusCls = d.statut === 'valide' ? 'zt-valid' : d.statut === 'refuse' ? 'zt-refuse' : 'zt-attente';
+        const statusCls = d.statut === 'valide' ? 'ss-valid' : d.statut === 'refuse' ? 'ss-refuse' : 'ss-attente';
         const statusLabel = d.statut === 'valide' ? 'Valid\u00e9' : d.statut === 'refuse' ? 'Refus\u00e9' : 'En attente';
         const isPermanent = !!d.permanent_id;
 
@@ -404,8 +404,8 @@ $initPermanents = Db::fetchAll(
         header.classList.add(d.statut === 'en_attente' ? 'desir-header-attente' : d.statut === 'valide' ? 'desir-header-valide' : 'desir-header-refuse');
 
         const typeBadge = d.type === 'jour_off'
-            ? '<span class="badge badge-zt-jour-off badge-zt-status-lg"><i class="bi bi-moon"></i> Jour off</span>'
-            : '<span class="badge badge-zt-horaire-special badge-zt-status-lg"><i class="bi bi-clock"></i> Horaire sp\u00e9cial</span>';
+            ? '<span class="badge badge-ss-jour-off badge-ss-status-lg"><i class="bi bi-moon"></i> Jour off</span>'
+            : '<span class="badge badge-ss-horaire-special badge-ss-status-lg"><i class="bi bi-clock"></i> Horaire sp\u00e9cial</span>';
 
         let permBlock = '';
         if (isPermanent) {
@@ -447,7 +447,7 @@ $initPermanents = Db::fetchAll(
 
         let statusBlock = `
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="badge bg-${statusCls} badge-zt-status-lg">${statusLabel}</span>
+          <span class="badge bg-${statusCls} badge-ss-status-lg">${statusLabel}</span>
           ${d.valide_at ? `<small class="text-muted">le ${formatDateFr(d.valide_at?.substring(0, 10))}</small>` : ''}
         </div>`;
 
@@ -539,13 +539,13 @@ $initPermanents = Db::fetchAll(
             const jour = joursSemaine[p.jour_semaine] || '?';
             const isModification = !!p.replaces_id;
             const typeBadge = p.type === 'jour_off'
-                ? '<span class="badge badge-zt-jour-off">Jour off</span>'
-                : '<span class="badge badge-zt-horaire-special">Horaire sp\u00e9cial</span>';
+                ? '<span class="badge badge-ss-jour-off">Jour off</span>'
+                : '<span class="badge badge-ss-horaire-special">Horaire sp\u00e9cial</span>';
 
             let horaireCell = '<span class="text-muted">\u2014</span>';
             if (p.horaire_code) {
                 const c = p.horaire_couleur || '#9B51E0';
-                horaireCell = `<span class="badge badge-zt-horaire-dynamic" style="background:${escapeHtml(c)}">${escapeHtml(p.horaire_code)}</span>`;
+                horaireCell = `<span class="badge badge-ss-horaire-dynamic" style="background:${escapeHtml(c)}">${escapeHtml(p.horaire_code)}</span>`;
             }
 
             let modifCell = '';

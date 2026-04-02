@@ -75,7 +75,7 @@ function admin_create_hygiene_commande() {
     $produitId = $params['produit_id'] ?? '';
     if (!$residentId || !$produitId) bad_request('Résident et produit requis');
 
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     $jour = $params['jour'] ?? date('Y-m-d');
 
     Db::exec(
@@ -88,7 +88,7 @@ function admin_create_hygiene_commande() {
 function admin_prepare_hygiene_commandes() {
     global $params;
     $ids = $params['ids'] ?? [];
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     if (!$ids || !is_array($ids)) bad_request('IDs requis');
 
     $ph = implode(',', array_fill(0, count($ids), '?'));
@@ -100,7 +100,7 @@ function admin_prepare_hygiene_commandes() {
 function admin_deliver_hygiene_commandes() {
     global $params;
     $ids = $params['ids'] ?? [];
-    $userId = $_SESSION['zt_user']['id'] ?? '';
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     if (!$ids || !is_array($ids)) bad_request('IDs requis');
 
     $ph = implode(',', array_fill(0, count($ids), '?'));

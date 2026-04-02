@@ -1,5 +1,5 @@
 <?php
-$userId = $_SESSION['zt_user']['id'] ?? '';
+$userId = $_SESSION['ss_user']['id'] ?? '';
 $totalContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts WHERE created_by = ? OR is_shared = 1", [$userId]);
 $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts WHERE is_shared = 1");
 ?>
@@ -321,7 +321,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
         if (window.ztCompose) {
             // Can't send external email via internal compose — navigate to email-externe
         }
-        window.location.href = '/zerdatime/admin/email-externe';
+        window.location.href = '/spocspace/admin/email-externe';
         // TODO: pre-fill compose with contact email
     }
 

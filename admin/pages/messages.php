@@ -14,11 +14,11 @@ $emailContacts = Db::fetchAll(
 
 $emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
 $emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
-$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['zt_user']['id'] ?? '']);
+$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['ss_user']['id'] ?? '']);
 $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
 ?>
 <!-- Admin Emails Page — Split-view email client -->
-<link rel="stylesheet" href="/zerdatime/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <style>
 /* Page header */
@@ -142,7 +142,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
 (function() {
     let editorModule = null;
     const getEditorModule = async () => {
-        if (!editorModule) editorModule = await import('/zerdatime/assets/js/rich-editor.js');
+        if (!editorModule) editorModule = await import('/spocspace/assets/js/rich-editor.js');
         return editorModule;
     };
     let contacts = <?= json_encode(array_values($emailContacts), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -369,7 +369,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
                 <div class="email-att-grid">
                 ${attachments.map(a => {
                     const isImg = a.mime_type && a.mime_type.startsWith('image/');
-                    const dlUrl = '/zerdatime/admin/api.php?action=admin_download_message_attachment&id=' + encodeURIComponent(a.id);
+                    const dlUrl = '/spocspace/admin/api.php?action=admin_download_message_attachment&id=' + encodeURIComponent(a.id);
                     const thumb = isImg
                         ? `<img src="${dlUrl}" alt="">`
                         : `<i class="bi ${getFileIcon(a.mime_type)} ${getFileColorClass(a.mime_type)}"></i>`;
@@ -684,9 +684,9 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             fd.append('action', 'admin_upload_message_attachment');
             fd.append('email_id', emailId);
             fd.append('file', f);
-            await fetch('/zerdatime/admin/api.php', {
+            await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
-                headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd
             });
         }

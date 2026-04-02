@@ -1,9 +1,9 @@
 {
-  "name": "zerdaTime",
-  "short_name": "zerdaTime",
+  "name": "SpocSpace",
+  "short_name": "SpocSpace",
   "description": "Gestion du personnel et planning pour EMS",
-  "start_url": "/zerdatime/",
-  "scope": "/zerdatime/",
+  "start_url": "/spocspace/",
+  "scope": "/spocspace/",
   "display": "fullscreen",
   "orientation": "any",
   "background_color": "#F7F5F2",
@@ -11,26 +11,26 @@
   "lang": "fr",
   "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/zerdatime/assets/icons/icon-72x72.png",   "sizes": "72x72",   "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-96x96.png",   "sizes": "96x96",   "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-144x144.png", "sizes": "144x144", "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-152x152.png", "sizes": "152x152", "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/zerdatime/assets/icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
-    { "src": "/zerdatime/assets/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/spocspace/assets/icons/icon-72x72.png",   "sizes": "72x72",   "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-96x96.png",   "sizes": "96x96",   "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-144x144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-152x152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/spocspace/assets/icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "/spocspace/assets/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "screenshots": [],
   "shortcuts": [
     {
       "name": "Planning",
-      "url": "/zerdatime/admin/planning",
-      "icons": [{ "src": "/zerdatime/assets/icons/icon-96x96.png", "sizes": "96x96" }]
+      "url": "/spocspace/admin/planning",
+      "icons": [{ "src": "/spocspace/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Messages",
-      "url": "/zerdatime/admin/messages",
-      "icons": [{ "src": "/zerdatime/assets/icons/icon-96x96.png", "sizes": "96x96" }]
+      "url": "/spocspace/admin/messages",
+      "icons": [{ "src": "/spocspace/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

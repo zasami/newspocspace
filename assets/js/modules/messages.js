@@ -5,7 +5,7 @@ import { apiPost, toast, escapeHtml } from '../helpers.js';
 
 export function init() {
     // Render initial data from SSR
-    const ssrMessages = window.__ZT_PAGE_DATA__?.messages || [];
+    const ssrMessages = window.__SS_PAGE_DATA__?.messages || [];
     renderMessages(ssrMessages);
 
     // Submit message
@@ -36,7 +36,7 @@ function renderMessages(messages) {
         return;
     }
 
-    const userId = window.__ZT__?.user?.id;
+    const userId = window.__SS__?.user?.id;
 
     container.innerHTML = messages.map(m => {
         const isMine = m.from_user_id === userId;
@@ -45,12 +45,12 @@ function renderMessages(messages) {
         });
 
         return `
-          <div style="padding:0.75rem 0;border-bottom:1px solid var(--zt-border-light)${!m.lu && !isMine ? ';background:rgba(26,26,26,0.04);margin:0 -1.25rem;padding-left:1.25rem;padding-right:1.25rem' : ''}">
+          <div style="padding:0.75rem 0;border-bottom:1px solid var(--ss-border-light)${!m.lu && !isMine ? ';background:rgba(26,26,26,0.04);margin:0 -1.25rem;padding-left:1.25rem;padding-right:1.25rem' : ''}">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
               <strong style="font-size:0.88rem">${escapeHtml(m.sujet)}</strong>
               <small class="text-muted">${escapeHtml(date)}</small>
             </div>
-            <div style="font-size:0.85rem;color:var(--zt-text-secondary);margin-bottom:0.25rem">
+            <div style="font-size:0.85rem;color:var(--ss-text-secondary);margin-bottom:0.25rem">
               ${isMine ? `<span class="text-muted">Envoyé à :</span> ${m.to_names ? escapeHtml(m.to_names) : 'Direction'}` :
                 `<span class="text-muted">De :</span> ${escapeHtml(m.from_prenom + ' ' + m.from_nom)}`}
             </div>

@@ -19,8 +19,8 @@ function get_mur_config() {
     require_auth();
     $cfg = _mur_config();
     // Get EMS logo as default hero avatar
-    $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/zerdatime/logo.png';
-    $emsNom  = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+    $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/spocspace/logo.png';
+    $emsNom  = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 
     respond([
         'success' => true,
@@ -409,7 +409,7 @@ function upload_mur_media() {
         imagewebp($img, $destPath, 82);
         imagedestroy($img);
 
-        $url = '/zerdatime/storage/mur/' . $filename;
+        $url = '/spocspace/storage/mur/' . $filename;
         $mediaId = Uuid::v4();
         Db::exec(
             "INSERT INTO mur_media (id, post_id, user_id, type, filename, url) VALUES (?, ?, ?, 'image', ?, ?)",

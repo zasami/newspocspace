@@ -1,5 +1,5 @@
 /**
- * zerdaTime - Helpers
+ * SpocSpace - Helpers
  */
 
 export async function apiPost(action, data = {}) {
@@ -7,17 +7,17 @@ export async function apiPost(action, data = {}) {
     const headers = { 'Content-Type': 'application/json' };
 
     const readOnly = action.startsWith('get_') || ['me', 'login', 'request_reset', 'reset_password'].includes(action);
-    if (!readOnly && window.__ZT__?.csrfToken) {
-        headers['X-CSRF-Token'] = window.__ZT__.csrfToken;
+    if (!readOnly && window.__SS__?.csrfToken) {
+        headers['X-CSRF-Token'] = window.__SS__.csrfToken;
     }
 
     try {
-        const res = await fetch('/zerdatime/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
+        const res = await fetch('/spocspace/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
         const json = await res.json();
 
         // Update CSRF token if returned
         if (json.csrf) {
-            window.__ZT__.csrfToken = json.csrf;
+            window.__SS__.csrfToken = json.csrf;
         }
 
         if (!res.ok && !json.message) {

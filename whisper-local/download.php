@@ -1,15 +1,15 @@
 <?php
 /**
  * Resumable file download — supports Range headers for large files.
- * Usage: download.php?file=ZerdaTime-IA-Install.zip
+ * Usage: download.php?file=SpocSpace-IA-Install.zip
  *        download.php?file=mistral-model.bin
  */
 
 $allowed = [
-    'ZerdaTime-IA-Install.zip' => __DIR__ . '/ZerdaTime-IA-Install.zip',
+    'SpocSpace-IA-Install.zip' => __DIR__ . '/SpocSpace-IA-Install.zip',
     'mistral-model.bin'        => __DIR__ . '/downloads/mistral-model.bin',
     'install.bat'              => __DIR__ . '/install.bat',
-    'start-zerdatime-ia.bat'   => __DIR__ . '/start-zerdatime-ia.bat',
+    'start-spocspace-ia.bat'   => __DIR__ . '/start-spocspace-ia.bat',
     'install-whisper.ps1'      => __DIR__ . '/install-whisper.ps1',
     'uninstall.bat'            => __DIR__ . '/uninstall.bat',
 ];

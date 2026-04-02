@@ -19,7 +19,7 @@ const PAGE_LIMIT = 30;
 
 export async function init() {
     // Load contacts from SSR data
-    contacts = window.__ZT_PAGE_DATA__?.contacts || [];
+    contacts = window.__SS_PAGE_DATA__?.contacts || [];
 
     // Setup colleague search dropdowns
     setupColleagueSearch('composeToSearch', 'composeToDropdown', toSelected, 'composeToTags');
@@ -148,7 +148,7 @@ function renderDropdown(query, dropdown, selectedArr, tagsContainerId, input) {
     for (const [mod, members] of Object.entries(groups)) {
         html += `<div class="cd-group">${escapeHtml(mod)}</div>`;
         members.forEach(c => {
-            html += `<div class="cd-item" data-id="${c.id}">${escapeHtml(c.prenom + ' ' + c.nom)}${c.fonction_nom ? ` <small style="color:var(--zt-text-muted)">— ${escapeHtml(c.fonction_nom)}</small>` : ''}</div>`;
+            html += `<div class="cd-item" data-id="${c.id}">${escapeHtml(c.prenom + ' ' + c.nom)}${c.fonction_nom ? ` <small style="color:var(--ss-text-muted)">— ${escapeHtml(c.fonction_nom)}</small>` : ''}</div>`;
         });
     }
     dropdown.innerHTML = html;
@@ -290,7 +290,7 @@ async function loadDetail(id) {
             <div class="email-att-grid">
             ${attachments.map(a => {
                 const isImg = a.mime_type && a.mime_type.startsWith('image/');
-                const dlUrl = '/zerdatime/api.php?action=download_attachment&id=' + encodeURIComponent(a.id);
+                const dlUrl = '/spocspace/api.php?action=download_attachment&id=' + encodeURIComponent(a.id);
                 const thumb = isImg
                     ? `<img src="${dlUrl}" class="att-preview-img" alt="">`
                     : `<i class="bi ${getFileIcon(a.mime_type)} att-preview-icon ${getFileColorClass(a.mime_type)}"></i>`;
@@ -383,7 +383,7 @@ async function loadDetail(id) {
         el.addEventListener('click', async (ev) => {
             ev.preventDefault();
             const a = document.createElement('a');
-            a.href = '/zerdatime/api.php?action=download_attachment&id=' + encodeURIComponent(el.dataset.attId);
+            a.href = '/spocspace/api.php?action=download_attachment&id=' + encodeURIComponent(el.dataset.attId);
             a.download = '';
             a.click();
         });
@@ -485,7 +485,7 @@ async function discardDraft() {
 }
 
 function openReply(email, recipients, replyAll) {
-    const userId = window.__ZT__?.user?.id;
+    const userId = window.__SS__?.user?.id;
     const to = [email.from_user_id].filter(id => id !== userId);
     let cc = [];
     if (replyAll) {
@@ -601,17 +601,17 @@ async function sendEmail() {
             fd.append('file', file);
 
             try {
-                const csrfToken = window.__ZT__?.csrfToken;
+                const csrfToken = window.__SS__?.csrfToken;
                 const headers = {};
                 if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-                const uploadRes = await fetch('/zerdatime/api.php', {
+                const uploadRes = await fetch('/spocspace/api.php', {
                     method: 'POST',
                     body: fd,
                     headers,
                 });
                 const json = await uploadRes.json();
-                if (json.csrf) window.__ZT__.csrfToken = json.csrf;
+                if (json.csrf) window.__SS__.csrfToken = json.csrf;
             } catch (err) {
                 console.warn('Attachment upload error:', err);
             }

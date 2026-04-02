@@ -48,7 +48,7 @@ function admin_create_planning()
     if ($existing > 0) bad_request('Un planning existe déjà pour ce mois');
 
     $id = Uuid::v4();
-    $userId = $_SESSION['zt_user']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     Db::exec(
         "INSERT INTO plannings (id, mois_annee, statut, genere_par, genere_at) VALUES (?, ?, 'brouillon', ?, NOW())",
         [$id, $mois, $userId]
@@ -128,7 +128,7 @@ function admin_finalize_planning()
 
     Db::exec(
         "UPDATE plannings SET statut = ?, valide_par = ?, valide_at = NOW() WHERE id = ?",
-        [$statut, $_SESSION['zt_user']['id'], $id]
+        [$statut, $_SESSION['ss_user']['id'], $id]
     );
 
     // Notify all active users when planning is published (provisoire or final)
@@ -521,7 +521,7 @@ function admin_generate_planning()
         $besoinsIdx[$b['module_id']][(int)$b['jour_semaine']][$b['fonction_id']] = (int) $b['nb_requis'];
     }
 
-    // ── Override besoins with zerdaTime rules ──
+    // ── Override besoins with SpocSpace rules ──
     // AS: 2 per étage per module, 7j/7
     // INF: 1 per module, 7j/7
     // ASSC: 1 per module, 7j/7
@@ -1304,11 +1304,11 @@ function admin_generate_planning()
                 }
                 if (!$iaResponse) {
                     $iaError = "Failed to parse JSON from Gemini response";
-                    error_log("zerdaTime IA Gemini JSON parse error. Raw text: " . substr($text, 0, 500));
+                    error_log("SpocSpace IA Gemini JSON parse error. Raw text: " . substr($text, 0, 500));
                 }
             } else {
                 $iaError = "Gemini API error (HTTP $httpCode)";
-                error_log("zerdaTime IA Gemini error: HTTP $httpCode — " . substr($raw, 0, 500));
+                error_log("SpocSpace IA Gemini error: HTTP $httpCode — " . substr($raw, 0, 500));
             }
 
         } elseif ($aiProvider === 'claude') {
@@ -1356,7 +1356,7 @@ function admin_generate_planning()
                 }
             } else {
                 $iaError = "Claude API error (HTTP $httpCode)";
-                error_log("zerdaTime IA Claude error: HTTP $httpCode — " . substr($raw, 0, 500));
+                error_log("SpocSpace IA Claude error: HTTP $httpCode — " . substr($raw, 0, 500));
             }
         }
 
@@ -1382,7 +1382,7 @@ function admin_generate_planning()
                 // Validate user_id exists in our users table
                 if (!$userId || !$date) continue;
                 if (!isset($validUserIds[$userId])) {
-                    error_log("zerdaTime IA: skipped invalid user_id '$userId'");
+                    error_log("SpocSpace IA: skipped invalid user_id '$userId'");
                     continue;
                 }
                 // Validate date is within the month
@@ -1419,7 +1419,7 @@ function admin_generate_planning()
                         $iaOptimizations++;
                     }
                 } catch (\Throwable $e) {
-                    error_log("zerdaTime IA optimization error: " . $e->getMessage());
+                    error_log("SpocSpace IA optimization error: " . $e->getMessage());
                     continue; // Skip this optimization, don't crash
                 }
             }
@@ -1527,7 +1527,7 @@ function admin_send_planning_email()
     }
 
     // Get EMS name for email subject
-    $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+    $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
     $monthNames = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
     [$year, $month] = explode('-', $mois);
     $monthLabel = $monthNames[(int)$month - 1] . ' ' . $year;

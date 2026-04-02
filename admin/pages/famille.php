@@ -136,7 +136,7 @@ $famResidents = Db::fetchAll(
   </div>
 </div></div></div>
 
-<script<?= nonce() ?> src="/zerdatime/website/assets/js/famille-crypto.js"></script>
+<script<?= nonce() ?> src="/spocspace/website/assets/js/famille-crypto.js"></script>
 <script<?= nonce() ?>>
 (function() {
     const residents = <?= json_encode(array_values($famResidents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -295,8 +295,8 @@ $famResidents = Db::fetchAll(
         fd.append('file_name', file.name);
         Object.entries(extraFields || {}).forEach(([k, v]) => fd.append(k, v));
 
-        const csrfToken = (window.__ZT_ADMIN__?.csrfToken || '');
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const csrfToken = (window.__SS_ADMIN__?.csrfToken || '');
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': csrfToken },
             body: fd

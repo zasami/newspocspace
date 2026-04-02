@@ -1,6 +1,6 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["zt_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 // ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['zt_user']['id'];
+$uid = $_SESSION['ss_user']['id'];
 $chgCurrentMois = date('Y-m');
 
 // Mon planning du mois courant
@@ -194,7 +194,7 @@ $chgChangements = Db::fetchAll(
     </div>
   </div>
 </div>
-<script type="application/json" id="__zt_ssr__"><?= json_encode([
+<script type="application/json" id="__ss_ssr__"><?= json_encode([
     'my_planning'  => $chgMyPlanning,
     'collegues'    => $chgAllCollegues,
     'changements'  => $chgChangements,

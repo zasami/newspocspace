@@ -60,7 +60,7 @@
         <!-- Import Users -->
         <div class="mb-4 p-3 bg-light rounded">
           <h6><i class="bi bi-people"></i> Collaborateurs (CSV)</h6>
-          <div class="zt-info-bar small mb-2">
+          <div class="ss-info-bar small mb-2">
             <i class="bi bi-info-circle"></i>
             Colonnes requises : <strong>nom, prenom, email</strong><br>
             Colonnes optionnelles : id, role, taux, fonction, contrat
@@ -75,7 +75,7 @@
         <!-- Import Polypoint -->
         <div class="p-3 bg-light rounded">
           <h6><i class="bi bi-calendar3"></i> Planning Polypoint (CSV)</h6>
-          <div class="zt-info-bar small mb-2">
+          <div class="ss-info-bar small mb-2">
             <i class="bi bi-info-circle"></i>
             Colonnes : <strong>email</strong> ou <strong>employee_id</strong>, <strong>date</strong> (YYYY-MM-DD), <strong>horaire</strong> (code), <strong>module</strong> (code)<br>
             Séparateur : <code>;</code> ou <code>,</code> (auto-détecté)
@@ -164,7 +164,7 @@ document.getElementById('impUsersBtn')?.addEventListener('click', async () => {
     fd.append('file', file);
 
     try {
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,
@@ -201,7 +201,7 @@ document.getElementById('impPolyBtn')?.addEventListener('click', async () => {
     fd.append('file', file);
 
     try {
-        const resp = await fetch('/zerdatime/admin/api.php', {
+        const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,

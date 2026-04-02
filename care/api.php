@@ -1,13 +1,13 @@
 <?php
 /**
- * zerdaCare — API entry point
+ * SpocCare — API entry point
  */
 require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 // Require at least collaborateur role (ASA, AS, infirmier can access)
-if (empty($_SESSION['zt_user'])) {
+if (empty($_SESSION['ss_user'])) {
     forbidden('Accès requis');
 }
 
@@ -24,7 +24,7 @@ if (empty($action)) {
 $isReadOnly = str_starts_with($action, 'care_get_') || str_starts_with($action, 'care_serve_') || str_starts_with($action, 'care_download_');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isReadOnly) {
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    if (empty($_SESSION['zt_csrf_token']) || !$token || !hash_equals($_SESSION['zt_csrf_token'], $token)) {
+    if (empty($_SESSION['ss_csrf_token']) || !$token || !hash_equals($_SESSION['ss_csrf_token'], $token)) {
         forbidden('Invalid CSRF token');
     }
 }
@@ -52,6 +52,6 @@ if (!function_exists($action)) not_found('Action not available');
 try {
     $action();
 } catch (\Throwable $e) {
-    error_log('zerdaCare API error [' . $action . ']: ' . $e->getMessage());
+    error_log('SpocCare API error [' . $action . ']: ' . $e->getMessage());
     error_response('Erreur interne', 500);
 }
