@@ -3017,7 +3017,7 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-cat-nav { display: flex; flex-direction: column; gap: 2px; }
 .mur-cat-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: .85rem; font-weight: 500; color: var(--zt-text, #1a1a1a); cursor: pointer; transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
 .mur-cat-item:hover { background: var(--zt-bg, #F7F5F2); }
-.mur-cat-item.active { background: #bcd2cb; color: #2d4a43; font-weight: 600; }
+.mur-cat-item.active { background: var(--mur-accent, #bcd2cb); color: var(--mur-accent-text, #2d4a43); font-weight: 600; }
 .mur-cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .mur-cat-icon { font-size: 1rem; width: 20px; text-align: center; }
 .mur-cat-count { margin-left: auto; font-size: .72rem; color: var(--zt-muted, #888); font-weight: 600; }
@@ -3051,8 +3051,8 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-composer-bottom .mur-btn-post { margin-left: auto; }
 .mur-select { border: 1.5px solid var(--zt-border, #e5e7eb); border-radius: 8px; padding: 5px 10px; font-size: .8rem; background: var(--zt-surface, #fff); cursor: pointer; }
 .mur-composer-anon { font-size: .78rem; color: var(--zt-muted, #888); display: flex; align-items: center; gap: 4px; cursor: pointer; }
-.mur-btn-post { background: #bcd2cb; color: #2d4a43; border: none; border-radius: 10px; padding: 8px 20px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px; }
-.mur-btn-post:hover { background: #a8c4bb; }
+.mur-btn-post { background: var(--mur-accent, #bcd2cb); color: var(--mur-accent-text, #2d4a43); border: none; border-radius: 10px; padding: 8px 20px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px; }
+.mur-btn-post:hover { filter: brightness(.93); }
 .mur-btn-post:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Posts (Zikzak style) ── */

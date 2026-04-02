@@ -75,6 +75,30 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
 /* ── Categories input ── */
 .mur-categories-input { font-size: .85rem; }
 
+/* ── Hero drop zone ── */
+.mur-hero-drop { position: relative; border: 2px dashed var(--cl-border, #e5e7eb); border-radius: 14px; overflow: hidden; aspect-ratio: 3/1; min-height: 140px; cursor: pointer; transition: all .2s; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; background: var(--cl-bg, #F7F5F2); }
+.mur-hero-drop:hover { border-color: #bcd2cb; background: rgba(188,210,203,.08); }
+.mur-hero-drop.drag-over { border-color: #2d4a43; background: rgba(188,210,203,.15); }
+.mur-hero-drop.has-image { border-style: solid; border-color: transparent; }
+.mur-hero-drop.has-image:hover { border-color: #bcd2cb; }
+.mur-hero-drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mur-hero-drop-plus { display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1; color: var(--cl-text-muted, #888); transition: all .2s; pointer-events: none; }
+.mur-hero-drop-plus i { font-size: 2rem; width: 56px; height: 56px; border-radius: 50%; background: rgba(188,210,203,.2); display: flex; align-items: center; justify-content: center; }
+.mur-hero-drop-plus span { font-size: .82rem; }
+.mur-hero-drop:hover .mur-hero-drop-plus i { background: rgba(188,210,203,.35); color: #2d4a43; }
+.mur-hero-drop.has-image .mur-hero-drop-plus { display: none; }
+.mur-hero-drop-actions { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; gap: 6px; opacity: 0; transition: opacity .2s; }
+.mur-hero-drop:hover .mur-hero-drop-actions,
+.mur-hero-drop.has-image .mur-hero-drop-actions { opacity: 1; }
+.mur-hero-drop:not(.has-image) .mur-hero-drop-actions { display: none; }
+.mur-hero-drop-btn { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .85rem; background: rgba(255,255,255,.9); color: #333; backdrop-filter: blur(4px); transition: all .2s; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.mur-hero-drop-btn:hover { background: #fff; transform: scale(1.1); }
+.mur-hero-drop-btn-danger:hover { color: #7B3B2C; background: #ffeae6; }
+@media (max-width: 768px) {
+    .mur-hero-drop-actions { opacity: 1; }
+    .mur-hero-drop-plus span { display: none; }
+}
+
 @media (max-width: 768px) {
     .mur-stats { flex-direction: column; }
     .mur-config-row { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -230,20 +254,38 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
     <div class="mur-config-card mt-3">
         <h6 class="fw-bold mb-3"><i class="bi bi-image me-2"></i>Personnalisation du Hero</h6>
 
+        <!-- Hero image preview / drop zone -->
+        <div class="mur-hero-drop <?= !empty($cfg['hero_image']) ? 'has-image' : '' ?>" id="heroDropZone">
+            <input type="file" id="cfgHeroImage" accept="image/jpeg,image/png,image/webp" style="display:none">
+            <?php if (!empty($cfg['hero_image'])): ?>
+            <img src="<?= h($cfg['hero_image']) ?>" alt="" id="heroPreviewImg">
+            <?php else: ?>
+            <img src="" alt="" id="heroPreviewImg" style="display:none">
+            <?php endif; ?>
+            <div class="mur-hero-drop-plus" id="heroDropPlus">
+                <i class="bi bi-plus-lg"></i>
+                <span>Glissez ou cliquez pour ajouter une image de couverture</span>
+            </div>
+            <div class="mur-hero-drop-actions" id="heroDropActions">
+                <button class="mur-hero-drop-btn" id="heroChangeBtn" title="Modifier"><i class="bi bi-pencil"></i></button>
+                <button class="mur-hero-drop-btn mur-hero-drop-btn-danger" id="heroDeleteBtn" title="Supprimer"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+
         <div class="mur-config-row">
             <div>
-                <div class="mur-config-label">Image de couverture</div>
-                <div class="mur-config-hint">Image de fond du bandeau hero (recommandé 1200x400, max 5 Mo)</div>
+                <div class="mur-config-label">Couleur du hero (si pas d'image)</div>
+                <div class="mur-config-hint">Couleur de fond dégradé du bandeau</div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <?php if (!empty($cfg['hero_image'])): ?>
-                <img src="<?= h($cfg['hero_image']) ?>" alt="" style="height:40px;border-radius:6px;object-fit:cover">
-                <?php endif; ?>
-                <label class="btn btn-light btn-sm" style="cursor:pointer">
-                    <i class="bi bi-upload me-1"></i>Changer
-                    <input type="file" id="cfgHeroImage" accept="image/*" style="display:none">
-                </label>
+            <input type="color" id="cfgHeroColor" class="form-control form-control-color" value="<?= h($cfg['hero_color'] ?? '#2d4a43') ?>" style="width:50px;height:36px;padding:2px;cursor:pointer">
+        </div>
+
+        <div class="mur-config-row">
+            <div>
+                <div class="mur-config-label">Couleur d'accentuation (boutons actifs)</div>
+                <div class="mur-config-hint">Couleur des boutons actifs, catégories sélectionnées, etc.</div>
             </div>
+            <input type="color" id="cfgAccentColor" class="form-control form-control-color" value="<?= h($cfg['accent_color'] ?? '#bcd2cb') ?>" style="width:50px;height:36px;padding:2px;cursor:pointer">
         </div>
 
         <div class="mur-config-row">
@@ -421,15 +463,28 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
         }
     });
 
-    // ── Hero image upload ──
-    $('#cfgHeroImage')?.addEventListener('change', async () => {
-        const file = $('#cfgHeroImage').files[0];
-        if (!file) return;
+    // ── Hero drop zone ──
+    const dropZone = $('#heroDropZone');
+    const fileInput = $('#cfgHeroImage');
+    const previewImg = $('#heroPreviewImg');
 
+    async function uploadHeroFile(file) {
+        if (!file || !file.type.startsWith('image/')) { showToast('Format image requis', 'error'); return; }
+        if (file.size > 5 * 1024 * 1024) { showToast('Max 5 Mo', 'error'); return; }
+
+        // Instant preview (client-side)
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewImg.style.display = '';
+            dropZone.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+
+        // Upload to server
         const fd = new FormData();
         fd.append('action', 'admin_upload_mur_hero');
         fd.append('hero_image', file);
-
         const res = await fetch('/zerdatime/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
@@ -437,21 +492,55 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
         }).then(r => r.json());
 
         if (res.success) {
+            previewImg.src = res.url;
             showToast('Image hero mise à jour', 'success');
-            // Update preview
-            const preview = $('#cfgHeroImage').closest('.d-flex')?.querySelector('img');
-            if (preview) preview.src = res.url;
-            else $('#cfgHeroImage').closest('.d-flex')?.insertAdjacentHTML('afterbegin', `<img src="${res.url}" alt="" style="height:40px;border-radius:6px;object-fit:cover">`);
         } else {
-            showToast(res.message || 'Erreur', 'error');
+            showToast(res.message || 'Erreur upload', 'error');
+        }
+    }
+
+    // Click to upload
+    dropZone?.addEventListener('click', (e) => {
+        if (e.target.closest('.mur-hero-drop-btn')) return;
+        fileInput.click();
+    });
+    fileInput?.addEventListener('change', () => {
+        if (fileInput.files[0]) uploadHeroFile(fileInput.files[0]);
+    });
+
+    // Drag & drop
+    if (dropZone) {
+        ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); }));
+        ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.remove('drag-over')));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer?.files?.[0];
+            if (file) uploadHeroFile(file);
+        });
+    }
+
+    // Change button
+    $('#heroChangeBtn')?.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+
+    // Delete button
+    $('#heroDeleteBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const res = await adminApiPost('admin_save_mur_config', { config: { hero_image: '' } });
+        if (res.success) {
+            previewImg.style.display = 'none';
+            previewImg.src = '';
+            dropZone.classList.remove('has-image');
+            showToast('Image supprimée', 'success');
         }
     });
 
-    // ── Save Hero text ──
+    // ── Save Hero (text + colors) ──
     $('#btnSaveHero')?.addEventListener('click', async () => {
         const config = {
             hero_title: $('#cfgHeroTitle').value || 'Mur social',
             hero_subtitle: $('#cfgHeroSubtitle').value || '',
+            hero_color: $('#cfgHeroColor').value || '#2d4a43',
+            accent_color: $('#cfgAccentColor').value || '#bcd2cb',
         };
         const res = await adminApiPost('admin_save_mur_config', { config });
         if (res.success) showToast('Hero mis à jour', 'success');

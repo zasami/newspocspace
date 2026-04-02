@@ -22,7 +22,7 @@ function admin_save_mur_config() {
     $allowed = [
         'moderation_enabled', 'allow_anonymous_comments', 'allow_private_posts',
         'allow_comments', 'allow_likes', 'max_posts_per_day', 'post_categories',
-        'hero_title', 'hero_subtitle',
+        'hero_title', 'hero_subtitle', 'hero_color', 'accent_color', 'hero_image',
     ];
 
     $updates = $params['config'] ?? [];

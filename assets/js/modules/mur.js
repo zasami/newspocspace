@@ -58,22 +58,38 @@ export function destroy() {
 // HERO
 // ══════════════════════════════════════
 function setupHero() {
-    if (wallConfig.hero_image) {
-        const cover = document.getElementById('murHeroCover');
-        if (cover) cover.style.backgroundImage = `url('${wallConfig.hero_image}')`;
+    const cover = document.getElementById('murHeroCover');
+    const heroColor = wallConfig.hero_color || '#2d4a43';
+    const accentColor = wallConfig.accent_color || '#bcd2cb';
+
+    // Apply hero background
+    if (wallConfig.hero_image && cover) {
+        cover.style.backgroundImage = `url('${wallConfig.hero_image}')`;
+    } else if (cover) {
+        // Use custom color gradient
+        cover.style.background = `linear-gradient(135deg, ${heroColor} 0%, ${lightenColor(heroColor, 30)} 50%, ${accentColor} 100%)`;
     }
+
     if (wallConfig.ems_logo) {
         const logo = document.getElementById('murHeroLogo');
         if (logo) logo.src = wallConfig.ems_logo;
     }
-    if (wallConfig.hero_title) {
-        const el = document.getElementById('murHeroTitle');
-        if (el) el.textContent = wallConfig.hero_title;
-    }
-    if (wallConfig.hero_subtitle) {
-        const el = document.getElementById('murHeroSubtitle');
-        if (el) el.textContent = wallConfig.hero_subtitle;
-    }
+    const titleEl = document.getElementById('murHeroTitle');
+    if (titleEl && wallConfig.hero_title) titleEl.textContent = wallConfig.hero_title;
+    const subEl = document.getElementById('murHeroSubtitle');
+    if (subEl && wallConfig.hero_subtitle) subEl.textContent = wallConfig.hero_subtitle;
+
+    // Apply accent color to CSS variables
+    document.getElementById('mur-page')?.style.setProperty('--mur-accent', accentColor);
+    document.getElementById('mur-page')?.style.setProperty('--mur-accent-text', heroColor);
+}
+
+function lightenColor(hex, percent) {
+    hex = hex.replace('#', '');
+    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + Math.round(255 * percent / 100));
+    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + Math.round(255 * percent / 100));
+    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + Math.round(255 * percent / 100));
+    return `rgb(${r},${g},${b})`;
 }
 
 // ══════════════════════════════════════

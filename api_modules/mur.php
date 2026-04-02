@@ -33,6 +33,8 @@ function get_mur_config() {
             'hero_image'            => $cfg['hero_image'] ?? '',
             'hero_title'            => $cfg['hero_title'] ?? 'Mur social',
             'hero_subtitle'         => $cfg['hero_subtitle'] ?? '',
+            'hero_color'            => $cfg['hero_color'] ?? '#2d4a43',
+            'accent_color'          => $cfg['accent_color'] ?? '#bcd2cb',
             'ems_logo'              => $emsLogo,
             'ems_name'              => $emsNom,
         ],
