@@ -3110,6 +3110,17 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-comment-anon-label { font-size: .72rem; color: var(--zt-muted, #888); display: flex; align-items: center; gap: 3px; white-space: nowrap; cursor: pointer; }
 .mur-comment-error { text-align: center; padding: 10px; font-size: .82rem; color: var(--zt-muted, #888); }
 
+/* Emoji picker */
+.mur-emoji-picker { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px; background: var(--zt-surface, #fff); border: 1.5px solid var(--zt-border, #e5e7eb); border-radius: 12px; margin-top: 8px; max-width: 280px; }
+.mur-emoji-item { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; border-radius: 6px; transition: background .1s; user-select: none; }
+.mur-emoji-item:hover { background: var(--zt-bg, #F7F5F2); transform: scale(1.2); }
+
+/* Comment image preview */
+.mur-comment-img-preview { margin-top: 6px; }
+.mur-comment-img-thumb { position: relative; display: inline-block; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; }
+.mur-comment-img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mur-comment-img-remove { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .55rem; }
+
 /* Edit inline */
 .mur-edit-area { width: 100%; border: 1.5px solid #bcd2cb; border-radius: 8px; padding: 8px; font-size: .85rem; font-family: inherit; resize: vertical; min-height: 60px; }
 .mur-edit-actions { display: flex; gap: 8px; margin-top: 8px; }

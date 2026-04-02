@@ -402,12 +402,20 @@ function renderPost(post) {
             <div class="mur-comment-input-wrap">
                 <input type="text" class="mur-comment-text" placeholder="Écrire un commentaire..." data-post-id="${post.id}">
                 <div class="mur-comment-icons">
-                    <button class="mur-comment-icon-btn" title="Photo"><i class="bi bi-image"></i></button>
-                    <button class="mur-comment-icon-btn" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
-                    <button class="mur-comment-icon-btn" title="Pièce jointe"><i class="bi bi-paperclip"></i></button>
+                    <label class="mur-comment-icon-btn" title="Photo">
+                        <i class="bi bi-image"></i>
+                        <input type="file" class="mur-comment-file" accept="image/*" data-post-id="${post.id}" style="display:none">
+                    </label>
+                    <button class="mur-comment-icon-btn mur-emoji-btn" title="Emoji" data-post-id="${post.id}"><i class="bi bi-emoji-smile"></i></button>
+                    <label class="mur-comment-icon-btn" title="Pièce jointe">
+                        <i class="bi bi-paperclip"></i>
+                        <input type="file" class="mur-comment-attach" data-post-id="${post.id}" style="display:none">
+                    </label>
                 </div>
             </div>
+            <div class="mur-comment-img-preview" data-post-id="${post.id}" style="display:none"></div>
         </div>
+        <div class="mur-emoji-picker" data-post-id="${post.id}" style="display:none"></div>
     </div>` : '';
 
     return `<div class="mur-post" data-post-id="${post.id}">
@@ -466,15 +474,59 @@ function setupPostHandlers(container) {
         });
     });
 
-    // Comment send (always-visible inputs)
+    // Comment send (Enter key)
     container.querySelectorAll('.mur-comment-text:not([data-bound])').forEach(input => {
         input.dataset.bound = '1';
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const postId = input.dataset.postId;
-                submitComment(postId, input);
+                submitComment(input.dataset.postId, input);
             }
+        });
+    });
+
+    // Emoji picker
+    container.querySelectorAll('.mur-emoji-btn:not([data-bound])').forEach(btn => {
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const postId = btn.dataset.postId;
+            const picker = container.querySelector(`.mur-emoji-picker[data-post-id="${postId}"]`);
+            if (!picker) return;
+            if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
+            if (!picker.dataset.init) {
+                picker.dataset.init = '1';
+                const emojis = ['😀','😂','🥰','😍','😎','🤩','😢','😡','👍','👎','❤️','🔥','🎉','👏','💪','🙏','✅','⭐','💡','🎯','☕','🍕','🌟','😊','🤔','😅','🙄','😇','🤗','💯'];
+                picker.innerHTML = emojis.map(e => `<span class="mur-emoji-item">${e}</span>`).join('');
+                picker.querySelectorAll('.mur-emoji-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const input = container.querySelector(`.mur-comment-text[data-post-id="${postId}"]`);
+                        if (input) { input.value += item.textContent; input.focus(); }
+                        picker.style.display = 'none';
+                    });
+                });
+            }
+            picker.style.display = 'flex';
+        });
+    });
+
+    // Comment image upload preview
+    container.querySelectorAll('.mur-comment-file:not([data-bound])').forEach(input => {
+        input.dataset.bound = '1';
+        input.addEventListener('change', () => {
+            const file = input.files[0];
+            if (!file) return;
+            const postId = input.dataset.postId;
+            const preview = container.querySelector(`.mur-comment-img-preview[data-post-id="${postId}"]`);
+            if (!preview) return;
+            const url = URL.createObjectURL(file);
+            preview.innerHTML = `<div class="mur-comment-img-thumb"><img src="${url}" alt=""><button class="mur-preview-remove mur-comment-img-remove"><i class="bi bi-x"></i></button></div>`;
+            preview.style.display = '';
+            preview.querySelector('.mur-comment-img-remove')?.addEventListener('click', () => {
+                preview.innerHTML = '';
+                preview.style.display = 'none';
+                input.value = '';
+            });
         });
     });
 
