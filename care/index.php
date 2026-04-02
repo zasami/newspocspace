@@ -28,7 +28,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = [
     'dashboard', 'residents', 'marquage', 'famille', 'menus',
-    'reservations', 'protection',
+    'reservations', 'protection', 'hygiene',
 ];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
@@ -42,6 +42,7 @@ $pageLabels = [
     'menus'        => 'Menus',
     'reservations' => 'Réservations repas',
     'protection'   => 'Suivi Protection',
+    'hygiene'      => 'Produits Hygiène',
 ];
 
 $topbarPlaceholders = [
@@ -83,6 +84,7 @@ $sidebarCategories = [
         'label' => 'Vie quotidienne',
         'items' => [
             'marquage'     => ['label' => 'Marquage Lingerie',  'icon' => 'tags'],
+            'hygiene'      => ['label' => 'Produits Hygiène',   'icon' => 'droplet'],
             'menus'        => ['label' => 'Menus',              'icon' => 'egg-fried'],
             'reservations' => ['label' => 'Réservations repas', 'icon' => 'calendar-check'],
         ],

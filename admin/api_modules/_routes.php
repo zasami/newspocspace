@@ -109,6 +109,12 @@ return [
     'connexions' => [
         'admin_get_connexions',
     ],
+    'hygiene' => [
+        'admin_get_hygiene_produits', 'admin_save_hygiene_produit', 'admin_delete_hygiene_produit',
+        'admin_get_hygiene_commandes', 'admin_create_hygiene_commande',
+        'admin_prepare_hygiene_commandes', 'admin_deliver_hygiene_commandes',
+        'admin_delete_hygiene_commande',
+    ],
     'protection' => [
         'admin_get_protection_produits', 'admin_save_protection_produit', 'admin_delete_protection_produit',
         'admin_get_protection_attributions', 'admin_save_protection_attribution', 'admin_delete_protection_attribution',
