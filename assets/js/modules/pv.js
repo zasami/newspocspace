@@ -15,9 +15,11 @@ export async function init() {
     // Load references from SSR data
     refs = { success: true, modules: window.__ZT_PAGE_DATA__?.modules || [] };
 
-    // Fill module filter
+    // Fill module filter (clear first to avoid duplicates on SPA re-init)
     const modFilter = document.getElementById('pvModuleFilter');
     if (modFilter && refs.modules) {
+        // Keep only the first "Tous les modules" option
+        while (modFilter.options.length > 1) modFilter.remove(1);
         refs.modules.forEach(m => {
             const opt = document.createElement('option');
             opt.value = m.id;
