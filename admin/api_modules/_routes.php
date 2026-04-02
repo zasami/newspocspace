@@ -109,6 +109,11 @@ return [
     'connexions' => [
         'admin_get_connexions',
     ],
+    'agenda' => [
+        'admin_get_agenda_events', 'admin_create_agenda_event', 'admin_update_agenda_event',
+        'admin_move_agenda_event', 'admin_delete_agenda_event',
+        'admin_search_agenda', 'admin_get_agenda_contacts',
+    ],
     'roadmap' => [
         'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
     ],
