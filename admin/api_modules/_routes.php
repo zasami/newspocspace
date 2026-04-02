@@ -131,7 +131,7 @@ return [
         'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
     ],
     'mur' => [
-        'admin_get_mur_config', 'admin_save_mur_config',
+        'admin_get_mur_config', 'admin_save_mur_config', 'admin_upload_mur_hero',
         'admin_get_mur_posts', 'admin_moderate_mur_post', 'admin_delete_mur_post',
         'admin_pin_mur_post', 'admin_delete_mur_comment', 'admin_get_mur_stats',
     ],

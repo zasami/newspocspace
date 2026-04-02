@@ -18,6 +18,10 @@ function _mur_config(?string $key = null) {
 function get_mur_config() {
     require_auth();
     $cfg = _mur_config();
+    // Get EMS logo as default hero avatar
+    $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/zerdatime/logo.png';
+    $emsNom  = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'zerdaTime';
+
     respond([
         'success' => true,
         'config' => [
@@ -26,6 +30,11 @@ function get_mur_config() {
             'allow_anonymous_comments' => $cfg['allow_anonymous_comments'] ?? '0',
             'allow_private_posts'   => $cfg['allow_private_posts'] ?? '0',
             'post_categories'       => $cfg['post_categories'] ?? 'general,info,evenement,social',
+            'hero_image'            => $cfg['hero_image'] ?? '',
+            'hero_title'            => $cfg['hero_title'] ?? 'Mur social',
+            'hero_subtitle'         => $cfg['hero_subtitle'] ?? '',
+            'ems_logo'              => $emsLogo,
+            'ems_name'              => $emsNom,
         ],
     ]);
 }
@@ -58,9 +67,24 @@ function get_mur_feed() {
         [$user['id']]
     );
 
+    // Fetch media for all posts in one query
+    $postIds = array_column($posts, 'id');
+    $mediaByPost = [];
+    if ($postIds) {
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $allMedia = Db::fetchAll(
+            "SELECT id, post_id, url, type FROM mur_media WHERE post_id IN ($placeholders) ORDER BY created_at ASC",
+            $postIds
+        );
+        foreach ($allMedia as $m) {
+            $mediaByPost[$m['post_id']][] = $m;
+        }
+    }
+
     // Mask author for anonymous posts (unless own post)
     foreach ($posts as &$post) {
         $post['is_liked'] = (int) $post['is_liked'] > 0;
+        $post['media'] = $mediaByPost[$post['id']] ?? [];
         if ($post['is_anonymous'] && $post['user_id'] !== $user['id']) {
             $post['prenom'] = 'Anonyme';
             $post['nom'] = '';
@@ -301,6 +325,78 @@ function delete_mur_comment() {
     Db::exec("UPDATE mur_posts SET comments_count = GREATEST(0, comments_count - 1) WHERE id = ?", [$comment['post_id']]);
 
     respond(['success' => true, 'message' => 'Commentaire supprimé']);
+}
+
+// ── Upload media with post ──
+function upload_mur_media() {
+    $user = require_auth();
+    global $params;
+
+    $postId = $params['post_id'] ?? '';
+    if (!$postId) bad_request('post_id manquant');
+
+    // Verify ownership
+    $post = Db::fetch("SELECT user_id FROM mur_posts WHERE id = ? AND deleted_at IS NULL", [$postId]);
+    if (!$post || $post['user_id'] !== $user['id']) forbidden();
+
+    $uploadDir = __DIR__ . '/../storage/mur/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $uploaded = [];
+    for ($i = 0; $i < 4; $i++) {
+        $key = "file_$i";
+        if (empty($_FILES[$key]['tmp_name']) || $_FILES[$key]['error'] !== UPLOAD_ERR_OK) continue;
+
+        $file = $_FILES[$key];
+        if ($file['size'] > 8 * 1024 * 1024) continue; // 8MB max
+
+        $mime = mime_content_type($file['tmp_name']);
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) continue;
+
+        $filename = $postId . '_' . $i . '_' . time() . '.webp';
+        $destPath = $uploadDir . $filename;
+
+        $img = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+            'image/png'  => imagecreatefrompng($file['tmp_name']),
+            'image/webp' => imagecreatefromwebp($file['tmp_name']),
+            'image/gif'  => imagecreatefromgif($file['tmp_name']),
+            default => null,
+        };
+        if (!$img) continue;
+        imagewebp($img, $destPath, 82);
+        imagedestroy($img);
+
+        $url = '/zerdatime/storage/mur/' . $filename;
+        $mediaId = Uuid::v4();
+        Db::exec(
+            "INSERT INTO mur_media (id, post_id, user_id, type, filename, url) VALUES (?, ?, ?, 'image', ?, ?)",
+            [$mediaId, $postId, $user['id'], $filename, $url]
+        );
+        $uploaded[] = ['id' => $mediaId, 'url' => $url];
+    }
+
+    respond(['success' => true, 'media' => $uploaded, 'count' => count($uploaded)]);
+}
+
+// ── Get recent media (gallery) ──
+function get_mur_gallery() {
+    require_auth();
+    global $params;
+
+    $limit = min(20, max(4, (int)($params['limit'] ?? 8)));
+
+    $media = Db::fetchAll(
+        "SELECT m.id, m.url, m.type, m.created_at, m.post_id,
+                u.prenom, u.nom
+         FROM mur_media m
+         JOIN users u ON u.id = m.user_id
+         JOIN mur_posts p ON p.id = m.post_id AND p.deleted_at IS NULL AND p.status = 'approved'
+         ORDER BY m.created_at DESC
+         LIMIT $limit"
+    );
+
+    respond(['success' => true, 'media' => $media]);
 }
 
 // ── Wall stats ──

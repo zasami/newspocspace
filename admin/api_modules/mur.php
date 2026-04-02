@@ -22,6 +22,7 @@ function admin_save_mur_config() {
     $allowed = [
         'moderation_enabled', 'allow_anonymous_comments', 'allow_private_posts',
         'allow_comments', 'allow_likes', 'max_posts_per_day', 'post_categories',
+        'hero_title', 'hero_subtitle',
     ];
 
     $updates = $params['config'] ?? [];
@@ -139,6 +140,46 @@ function admin_delete_mur_comment() {
     Db::exec("UPDATE mur_posts SET comments_count = GREATEST(0, comments_count - 1) WHERE id = ?", [$postId]);
 
     respond(['success' => true, 'message' => 'Commentaire supprimé']);
+}
+
+function admin_upload_mur_hero() {
+    require_admin();
+
+    if (empty($_FILES['hero_image']) || $_FILES['hero_image']['error'] !== UPLOAD_ERR_OK) {
+        bad_request('Aucun fichier');
+    }
+
+    $file = $_FILES['hero_image'];
+    if ($file['size'] > 5 * 1024 * 1024) bad_request('Max 5 Mo');
+
+    $mime = mime_content_type($file['tmp_name']);
+    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
+        bad_request('Format non supporté (JPG, PNG, WebP)');
+    }
+
+    $uploadDir = __DIR__ . '/../../storage/mur/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $filename = 'hero_' . time() . '.webp';
+    $destPath = $uploadDir . $filename;
+
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+        'image/png'  => imagecreatefrompng($file['tmp_name']),
+        'image/webp' => imagecreatefromwebp($file['tmp_name']),
+    };
+    if (!$img) bad_request('Impossible de lire l\'image');
+    imagewebp($img, $destPath, 82);
+    imagedestroy($img);
+
+    $url = '/zerdatime/storage/mur/' . $filename;
+    Db::exec(
+        "INSERT INTO mur_config (config_key, config_value) VALUES ('hero_image', ?)
+         ON DUPLICATE KEY UPDATE config_value = ?",
+        [$url, $url]
+    );
+
+    respond(['success' => true, 'url' => $url, 'message' => 'Image hero mise à jour']);
 }
 
 function admin_get_mur_stats() {

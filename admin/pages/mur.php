@@ -225,6 +225,47 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
             <button class="btn btn-primary btn-sm" id="btnSaveConfig"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
         </div>
     </div>
+
+    <!-- Hero settings -->
+    <div class="mur-config-card mt-3">
+        <h6 class="fw-bold mb-3"><i class="bi bi-image me-2"></i>Personnalisation du Hero</h6>
+
+        <div class="mur-config-row">
+            <div>
+                <div class="mur-config-label">Image de couverture</div>
+                <div class="mur-config-hint">Image de fond du bandeau hero (recommandé 1200x400, max 5 Mo)</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <?php if (!empty($cfg['hero_image'])): ?>
+                <img src="<?= h($cfg['hero_image']) ?>" alt="" style="height:40px;border-radius:6px;object-fit:cover">
+                <?php endif; ?>
+                <label class="btn btn-light btn-sm" style="cursor:pointer">
+                    <i class="bi bi-upload me-1"></i>Changer
+                    <input type="file" id="cfgHeroImage" accept="image/*" style="display:none">
+                </label>
+            </div>
+        </div>
+
+        <div class="mur-config-row">
+            <div>
+                <div class="mur-config-label">Titre du mur</div>
+                <div class="mur-config-hint">Texte principal affiché sur le hero</div>
+            </div>
+            <input type="text" id="cfgHeroTitle" class="form-control form-control-sm" style="width:250px" value="<?= h($cfg['hero_title'] ?? 'Mur social') ?>">
+        </div>
+
+        <div class="mur-config-row">
+            <div>
+                <div class="mur-config-label">Sous-titre</div>
+                <div class="mur-config-hint">Phrase de présentation du réseau interne</div>
+            </div>
+            <input type="text" id="cfgHeroSubtitle" class="form-control form-control-sm" style="width:400px" value="<?= h($cfg['hero_subtitle'] ?? '') ?>">
+        </div>
+
+        <div class="mt-3 text-end">
+            <button class="btn btn-primary btn-sm" id="btnSaveHero"><i class="bi bi-check-lg me-1"></i>Enregistrer hero</button>
+        </div>
+    </div>
 </div>
 
 <script<?= nonce() ?>>
@@ -378,6 +419,43 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
         } else {
             showToast(res.message || 'Erreur', 'error');
         }
+    });
+
+    // ── Hero image upload ──
+    $('#cfgHeroImage')?.addEventListener('change', async () => {
+        const file = $('#cfgHeroImage').files[0];
+        if (!file) return;
+
+        const fd = new FormData();
+        fd.append('action', 'admin_upload_mur_hero');
+        fd.append('hero_image', file);
+
+        const res = await fetch('/zerdatime/admin/api.php', {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
+            body: fd,
+        }).then(r => r.json());
+
+        if (res.success) {
+            showToast('Image hero mise à jour', 'success');
+            // Update preview
+            const preview = $('#cfgHeroImage').closest('.d-flex')?.querySelector('img');
+            if (preview) preview.src = res.url;
+            else $('#cfgHeroImage').closest('.d-flex')?.insertAdjacentHTML('afterbegin', `<img src="${res.url}" alt="" style="height:40px;border-radius:6px;object-fit:cover">`);
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
+    });
+
+    // ── Save Hero text ──
+    $('#btnSaveHero')?.addEventListener('click', async () => {
+        const config = {
+            hero_title: $('#cfgHeroTitle').value || 'Mur social',
+            hero_subtitle: $('#cfgHeroSubtitle').value || '',
+        };
+        const res = await adminApiPost('admin_save_mur_config', { config });
+        if (res.success) showToast('Hero mis à jour', 'success');
+        else showToast(res.message || 'Erreur', 'error');
     });
 
     // ── Init ──
