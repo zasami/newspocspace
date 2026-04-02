@@ -1,6 +1,10 @@
 <?php
-// Load zerdaTime DB to fetch dynamic menus
+// Load zerdaTime DB to fetch dynamic menus + CMS sections
 require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/includes/cms.php';
+
+// Load CMS sections
+$cms = ws_load_sections('index');
 
 // Get 4 weeks of menus (current week Monday → +27 days) for continuous carousel
 $dt = new DateTime();
@@ -39,44 +43,40 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php include __DIR__ . '/includes/navbar.php'; ?>
 
 <!-- ═══ HERO WITH VIDEO BACKGROUND ═══ -->
+<?php if (ws_visible($cms, 'hero')):
+    $hero = ws_content($cms, 'hero');
+    $heroStats = $hero['stats'] ?? [];
+    $heroVideos = $hero['videos'] ?? ['assets/video/6096_medium.mp4'];
+    $ctaPrimary = $hero['cta_primary'] ?? ['text'=>'Nous contacter','href'=>'#contact','icon'=>'bi-telephone'];
+    $ctaSecondary = $hero['cta_secondary'] ?? ['text'=>'Découvrir','href'=>'#services','icon'=>'bi-arrow-down'];
+?>
 <section class="ws-hero ws-hero-video" id="hero">
   <div class="ws-hero-video-wrap">
     <video class="ws-hero-vid" autoplay muted loop playsinline
-           data-playlist='["assets/video/6096_medium.mp4","assets/video/229069_medium.mp4","assets/video/229071_medium.mp4"]'>
-      <source src="assets/video/6096_medium.mp4" type="video/mp4">
+           data-playlist='<?= json_encode($heroVideos) ?>'>
+      <source src="<?= h($heroVideos[0] ?? '') ?>" type="video/mp4">
     </video>
     <div class="ws-hero-video-overlay"></div>
   </div>
   <div class="container">
     <div class="ws-hero-content">
       <img src="EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-hero-logo">
-      <h1 class="ws-hero-title">Un lieu de vie<br>chaleureux <span class="ws-accent-light">au centre de Genève</span></h1>
-      <p class="ws-hero-desc">
-        Depuis plus de 30 ans, l'EMS La Terrassière SA accompagne les personnes âgées
-        avec respect, dignité et professionnalisme au cœur de Genève.
-      </p>
+      <h1 class="ws-hero-title"><?= ws_get($cms, 'hero', 'title') ?></h1>
+      <p class="ws-hero-desc"><?= h(ws_get($cms, 'hero', 'subtitle')) ?></p>
       <div class="ws-hero-actions">
-        <a href="#contact" class="ws-btn ws-btn-primary"><i class="bi bi-telephone"></i> Nous contacter</a>
-        <a href="#services" class="ws-btn ws-btn-outline-light"><i class="bi bi-arrow-down"></i> Découvrir</a>
+        <a href="<?= h($ctaPrimary['href'] ?? '#contact') ?>" class="ws-btn ws-btn-primary"><i class="bi <?= h($ctaPrimary['icon'] ?? '') ?>"></i> <?= h($ctaPrimary['text'] ?? '') ?></a>
+        <a href="<?= h($ctaSecondary['href'] ?? '#services') ?>" class="ws-btn ws-btn-outline-light"><i class="bi <?= h($ctaSecondary['icon'] ?? '') ?>"></i> <?= h($ctaSecondary['text'] ?? '') ?></a>
       </div>
+      <?php if ($heroStats): ?>
       <div class="ws-hero-stats">
+        <?php foreach ($heroStats as $st): ?>
         <div class="ws-stat">
-          <div class="ws-stat-num">98</div>
-          <div class="ws-stat-label">Collaborateurs</div>
+          <div class="ws-stat-num"><?= h($st['num'] ?? '') ?></div>
+          <div class="ws-stat-label"><?= h($st['label'] ?? '') ?></div>
         </div>
-        <div class="ws-stat">
-          <div class="ws-stat-num">4</div>
-          <div class="ws-stat-label">Modules de soins</div>
-        </div>
-        <div class="ws-stat">
-          <div class="ws-stat-num">24/7</div>
-          <div class="ws-stat-label">Présence continue</div>
-        </div>
-        <div class="ws-stat">
-          <div class="ws-stat-num">30+</div>
-          <div class="ws-stat-label">Années d'expérience</div>
-        </div>
+        <?php endforeach; ?>
       </div>
+      <?php endif; ?>
     </div>
   </div>
   <!-- Scroll indicator -->
@@ -86,205 +86,111 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ ABOUT / MISSION ═══ -->
+<?php if (ws_visible($cms, 'about')):
+    $aboutCards = ws_content($cms, 'about', 'cards') ?: [];
+?>
 <section class="ws-section" id="about">
   <div class="container">
     <div class="ws-section-header">
-      <div class="ws-section-badge"><i class="bi bi-feather"></i> Notre engagement</div>
-      <h2 class="ws-section-title">Une mission centrée sur <span class="ws-accent">l'humain</span></h2>
-      <p class="ws-section-desc">
-        L'EMS La Terrassière offre un accompagnement personnalisé dans un environnement
-        chaleureux et sécurisant au centre de Genève, favorisant l'autonomie et le bien-être de chaque résident.
-      </p>
+      <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'about', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'about', 'badge_text')) ?></div>
+      <h2 class="ws-section-title"><?= ws_get($cms, 'about', 'title') ?></h2>
+      <p class="ws-section-desc"><?= h(ws_get($cms, 'about', 'subtitle')) ?></p>
     </div>
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="ws-card ws-card-icon">
-          <div class="ws-card-ic"><i class="bi bi-heart-pulse"></i></div>
-          <h3>Soins personnalisés</h3>
-          <p>Chaque résident bénéficie d'un plan de soins adapté à ses besoins, élaboré en concertation avec l'équipe médicale et la famille.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="ws-card ws-card-icon">
-          <div class="ws-card-ic"><i class="bi bi-people-fill"></i></div>
-          <h3>Équipe qualifiée</h3>
-          <p>98 collaborateurs formés et passionnés — infirmières, aides-soignants, accompagnants — assurent une présence continue 7j/7.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="ws-card ws-card-icon">
-          <div class="ws-card-ic"><i class="bi bi-geo-alt"></i></div>
-          <h3>Au centre de Genève</h3>
-          <p>Un emplacement idéal en plein cœur de la ville, facilitant les visites des proches et l'accès aux services urbains.</p>
-        </div>
-      </div>
+      <?= ws_render_cards($aboutCards) ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ VIDEO DIVIDER 1 ═══ -->
+<?php if (ws_visible($cms, 'quote1')):
+    $q1 = ws_content($cms, 'quote1');
+?>
 <section class="ws-video-divider">
   <video autoplay muted loop playsinline>
-    <source src="assets/video/229069_medium.mp4" type="video/mp4">
+    <source src="<?= h($q1['video'] ?? 'assets/video/229069_medium.mp4') ?>" type="video/mp4">
   </video>
   <div class="ws-video-divider-overlay"></div>
   <div class="ws-video-divider-content">
-    <div class="ws-video-divider-badge"><i class="bi bi-quote"></i></div>
-    <blockquote>« Prendre soin, c'est offrir un regard bienveillant sur chaque instant de vie. »</blockquote>
+    <div class="ws-video-divider-badge"><i class="bi <?= h(ws_get($cms, 'quote1', 'badge_icon') ?: 'bi-quote') ?>"></i></div>
+    <blockquote>« <?= h($q1['text'] ?? '') ?> »</blockquote>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ SERVICES ═══ -->
+<?php if (ws_visible($cms, 'services')):
+    $svcCards = ws_content($cms, 'services', 'cards') ?: [];
+?>
 <section class="ws-section ws-section-alt" id="services">
   <div class="container">
     <div class="ws-section-header">
-      <div class="ws-section-badge"><i class="bi bi-clipboard2-pulse"></i> Nos prestations</div>
-      <h2 class="ws-section-title">Des soins <span class="ws-accent">complets</span> et adaptés</h2>
+      <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'services', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'services', 'badge_text')) ?></div>
+      <h2 class="ws-section-title"><?= ws_get($cms, 'services', 'title') ?></h2>
     </div>
     <div class="row g-4">
+      <?php foreach ($svcCards as $c): ?>
       <div class="col-lg-6">
         <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+          <div class="ws-service-icon"><i class="bi <?= h($c['icon'] ?? '') ?>"></i></div>
           <div class="ws-service-body">
-            <h4>Soins infirmiers</h4>
-            <p>Administration des traitements, surveillance clinique, soins techniques et accompagnement médical quotidien par notre équipe d'infirmières diplômées.</p>
+            <h4><?= h($c['title'] ?? '') ?></h4>
+            <p><?= h($c['text'] ?? '') ?></p>
           </div>
         </div>
       </div>
-      <div class="col-lg-6">
-        <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-person-hearts"></i></div>
-          <div class="ws-service-body">
-            <h4>Accompagnement quotidien</h4>
-            <p>Aide à la toilette, aux repas, aux déplacements. Nos aides-soignants qualifiés accompagnent chaque geste du quotidien avec bienveillance.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-emoji-smile"></i></div>
-          <div class="ws-service-body">
-            <h4>Animation & loisirs</h4>
-            <p>Activités variées : ateliers créatifs, gymnastique douce, sorties, musique, jeux de société — pour stimuler et maintenir le lien social.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-moon-stars"></i></div>
-          <div class="ws-service-body">
-            <h4>Veille de nuit</h4>
-            <p>Équipe de nuit dédiée de 20h15 à 7h15, garantissant sécurité et sérénité pour tous les résidents, avec rondes régulières.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-capsule"></i></div>
-          <div class="ws-service-body">
-            <h4>Suivi médical</h4>
-            <p>Collaboration étroite avec les médecins traitants, spécialistes et pharmaciens. Gestion rigoureuse des traitements et dossiers médicaux.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="ws-service-card">
-          <div class="ws-service-icon"><i class="bi bi-chat-heart"></i></div>
-          <div class="ws-service-body">
-            <h4>Soutien aux familles</h4>
-            <p>Écoute, conseil et accompagnement des proches. Des entretiens réguliers pour maintenir le lien et informer sur l'évolution des soins.</p>
-          </div>
-        </div>
-      </div>
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ VIE QUOTIDIENNE ═══ -->
+<?php if (ws_visible($cms, 'life')):
+    $lifeItems = ws_content($cms, 'life', 'items') ?: [];
+?>
 <section class="ws-section" id="life">
   <div class="container">
     <div class="ws-section-header">
-      <div class="ws-section-badge"><i class="bi bi-sun"></i> Au quotidien</div>
-      <h2 class="ws-section-title">Une journée à <span class="ws-accent">La Terrassière</span></h2>
-      <p class="ws-section-desc">
-        Chaque journée est rythmée par des moments de soins, de partage et de détente,
-        dans le respect du rythme de chacun.
-      </p>
+      <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'life', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'life', 'badge_text')) ?></div>
+      <h2 class="ws-section-title"><?= ws_get($cms, 'life', 'title') ?></h2>
+      <p class="ws-section-desc"><?= h(ws_get($cms, 'life', 'subtitle')) ?></p>
     </div>
     <div class="ws-timeline">
+      <?php foreach ($lifeItems as $item): ?>
       <div class="ws-timeline-item">
-        <div class="ws-timeline-time">7h00</div>
+        <div class="ws-timeline-time"><?= h($item['time'] ?? '') ?></div>
         <div class="ws-timeline-dot"></div>
         <div class="ws-timeline-content">
-          <h5>Réveil en douceur</h5>
-          <p>L'équipe de jour prend le relais. Aide au lever, toilette, habillage selon les besoins de chaque résident.</p>
+          <h5><?= h($item['title'] ?? '') ?></h5>
+          <p><?= h($item['text'] ?? '') ?></p>
         </div>
       </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">8h00</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Petit-déjeuner</h5>
-          <p>Repas servi en salle commune ou en chambre. Menus adaptés aux régimes et préférences alimentaires.</p>
-        </div>
-      </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">9h30</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Soins & activités du matin</h5>
-          <p>Soins infirmiers, visites médicales, kiné. En parallèle : ateliers mémoire, gymnastique douce, lecture.</p>
-        </div>
-      </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">12h00</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Déjeuner</h5>
-          <p>Repas équilibrés préparés sur place. Moment convivial de partage entre résidents.</p>
-        </div>
-      </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">14h00</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Animations de l'après-midi</h5>
-          <p>Ateliers créatifs, musique, jeux, sorties au jardin. Temps libre pour les visites des proches.</p>
-        </div>
-      </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">18h30</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Dîner & soirée</h5>
-          <p>Repas du soir suivi d'un moment de détente. Préparation au coucher selon le rythme de chacun.</p>
-        </div>
-      </div>
-      <div class="ws-timeline-item">
-        <div class="ws-timeline-time">20h15</div>
-        <div class="ws-timeline-dot"></div>
-        <div class="ws-timeline-content">
-          <h5>Équipe de nuit</h5>
-          <p>Relève de l'équipe de nuit. Rondes de surveillance, disponibilité continue jusqu'au matin.</p>
-        </div>
-      </div>
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ VIDEO DIVIDER 2 ═══ -->
+<?php if (ws_visible($cms, 'quote2')):
+    $q2 = ws_content($cms, 'quote2');
+?>
 <section class="ws-video-divider">
   <video autoplay muted loop playsinline>
-    <source src="assets/video/229071_medium.mp4" type="video/mp4">
+    <source src="<?= h($q2['video'] ?? 'assets/video/229071_medium.mp4') ?>" type="video/mp4">
   </video>
   <div class="ws-video-divider-overlay"></div>
   <div class="ws-video-divider-content">
-    <div class="ws-video-divider-badge"><i class="bi bi-heart-pulse"></i></div>
-    <blockquote>« Chaque jour, nous cultivons le bien-être et la dignité de nos résidents. »</blockquote>
+    <div class="ws-video-divider-badge"><i class="bi <?= h(ws_get($cms, 'quote2', 'badge_icon') ?: 'bi-heart-pulse') ?>"></i></div>
+    <blockquote>« <?= h($q2['text'] ?? '') ?> »</blockquote>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ MENU DE LA SEMAINE — Carousel ═══ -->
 <section class="ws-section" id="menu-semaine">
@@ -1076,55 +982,40 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ VALUES ═══ -->
+<?php if (ws_visible($cms, 'values')):
+    $valCards = ws_content($cms, 'values', 'cards') ?: [];
+?>
 <section class="ws-section ws-section-alt" id="values">
   <div class="container">
     <div class="ws-section-header">
-      <div class="ws-section-badge"><i class="bi bi-award"></i> Nos valeurs</div>
-      <h2 class="ws-section-title">Ce qui nous <span class="ws-accent">guide</span></h2>
+      <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'values', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'values', 'badge_text')) ?></div>
+      <h2 class="ws-section-title"><?= ws_get($cms, 'values', 'title') ?></h2>
     </div>
     <div class="row g-4">
+      <?php foreach ($valCards as $c): ?>
       <div class="col-md-6 col-lg-3">
         <div class="ws-value-card">
-          <div class="ws-value-icon"><i class="bi bi-shield-heart"></i></div>
-          <h5>Respect</h5>
-          <p>Chaque résident est unique. Nous respectons sa dignité, ses choix et son rythme de vie.</p>
+          <div class="ws-value-icon"><i class="bi <?= h($c['icon'] ?? '') ?>"></i></div>
+          <h5><?= h($c['title'] ?? '') ?></h5>
+          <p><?= h($c['text'] ?? '') ?></p>
         </div>
       </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="ws-value-card">
-          <div class="ws-value-icon"><i class="bi bi-brightness-high"></i></div>
-          <h5>Bienveillance</h5>
-          <p>Un accompagnement chaleureux et attentionné, dans un climat de confiance et de sécurité.</p>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="ws-value-card">
-          <div class="ws-value-icon"><i class="bi bi-graph-up-arrow"></i></div>
-          <h5>Excellence</h5>
-          <p>Formation continue, protocoles actualisés et amélioration constante de nos pratiques.</p>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="ws-value-card">
-          <div class="ws-value-icon"><i class="bi bi-puzzle"></i></div>
-          <h5>Collaboration</h5>
-          <p>Travail d'équipe entre soignants, familles et médecins pour un accompagnement global.</p>
-        </div>
-      </div>
+      <?php endforeach; ?>
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <!-- ═══ CONTACT ═══ -->
+<?php if (ws_visible($cms, 'contact')):
+    $contact = ws_content($cms, 'contact');
+?>
 <section class="ws-section" id="contact">
   <div class="container">
     <div class="ws-section-header">
-      <div class="ws-section-badge"><i class="bi bi-chat-dots"></i> Contactez-nous</div>
-      <h2 class="ws-section-title">Nous sommes à votre <span class="ws-accent">écoute</span></h2>
-      <p class="ws-section-desc">
-        Pour toute question, demande de visite ou renseignement sur nos prestations,
-        n'hésitez pas à nous contacter.
-      </p>
+      <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'contact', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'contact', 'badge_text')) ?></div>
+      <h2 class="ws-section-title"><?= ws_get($cms, 'contact', 'title') ?></h2>
+      <p class="ws-section-desc"><?= h(ws_get($cms, 'contact', 'subtitle')) ?></p>
     </div>
     <div class="row g-4">
       <div class="col-lg-5">
@@ -1133,29 +1024,29 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
             <div class="ws-contact-ic"><i class="bi bi-geo-alt-fill"></i></div>
             <div>
               <h5>Adresse</h5>
-              <p>E.M.S. La Terrassière SA<br>Genève, Suisse</p>
+              <p><?= nl2br(h($contact['address'] ?? '')) ?></p>
             </div>
           </div>
           <div class="ws-contact-item">
             <div class="ws-contact-ic"><i class="bi bi-telephone-fill"></i></div>
             <div>
               <h5>Téléphone</h5>
-              <p>+41 22 XXX XX XX</p>
+              <p><?= h($contact['phone'] ?? '') ?></p>
             </div>
           </div>
           <div class="ws-contact-item">
             <div class="ws-contact-ic"><i class="bi bi-envelope-fill"></i></div>
             <div>
               <h5>Email</h5>
-              <p>contact@ems-la-terrassiere.ch</p>
+              <p><?= h($contact['email'] ?? '') ?></p>
             </div>
           </div>
           <div class="ws-contact-item">
             <div class="ws-contact-ic"><i class="bi bi-clock-fill"></i></div>
             <div>
               <h5>Horaires de visite</h5>
-              <p>Tous les jours : 10h – 12h / 14h – 19h<br>
-              <small class="text-muted">Horaires flexibles sur demande</small></p>
+              <p><?= h($contact['hours'] ?? '') ?><br>
+              <?php if (!empty($contact['hours_note'])): ?><small class="text-muted"><?= h($contact['hours_note']) ?></small><?php endif; ?></p>
             </div>
           </div>
         </div>
@@ -1204,6 +1095,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     </div>
   </div>
 </section>
+<?php endif; /* contact */ ?>
 
 <!-- ═══ FOOTER ═══ -->
 <?php include __DIR__ . '/includes/footer.php'; ?>
