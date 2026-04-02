@@ -134,6 +134,7 @@ return [
         'admin_get_mur_config', 'admin_save_mur_config', 'admin_upload_mur_hero',
         'admin_get_mur_posts', 'admin_moderate_mur_post', 'admin_delete_mur_post',
         'admin_pin_mur_post', 'admin_delete_mur_comment', 'admin_get_mur_stats',
+        'admin_search_pixabay', 'admin_save_pixabay_image',
     ],
     'residents' => [
         'admin_get_residents', 'admin_create_resident', 'admin_update_resident', 'admin_toggle_resident',

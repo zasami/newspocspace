@@ -182,6 +182,102 @@ function admin_upload_mur_hero() {
     respond(['success' => true, 'url' => $url, 'message' => 'Image hero mise à jour']);
 }
 
+function admin_search_pixabay() {
+    require_responsable();
+    global $params;
+
+    $query = trim($params['query'] ?? '');
+    $category = $params['category'] ?? '';
+    $page = max(1, (int)($params['page'] ?? 1));
+
+    $allowed = ['backgrounds','nature','science','places','computer','feelings','business','people','food','travel','buildings','animals'];
+    if ($category && !in_array($category, $allowed)) $category = '';
+
+    $apiKey = $_ENV['PIXABAY_API_KEY'] ?? '';
+    if (!$apiKey) bad_request('Pixabay non configuré');
+
+    $url = 'https://pixabay.com/api/?' . http_build_query([
+        'key' => $apiKey,
+        'q' => $query ?: $category,
+        'image_type' => 'photo',
+        'orientation' => 'horizontal',
+        'min_width' => 1280,
+        'per_page' => 30,
+        'page' => $page,
+        'safesearch' => 'true',
+        'category' => $category,
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_SSL_VERIFYPEER => true]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$response) bad_request('Erreur Pixabay');
+
+    $data = json_decode($response, true);
+    respond([
+        'success' => true,
+        'total' => $data['totalHits'] ?? 0,
+        'hits' => $data['hits'] ?? [],
+    ]);
+}
+
+function admin_save_pixabay_image() {
+    require_responsable();
+    global $params;
+
+    $imageUrl = $params['image_url'] ?? '';
+    if (!$imageUrl) bad_request('URL manquante');
+
+    // Security: only allow pixabay.com domains
+    $parsed = parse_url($imageUrl);
+    if (!$parsed || !preg_match('/pixabay\.(com|net)$/', $parsed['host'] ?? '')) {
+        bad_request('Source non autorisée');
+    }
+    if (($parsed['scheme'] ?? '') !== 'https') bad_request('HTTPS requis');
+
+    // Download image
+    $ch = curl_init($imageUrl);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true]);
+    $imgData = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$imgData) bad_request('Téléchargement échoué');
+
+    // Save as WebP
+    $uploadDir = __DIR__ . '/../../storage/mur/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'pxb_');
+    file_put_contents($tmpFile, $imgData);
+
+    $mime = mime_content_type($tmpFile);
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($tmpFile),
+        'image/png'  => imagecreatefrompng($tmpFile),
+        'image/webp' => imagecreatefromwebp($tmpFile),
+        default => null,
+    };
+    unlink($tmpFile);
+    if (!$img) bad_request('Format image non supporté');
+
+    $filename = 'hero_' . time() . '.webp';
+    imagewebp($img, $uploadDir . $filename, 82);
+    imagedestroy($img);
+
+    $url = '/zerdatime/storage/mur/' . $filename;
+    Db::exec(
+        "INSERT INTO mur_config (config_key, config_value) VALUES ('hero_image', ?)
+         ON DUPLICATE KEY UPDATE config_value = ?",
+        [$url, $url]
+    );
+
+    respond(['success' => true, 'url' => $url, 'message' => 'Image hero mise à jour']);
+}
+
 function admin_get_mur_stats() {
     require_responsable();
 

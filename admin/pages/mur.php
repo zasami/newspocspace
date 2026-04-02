@@ -105,9 +105,31 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
     .mur-hero-preview-stats { justify-content: center; }
 }
 
+/* ── Image picker modal ── */
+.cm-tab-btn { border-radius: 10px 10px 0 0 !important; font-size: .85rem; font-weight: 600; padding: 8px 16px; }
+.cm-tab-btn.active { background: var(--cl-surface, #fff) !important; border-color: #e5e7eb #e5e7eb #fff !important; }
+.cm-upload-zone { border: 2px dashed #e5e7eb; border-radius: 14px; min-height: 200px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+.cm-upload-zone:hover { border-color: #bcd2cb; background: rgba(188,210,203,.05); }
+.cm-upload-zone.dragover { border-color: #2d4a43; background: rgba(188,210,203,.12); }
+.cm-upload-placeholder { text-align: center; color: #999; pointer-events: none; }
+.cm-upload-placeholder i { font-size: 2.5rem; color: #ccc; display: block; margin-bottom: 8px; }
+.cm-upload-placeholder p { font-size: .9rem; font-weight: 600; margin: 0 0 4px; color: #666; }
+.cm-upload-placeholder span { font-size: .78rem; }
+.cm-upload-preview-wrap { position: absolute; inset: 0; }
+.cm-upload-preview-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.cm-pixabay-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; max-height: 360px; overflow-y: auto; }
+.cm-pixabay-item { aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; cursor: pointer; position: relative; transition: transform .2s, box-shadow .2s; }
+.cm-pixabay-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.cm-pixabay-item img { width: 100%; height: 100%; object-fit: cover; }
+.cm-pixabay-item-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 4px 8px; background: linear-gradient(transparent, rgba(0,0,0,.6)); font-size: .65rem; color: #fff; }
+.cm-pixabay-empty { grid-column: 1 / -1; text-align: center; padding: 40px; color: #999; }
+.cm-pixabay-empty i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: .4; }
+.cm-pixabay-empty p { margin: 0; font-size: .85rem; }
+
 @media (max-width: 768px) {
     .mur-stats { flex-direction: column; }
     .mur-config-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .cm-pixabay-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
 </style>
 
@@ -270,14 +292,11 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
                 : "background:linear-gradient(135deg,{$heroColor} 0%,{$accentColor} 100%)";
         ?>
 
-        <!-- Live hero preview (drop zone) -->
+        <!-- Live hero preview -->
         <div class="mur-hero-preview" id="heroPreview" style="<?= $heroBg ?>">
-            <input type="file" id="cfgHeroImage" accept="image/jpeg,image/png,image/webp" style="display:none">
             <div class="mur-hero-preview-overlay"></div>
             <div class="mur-hero-preview-content">
-                <div class="mur-hero-preview-avatar">
-                    <img src="<?= h($emsLogo) ?>" alt="">
-                </div>
+                <div class="mur-hero-preview-avatar"><img src="<?= h($emsLogo) ?>" alt=""></div>
                 <div class="mur-hero-preview-text">
                     <h3 id="heroPreviewTitle"><?= h($cfg['hero_title'] ?? 'Mur social') ?></h3>
                     <p id="heroPreviewSubtitle"><?= h($cfg['hero_subtitle'] ?? 'Votre réseau interne') ?></p>
@@ -288,15 +307,72 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
                     <div><strong>5</strong><span>Membres</span></div>
                 </div>
             </div>
-            <!-- Drop zone overlay -->
-            <div class="mur-hero-preview-drop" id="heroDropOverlay">
-                <i class="bi bi-plus-lg"></i>
+            <div class="mur-hero-preview-drop" id="heroDropOverlay"><i class="bi bi-camera-fill"></i><span>Changer l'image</span></div>
+            <div class="mur-hero-preview-actions">
+                <button class="mur-hero-drop-btn" id="heroChangeBtn" title="Modifier"><i class="bi bi-pencil"></i></button>
+                <button class="mur-hero-drop-btn mur-hero-drop-btn-danger" id="heroDeleteBtn" title="Supprimer"><i class="bi bi-trash"></i></button>
             </div>
-            <!-- Edit/delete buttons -->
-            <div class="mur-hero-preview-actions" id="heroPreviewActions">
-                <button class="mur-hero-drop-btn" id="heroChangeBtn" title="Modifier l'image"><i class="bi bi-pencil"></i></button>
-                <button class="mur-hero-drop-btn mur-hero-drop-btn-danger" id="heroDeleteBtn" title="Supprimer l'image"><i class="bi bi-trash"></i></button>
+        </div>
+
+        <!-- Image picker modal -->
+        <div class="modal fade" id="heroImageModal" tabindex="-1">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius:18px;overflow:hidden">
+              <div class="modal-header" style="border-bottom:1px solid #eee;padding:16px 24px">
+                <h6 class="modal-title fw-bold"><i class="bi bi-image me-2"></i>Choisir une image de couverture</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body p-0">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs px-3 pt-3" style="border-bottom:none;gap:4px">
+                  <li class="nav-item"><button class="nav-link active cm-tab-btn" data-cm-tab="upload"><i class="bi bi-cloud-arrow-up me-1"></i>Uploader</button></li>
+                  <li class="nav-item"><button class="nav-link cm-tab-btn" data-cm-tab="pixabay"><i class="bi bi-search me-1"></i>Pixabay</button></li>
+                </ul>
+
+                <!-- Upload tab -->
+                <div class="cm-panel p-3" id="cmPanelUpload">
+                  <div class="cm-upload-zone" id="cmUploadZone">
+                    <div class="cm-upload-placeholder" id="cmUploadPlaceholder">
+                      <i class="bi bi-cloud-arrow-up"></i>
+                      <p>Glissez une image ou cliquez pour charger</p>
+                      <span>JPG, PNG, WebP — max 5 Mo</span>
+                    </div>
+                    <div class="cm-upload-preview-wrap d-none" id="cmUploadPreviewWrap">
+                      <img src="" alt="" id="cmUploadPreviewImg">
+                      <button class="mur-hero-drop-btn mur-hero-drop-btn-danger" id="cmUploadRemove" style="position:absolute;top:8px;right:8px"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <input type="file" id="cmUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+                  </div>
+                  <button class="btn btn-primary w-100 mt-2" id="cmUploadBtn" disabled><i class="bi bi-check-lg me-1"></i>Utiliser cette image</button>
+                </div>
+
+                <!-- Pixabay tab -->
+                <div class="cm-panel p-3 d-none" id="cmPanelPixabay">
+                  <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="cmPixabayInput" placeholder="Rechercher des photos...">
+                    <select class="form-select" id="cmPixabayCat" style="max-width:140px">
+                      <option value="">Toutes</option>
+                      <option value="backgrounds">Fonds</option>
+                      <option value="nature">Nature</option>
+                      <option value="business">Business</option>
+                      <option value="people">Personnes</option>
+                      <option value="places">Lieux</option>
+                      <option value="food">Cuisine</option>
+                      <option value="buildings">Bâtiments</option>
+                      <option value="travel">Voyage</option>
+                    </select>
+                    <button class="btn btn-primary" id="cmPixabaySearchBtn"><i class="bi bi-search"></i></button>
+                  </div>
+                  <div class="cm-pixabay-grid" id="cmPixabayGrid">
+                    <div class="cm-pixabay-empty"><i class="bi bi-images"></i><p>Recherchez des photos libres de droits</p></div>
+                  </div>
+                  <div class="text-center mt-2 d-none" id="cmPixabayLoading"><span class="spinner-border spinner-border-sm"></span> Recherche...</div>
+                  <button class="btn btn-outline-secondary w-100 mt-2 d-none" id="cmPixabayMore"><i class="bi bi-plus-circle me-1"></i>Voir plus</button>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
 
         <div class="row mt-3 g-3">
@@ -485,87 +561,170 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
 
     // ── Hero live preview ──
     const heroPreview = $('#heroPreview');
-    const fileInput = $('#cfgHeroImage');
     let hasHeroImage = <?= !empty($cfg['hero_image']) ? 'true' : 'false' ?>;
+    const heroModal = new bootstrap.Modal($('#heroImageModal'));
 
     function updatePreviewBg() {
-        if (hasHeroImage) return; // image is set, don't override
+        if (hasHeroImage) return;
         const c1 = $('#cfgHeroColor').value || '#2d4a43';
         const c2 = $('#cfgAccentColor').value || '#bcd2cb';
         heroPreview.style.backgroundImage = 'none';
         heroPreview.style.background = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
     }
 
-    // Live text updates
-    $('#cfgHeroTitle')?.addEventListener('input', () => {
-        $('#heroPreviewTitle').textContent = $('#cfgHeroTitle').value || 'Mur social';
-    });
-    $('#cfgHeroSubtitle')?.addEventListener('input', () => {
-        $('#heroPreviewSubtitle').textContent = $('#cfgHeroSubtitle').value || '';
-    });
-    // Live color updates
+    function setHeroImage(url) {
+        heroPreview.style.background = `url('${url}') center/cover no-repeat`;
+        hasHeroImage = true;
+    }
+
+    // Live text + color updates
+    $('#cfgHeroTitle')?.addEventListener('input', () => { $('#heroPreviewTitle').textContent = $('#cfgHeroTitle').value || 'Mur social'; });
+    $('#cfgHeroSubtitle')?.addEventListener('input', () => { $('#heroPreviewSubtitle').textContent = $('#cfgHeroSubtitle').value || ''; });
     $('#cfgHeroColor')?.addEventListener('input', updatePreviewBg);
     $('#cfgAccentColor')?.addEventListener('input', updatePreviewBg);
 
-    // Upload hero image
-    async function uploadHeroFile(file) {
-        if (!file || !file.type.startsWith('image/')) { showToast('Format image requis', 'error'); return; }
-        if (file.size > 5 * 1024 * 1024) { showToast('Max 5 Mo', 'error'); return; }
+    // Open modal on click/change
+    heroPreview?.addEventListener('click', (e) => { if (!e.target.closest('.mur-hero-drop-btn')) heroModal.show(); });
+    $('#heroChangeBtn')?.addEventListener('click', (e) => { e.stopPropagation(); heroModal.show(); });
 
-        // Instant client-side preview
+    // Delete hero image
+    $('#heroDeleteBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const res = await adminApiPost('admin_save_mur_config', { config: { hero_image: '' } });
+        if (res.success) { hasHeroImage = false; updatePreviewBg(); showToast('Image supprimée', 'success'); }
+    });
+
+    // ── Modal tabs ──
+    $$('.cm-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $$('.cm-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            $$('.cm-panel').forEach(p => p.classList.add('d-none'));
+            const tab = btn.dataset.cmTab;
+            $(`#cmPanel${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('d-none');
+        });
+    });
+
+    // ── Upload tab ──
+    let uploadedFile = null;
+    const uploadZone = $('#cmUploadZone');
+    const uploadInput = $('#cmUploadInput');
+
+    uploadZone?.addEventListener('click', (e) => {
+        if (e.target.closest('#cmUploadRemove')) return;
+        if ($('#cmUploadPreviewWrap').classList.contains('d-none')) uploadInput.click();
+    });
+    ['dragenter','dragover'].forEach(ev => uploadZone?.addEventListener(ev, (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev => uploadZone?.addEventListener(ev, () => uploadZone.classList.remove('dragover')));
+    uploadZone?.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer?.files?.[0]) previewUpload(e.dataTransfer.files[0]); });
+    uploadInput?.addEventListener('change', () => { if (uploadInput.files[0]) previewUpload(uploadInput.files[0]); });
+
+    function previewUpload(file) {
+        if (!file.type.startsWith('image/')) { showToast('Image requise', 'error'); return; }
+        if (file.size > 5 * 1024 * 1024) { showToast('Max 5 Mo', 'error'); return; }
+        uploadedFile = file;
         const reader = new FileReader();
         reader.onload = (e) => {
-            heroPreview.style.background = '';
-            heroPreview.style.backgroundImage = `url('${e.target.result}')`;
-            heroPreview.style.backgroundSize = 'cover';
-            heroPreview.style.backgroundPosition = 'center';
-            hasHeroImage = true;
+            $('#cmUploadPreviewImg').src = e.target.result;
+            $('#cmUploadPreviewWrap').classList.remove('d-none');
+            $('#cmUploadPlaceholder').classList.add('d-none');
+            $('#cmUploadBtn').disabled = false;
         };
         reader.readAsDataURL(file);
+    }
 
-        // Upload to server
+    $('#cmUploadRemove')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        uploadedFile = null;
+        $('#cmUploadPreviewWrap').classList.add('d-none');
+        $('#cmUploadPlaceholder').classList.remove('d-none');
+        $('#cmUploadBtn').disabled = true;
+        uploadInput.value = '';
+    });
+
+    $('#cmUploadBtn')?.addEventListener('click', async () => {
+        if (!uploadedFile) return;
+        $('#cmUploadBtn').disabled = true;
+        $('#cmUploadBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span> Upload...';
+
         const fd = new FormData();
         fd.append('action', 'admin_upload_mur_hero');
-        fd.append('hero_image', file);
+        fd.append('hero_image', uploadedFile);
         const res = await fetch('/zerdatime/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': window.__ZT_ADMIN__?.csrfToken || '' },
             body: fd,
         }).then(r => r.json());
 
+        $('#cmUploadBtn').disabled = false;
+        $('#cmUploadBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Utiliser cette image';
+
         if (res.success) {
-            heroPreview.style.backgroundImage = `url('${res.url}')`;
+            setHeroImage(res.url);
+            heroModal.hide();
             showToast('Image hero mise à jour', 'success');
         } else {
-            showToast(res.message || 'Erreur upload', 'error');
+            showToast(res.message || 'Erreur', 'error');
+        }
+    });
+
+    // ── Pixabay tab ──
+    let pxPage = 1;
+    let pxTotal = 0;
+
+    async function searchPx(append) {
+        const query = $('#cmPixabayInput').value.trim();
+        const cat = $('#cmPixabayCat').value;
+        if (!query && !cat) { showToast('Entrez un terme de recherche', 'warning'); return; }
+
+        if (!append) { pxPage = 1; $('#cmPixabayGrid').innerHTML = ''; }
+        else pxPage++;
+
+        $('#cmPixabayLoading').classList.remove('d-none');
+        $('#cmPixabayMore').classList.add('d-none');
+
+        const res = await adminApiPost('admin_search_pixabay', { query: query || cat, category: cat, page: pxPage });
+        $('#cmPixabayLoading').classList.add('d-none');
+
+        if (!res.success) { showToast(res.message || 'Erreur', 'error'); return; }
+        pxTotal = res.total || 0;
+
+        if (!res.hits?.length && !append) {
+            $('#cmPixabayGrid').innerHTML = '<div class="cm-pixabay-empty"><i class="bi bi-emoji-frown"></i><p>Aucun résultat</p></div>';
+            return;
+        }
+
+        const grid = $('#cmPixabayGrid');
+        res.hits.forEach(hit => {
+            const item = document.createElement('div');
+            item.className = 'cm-pixabay-item';
+            item.innerHTML = `<img src="${hit.webformatURL}" alt="${escapeHtml(hit.tags || '')}" loading="lazy"><div class="cm-pixabay-item-overlay">${escapeHtml(hit.user)}</div>`;
+            item.addEventListener('click', () => selectPxImage(hit.largeImageURL));
+            grid.appendChild(item);
+        });
+
+        if (grid.querySelectorAll('.cm-pixabay-item').length < pxTotal) {
+            $('#cmPixabayMore').classList.remove('d-none');
         }
     }
 
-    // Click to upload (avoid clicks on buttons)
-    heroPreview?.addEventListener('click', (e) => {
-        if (e.target.closest('.mur-hero-drop-btn')) return;
-        fileInput.click();
-    });
-    fileInput?.addEventListener('change', () => { if (fileInput.files[0]) uploadHeroFile(fileInput.files[0]); });
+    async function selectPxImage(url) {
+        $('#cmPixabayLoading').classList.remove('d-none');
+        const res = await adminApiPost('admin_save_pixabay_image', { image_url: url });
+        $('#cmPixabayLoading').classList.add('d-none');
 
-    // Drag & drop
-    if (heroPreview) {
-        ['dragenter', 'dragover'].forEach(ev => heroPreview.addEventListener(ev, (e) => { e.preventDefault(); heroPreview.classList.add('drag-over'); }));
-        ['dragleave', 'drop'].forEach(ev => heroPreview.addEventListener(ev, () => heroPreview.classList.remove('drag-over')));
-        heroPreview.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer?.files?.[0]) uploadHeroFile(e.dataTransfer.files[0]); });
-    }
-
-    // Change / delete buttons
-    $('#heroChangeBtn')?.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
-    $('#heroDeleteBtn')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const res = await adminApiPost('admin_save_mur_config', { config: { hero_image: '' } });
         if (res.success) {
-            hasHeroImage = false;
-            updatePreviewBg();
-            showToast('Image supprimée', 'success');
+            setHeroImage(res.url);
+            heroModal.hide();
+            showToast('Image Pixabay appliquée', 'success');
+        } else {
+            showToast(res.message || 'Erreur', 'error');
         }
-    });
+    }
+
+    $('#cmPixabaySearchBtn')?.addEventListener('click', () => searchPx(false));
+    $('#cmPixabayInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchPx(false); });
+    $('#cmPixabayMore')?.addEventListener('click', () => searchPx(true));
 
     // ── Save Hero (text + colors) ──
     $('#btnSaveHero')?.addEventListener('click', async () => {
