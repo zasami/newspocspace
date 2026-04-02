@@ -2981,9 +2981,9 @@ input[type="checkbox"]:not(.form-check-input):hover {
    MUR SOCIAL (Wall) — 3-column layout with hero
    ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Hero Banner (profile-cover style, full-width) ── */
-.mur-hero { position: relative; overflow: hidden; margin: -1.5rem -1.5rem 20px -1.5rem; border-radius: 0; }
-@media (max-width: 768px) { .mur-hero { margin: -1rem -1rem 16px -1rem; } }
+/* ── Hero Banner (profile-cover style, full-bleed) ── */
+.mur-hero { position: relative; overflow: hidden; border-radius: 0; margin-bottom: 20px; width: 100vw; margin-left: 50%; transform: translateX(-50%); margin-top: -1.5rem; }
+@media (max-width: 768px) { .mur-hero { margin-top: -1rem; } }
 .mur-hero-cover { position: absolute; inset: 0; background: linear-gradient(135deg, #2d4a43 0%, #4a7c6f 40%, #8bb5a5 70%, #bcd2cb 100%); background-size: cover; background-position: center; }
 .mur-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(45,74,67,.6) 100%); }
 .mur-hero-inner { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 20px; padding: 80px 32px 24px; }
@@ -3134,15 +3134,20 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-post-images.count-3 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
 .mur-post-images.count-3 .mur-post-img:first-child { grid-column: 1 / -1; }
 .mur-post-images.count-4 { grid-template-columns: 1fr 1fr; }
-.mur-post-img { cursor: pointer; overflow: hidden; aspect-ratio: 16/10; }
-.mur-post-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.mur-post-img { cursor: pointer; overflow: hidden; }
+.mur-post-img img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.mur-post-images.count-1 .mur-post-img { max-height: 400px; }
+.mur-post-images.count-2 .mur-post-img,
+.mur-post-images.count-3 .mur-post-img,
+.mur-post-images.count-4 .mur-post-img { aspect-ratio: 1; }
 .mur-post-img:hover img { transform: scale(1.03); }
 
 /* ── Gallery grid (sidebar) ── */
 .mur-gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-.mur-gallery-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: pointer; }
-.mur-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.mur-gallery-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--zt-bg, #F7F5F2); }
+.mur-gallery-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
 .mur-gallery-thumb:hover img { transform: scale(1.08); }
+.mur-gallery-grid .mur-widget-empty { grid-column: 1 / -1; }
 
 /* ── Lightbox ── */
 .mur-lightbox { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; }
