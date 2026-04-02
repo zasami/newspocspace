@@ -62,11 +62,10 @@ function setupHero() {
     const heroColor = wallConfig.hero_color || '#2d4a43';
     const accentColor = wallConfig.accent_color || '#bcd2cb';
 
-    // Apply hero background
+    // Apply hero background — must use style.background (not backgroundImage) to override CSS shorthand
     if (wallConfig.hero_image && cover) {
-        cover.style.backgroundImage = `url('${wallConfig.hero_image}')`;
+        cover.style.background = `url('${wallConfig.hero_image}') center/cover no-repeat`;
     } else if (cover) {
-        // Use custom color gradient
         cover.style.background = `linear-gradient(135deg, ${heroColor} 0%, ${lightenColor(heroColor, 30)} 50%, ${accentColor} 100%)`;
     }
 
