@@ -109,6 +109,13 @@ return [
     'connexions' => [
         'admin_get_connexions',
     ],
+    'protection' => [
+        'admin_get_protection_produits', 'admin_save_protection_produit', 'admin_delete_protection_produit',
+        'admin_get_protection_attributions', 'admin_save_protection_attribution', 'admin_delete_protection_attribution',
+        'admin_get_protection_comptages', 'admin_save_protection_comptage',
+        'admin_validate_protection_comptages', 'admin_deliver_protection_comptages',
+        'admin_get_protection_dashboard',
+    ],
     'agenda' => [
         'admin_get_agenda_events', 'admin_create_agenda_event', 'admin_update_agenda_event',
         'admin_move_agenda_event', 'admin_delete_agenda_event',
