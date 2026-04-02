@@ -43,7 +43,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
           <i class="bi bi-info-circle"></i> Comptes de démonstration
         </button>
         <div id="famDemoList" style="display:none;margin-top:10px">
-          <table class="fam-demo-table">
+          <div class="fam-demo-wrap"><table class="fam-demo-table">
             <thead><tr><th>Résident</th><th>Ch.</th><th>Email correspondant</th><th>Code</th><th></th></tr></thead>
             <tbody>
               <tr><td>Marguerite Dupont</td><td>101</td><td>jp.dupont@gmail.com</td><td><code>12031935</code></td>
@@ -57,7 +57,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
               <tr><td>Robert Blanc</td><td>105</td><td>catherine.blanc@gmail.com</td><td><code>30091936</code></td>
                 <td><button class="fam-demo-use" data-email="catherine.blanc@gmail.com" data-pwd="30091936">Utiliser</button></td></tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>

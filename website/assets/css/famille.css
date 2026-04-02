@@ -111,9 +111,10 @@ html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
 /* ── Demo table ── */
 .fam-demo-toggle { background: none; border: none; color: var(--fam-text-muted); font-size: .85rem; cursor: pointer; padding: 0; }
 .fam-demo-toggle:hover { color: var(--fam-text); }
-.fam-demo-table { width: 100%; font-size: .8rem; border-collapse: collapse; }
-.fam-demo-table th { text-align: left; padding: 6px 8px; border-bottom: 1.5px solid var(--fam-border); color: var(--fam-text-muted); font-weight: 600; }
-.fam-demo-table td { padding: 6px 8px; border-bottom: 1px solid var(--fam-border); }
+.fam-demo-wrap { overflow-x: auto; margin: 0 -8px; padding: 0 8px; }
+.fam-demo-table { width: 100%; font-size: .75rem; border-collapse: collapse; white-space: nowrap; }
+.fam-demo-table th { text-align: left; padding: 5px 6px; border-bottom: 1.5px solid var(--fam-border); color: var(--fam-text-muted); font-weight: 600; }
+.fam-demo-table td { padding: 5px 6px; border-bottom: 1px solid var(--fam-border); }
 .fam-demo-table code { background: var(--fam-bg); padding: 2px 6px; border-radius: 4px; font-size: .8rem; }
 .fam-demo-use { background: var(--fam-green); color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: .75rem; font-weight: 600; cursor: pointer; }
 .fam-demo-use:hover { background: #256b28; }
