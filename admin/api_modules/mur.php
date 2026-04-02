@@ -63,7 +63,7 @@ function admin_get_mur_posts() {
     $total = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts p WHERE $where", $binds);
 
     $posts = Db::fetchAll(
-        "SELECT p.*, u.prenom, u.nom, u.avatar_url,
+        "SELECT p.*, u.prenom, u.nom, u.photo AS avatar_url,
                 f.nom AS fonction_nom
          FROM mur_posts p
          JOIN users u ON u.id = p.user_id

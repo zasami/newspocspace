@@ -55,8 +55,8 @@ function setupComposer(user) {
     // Avatar
     const av = document.getElementById('composerAvatar');
     if (av) {
-        if (user.avatar_url) {
-            av.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" alt="">`;
+        if (user.photo) {
+            av.innerHTML = `<img src="${escapeHtml(user.photo)}" alt="">`;
         } else {
             av.textContent = ((user.prenom || '')[0] || '') + ((user.nom || '')[0] || '');
         }

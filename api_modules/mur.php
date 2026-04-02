@@ -46,7 +46,7 @@ function get_mur_feed() {
     $posts = Db::fetchAll(
         "SELECT p.id, p.user_id, p.body, p.category, p.is_anonymous, p.is_pinned,
                 p.likes_count, p.comments_count, p.created_at,
-                u.prenom, u.nom, u.avatar_url,
+                u.prenom, u.nom, u.photo AS avatar_url,
                 f.nom AS fonction_nom,
                 (SELECT COUNT(*) FROM mur_likes l WHERE l.target_type = 'post' AND l.target_id = p.id AND l.user_id = ?) AS is_liked
          FROM mur_posts p
@@ -213,7 +213,7 @@ function get_mur_comments() {
 
     $comments = Db::fetchAll(
         "SELECT c.id, c.user_id, c.body, c.is_anonymous, c.created_at,
-                u.prenom, u.nom, u.avatar_url
+                u.prenom, u.nom, u.photo AS avatar_url
          FROM mur_comments c
          JOIN users u ON u.id = c.user_id
          WHERE c.post_id = ? AND c.deleted_at IS NULL

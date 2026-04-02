@@ -1398,6 +1398,28 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 })();
 </script>
 
+<!-- ═══ PWA: Update Modal ═══ -->
+<style<?= nonce() ?>>@keyframes zt-update-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}#ztUpdateNow:hover{background:#a8c4bb!important}#ztUpdateLater:hover{background:#f7f5f2!important;border-color:#bcd2cb!important}</style>
+<div id="ztUpdateOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);transition:opacity .3s;opacity:0">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:18px;padding:32px 36px;width:380px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center">
+    <div id="ztUpdateIcon" style="width:56px;height:56px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem">
+      <i class="bi bi-arrow-repeat"></i>
+    </div>
+    <h6 style="font-weight:700;font-size:1rem;margin:0 0 6px">Nouvelle version disponible</h6>
+    <p id="ztUpdateText" style="font-size:.85rem;color:#666;margin:0 0 20px">Une mise à jour est prête. Souhaitez-vous l'installer maintenant ?</p>
+    <div id="ztUpdateProgress" style="display:none;margin-bottom:20px">
+      <div style="background:#f0eeeb;border-radius:8px;height:8px;overflow:hidden">
+        <div id="ztUpdateBar" style="height:100%;width:0%;background:linear-gradient(90deg,#bcd2cb,#8fb5a8);border-radius:8px;transition:width .3s ease"></div>
+      </div>
+      <div id="ztUpdatePercent" style="font-size:.75rem;color:#888;margin-top:6px">Préparation...</div>
+    </div>
+    <div id="ztUpdateBtns" style="display:flex;gap:10px;justify-content:center">
+      <button id="ztUpdateLater" style="padding:9px 22px;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;color:#666">Plus tard</button>
+      <button id="ztUpdateNow" style="padding:9px 22px;border-radius:10px;border:none;background:#bcd2cb;color:#2d4a43;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s">Mettre à jour</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ PWA: Service Worker + Offline banner ═══ -->
 <div id="ztOfflineBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#fff;padding:8px 20px;font-size:.82rem;text-align:center">
   <i class="bi bi-wifi-off"></i> Mode hors ligne — les données en cache sont affichées
@@ -1405,6 +1427,67 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 </div>
 <script nonce="<?= $cspNonce ?>">
 (function() {
+    // ── Update modal helpers ──
+    function showUpdateModal(newSW) {
+        const overlay = document.getElementById('ztUpdateOverlay');
+        const btnNow = document.getElementById('ztUpdateNow');
+        const btnLater = document.getElementById('ztUpdateLater');
+        const progress = document.getElementById('ztUpdateProgress');
+        const bar = document.getElementById('ztUpdateBar');
+        const percent = document.getElementById('ztUpdatePercent');
+        const btns = document.getElementById('ztUpdateBtns');
+        const icon = document.getElementById('ztUpdateIcon');
+        const text = document.getElementById('ztUpdateText');
+
+        overlay.style.display = '';
+        requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+        function closeModal() {
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        }
+
+        btnLater.onclick = closeModal;
+
+        btnNow.onclick = () => {
+            // Show progress bar, hide buttons
+            btns.style.display = 'none';
+            progress.style.display = '';
+            text.textContent = 'Installation en cours...';
+            icon.innerHTML = '<i class="bi bi-arrow-repeat" style="animation:zt-update-spin 1s linear infinite"></i>';
+
+            // Simulate progress (SW activation is nearly instant but we make it feel smooth)
+            let pct = 0;
+            const steps = [
+                { to: 25, label: 'Téléchargement...', delay: 200 },
+                { to: 50, label: 'Installation des fichiers...', delay: 400 },
+                { to: 75, label: 'Nettoyage du cache...', delay: 300 },
+                { to: 95, label: 'Presque terminé...', delay: 300 },
+            ];
+
+            let i = 0;
+            function nextStep() {
+                if (i >= steps.length) {
+                    // Final step: activate SW and reload
+                    bar.style.width = '100%';
+                    percent.textContent = 'Redémarrage...';
+                    icon.style.background = '#bcd2cb';
+                    icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+                    text.textContent = 'Mise à jour terminée !';
+                    newSW.postMessage({ type: 'SKIP_WAITING' });
+                    setTimeout(() => location.reload(), 500);
+                    return;
+                }
+                const step = steps[i];
+                bar.style.width = step.to + '%';
+                percent.textContent = step.label;
+                i++;
+                setTimeout(nextStep, step.delay);
+            }
+            nextStep();
+        };
+    }
+
     // Register Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/zerdatime/sw.js', { scope: '/zerdatime/' })
@@ -1415,11 +1498,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
                     const newSW = reg.installing;
                     newSW.addEventListener('statechange', () => {
                         if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            if (confirm('Nouvelle version disponible. Mettre à jour ?')) {
-                                newSW.postMessage({ type: 'SKIP_WAITING' });
-                                location.reload();
-                            }
+                            showUpdateModal(newSW);
                         }
                     });
                 });

@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'zt-v2';
+const CACHE_VERSION = 'zt-v3';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -75,7 +75,9 @@ self.addEventListener('install', event => {
           console.warn('[SW] Could not cache:', url);
         }
       }
-    }).then(() => self.skipWaiting())
+    })
+    // Don't call skipWaiting() here — let the update modal handle it
+    // so users see the update prompt before the new SW activates
   );
 });
 
