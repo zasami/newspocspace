@@ -463,6 +463,19 @@ function setupPostHandlers(container) {
         });
     });
 
+    // Auto-load comments for posts that have comments
+    container.querySelectorAll('.mur-comments-section:not([data-autoloaded])').forEach(section => {
+        section.dataset.autoloaded = '1';
+        const postId = section.dataset.postId;
+        const list = section.querySelector('.mur-comment-list');
+        const countEl = container.querySelector(`.mur-comment-toggle[data-id="${postId}"] .mur-comment-count`);
+        const count = parseInt(countEl?.textContent || '0');
+        if (list && count > 0 && !list.dataset.loaded) {
+            list.dataset.loaded = '1';
+            loadCommentsInline(postId, list);
+        }
+    });
+
     // Comment send (always-visible inputs)
     container.querySelectorAll('.mur-comment-text:not([data-bound])').forEach(input => {
         input.dataset.bound = '1';

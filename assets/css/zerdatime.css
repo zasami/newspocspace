@@ -3148,17 +3148,19 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-preview-remove { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .6rem; }
 
 /* ── Post images grid ── */
-.mur-post-images { display: grid; gap: 4px; margin-top: 12px; border-radius: 12px; overflow: hidden; }
+/* Post images — full bleed (no side padding) */
+.mur-post-images { display: grid; gap: 3px; margin: 12px -18px 0; overflow: hidden; }
 .mur-post-images.count-1 { grid-template-columns: 1fr; }
 .mur-post-images.count-2 { grid-template-columns: 1fr 1fr; }
 .mur-post-images.count-3 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
 .mur-post-images.count-3 .mur-post-img:first-child { grid-column: 1 / -1; }
 .mur-post-images.count-4 { grid-template-columns: 1fr 1fr; }
-.mur-post-img { cursor: pointer; overflow: hidden; }
+.mur-post-img { cursor: pointer; overflow: hidden; position: relative; }
 .mur-post-img img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
-.mur-post-images.count-1 .mur-post-img { max-height: 400px; }
-.mur-post-images.count-2 .mur-post-img,
-.mur-post-images.count-3 .mur-post-img,
+.mur-post-images.count-1 .mur-post-img { aspect-ratio: 16/9; max-height: 450px; }
+.mur-post-images.count-2 .mur-post-img { aspect-ratio: 1; }
+.mur-post-images.count-3 .mur-post-img:first-child { aspect-ratio: 16/9; }
+.mur-post-images.count-3 .mur-post-img:not(:first-child) { aspect-ratio: 1; }
 .mur-post-images.count-4 .mur-post-img { aspect-ratio: 1; }
 .mur-post-img:hover img { transform: scale(1.03); }
 
