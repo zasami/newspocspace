@@ -387,18 +387,16 @@ function renderPost(post) {
         imagesHtml += '</div>';
     }
 
-    // Engagement stats
+    // Engagement stats — clickable: heart = like/unlike, comments = toggle comments
+    const likeIcon = post.is_liked ? 'bi-heart-fill' : 'bi-heart';
+    const likeClass = post.is_liked ? 'mur-eng-liked' : '';
     const engagement = `<div class="mur-post-engagement">
-        <span><i class="bi bi-heart-fill" style="color:#e74c3c"></i> ${post.likes_count || 0} J'aime</span>
-        <span><i class="bi bi-chat"></i> ${post.comments_count || 0} Commentaires</span>
+        <span class="mur-eng-like ${likeClass}" data-id="${post.id}"><i class="bi ${likeIcon}"></i> <em class="mur-like-count">${post.likes_count || 0}</em> J'aime</span>
+        <span class="mur-eng-comment" data-id="${post.id}"><i class="bi bi-chat"></i> <em class="mur-comment-count">${post.comments_count || 0}</em> Commentaires</span>
     </div>`;
 
-    // Action buttons (like Zikzak: Like / Comment)
-    const likeBtn = wallConfig.allow_likes !== '0' ? `<button class="mur-action-btn mur-like-btn ${post.is_liked ? 'liked' : ''}" data-id="${post.id}"><i class="bi ${post.is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'}"></i> ${post.is_liked ? 'Aimé' : 'J\'aime'}</button>` : '';
-    const commentBtn = wallConfig.allow_comments !== '0' ? `<button class="mur-action-btn mur-comment-toggle" data-id="${post.id}"><i class="bi bi-chat-dots"></i> Commenter</button>` : '';
-
-    // Always-visible comment input
-    const commentInput = wallConfig.allow_comments !== '0' && user ? `<div class="mur-comments-section" data-post-id="${post.id}">
+    // Comment section — hidden by default, toggled by clicking "Commentaires"
+    const commentSection = wallConfig.allow_comments !== '0' && user ? `<div class="mur-comments-section" data-post-id="${post.id}" style="display:none">
         <div class="mur-comment-list" data-post-id="${post.id}"></div>
         <div class="mur-comment-input">
             <div class="mur-comment-input-wrap">
@@ -424,8 +422,7 @@ function renderPost(post) {
         ${post.body ? `<div class="mur-post-body">${escapeHtml(post.body)}</div>` : ''}
         ${imagesHtml}
         ${engagement}
-        <div class="mur-post-footer">${likeBtn}${commentBtn}</div>
-        ${commentInput}
+        ${commentSection}
     </div>`;
 }
 
@@ -433,47 +430,40 @@ function renderPost(post) {
 // POST HANDLERS
 // ══════════════════════════════════════
 function setupPostHandlers(container) {
-    // Like
-    container.querySelectorAll('.mur-like-btn:not([data-bound])').forEach(btn => {
-        btn.dataset.bound = '1';
-        btn.addEventListener('click', async () => {
-            const res = await apiPost('toggle_mur_like', { target_type: 'post', target_id: btn.dataset.id });
+    // Like — click on heart in engagement bar
+    container.querySelectorAll('.mur-eng-like:not([data-bound])').forEach(el => {
+        el.dataset.bound = '1';
+        el.addEventListener('click', async () => {
+            const id = el.dataset.id;
+            const res = await apiPost('toggle_mur_like', { target_type: 'post', target_id: id });
             if (res.success) {
-                btn.classList.toggle('liked', res.liked);
-                btn.querySelector('i').className = res.liked ? 'bi bi-heart-fill' : 'bi bi-heart';
-                btn.querySelectorAll('span')[0].textContent = res.liked ? 'Aimé' : 'Aimer';
-                btn.querySelector('.mur-like-count').textContent = res.count;
+                el.classList.toggle('mur-eng-liked', res.liked);
+                el.querySelector('i').className = res.liked ? 'bi bi-heart-fill' : 'bi bi-heart';
+                el.querySelector('.mur-like-count').textContent = res.count;
             }
         });
     });
 
-    // Comment toggle — load comments + focus input
-    container.querySelectorAll('.mur-comment-toggle:not([data-bound])').forEach(btn => {
-        btn.dataset.bound = '1';
-        btn.addEventListener('click', () => {
-            const postId = btn.dataset.id;
+    // Comment toggle — click on "X Commentaires" in engagement bar
+    container.querySelectorAll('.mur-eng-comment:not([data-bound])').forEach(el => {
+        el.dataset.bound = '1';
+        el.addEventListener('click', () => {
+            const postId = el.dataset.id;
             const section = container.querySelector(`.mur-comments-section[data-post-id="${postId}"]`);
             if (!section) return;
-            const list = section.querySelector('.mur-comment-list');
-            if (list && !list.dataset.loaded) {
-                list.dataset.loaded = '1';
-                loadCommentsInline(postId, list);
-            }
-            section.querySelector('.mur-comment-text')?.focus();
-        });
-    });
 
-    // Auto-load comments for posts that have comments
-    container.querySelectorAll('.mur-comments-section:not([data-autoloaded])').forEach(section => {
-        section.dataset.autoloaded = '1';
-        const postId = section.dataset.postId;
-        const list = section.querySelector('.mur-comment-list');
-        const countEl = container.querySelector(`.mur-comment-toggle[data-id="${postId}"] .mur-comment-count`);
-        const count = parseInt(countEl?.textContent || '0');
-        if (list && count > 0 && !list.dataset.loaded) {
-            list.dataset.loaded = '1';
-            loadCommentsInline(postId, list);
-        }
+            const isHidden = section.style.display === 'none';
+            section.style.display = isHidden ? '' : 'none';
+
+            if (isHidden) {
+                const list = section.querySelector('.mur-comment-list');
+                if (list && !list.dataset.loaded) {
+                    list.dataset.loaded = '1';
+                    loadCommentsInline(postId, list);
+                }
+                section.querySelector('.mur-comment-text')?.focus();
+            }
+        });
     });
 
     // Comment send (always-visible inputs)
@@ -626,7 +616,7 @@ async function loadComments(postId, container) {
 }
 
 function updateCommentCount(postId, delta) {
-    const el = document.querySelector(`.mur-comment-toggle[data-id="${postId}"] .mur-comment-count`);
+    const el = document.querySelector(`.mur-eng-comment[data-id="${postId}"] .mur-comment-count`);
     if (el) el.textContent = Math.max(0, parseInt(el.textContent) + delta);
 }
 

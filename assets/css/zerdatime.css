@@ -3070,19 +3070,20 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-post-actions { display: flex; gap: 4px; margin-left: auto; }
 .mur-post-body { padding: 10px 18px 0; font-size: .9rem; line-height: 1.65; color: var(--zt-text, #1a1a1a); white-space: pre-wrap; word-break: break-word; }
 
-/* Engagement stats (impressions, comments, likes count) */
-.mur-post-engagement { display: flex; gap: 16px; padding: 10px 18px; font-size: .78rem; color: var(--zt-muted, #888); }
-.mur-post-engagement span { display: flex; align-items: center; gap: 4px; }
-.mur-post-engagement i { font-size: .82rem; }
+/* Engagement stats — clickable */
+.mur-post-engagement { display: flex; gap: 16px; padding: 10px 18px; font-size: .82rem; color: var(--zt-muted, #888); border-top: 1px solid var(--zt-border, #e5e7eb); }
+.mur-post-engagement span { display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: all .15s; user-select: none; }
+.mur-post-engagement span:hover { background: var(--zt-bg, #F7F5F2); color: var(--zt-text, #333); }
+.mur-post-engagement i { font-size: .92rem; }
+.mur-post-engagement em { font-style: normal; font-weight: 600; }
+.mur-eng-like { color: var(--zt-muted, #888); }
+.mur-eng-like.mur-eng-liked { color: #e74c3c; }
+.mur-eng-like.mur-eng-liked:hover { background: rgba(231,76,60,.06); }
+.mur-eng-comment { color: var(--zt-muted, #888); }
 
-/* Action buttons bar (Like / Comment / Share / Save style) */
-.mur-post-footer { display: flex; border-top: 1px solid var(--zt-border, #e5e7eb); }
-.mur-action-btn { flex: 1; background: none; border: none; cursor: pointer; font-size: .82rem; color: #2d4a43; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 8px; transition: all .15s; font-weight: 600; }
-.mur-action-btn:hover { background: var(--zt-bg, #F7F5F2); }
-.mur-action-btn + .mur-action-btn { border-left: 1px solid var(--zt-border, #e5e7eb); }
-.mur-action-btn i { font-size: 1rem; }
-.mur-like-btn.liked { color: #e74c3c; }
-.mur-like-btn.liked:hover { background: rgba(231,76,60,.04); }
+/* Keep action-btn for edit menu only */
+.mur-action-btn { background: none; border: none; cursor: pointer; font-size: .82rem; color: var(--zt-muted, #888); display: flex; align-items: center; gap: 5px; padding: 6px; border-radius: 8px; transition: all .15s; }
+.mur-action-btn:hover { background: var(--zt-bg, #F7F5F2); color: var(--zt-text, #1a1a1a); }
 
 /* ── Comment section (always visible input) ── */
 .mur-comments-section { padding: 0 18px 14px; }
