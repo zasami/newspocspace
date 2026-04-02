@@ -252,8 +252,14 @@ function setupComposer(user) {
 
     document.getElementById('btnPost')?.addEventListener('click', submitPost);
     const textarea = document.getElementById('composerBody');
-    textarea?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost(); });
-    textarea?.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; });
+    if (textarea) {
+        setupMentionAutocomplete(textarea);
+        textarea.addEventListener('keydown', (e) => {
+            if (textarea.parentElement?.querySelector('.mur-mention-dropdown')) return;
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
+        });
+        textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; });
+    }
 }
 
 function renderFilePreview() {
@@ -387,11 +393,12 @@ function renderPost(post) {
         imagesHtml += '</div>';
     }
 
-    // Engagement stats — clickable: heart = like/unlike, comments = toggle comments
+    // Engagement bar — likes left, comments right
     const likeIcon = post.is_liked ? 'bi-heart-fill' : 'bi-heart';
     const likeClass = post.is_liked ? 'mur-eng-liked' : '';
     const engagement = `<div class="mur-post-engagement">
         <span class="mur-eng-like ${likeClass}" data-id="${post.id}"><i class="bi ${likeIcon}"></i> <em class="mur-like-count">${post.likes_count || 0}</em> J'aime</span>
+        <span class="mur-eng-spacer"></span>
         <span class="mur-eng-comment" data-id="${post.id}"><i class="bi bi-chat"></i> <em class="mur-comment-count">${post.comments_count || 0}</em> Commentaires</span>
     </div>`;
 
@@ -474,10 +481,13 @@ function setupPostHandlers(container) {
         });
     });
 
-    // Comment send (Enter key)
+    // Comment send (Enter key) + @mention autocomplete
     container.querySelectorAll('.mur-comment-text:not([data-bound])').forEach(input => {
         input.dataset.bound = '1';
+        setupMentionAutocomplete(input);
         input.addEventListener('keydown', (e) => {
+            // Don't submit if mention dropdown is open
+            if (input.parentElement?.querySelector('.mur-mention-dropdown')) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 submitComment(input.dataset.postId, input);
@@ -596,13 +606,79 @@ async function loadCommentsInline(postId, listEl) {
         const initials = ((c.prenom || '')[0] || '') + ((c.nom || '')[0] || '');
         const name = escapeHtml(((c.prenom || '') + ' ' + (c.nom || '')).trim() || 'Anonyme');
         const isOwn = user?.id === c.user_id;
-        return `<div class="mur-comment"><div class="mur-comment-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : escapeHtml(initials || '?')}</div><div class="mur-comment-content"><div class="mur-comment-header"><span class="mur-comment-name">${name}</span><span class="mur-comment-time">${timeAgo(c.created_at)}</span>${isOwn ? `<button class="mur-comment-del" data-id="${c.id}" data-post-id="${postId}"><i class="bi bi-x"></i></button>` : ''}</div><div class="mur-comment-body">${escapeHtml(c.body)}</div></div></div>`;
+        const bodyHtml = renderMentions(escapeHtml(c.body));
+        return `<div class="mur-comment" data-comment-id="${c.id}">
+            <div class="mur-comment-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : escapeHtml(initials || '?')}</div>
+            <div class="mur-comment-content">
+                <div class="mur-comment-header">
+                    <span class="mur-comment-name">${name}</span>
+                    <span class="mur-comment-time">${timeAgo(c.created_at)}</span>
+                    ${isOwn ? `<button class="mur-comment-menu-btn" data-id="${c.id}" data-post-id="${postId}"><i class="bi bi-three-dots"></i></button>` : ''}
+                </div>
+                <div class="mur-comment-body">${bodyHtml}</div>
+                <div class="mur-comment-reactions">
+                    <button class="mur-comment-react" data-id="${c.id}" data-type="up"><i class="bi bi-hand-thumbs-up"></i></button>
+                    <button class="mur-comment-react" data-id="${c.id}" data-type="down"><i class="bi bi-hand-thumbs-down"></i></button>
+                </div>
+            </div>
+        </div>`;
     }).join('');
 
-    listEl.querySelectorAll('.mur-comment-del').forEach(btn => {
+    // Comment 3-dots menu (edit/delete)
+    listEl.querySelectorAll('.mur-comment-menu-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const comment = btn.closest('.mur-comment');
+            const existing = comment?.querySelector('.mur-comment-dropdown');
+            if (existing) { existing.remove(); return; }
+
+            const menu = document.createElement('div');
+            menu.className = 'mur-comment-dropdown';
+            menu.innerHTML = `<button data-act="edit"><i class="bi bi-pencil"></i> Modifier</button><button class="mur-menu-danger" data-act="delete"><i class="bi bi-trash"></i> Supprimer</button>`;
+            btn.parentElement.style.position = 'relative';
+            btn.parentElement.appendChild(menu);
+
+            menu.querySelector('[data-act="edit"]').addEventListener('click', () => {
+                menu.remove();
+                const bodyEl = comment.querySelector('.mur-comment-body');
+                const currentText = bodyEl.textContent;
+                bodyEl.innerHTML = `<input type="text" class="mur-comment-edit-input" value="${escapeHtml(currentText)}">`;
+                const input = bodyEl.querySelector('input');
+                input.focus();
+                input.addEventListener('keydown', async (ev) => {
+                    if (ev.key === 'Enter') {
+                        const newBody = input.value.trim();
+                        if (!newBody) return;
+                        const r = await apiPost('update_mur_comment', { id: btn.dataset.id, body: newBody });
+                        if (r.success) { bodyEl.innerHTML = renderMentions(escapeHtml(newBody)); toast('Commentaire modifié'); }
+                        else { bodyEl.textContent = currentText; toast(r.message || 'Erreur'); }
+                    }
+                    if (ev.key === 'Escape') bodyEl.innerHTML = renderMentions(escapeHtml(currentText));
+                });
+            });
+
+            menu.querySelector('[data-act="delete"]').addEventListener('click', async () => {
+                const r = await apiPost('delete_mur_comment', { id: btn.dataset.id });
+                if (r.success) { comment.remove(); updateCommentCount(btn.dataset.postId, -1); toast('Commentaire supprimé'); }
+            });
+
+            setTimeout(() => document.addEventListener('click', function close(ev) {
+                if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); }
+            }), 10);
+        });
+    });
+
+    // Thumbs up/down reactions on comments
+    listEl.querySelectorAll('.mur-comment-react').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const r = await apiPost('delete_mur_comment', { id: btn.dataset.id });
-            if (r.success) { btn.closest('.mur-comment')?.remove(); updateCommentCount(btn.dataset.postId, -1); }
+            const type = btn.dataset.type;
+            const res2 = await apiPost('toggle_mur_like', { target_type: 'comment', target_id: btn.dataset.id });
+            if (res2.success) {
+                btn.classList.toggle('mur-react-active', res2.liked);
+                btn.querySelector('i').className = res2.liked
+                    ? (type === 'up' ? 'bi bi-hand-thumbs-up-fill' : 'bi bi-hand-thumbs-down-fill')
+                    : (type === 'up' ? 'bi bi-hand-thumbs-up' : 'bi bi-hand-thumbs-down');
+            }
         });
     });
 }
@@ -683,6 +759,96 @@ function timeAgo(dateStr) {
     if (diff < 86400) return `il y a ${Math.floor(diff / 3600)}h`;
     if (diff < 604800) return `il y a ${Math.floor(diff / 86400)}j`;
     return d.toLocaleDateString('fr-CH', { day: '2-digit', month: 'short' });
+}
+
+// ══════════════════════════════════════
+// @MENTION AUTOCOMPLETE
+// ══════════════════════════════════════
+function renderMentions(text) {
+    // Convert @Prénom Nom into styled tags
+    return text.replace(/@([A-ZÀ-Ü][a-zà-ü]+ [A-ZÀ-Ü][a-zà-ü]+)/g, '<span class="mur-mention">@$1</span>');
+}
+
+function setupMentionAutocomplete(input) {
+    if (input.dataset.mentionInit) return;
+    input.dataset.mentionInit = '1';
+
+    let dropdown = null;
+    let debounceTimer = null;
+
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const val = input.value;
+        const cursor = input.selectionStart;
+        // Find @ before cursor
+        const before = val.substring(0, cursor);
+        const match = before.match(/@(\w{1,})$/);
+
+        if (!match) { closeMentionDropdown(); return; }
+
+        debounceTimer = setTimeout(async () => {
+            const q = match[1];
+            if (q.length < 1) return;
+            const res = await apiPost('search_mur_users', { q });
+            if (!res.success || !res.users?.length) { closeMentionDropdown(); return; }
+            showMentionDropdown(input, res.users, match[0], cursor);
+        }, 200);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (!dropdown) return;
+        const items = dropdown.querySelectorAll('.mur-mention-item');
+        const active = dropdown.querySelector('.mur-mention-item.active');
+        let idx = Array.from(items).indexOf(active);
+
+        if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); items.forEach(i => i.classList.remove('active')); items[idx]?.classList.add('active'); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); items.forEach(i => i.classList.remove('active')); items[idx]?.classList.add('active'); }
+        else if (e.key === 'Enter' && active) { e.preventDefault(); selectMention(input, active); }
+        else if (e.key === 'Escape') { closeMentionDropdown(); }
+    });
+
+    function showMentionDropdown(input, users, matchStr, cursor) {
+        closeMentionDropdown();
+        dropdown = document.createElement('div');
+        dropdown.className = 'mur-mention-dropdown';
+        dropdown.innerHTML = users.map((u, i) => {
+            const initials = ((u.prenom || '')[0] || '') + ((u.nom || '')[0] || '');
+            const name = (u.prenom || '') + ' ' + (u.nom || '');
+            return `<div class="mur-mention-item ${i === 0 ? 'active' : ''}" data-name="${escapeHtml(name)}" data-match="${escapeHtml(matchStr)}" data-cursor="${cursor}">
+                <div class="mur-mention-avatar">${u.avatar_url ? `<img src="${escapeHtml(u.avatar_url)}" alt="">` : escapeHtml(initials)}</div>
+                <div><div class="mur-mention-name">${escapeHtml(name)}</div>${u.fonction_nom ? `<div class="mur-mention-fn">${escapeHtml(u.fonction_nom)}</div>` : ''}</div>
+            </div>`;
+        }).join('');
+
+        input.parentElement.style.position = 'relative';
+        input.parentElement.appendChild(dropdown);
+
+        dropdown.querySelectorAll('.mur-mention-item').forEach(item => {
+            item.addEventListener('click', () => selectMention(input, item));
+        });
+    }
+
+    function selectMention(input, item) {
+        const name = item.dataset.name;
+        const matchStr = item.dataset.match;
+        const cursor = parseInt(item.dataset.cursor);
+        const before = input.value.substring(0, cursor - matchStr.length);
+        const after = input.value.substring(cursor);
+        input.value = before + '@' + name + ' ' + after;
+        input.focus();
+        const newPos = before.length + name.length + 2;
+        input.setSelectionRange(newPos, newPos);
+        closeMentionDropdown();
+    }
+
+    function closeMentionDropdown() {
+        if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (dropdown && !dropdown.contains(e.target) && e.target !== input) closeMentionDropdown();
+    });
 }
 
 function animateNum(id, target) {

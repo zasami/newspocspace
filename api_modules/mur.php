@@ -329,6 +329,46 @@ function delete_mur_comment() {
     respond(['success' => true, 'message' => 'Commentaire supprimé']);
 }
 
+// ── Update comment ──
+function update_mur_comment() {
+    $user = require_auth();
+    global $params;
+
+    $id   = $params['id'] ?? '';
+    $body = Sanitize::text(trim($params['body'] ?? ''));
+    if (!$id) bad_request('ID manquant');
+    if ($body === '') bad_request('Commentaire vide');
+
+    $comment = Db::fetch("SELECT user_id FROM mur_comments WHERE id = ? AND deleted_at IS NULL", [$id]);
+    if (!$comment) not_found();
+    if ($comment['user_id'] !== $user['id']) forbidden();
+
+    Db::exec("UPDATE mur_comments SET body = ? WHERE id = ?", [$body, $id]);
+    respond(['success' => true, 'message' => 'Commentaire modifié']);
+}
+
+// ── Search users for @mention ──
+function search_mur_users() {
+    require_auth();
+    global $params;
+
+    $q = trim($params['q'] ?? '');
+    if (strlen($q) < 1) { respond(['success' => true, 'users' => []]); return; }
+
+    $like = '%' . $q . '%';
+    $users = Db::fetchAll(
+        "SELECT id, prenom, nom, photo AS avatar_url,
+                (SELECT f.nom FROM fonctions f WHERE f.id = u.fonction_id) AS fonction_nom
+         FROM users u
+         WHERE u.is_active = 1 AND (u.prenom LIKE ? OR u.nom LIKE ? OR CONCAT(u.prenom, ' ', u.nom) LIKE ?)
+         ORDER BY u.prenom, u.nom
+         LIMIT 8",
+        [$like, $like, $like]
+    );
+
+    respond(['success' => true, 'users' => $users]);
+}
+
 // ── Upload media with post ──
 function upload_mur_media() {
     $user = require_auth();
