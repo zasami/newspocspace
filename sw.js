@@ -12,6 +12,7 @@ const SYNC_QUEUE = 'zt-sync-queue';
 // Static assets to pre-cache on install (employee SPA)
 const PRECACHE_URLS = [
   '/zerdatime/',
+  '/zerdatime/login',
   '/zerdatime/logo.png',
   '/zerdatime/manifest.json',
   '/zerdatime/assets/css/vendor/bootstrap.min.css',
@@ -165,8 +166,9 @@ async function handleNavigate(request) {
     if (response.ok) {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
-      // Also cache as the shell URL for offline fallback
-      if (new URL(request.url).pathname.startsWith('/zerdatime/') && !new URL(request.url).pathname.includes('/admin/') && !new URL(request.url).pathname.includes('/care/') && !new URL(request.url).pathname.includes('/website/')) {
+      // Cache the SPA shell for offline fallback
+      const p = new URL(request.url).pathname;
+      if (p.startsWith('/zerdatime/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
         cache.put(new Request('/zerdatime/'), response.clone());
       }
     }
