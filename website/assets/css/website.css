@@ -794,15 +794,15 @@ a:hover { color: var(--ws-green-hover); }
 .ws-cta-contact-links a i { font-size: 1.1rem; }
 .ws-cta-closing { font-weight: 700; font-size: 1.05rem; color: var(--ws-text); margin: 0; font-style: italic; }
 .ws-cta-postuler {
-  margin-top: 32px; display: flex; align-items: center; gap: 20px;
+  margin-top: 32px; display: flex; align-items: center; gap: 24px;
   padding: 20px 28px; border-top: 1px solid rgba(46,125,50,0.1);
 }
+.ws-cta-postuler > div { flex: 1; min-width: 0; }
 .ws-cta-postuler h5 {
   font-size: 1rem; font-weight: 700; margin: 0 0 2px; display: flex; align-items: center; gap: 8px;
 }
 .ws-cta-postuler h5 i { color: var(--ws-green); }
 .ws-cta-postuler p { font-size: .85rem; margin: 0; color: var(--ws-text-muted); }
-.ws-cta-postuler .ws-btn-outline-sm { margin-left: auto; }
 .ws-btn-outline-sm {
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   padding: 8px 18px; border-radius: 8px; font-size: .85rem; font-weight: 600;

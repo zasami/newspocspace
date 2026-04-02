@@ -1016,12 +1016,14 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     </div>
 
     <!-- Postuler -->
-    <div class="ws-cta-postuler">
-      <div>
-        <h5><i class="bi bi-feather"></i> Rejoignez notre équipe</h5>
-        <p>Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
+    <div style="margin-top:32px;display:flex;align-items:center;gap:24px;padding:20px 28px;border-top:1px solid rgba(46,125,50,0.1)">
+      <div style="flex:1">
+        <h5 style="font-size:1rem;font-weight:700;margin:0 0 2px;display:flex;align-items:center;gap:8px"><i class="bi bi-feather" style="color:var(--ws-green)"></i> Rejoignez notre équipe</h5>
+        <p style="font-size:.85rem;margin:0;color:var(--ws-text-muted)">Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
       </div>
-      <a href="/zerdatime/website/recrutement.php" class="ws-btn ws-btn-outline-sm"><i class="bi bi-send"></i> Voir les offres</a>
+      <a href="/zerdatime/website/recrutement.php" class="ws-btn-outline-sm" style="flex-shrink:0">
+        <i class="bi bi-send"></i> Voir les offres
+      </a>
     </div>
   </div>
 </section>
