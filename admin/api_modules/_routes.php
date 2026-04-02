@@ -130,6 +130,11 @@ return [
     'roadmap' => [
         'admin_roadmap_toggle', 'admin_roadmap_create', 'admin_roadmap_update', 'admin_roadmap_delete',
     ],
+    'mur' => [
+        'admin_get_mur_config', 'admin_save_mur_config',
+        'admin_get_mur_posts', 'admin_moderate_mur_post', 'admin_delete_mur_post',
+        'admin_pin_mur_post', 'admin_delete_mur_comment', 'admin_get_mur_stats',
+    ],
     'residents' => [
         'admin_get_residents', 'admin_create_resident', 'admin_update_resident', 'admin_toggle_resident',
         'admin_upload_resident_photo', 'admin_serve_resident_photo', 'admin_delete_resident_photo',

@@ -70,6 +70,11 @@ return [
     'repartition' => [
         'get_repartition',
     ],
+    'mur' => [
+        'get_mur_config', 'get_mur_feed', 'create_mur_post', 'update_mur_post', 'delete_mur_post',
+        'toggle_mur_like', 'get_mur_comments', 'add_mur_comment', 'delete_mur_comment',
+        'get_mur_stats',
+    ],
     'cuisine' => [
         'cuisine_get_menus_semaine', 'cuisine_save_menu', 'cuisine_delete_menu',
         'cuisine_get_reservations_collab',

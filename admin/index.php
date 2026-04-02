@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -149,6 +149,7 @@ $pageLabels = [
     'rh-offres'        => 'Offres d\'emploi',
     'rh-candidatures'  => 'Candidatures',
     'rh-formations'    => 'Formations collaborateurs',
+    'mur'              => 'Mur social',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -204,6 +205,7 @@ $sidebarCategories = [
             'notes'    => ['label' => 'Notes',                 'icon' => 'journal-text'],
             'pv'       => ['label' => 'Procès-Verbaux',       'icon' => 'file-earmark-text'],
             'sondages' => ['label' => 'Sondages',             'icon' => 'clipboard2-check'],
+            'mur'      => ['label' => 'Mur social',            'icon' => 'chat-square-heart'],
         ],
     ],
     'rh' => [

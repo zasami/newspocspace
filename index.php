@@ -54,6 +54,7 @@ $sidebarNav = [
             'collegues'   => ['label' => 'Collègues',            'icon' => 'people'],
             'covoiturage' => ['label' => 'Covoiturage',      'icon' => 'car-front'],
             'emails'      => ['label' => 'Messagerie interne','icon' => 'chat-dots'],
+            'mur'         => ['label' => 'Mur social',         'icon' => 'chat-square-heart'],
         ],
     ],
     'cuisine' => [
