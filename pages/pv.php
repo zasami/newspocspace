@@ -175,15 +175,27 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
 .pv-comment-box {
   background: #fff;
   border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
+.pv-comment-top { display: flex; gap: 12px; }
+.pv-comment-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; object-fit: cover;
+  border: 2px solid #f0ede8;
+}
+.pv-comment-avatar-initials {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--zt-bg-alt, #f0ede8); color: var(--zt-navy, #2a3b4d);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700; border: 2px solid #f0ede8;
+}
+.pv-comment-content { flex: 1; min-width: 0; }
 .pv-comment-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 0.85rem;
 }
 .pv-comment-author {
@@ -198,6 +210,27 @@ $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, 
   color: #444;
   line-height: 1.5;
 }
+/* Likes */
+.pv-comment-footer { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f5f3f0; }
+.pv-like-btn {
+  background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+  font-size: .82rem; color: #999; padding: 3px 8px; border-radius: 6px; transition: all .15s;
+}
+.pv-like-btn:hover { background: #f5f3f0; color: #666; }
+.pv-like-btn.liked { color: #C53030; }
+.pv-like-btn.liked i { font-weight: 700; }
+.pv-like-avatars { display: flex; margin-left: 4px; }
+.pv-like-avatars img, .pv-like-avatars .pv-like-av-init {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+  margin-left: -6px; object-fit: cover;
+}
+.pv-like-avatars img:first-child, .pv-like-avatars .pv-like-av-init:first-child { margin-left: 0; }
+.pv-like-av-init {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+  background: #f0ede8; color: #666; display: flex; align-items: center;
+  justify-content: center; font-size: .55rem; font-weight: 700;
+}
+.pv-like-count { font-size: .78rem; color: #999; margin-left: 4px; }
 .pv-editor-container {
   border: 1px solid #ddd;
   border-radius: 6px;

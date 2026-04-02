@@ -36,7 +36,7 @@ return [
         'get_proposals_ouvertes', 'get_proposal_planning', 'submit_vote',
     ],
     'pv' => [
-        'get_pv_list', 'get_pv', 'get_pv_refs', 'get_recent_pv', 'rate_pv', 'comment_pv'
+        'get_pv_list', 'get_pv', 'get_pv_refs', 'get_recent_pv', 'rate_pv', 'comment_pv', 'toggle_pv_comment_like'
     ],
     'sondages' => [
         'get_sondages_ouverts', 'get_sondage_detail', 'submit_sondage_reponses',

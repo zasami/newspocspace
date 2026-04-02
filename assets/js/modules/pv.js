@@ -162,16 +162,43 @@ async function displayPvDetail(pv, comments) {
             </div>
         `;
     } else {
-        const commentsList = comments.length > 0 
-            ? comments.map(c => `
-                <div class="pv-comment-box">
-                    <div class="pv-comment-header">
-                        <span class="pv-comment-author">${escapeHtml(c.prenom)} ${escapeHtml(c.nom)} <small class="text-muted fw-normal">(${escapeHtml(c.fonction_code || '?')})</small></span>
-                        <span class="pv-comment-date">${new Date(c.created_at).toLocaleString('fr-FR', {dateStyle: 'short', timeStyle: 'short'})}</span>
+        const commentsList = comments.length > 0
+            ? comments.map(c => {
+                const initials = ((c.prenom||'')[0] + (c.nom||'')[0]).toUpperCase();
+                const avatarHtml = c.photo
+                    ? `<img src="${c.photo}" class="pv-comment-avatar" alt="">`
+                    : `<div class="pv-comment-avatar-initials">${escapeHtml(initials)}</div>`;
+
+                const likes = c.likes || [];
+                const likedByMe = c.liked_by_me;
+                const likeAvatars = likes.slice(0, 5).map(l => {
+                    const li = ((l.prenom||'')[0] + (l.nom||'')[0]).toUpperCase();
+                    return l.photo
+                        ? `<img src="${l.photo}" title="${escapeHtml(l.prenom + ' ' + l.nom)}">`
+                        : `<div class="pv-like-av-init" title="${escapeHtml(l.prenom + ' ' + l.nom)}">${escapeHtml(li)}</div>`;
+                }).join('');
+                const likeCount = likes.length;
+
+                return `<div class="pv-comment-box">
+                    <div class="pv-comment-top">
+                        ${avatarHtml}
+                        <div class="pv-comment-content">
+                            <div class="pv-comment-header">
+                                <span class="pv-comment-author">${escapeHtml(c.prenom)} ${escapeHtml(c.nom)} <small class="text-muted fw-normal">(${escapeHtml(c.fonction_code || '?')})</small></span>
+                                <span class="pv-comment-date">${new Date(c.created_at).toLocaleString('fr-FR', {dateStyle: 'short', timeStyle: 'short'})}</span>
+                            </div>
+                            <div class="pv-comment-body">${c.contenu}</div>
+                            <div class="pv-comment-footer">
+                                <button class="pv-like-btn${likedByMe ? ' liked' : ''}" data-like-comment="${c.id}">
+                                    <i class="bi bi-heart${likedByMe ? '-fill' : ''}"></i> ${likeCount || ''}
+                                </button>
+                                ${likeCount > 0 ? `<div class="pv-like-avatars">${likeAvatars}</div>` : ''}
+                                ${likeCount > 5 ? `<span class="pv-like-count">+${likeCount - 5}</span>` : ''}
+                            </div>
+                        </div>
                     </div>
-                    <div class="pv-comment-body">${c.contenu}</div>
-                </div>
-            `).join('') 
+                </div>`;
+            }).join('')
             : '<div class="text-muted text-center small mb-4 py-3 border rounded bg-white">Soyez le premier à commenter ce PV.</div>';
 
         commentsHtml = `
@@ -305,6 +332,17 @@ async function displayPvDetail(pv, comments) {
             }
         });
     }
+
+    // Like buttons
+    document.querySelectorAll('[data-like-comment]').forEach(btn => {
+        on(btn, 'click', async () => {
+            const commentId = btn.dataset.likeComment;
+            const r = await apiPost('toggle_pv_comment_like', { comment_id: commentId });
+            if (r.success) {
+                selectPv(pv.id); // Reload to refresh likes
+            }
+        });
+    });
 }
 
 export function destroy() {

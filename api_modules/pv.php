@@ -104,7 +104,7 @@ function get_pv()
 
     // Get comments
     $comments = Db::fetchAll(
-        "SELECT c.*, u.prenom, u.nom, u.fonction_id, f.code AS fonction_code 
+        "SELECT c.*, u.prenom, u.nom, u.photo, u.fonction_id, f.code AS fonction_code
          FROM pv_comments c
          JOIN users u ON c.user_id = u.id
          LEFT JOIN fonctions f ON u.fonction_id = f.id
@@ -112,6 +112,21 @@ function get_pv()
          ORDER BY c.created_at ASC",
         [$pvId]
     );
+
+    // Add likes for each comment
+    $currentUserId = $_SESSION['zt_user']['id'];
+    foreach ($comments as &$c) {
+        $c['likes'] = Db::fetchAll(
+            "SELECT l.user_id, u.prenom, u.nom, u.photo
+             FROM pv_comment_likes l
+             JOIN users u ON u.id = l.user_id
+             WHERE l.comment_id = ?
+             ORDER BY l.created_at ASC",
+            [$c['id']]
+        );
+        $c['liked_by_me'] = !empty(array_filter($c['likes'], fn($l) => $l['user_id'] === $currentUserId));
+    }
+    unset($c);
 
     respond([
         'success' => true,
@@ -195,6 +210,26 @@ function comment_pv()
         'success' => true,
         'message' => 'Commentaire ajouté'
     ]);
+}
+
+function toggle_pv_comment_like()
+{
+    global $params;
+    require_auth();
+
+    $commentId = $params['comment_id'] ?? '';
+    if (!$commentId) bad_request('comment_id requis');
+
+    $userId = $_SESSION['zt_user']['id'];
+
+    $existing = Db::fetch("SELECT id FROM pv_comment_likes WHERE comment_id = ? AND user_id = ?", [$commentId, $userId]);
+    if ($existing) {
+        Db::exec("DELETE FROM pv_comment_likes WHERE id = ?", [$existing['id']]);
+        respond(['success' => true, 'liked' => false]);
+    } else {
+        Db::exec("INSERT INTO pv_comment_likes (id, comment_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $commentId, $userId]);
+        respond(['success' => true, 'liked' => true]);
+    }
 }
 
 function rate_pv()
