@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'zt-v1';
+const CACHE_VERSION = 'zt-v2';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -118,9 +118,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // HTML pages — network first, fallback to cache
-  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+  // SPA page fragments (pages/*.php fetched by app.js)
+  if (url.pathname.match(/\/zerdatime\/pages\/.*\.php/)) {
     event.respondWith(networkFirst(event.request, DYNAMIC_CACHE));
+    return;
+  }
+
+  // HTML pages (navigate) — network first, shell fallback
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(handleNavigate(event.request));
     return;
   }
 
@@ -153,6 +159,30 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
+async function handleNavigate(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, response.clone());
+      // Also cache as the shell URL for offline fallback
+      if (new URL(request.url).pathname.startsWith('/zerdatime/') && !new URL(request.url).pathname.includes('/admin/') && !new URL(request.url).pathname.includes('/care/') && !new URL(request.url).pathname.includes('/website/')) {
+        cache.put(new Request('/zerdatime/'), response.clone());
+      }
+    }
+    return response;
+  } catch {
+    // Offline: try exact match first, then shell, then offline page
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const shell = await caches.match('/zerdatime/');
+    if (shell) return shell;
+    return new Response(offlinePage(), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+}
+
 async function networkFirst(request, cacheName) {
   try {
     const response = await fetch(request);
@@ -164,9 +194,9 @@ async function networkFirst(request, cacheName) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
-    // Offline fallback for HTML
-    if (request.headers.get('accept')?.includes('text/html')) {
-      return caches.match('/zerdatime/') || new Response(offlinePage(), {
+    // For page fragments, return a helpful offline message
+    if (request.url.includes('/pages/')) {
+      return new Response('<div class="text-center py-5"><i class="bi bi-wifi-off" style="font-size:2rem;opacity:.2"></i><h5 class="mt-3">Hors ligne</h5><p class="text-muted">Cette page n\'est pas disponible hors ligne. Visitez-la une fois en ligne pour la mettre en cache.</p></div>', {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
