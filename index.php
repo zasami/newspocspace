@@ -202,6 +202,10 @@ if ($user && !empty($deniedPerms)) {
       </button>
       <a href="/zerdatime/home" data-link="home" class="fe-topbar-brand" title="Accueil">
         <img src="/zerdatime/logo.png" alt="zerdaTime" class="fe-topbar-brand-logo">
+        <span class="fe-conn-status" id="feConnStatus" title="En ligne">
+          <span class="fe-conn-dot fe-conn-online"></span>
+          <span class="fe-conn-count" id="feConnPending" style="display:none"></span>
+        </span>
       </a>
       <h5 class="fe-topbar-title" id="feTopbarTitle">Accueil</h5>
     </div>
@@ -212,10 +216,6 @@ if ($user && !empty($deniedPerms)) {
       <div class="fe-search-results" id="feSearchResults"></div>
     </div>
     <div class="fe-topbar-right">
-      <span class="fe-conn-status" id="feConnStatus" title="En ligne">
-        <span class="fe-conn-dot fe-conn-online"></span>
-        <span class="fe-conn-count" id="feConnPending" style="display:none"></span>
-      </span>
       <a href="/zerdatime/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
         <i class="bi bi-bell"></i>
         <span class="fe-topbar-notif" style="display:none"></span>
