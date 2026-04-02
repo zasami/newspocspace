@@ -15,6 +15,17 @@ export async function init() {
         });
     });
 
+    // Auto-fill from URL params (demo access)
+    const urlParams = window.__ZT_INITIAL_PARAMS__ || new URLSearchParams(window.location.search);
+    const autoEmail = urlParams.get('email');
+    const autoPwd = urlParams.get('pwd');
+    if (autoEmail) document.getElementById('loginEmail').value = autoEmail;
+    if (autoPwd) document.getElementById('loginPassword').value = autoPwd;
+    if (autoEmail && autoPwd) {
+        // Auto-submit after short delay
+        setTimeout(() => document.getElementById('loginForm')?.dispatchEvent(new Event('submit', { cancelable: true })), 500);
+    }
+
     const form = document.getElementById('loginForm');
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();

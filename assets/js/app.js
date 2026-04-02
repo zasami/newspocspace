@@ -4,6 +4,9 @@
 
 const BASE = '/zerdatime';
 
+// Save initial URL params before SPA routing replaces them
+window.__ZT_INITIAL_PARAMS__ = new URLSearchParams(window.location.search);
+
 const moduleMap = {
     'home':       () => import('./modules/home.js'),
     'login':      () => import('./modules/auth.js'),
