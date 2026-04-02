@@ -79,7 +79,7 @@ run.font.color.rgb = RGBColor(0x6B, 0x6B, 0x6B)
 
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = p.add_run('zerdaTime — EMS La Terrassière SA')
+run = p.add_run('SpocSpace — EMS La Terrassière SA')
 run.font.size = Pt(12)
 
 p = doc.add_paragraph()
@@ -134,7 +134,7 @@ doc.add_page_break()
 doc.add_heading('1. Présentation générale', level=1)
 
 doc.add_paragraph(
-    'L\'Espace Famille est un module de zerdaTime qui permet aux familles et correspondants '
+    'L\'Espace Famille est un module de SpocSpace qui permet aux familles et correspondants '
     'des résidents de suivre la vie quotidienne de leur proche au sein de l\'EMS. '
     'Il offre trois volets principaux :'
 )
@@ -281,7 +281,7 @@ doc.add_paragraph(
     'dans le widget latéral) ou directement via l\'URL :'
 )
 p = doc.add_paragraph()
-run = p.add_run('https://zkriva.com/zerdatime/website/famille.php')
+run = p.add_run('https://zkriva.com/spocspace/website/famille.php')
 run.bold = True
 
 doc.add_paragraph('Saisissez :')
@@ -358,7 +358,7 @@ doc.add_paragraph(
     'Le module de réservation est accessible depuis le site web principal de l\'EMS :'
 )
 p = doc.add_paragraph()
-run = p.add_run('https://zkriva.com/zerdatime/website/')
+run = p.add_run('https://zkriva.com/spocspace/website/')
 run.bold = True
 
 doc.add_paragraph(
@@ -604,12 +604,12 @@ doc.add_paragraph()
 doc.add_paragraph()
 p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = p.add_run('— Document généré automatiquement par zerdaTime — Mars 2026 —')
+run = p.add_run('— Document généré automatiquement par SpocSpace — Mars 2026 —')
 run.font.size = Pt(9)
 run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
 run.italic = True
 
 # ── Save ──
-output = '/home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/zerdatime/docs/Espace_Famille_Guide_Complet.docx'
+output = '/home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/spocspace/docs/Espace_Famille_Guide_Complet.docx'
 doc.save(output)
 print(f'Document saved: {output}')

@@ -7,7 +7,7 @@ class PDF(FPDF):
         if self.page_no() > 1:
             self.set_font('Helvetica', 'I', 8)
             self.set_text_color(150)
-            self.cell(0, 8, 'Espace Famille — Guide complet — zerdaTime', align='C')
+            self.cell(0, 8, 'Espace Famille — Guide complet — SpocSpace', align='C')
             self.ln(10)
 
     def footer(self):
@@ -102,7 +102,7 @@ pdf.cell(0, 10, 'Guide complet — Fonctionnement et administration', align='C',
 pdf.ln(10)
 pdf.set_font('Helvetica', '', 12)
 pdf.set_text_color(60)
-pdf.cell(0, 8, 'zerdaTime — EMS La Terrassiere SA', align='C', ln=True)
+pdf.cell(0, 8, 'SpocSpace — EMS La Terrassiere SA', align='C', ln=True)
 pdf.cell(0, 8, 'Mars 2026', align='C', ln=True)
 
 # ── TOC ──
@@ -125,7 +125,7 @@ for t in toc:
 # ── 1 ──
 pdf.add_page()
 pdf.h1('1. Presentation generale')
-pdf.body_text("L'Espace Famille est un module de zerdaTime qui permet aux familles et correspondants des residents de suivre la vie quotidienne de leur proche au sein de l'EMS. Il offre trois volets principaux :")
+pdf.body_text("L'Espace Famille est un module de SpocSpace qui permet aux familles et correspondants des residents de suivre la vie quotidienne de leur proche au sein de l'EMS. Il offre trois volets principaux :")
 pdf.bullet("Suivi des activites et animations (sorties, ateliers, fetes)", "Activites")
 pdf.bullet("Consultation des avis medicaux, rapports et ordonnances", "Suivi medical")
 pdf.bullet("Albums photo organises par date et par annee", "Galerie photos")
@@ -193,7 +193,7 @@ pdf.body_text("Le bouton 'Import par lot' dans l'onglet Galerie permet d'importe
 pdf.add_page()
 pdf.h1('4. Guide famille (correspondants)')
 pdf.h2('4.1 Connexion')
-pdf.body_text("URL : https://zkriva.com/zerdatime/website/famille.php")
+pdf.body_text("URL : https://zkriva.com/spocspace/website/famille.php")
 pdf.bullet("Email du correspondant")
 pdf.bullet("Code d'acces = date de naissance JJMMAAAA (ex: 12031935)")
 pdf.note("5 tentatives max par IP, blocage 15 minutes.")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ZerdaTime - Serveur local de transcription (Vosk + Whisper)
+SpocSpace - Serveur local de transcription (Vosk + Whisper)
 Ecoute sur http://localhost:5876 et transcrit l'audio envoye en POST.
 Supporte deux moteurs :
   - Vosk  : leger, rapide, fonctionne sur CPU faible (defaut)
@@ -69,10 +69,10 @@ def _download_progress(block_num, block_size, total_size):
         print(f"\r[Vosk] Telechargement: {mb}/{total_mb} Mo ({pct}%)", end="", flush=True)
 
 
-print("[ZerdaTime] Chargement du modele Vosk...")
+print("[SpocSpace] Chargement du modele Vosk...")
 vosk_model_path = find_vosk_model()
 vosk_model = Model(vosk_model_path)
-print(f"[ZerdaTime] Vosk pret ! ({os.path.basename(vosk_model_path)})")
+print(f"[SpocSpace] Vosk pret ! ({os.path.basename(vosk_model_path)})")
 
 
 def transcribe_vosk(audio_path):
@@ -307,24 +307,24 @@ def main():
             server = HTTPServer(("127.0.0.1", port), TranscriptionHandler)
             break
         except OSError as e:
-            print(f"[ZerdaTime] Port {port} indisponible ({e}), essai suivant...")
+            print(f"[SpocSpace] Port {port} indisponible ({e}), essai suivant...")
 
     if server is None:
-        print(f"[ZerdaTime] ERREUR : aucun port disponible entre {base_port} et {base_port + 9}")
+        print(f"[SpocSpace] ERREUR : aucun port disponible entre {base_port} et {base_port + 9}")
         sys.exit(1)
 
     whisper_status = "disponible" if check_whisper_available() else "non installe"
-    print(f"[ZerdaTime] Serveur demarre sur http://localhost:{port}")
-    print(f"[ZerdaTime] Moteurs : Vosk (pret), Whisper ({whisper_status})")
-    print(f"[ZerdaTime] Endpoints :")
+    print(f"[SpocSpace] Serveur demarre sur http://localhost:{port}")
+    print(f"[SpocSpace] Moteurs : Vosk (pret), Whisper ({whisper_status})")
+    print(f"[SpocSpace] Endpoints :")
     print(f"  GET  /health                -> statut + moteurs disponibles")
     print(f"  POST /transcribe            -> transcription Vosk (defaut)")
     print(f"  POST /transcribe?engine=whisper -> transcription Whisper")
-    print(f"[ZerdaTime] Ctrl+C pour arreter")
+    print(f"[SpocSpace] Ctrl+C pour arreter")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n[ZerdaTime] Arret du serveur.")
+        print("\n[SpocSpace] Arret du serveur.")
         server.server_close()
 
 

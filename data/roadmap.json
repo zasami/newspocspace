@@ -182,7 +182,7 @@
     {
         "id": "justificatif-pour-une-absance",
         "title": "Justificatif pour une absance",
-        "desc": "Voici la correction :\n\nQuand un collègue envoie un justificatif d'absence (accident, maladie, etc.), celui-ci doit être transmis simultanément dans Zerdatime et par e-mail aux RH, afin d’éviter le double envoi.",
+        "desc": "Voici la correction :\n\nQuand un collègue envoie un justificatif d'absence (accident, maladie, etc.), celui-ci doit être transmis simultanément dans SpocSpace et par e-mail aux RH, afin d’éviter le double envoi.",
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,

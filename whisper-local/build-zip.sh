@@ -1,14 +1,14 @@
 #!/bin/bash
-# Regenere le ZIP d'installation ZerdaTime-IA-Install.zip
+# Regenere le ZIP d'installation SpocSpace-IA-Install.zip
 # Le install.bat reste EN DEHORS du ZIP (telechargement separe)
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
-rm -f ZerdaTime-IA-Install.zip
+rm -f SpocSpace-IA-Install.zip
 
 # Creer un dossier temporaire avec la bonne structure
 TMPDIR=$(mktemp -d)
-PACK="$TMPDIR/ZerdaTime-IA"
+PACK="$TMPDIR/SpocSpace-IA"
 mkdir -p "$PACK/ollama-model/blobs"
 
 # Fichiers racine
@@ -69,13 +69,13 @@ fi
 
 # Creer le ZIP (tout inclus)
 cd "$TMPDIR"
-zip -0 -r "$DIR/ZerdaTime-IA-Install.zip" ZerdaTime-IA/
+zip -0 -r "$DIR/SpocSpace-IA-Install.zip" SpocSpace-IA/
 cd "$DIR"
 rm -rf "$TMPDIR"
 
 echo "=== ZIP regenere ==="
-ls -lh ZerdaTime-IA-Install.zip
+ls -lh SpocSpace-IA-Install.zip
 echo ""
 echo "Fichiers a distribuer :"
-echo "  1. ZerdaTime-IA-Install.zip  (tout inclus)"
+echo "  1. SpocSpace-IA-Install.zip  (tout inclus)"
 echo "  2. install.bat               (HORS du ZIP, separe)"

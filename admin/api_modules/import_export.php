@@ -226,7 +226,7 @@ function admin_import_users()
         } else {
             // Create new
             $id = Uuid::v4();
-            $password = password_hash('Zerdatime2026!', PASSWORD_DEFAULT);
+            $password = password_hash('SpocSpace2026!', PASSWORD_DEFAULT);
             Db::exec(
                 "INSERT INTO users (id, nom, prenom, email, password, role, fonction_id, taux, employee_id, is_active)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)",
