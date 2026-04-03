@@ -338,7 +338,7 @@
         "desc": "Dans le site web il yaura un bouton espace famille, avec le login , il peuve voir les activités faites les prochaines activité, les sortie etc....il peuve voir si possible le suivi midical et la galérie photos",
         "difficulty": "difficile",
         "category": "Site web",
-        "done": false,
+        "done": true,
         "order": 38
     },
     {
@@ -358,5 +358,14 @@
         "category": "General",
         "done": false,
         "order": 40
+    },
+    {
+        "id": "mur-social",
+        "title": "Mur social",
+        "desc": "Voici la correction :\n\nIl faut ajouter sur les sidebare gauche et droite des cartes utiles, comme les prochains événements, les sondages ou des informations utiles. Il faut aussi donner la possibilité à l’admin d’épingler un post sur le mur.\n_ aussi ajoute l'option quand le texte est trop long du poste, il se tronsforme en textare",
+        "difficulty": "difficile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 41
     }
 ]
