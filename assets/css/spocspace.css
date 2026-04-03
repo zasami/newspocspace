@@ -3031,35 +3031,37 @@ input[type="checkbox"]:not(.form-check-input):hover {
 /* ── Center Column ── */
 .mur-center { min-width: 0; }
 
-/* ── Composer (TipTap editor with bottom toolbar) ── */
+/* ── Composer (TipTap editor — original pill layout + expandable toolbar) ── */
 .mur-composer { background: var(--ss-surface, #fff); border-radius: 14px; border: 1.5px solid var(--ss-border, #e5e7eb); padding: 16px; margin-bottom: 14px; }
 .mur-composer-row { display: flex; gap: 12px; }
 .mur-composer-avatar { width: 40px; height: 40px; border-radius: 50%; background: #B8C9D4; color: #3B4F6B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .82rem; flex-shrink: 0; overflow: hidden; }
 .mur-composer-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.mur-composer-wrap { flex: 1; display: flex; flex-direction: column; border: 1.5px solid var(--ss-border, #e5e7eb); border-radius: 22px; background: var(--ss-bg, #F7F5F2); transition: border-color .25s ease, background .25s ease; overflow: hidden; }
-.mur-composer-wrap:focus-within { border-color: #bcd2cb; background: #fff; }
+.mur-composer-wrap { flex: 1; position: relative; display: flex; align-items: center; border: 1.5px solid var(--ss-border, #e5e7eb); border-radius: 22px; background: var(--ss-bg, #F7F5F2); transition: border-color .25s ease, background .25s ease, border-radius .25s ease; overflow: hidden; }
+.mur-composer-wrap:focus-within { border-color: #bcd2cb; background: #fff; flex-wrap: wrap; border-radius: 14px; }
 
 /* Editor content area */
-.mur-composer-editor .ProseMirror { padding: 10px 16px; font-size: .88rem; line-height: 1.55; outline: none; min-height: 42px; transition: min-height .25s ease; }
+.mur-composer-editor { flex: 1; min-width: 0; }
+.mur-composer-editor .ProseMirror { padding: 10px 0 10px 16px; font-size: .88rem; line-height: 1.55; outline: none; min-height: 42px; }
 .mur-composer-editor .ProseMirror p { margin: 0 0 .3rem; }
 .mur-composer-editor .ProseMirror p:last-child { margin-bottom: 0; }
 .mur-composer-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--ss-muted, #999); pointer-events: none; float: left; height: 0; }
 .mur-composer-editor .ProseMirror mark { background: #fef3cd; padding: .05em .15em; border-radius: 2px; }
-.mur-composer-wrap:focus-within .mur-composer-editor .ProseMirror { min-height: 100px; }
+.mur-composer-wrap:focus-within .mur-composer-editor { flex-basis: 100%; }
+.mur-composer-wrap:focus-within .mur-composer-editor .ProseMirror { min-height: 100px; padding-right: 16px; }
 
-/* Bottom bar: always visible — icons right, toolbar appears on focus */
-.mur-composer-bar { display: flex; align-items: center; justify-content: flex-end; padding: 2px 8px 4px; }
-.mur-composer-wrap:focus-within .mur-composer-bar { justify-content: space-between; border-top: 1px solid var(--ss-border, #e5e7eb); padding: 4px 8px 6px; }
+/* Bottom bar: inline with editor (icons only), wraps below on focus (toolbar + icons) */
+.mur-composer-bar { display: flex; align-items: center; flex-shrink: 0; padding-right: 8px; }
+.mur-composer-wrap:focus-within .mur-composer-bar { flex-basis: 100%; justify-content: space-between; padding: 4px 8px 6px; border-top: 1px solid var(--ss-border, #e5e7eb); }
 
-/* Mini toolbar (bold, italic, highlight, emoji, category) — hidden until focus */
-.mur-composer-toolbar { display: none; align-items: center; gap: 2px; }
-.mur-composer-wrap:focus-within .mur-composer-toolbar { display: flex; }
+/* Mini toolbar — slides in on focus */
+.mur-composer-toolbar { display: flex; align-items: center; gap: 2px; max-width: 0; opacity: 0; overflow: hidden; transition: max-width .3s ease, opacity .25s ease .05s; }
+.mur-composer-wrap:focus-within .mur-composer-toolbar { max-width: 300px; opacity: 1; }
 .mur-tb-btn { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); border: none; background: none; font-size: .88rem; transition: all .15s; }
 .mur-tb-btn:hover { background: rgba(188,210,203,.25); color: #2d4a43; }
 .mur-tb-btn.active { background: rgba(188,210,203,.4); color: #2d4a43; }
-.mur-composer-cat { border: 1px solid var(--ss-border, #e5e7eb); border-radius: 6px; padding: 3px 8px; font-size: .75rem; background: var(--ss-surface, #fff); cursor: pointer; margin-left: 4px; color: var(--ss-text, #333); }
+.mur-composer-cat { border: 1px solid var(--ss-border, #e5e7eb); border-radius: 6px; padding: 3px 8px; font-size: .75rem; background: var(--ss-surface, #fff); cursor: pointer; margin-left: 4px; color: var(--ss-text, #333); white-space: nowrap; }
 
-/* Media icons (right side, always visible) */
+/* Media icons (always visible, right side) */
 .mur-composer-icons { display: flex; gap: 2px; }
 .mur-composer-icon-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); transition: all .15s; font-size: 1rem; }
 .mur-composer-icon-btn:hover { background: rgba(188,210,203,.2); color: #2d4a43; }
