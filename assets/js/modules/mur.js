@@ -259,6 +259,9 @@ function setupComposer(user) {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
         });
         textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; });
+        textarea.addEventListener('blur', () => { if (!textarea.value.trim()) textarea.style.height = ''; });
+        const wrap = textarea.closest('.mur-composer-wrap');
+        if (wrap) wrap.addEventListener('click', (e) => { if (!e.target.closest('.mur-composer-icon-btn')) textarea.focus(); });
     }
 }
 

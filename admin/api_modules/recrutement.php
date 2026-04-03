@@ -703,13 +703,13 @@ function _scrape_fegems_detail(string $url): array
             $content = trim(mb_substr($full, mb_strlen($heading)));
         }
 
-        if (preg_match('/objectif/', $label)) {
+        if (preg_match('/objectif/u', $label)) {
             $result['objectifs'] = $content;
-        } elseif (preg_match('/descriptif/', $label)) {
+        } elseif (preg_match('/descriptif/u', $label)) {
             $result['descriptif'] = $content;
-        } elseif (preg_match('/public/', $label)) {
+        } elseif (preg_match('/public/u', $label)) {
             $result['public_cible'] = $content;
-        } elseif (preg_match('/intervenant/', $label)) {
+        } elseif (preg_match('/intervenant/u', $label)) {
             $result['intervenants'] = $content;
         } elseif (preg_match('/tarif/', $label)) {
             // Parse tariffs — use [\d\'\.,\-\s]+ to catch "0.-" and "1'832.00"
@@ -723,18 +723,26 @@ function _scrape_fegems_detail(string $url): array
             if (preg_match('/externes?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $content, $m)) {
                 $result['tarif_externes'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
             }
-        } elseif (preg_match('/date\s*(et\s*heure|&|\/\s*h)/i', $label) || preg_match('/horaire/', $label)) {
-            // Clean up session text: normalize whitespace, keep line breaks between sessions
-            $content = preg_replace('/\s+/', ' ', $content);
-            $content = preg_replace('/\s*,\s*/', ', ', $content);
-            // Split into individual session lines
-            $sessions = preg_split('/(?=\d{2}\.\d{2}\.\d{4})/', $content, -1, PREG_SPLIT_NO_EMPTY);
-            $result['sessions'] = implode("\n", array_map('trim', $sessions));
-        } elseif (preg_match('/lieu/', $label)) {
+        } elseif (preg_match('/date\s*(et\s*heure|&|\/\s*h)/iu', $label) || preg_match('/horaire/u', $label)) {
+            // Sessions: collect ALL sibling modules until next heading
+            $parentMod = $h3->parentNode;
+            $nextNode = $parentMod->nextSibling;
+            $sessionLines = [];
+            while ($nextNode) {
+                if ($nextNode->nodeType === XML_ELEMENT_NODE) {
+                    $innerH3 = $xpath->query(".//h3[contains(@class, 'module-title')]", $nextNode);
+                    if ($innerH3->length > 0) break;
+                    $t = preg_replace('/\s+/', ' ', trim($nextNode->textContent));
+                    if ($t) $sessionLines[] = preg_replace('/\s*,\s*/', ', ', $t);
+                }
+                $nextNode = $nextNode->nextSibling;
+            }
+            $result['sessions'] = implode("\n", $sessionLines) ?: $content;
+        } elseif (preg_match('/lieu/u', $label)) {
             $result['lieu'] = preg_replace('/\s+/', ' ', $content);
-        } elseif (preg_match('/information|info/i', $label) && !preg_match('/cl[oô]ture/i', $label)) {
+        } elseif (preg_match('/information|info/iu', $label) && !preg_match('/cl[oô]ture/iu', $label)) {
             $result['info_complementaire'] = $content;
-        } elseif (preg_match('/cl[oô]ture/', $label)) {
+        } elseif (preg_match('/cl[oô]ture/u', $label)) {
             $result['date_cloture_raw'] = $content;
         }
     }

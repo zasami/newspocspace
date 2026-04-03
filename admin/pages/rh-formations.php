@@ -451,17 +451,47 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             document.getElementById('rhfDetailTitle').textContent = f.titre;
 
             const field = (label, val) => `<div class="mb-2"><div class="rhf-detail-label">${label}</div><div class="rhf-detail-val">${val}</div></div>`;
-            let html = '<div class="row g-3">';
+            const preBlock = (txt) => `<div style="white-space:pre-wrap;background:var(--cl-bg);padding:10px;border-radius:8px;font-size:.85rem">${escapeHtml(txt)}</div>`;
+
+            let html = '';
+
+            // Image + source link for imported formations
+            if (f.image_url || f.source_url) {
+                html += '<div class="d-flex align-items-start gap-3 mb-3">';
+                if (f.image_url) html += `<img src="${escapeHtml(f.image_url)}" style="width:100px;height:100px;border-radius:12px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`;
+                html += '<div>';
+                if (f.source_url) html += `<a href="${escapeHtml(f.source_url)}" target="_blank" class="btn btn-sm btn-outline-secondary mb-2"><i class="bi bi-box-arrow-up-right"></i> Voir sur fegems.ch</a><br>`;
+                if (f.modalite) html += `<span class="rhf-badge rhf-badge-externe" style="margin-right:4px"><i class="bi bi-geo-alt"></i> ${escapeHtml(f.modalite)}</span>`;
+                if (f.categorie) html += `<span class="text-muted small"><i class="bi bi-tag"></i> ${escapeHtml(f.categorie)}</span>`;
+                html += '</div></div>';
+            }
+
+            html += '<div class="row g-3">';
             html += `<div class="col-md-4">${field('Type', '<span class="rhf-badge rhf-badge-'+(f.type_formation||'interne')+'">'+escapeHtml(TYPE_LABELS[f.type_formation]||f.type_formation)+'</span>')}</div>`;
             html += `<div class="col-md-4">${field('Statut', '<span class="rhf-badge rhf-badge-'+(f.statut||'planifiee')+'">'+escapeHtml(STATUT_LABELS[f.statut]||f.statut)+'</span>')}</div>`;
             html += `<div class="col-md-4">${field('Obligatoire', parseInt(f.is_obligatoire) ? '<i class="bi bi-check-circle-fill text-success"></i> Oui' : 'Non')}</div>`;
-            html += `<div class="col-md-4">${field('Formateur', escapeHtml(f.formateur || '-'))}</div>`;
+            html += `<div class="col-md-4">${field('Formateur / Intervenant·es', escapeHtml(f.intervenants || f.formateur || '-'))}</div>`;
             html += `<div class="col-md-4">${field('Lieu', escapeHtml(f.lieu || '-'))}</div>`;
             html += `<div class="col-md-4">${field('Durée', f.duree_heures ? f.duree_heures + 'h' : '-')}</div>`;
             const dates = f.date_debut ? formatDate(f.date_debut) + (f.date_fin && f.date_fin !== f.date_debut ? ' - ' + formatDate(f.date_fin) : '') : '-';
             html += `<div class="col-md-6">${field('Dates', dates)}</div>`;
             html += `<div class="col-md-6">${field('Max participants', f.max_participants || 'Illimité')}</div>`;
-            if (f.description) html += `<div class="col-12">${field('Description', '<div style="white-space:pre-wrap;background:var(--cl-bg);padding:10px;border-radius:8px;font-size:.85rem">'+escapeHtml(f.description)+'</div>')}</div>`;
+
+            // FEGEMS-specific fields
+            if (f.tarif_membres || f.tarif_non_membres) {
+                let tarifs = '';
+                if (f.tarif_membres) tarifs += `<div>Membres : <strong>${escapeHtml(f.tarif_membres)}</strong></div>`;
+                if (f.tarif_non_membres) tarifs += `<div>Non-membres : <strong>${escapeHtml(f.tarif_non_membres)}</strong></div>`;
+                if (f.tarif_externes) tarifs += `<div>Externes : <strong>${escapeHtml(f.tarif_externes)}</strong></div>`;
+                html += `<div class="col-md-6">${field('Tarifs', tarifs)}</div>`;
+            }
+            if (f.date_cloture_inscription) html += `<div class="col-md-3">${field('Clôture inscriptions', formatDate(f.date_cloture_inscription))}</div>`;
+            if (f.places_restantes) html += `<div class="col-md-3">${field('Places restantes', '<strong>' + escapeHtml(f.places_restantes) + '</strong>')}</div>`;
+            if (f.public_cible) html += `<div class="col-md-6">${field('Public-cible', escapeHtml(f.public_cible))}</div>`;
+            if (f.sessions) html += `<div class="col-12">${field('Sessions', preBlock(f.sessions))}</div>`;
+            if (f.objectifs) html += `<div class="col-12">${field('Objectifs', preBlock(f.objectifs))}</div>`;
+            if (f.description) html += `<div class="col-12">${field('Description', preBlock(f.description))}</div>`;
+            if (f.info_complementaire) html += `<div class="col-12">${field('Informations complémentaires', preBlock(f.info_complementaire))}</div>`;
             html += '</div>';
 
             // Participants section
