@@ -1,7 +1,7 @@
 <?php
 return [
     'dashboard' => [
-        'admin_get_dashboard_stats', 'admin_get_system_info', 'admin_session_ping',
+        'admin_get_dashboard_stats', 'admin_get_system_info', 'admin_get_session_ping',
     ],
     'users' => [
         'admin_get_users', 'admin_get_user', 'admin_search_users', 'admin_create_user',

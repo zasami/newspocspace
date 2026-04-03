@@ -7,7 +7,10 @@ require_once __DIR__ . '/../init.php';
 header('Content-Type: application/json; charset=utf-8');
 
 // Require admin/responsable role
-if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
+if (empty($_SESSION['ss_user'])) {
+    unauthorized('Session expirée');
+}
+if (!in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
     forbidden('Accès administration requis');
 }
 

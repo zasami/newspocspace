@@ -600,20 +600,20 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
         const modal = new bootstrap.Modal(document.getElementById('sessionExpiredModal'));
         modal.show();
     };
-    // Heartbeat: check session every 2 minutes
+    // Heartbeat: check session every 5 minutes
     setInterval(async () => {
         if (shown) return;
         try {
             const res = await fetch('/spocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'admin_session_ping' })
+                body: JSON.stringify({ action: 'admin_get_session_ping' })
             });
             if (res.status === 401 || res.status === 403) {
                 window.__ssShowSessionExpired();
             }
         } catch(e) {}
-    }, 120000);
+    }, 300000);
 })();
 </script>
 

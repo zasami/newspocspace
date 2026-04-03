@@ -62,7 +62,7 @@ function admin_get_dashboard_stats()
     ]);
 }
 
-function admin_session_ping()
+function admin_get_session_ping()
 {
     respond(['success' => true, 'ts' => time()]);
 }
