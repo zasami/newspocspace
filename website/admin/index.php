@@ -18,6 +18,20 @@ $sections = Db::fetchAll(
     "SELECT * FROM website_sections WHERE page = 'index' ORDER BY sort_order ASC"
 );
 
+// Traduction des clés de section
+$sectionLabels = [
+    'hero' => 'Accueil / Bannière',
+    'about' => 'À propos',
+    'quote1' => 'Citation 1',
+    'quote2' => 'Citation 2',
+    'services' => 'Nos services',
+    'life' => 'Vie quotidienne',
+    'team' => 'Notre équipe',
+    'values' => 'Nos valeurs',
+    'contact' => 'Contact',
+    'pinned' => '📌 Rubrique épinglée',
+];
+
 $sectionTypes = [
     'hero' => ['label' => 'Hero / Bannière', 'icon' => 'bi-display', 'color' => '#6366f1'],
     'cards' => ['label' => 'Cartes', 'icon' => 'bi-grid-3x3-gap', 'color' => '#3b82f6'],
@@ -93,7 +107,7 @@ $sectionTypes = [
                     <i class="bi <?= $type['icon'] ?>"></i>
                 </div>
                 <div class="wa-section-info">
-                    <div class="wa-section-name"><?= h($s['section_key']) ?></div>
+                    <div class="wa-section-name"><?= h($sectionLabels[$s['section_key']] ?? $s['section_key']) ?></div>
                     <div class="wa-section-type"><?= h($type['label']) ?></div>
                 </div>
                 <div class="wa-section-actions">
@@ -164,6 +178,7 @@ window.__WA_SECTIONS = <?= json_encode(array_map(function($s) {
     return $s;
 }, $sections), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;
 window.__WA_TYPES = <?= json_encode($sectionTypes, JSON_UNESCAPED_UNICODE) ?>;
+window.__WA_LABELS = <?= json_encode($sectionLabels, JSON_UNESCAPED_UNICODE) ?>;
 </script>
 <script src="assets/js/admin.js?v=<?= time() ?>"></script>
 </body>

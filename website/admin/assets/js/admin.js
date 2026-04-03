@@ -7,6 +7,7 @@
 const API = '/spocspace/website/admin/api/sections.php';
 let sections = window.__WA_SECTIONS || [];
 const TYPES = window.__WA_TYPES || {};
+const LABELS = window.__WA_LABELS || {};
 let activeId = null;
 let unsavedChanges = {};
 
@@ -87,7 +88,7 @@ function renderEditor(id) {
     let html = `
     <div class="wa-edit-header">
         <div class="wa-edit-header-left">
-            <h2>${esc(s.section_key)}</h2>
+            <h2>${esc(LABELS[s.section_key] || s.section_key)}</h2>
             <span class="wa-edit-badge"><i class="bi ${type.icon}"></i> ${esc(type.label)}</span>
             <span class="wa-unsaved" id="waUnsaved" style="display:none">Non sauvegardé</span>
         </div>
@@ -117,11 +118,11 @@ function renderEditor(id) {
             <input type="text" class="wa-input" value="${esc(s.badge_text || '')}" data-field="badge_text" placeholder="Ex: Notre engagement">
         </div>
         <div class="wa-form-group">
-            <label>Titre</label>
+            <label>Titre de la section</label>
             <input type="text" class="wa-input" value="${esc(s.title || '')}" data-field="title" placeholder="Titre de la section">
         </div>
         <div class="wa-form-group">
-            <label>Sous-titre</label>
+            <label>Sous-titre / Description</label>
             <textarea class="wa-textarea" data-field="subtitle" rows="2" placeholder="Description sous le titre">${esc(s.subtitle || '')}</textarea>
         </div>
     </div>`;
@@ -419,9 +420,9 @@ function renderContactEditor(content) {
 function renderJsonEditor(content) {
     return `
     <div class="wa-section-box">
-        <div class="wa-section-box-title"><i class="bi bi-code-slash"></i> Contenu JSON</div>
+        <div class="wa-section-box-title"><i class="bi bi-code-slash"></i> Contenu avancé</div>
         <div class="wa-form-group">
-            <label>Données brutes</label>
+            <label>Données (format JSON)</label>
             <textarea class="wa-textarea" data-content="__raw_json" rows="10" style="font-family:monospace;font-size:12px">${esc(JSON.stringify(content, null, 2))}</textarea>
         </div>
     </div>`;
