@@ -82,6 +82,56 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 }
 .al-msg-box.is-open { opacity: 1; margin-top: .75rem; padding: .75rem 1rem; border-width: 1px; }
 .al-hidden { display: none; }
+
+/* ── Rich text editor ── */
+.al-rte-toolbar {
+    display: flex; align-items: center; gap: 2px; padding: 6px 8px; flex-wrap: wrap;
+    border: 1px solid var(--cl-border, #E8E5E0); border-bottom: none;
+    border-radius: var(--cl-radius-sm, 8px) var(--cl-radius-sm, 8px) 0 0;
+    background: var(--cl-bg, #F7F5F2);
+}
+.al-rte-btn {
+    width: 30px; height: 30px; border: none; background: none; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--cl-text-muted, #888); transition: all .15s;
+}
+.al-rte-btn:hover { background: var(--cl-surface, #fff); color: var(--cl-text, #333); }
+.al-rte-btn.active { background: var(--cl-surface, #fff); color: var(--cl-primary, #2E7D32); box-shadow: 0 0 0 1.5px var(--cl-primary, #2E7D32); }
+.al-rte-sep { width: 1px; height: 18px; background: var(--cl-border, #E8E5E0); margin: 0 3px; }
+.al-rte-editor {
+    width: 100%; min-height: 140px; max-height: 300px; padding: 12px 14px; overflow-y: auto;
+    border: 1px solid var(--cl-border, #E8E5E0); border-radius: 0 0 var(--cl-radius-sm, 8px) var(--cl-radius-sm, 8px);
+    font-size: .88rem; font-family: inherit; line-height: 1.7; color: var(--cl-text, #333);
+    background: var(--cl-surface, #fff); outline: none;
+}
+.al-rte-editor:focus { border-color: var(--cl-primary, #2E7D32); box-shadow: 0 0 0 3px rgba(46,125,50,.08); }
+.al-rte-editor p { margin: 0 0 6px; }
+.al-rte-editor ul, .al-rte-editor ol { margin: 4px 0; padding-left: 20px; }
+.al-rte-editor blockquote { border-left: 3px solid var(--cl-border, #D4C4A8); margin: 6px 0; padding: 6px 14px; background: rgba(212,196,168,.08); border-radius: 0 6px 6px 0; font-style: italic; }
+
+/* ── Emoji picker ── */
+.al-emoji-picker {
+    position: absolute; z-index: 100; background: var(--cl-surface, #fff);
+    border: 1px solid var(--cl-border, #E8E5E0); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); width: 320px; padding: 8px;
+    margin-top: 4px; right: 0;
+}
+.al-emoji-search {
+    width: 100%; padding: 6px 10px; border: 1px solid var(--cl-border, #E8E5E0);
+    border-radius: 8px; font-size: .82rem; margin-bottom: 6px; outline: none;
+}
+.al-emoji-search:focus { border-color: var(--cl-primary, #2E7D32); }
+.al-emoji-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+    max-height: 200px; overflow-y: auto;
+}
+.al-emoji-item {
+    width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; cursor: pointer; border-radius: 8px; transition: all .12s;
+}
+.al-emoji-item:hover { background: var(--cl-bg, #F7F5F2); transform: scale(1.2); }
+.al-emoji-cat { grid-column: 1 / -1; font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--cl-text-muted, #888); padding: 6px 4px 2px; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -192,37 +242,64 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 
 <!-- Create modal -->
 <div class="modal fade" id="alertModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h6 class="modal-title"><i class="bi bi-megaphone"></i> Nouvelle alerte</h6>
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label fw-bold">Titre *</label>
-          <input type="text" class="form-control form-control-sm" id="alertTitle" maxlength="255">
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Priorité</label>
+            <div class="zs-select" id="alertPriority" data-placeholder="Priorité"></div>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label fw-bold">Titre *</label>
+            <input type="text" class="form-control form-control-sm" id="alertTitle" maxlength="255">
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label fw-bold">Message *</label>
-          <textarea class="form-control form-control-sm" id="alertMessage" rows="4"></textarea>
+          <div style="position:relative">
+          <div class="al-rte-toolbar">
+            <button type="button" class="al-rte-btn" data-cmd="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="underline" title="Souligné"><i class="bi bi-type-underline"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="strikeThrough" title="Barré"><i class="bi bi-type-strikethrough"></i></button>
+            <span class="al-rte-sep"></span>
+            <button type="button" class="al-rte-btn" data-cmd="hiliteColor" data-val="#FFF9C4" title="Surligner"><i class="bi bi-highlighter"></i></button>
+            <span class="al-rte-sep"></span>
+            <button type="button" class="al-rte-btn" data-cmd="justifyLeft" title="Gauche"><i class="bi bi-text-left"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="justifyCenter" title="Centrer"><i class="bi bi-text-center"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="justifyRight" title="Droite"><i class="bi bi-text-right"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="justifyFull" title="Justifier"><i class="bi bi-justify"></i></button>
+            <span class="al-rte-sep"></span>
+            <button type="button" class="al-rte-btn" data-cmd="insertUnorderedList" title="Liste à puces"><i class="bi bi-list-ul"></i></button>
+            <button type="button" class="al-rte-btn" data-cmd="insertOrderedList" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+            <span class="al-rte-sep"></span>
+            <button type="button" class="al-rte-btn" data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Citation"><i class="bi bi-blockquote-left"></i></button>
+            <span class="al-rte-sep"></span>
+            <button type="button" class="al-rte-btn" id="alEmojiBtn" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+          </div>
+          <div class="al-rte-editor" contenteditable="true" id="alertMessage"></div>
+          <!-- Emoji picker dropdown -->
+          <div class="al-emoji-picker" id="alEmojiPicker" style="display:none">
+            <input type="text" class="al-emoji-search" id="alEmojiSearch" placeholder="Rechercher...">
+            <div class="al-emoji-grid" id="alEmojiGrid"></div>
+          </div>
+          </div><!-- /relative -->
         </div>
         <div class="row g-2 mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Priorité</label>
-            <div class="zs-select" id="alertPriority" data-placeholder="Priorité"></div>
-          </div>
-          <div class="col-md-6">
+          <div class="col-md-3">
             <label class="form-label">Expire le</label>
             <input type="date" class="form-control form-control-sm" id="alertExpires">
           </div>
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col-md-6">
+          <div class="col-md-3">
             <label class="form-label">Cible</label>
             <div class="zs-select" id="alertTarget" data-placeholder="Cible"></div>
           </div>
-          <div class="col-md-6 al-hidden" id="alertTargetValueGroup">
+          <div class="col-md-3 al-hidden" id="alertTargetValueGroup">
             <label class="form-label">Valeur</label>
             <div class="zs-select" id="alertTargetValue" data-placeholder="Valeur"></div>
           </div>
@@ -312,7 +389,7 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 
     document.getElementById('btnNewAlert').addEventListener('click', () => {
         document.getElementById('alertTitle').value   = '';
-        document.getElementById('alertMessage').value = '';
+        document.getElementById('alertMessage').innerHTML = '';
         zerdaSelect.setValue('#alertPriority', 'normale');
         document.getElementById('alertExpires').value = '';
         zerdaSelect.setValue('#alertTarget', 'all');
@@ -323,7 +400,7 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 
     document.getElementById('alertSaveBtn').addEventListener('click', async () => {
         const title    = document.getElementById('alertTitle').value.trim();
-        const message  = document.getElementById('alertMessage').value.trim();
+        const message  = document.getElementById('alertMessage').innerHTML.trim();
         const priority = zerdaSelect.getValue('#alertPriority');
         const target   = zerdaSelect.getValue('#alertTarget');
         const targetValue = zerdaSelect.getValue('#alertTargetValue');
@@ -457,5 +534,75 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     });
 
     document.getElementById('alertDetailSearch').addEventListener('input', () => renderDetailUsers());
+
+    // ═══ Rich Text Editor — Toolbar ═══
+    document.querySelector('.al-rte-toolbar')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.al-rte-btn');
+        if (!btn || btn.id === 'alEmojiBtn') return;
+        e.preventDefault();
+        const cmd = btn.dataset.cmd;
+        const val = btn.dataset.val || null;
+        document.execCommand(cmd, false, val);
+        document.getElementById('alertMessage')?.focus();
+    });
+
+    // ═══ Emoji Picker ═══
+    const EMOJIS = {
+        'Smileys': ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🥰','😍','🤩','😘','😗','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐'],
+        'Gestes': ['👍','👎','👏','🙌','🤝','🙏','💪','✌️','🤞','🤟','🤘','👌','🤌','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','✍️'],
+        'Coeurs': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟'],
+        'Objets': ['⚠️','🚨','🔴','🟡','🟢','🔵','📌','📋','📝','✅','❌','⭐','🌟','💡','🔔','📢','📣','💊','🩺','🏥','🧹','🧤','😷','💉','🩹','🔒','🔑','📅','⏰','📞','📧','💻'],
+        'Nature': ['🌸','🌺','🌻','🌹','🌷','🌿','🍀','🌳','🌈','☀️','🌙','⭐','❄️','🔥','💧','🌊'],
+        'Nourriture': ['🍎','🍊','🍋','🍇','🍓','🍰','🎂','☕','🍵','🥐','🧀','🥗','🍕','🍔'],
+        'Fêtes': ['🎉','🎊','🎈','🎁','🎄','🎃','🎆','🎇','🏆','🥇','🥈','🥉','🎓','🎗️'],
+    };
+
+    const emojiPicker = document.getElementById('alEmojiPicker');
+    const emojiGrid = document.getElementById('alEmojiGrid');
+    const emojiSearch = document.getElementById('alEmojiSearch');
+
+    function renderEmojis(filter) {
+        const q = (filter || '').toLowerCase();
+        let html = '';
+        for (const [cat, emojis] of Object.entries(EMOJIS)) {
+            const filtered = q ? emojis.filter(e => e.includes(q)) : emojis;
+            if (!filtered.length) continue;
+            html += `<div class="al-emoji-cat">${escapeHtml(cat)}</div>`;
+            filtered.forEach(e => { html += `<div class="al-emoji-item" data-emoji="${e}">${e}</div>`; });
+        }
+        emojiGrid.innerHTML = html || '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#999">Aucun emoji</div>';
+    }
+
+    document.getElementById('alEmojiBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = emojiPicker.style.display !== 'none';
+        emojiPicker.style.display = isOpen ? 'none' : '';
+        if (!isOpen) {
+            emojiSearch.value = '';
+            renderEmojis('');
+            emojiSearch.focus();
+        }
+    });
+
+    emojiSearch?.addEventListener('input', (e) => renderEmojis(e.target.value));
+
+    emojiGrid?.addEventListener('click', (e) => {
+        const item = e.target.closest('.al-emoji-item');
+        if (!item) return;
+        const emoji = item.dataset.emoji;
+        const editor = document.getElementById('alertMessage');
+        editor.focus();
+        document.execCommand('insertText', false, emoji);
+        emojiPicker.style.display = 'none';
+    });
+
+    // Close emoji picker on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#alEmojiPicker') && !e.target.closest('#alEmojiBtn')) {
+            emojiPicker.style.display = 'none';
+        }
+    });
+
 })();
 </script>
