@@ -48,7 +48,7 @@ return [
         'admin_generate_structure', 'admin_update_module_config', 'admin_get_ia_usage',
         'admin_get_ia_rules', 'admin_create_ia_rule', 'admin_update_ia_rule',
         'admin_delete_ia_rule', 'admin_toggle_ia_rule',
-        'admin_upload_logo',
+        'admin_upload_logo', 'admin_upload_pinned_image',
     ],
     'besoins' => [
         'admin_get_besoins', 'admin_save_besoin', 'admin_delete_besoin',

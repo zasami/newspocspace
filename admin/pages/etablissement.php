@@ -464,6 +464,47 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
   </div>
 
   <!-- Interface CSS -->
+  <!-- ═══ Rubrique épinglée (site web) ═══ -->
+  <div class="form-section">
+    <div class="form-section-title"><i class="bi bi-pin-angle"></i> Rubrique épinglée — Site web</div>
+    <p class="text-muted mb-3" style="font-size:.85rem">Cette rubrique s'affiche sur la page d'accueil du site web, avant la section "Formation continue". Vous pouvez y mettre un message, une annonce ou une félicitation.</p>
+    <div class="row g-3">
+      <div class="col-md-12">
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="pinnedVisible" name="pinned_visible">
+          <label class="form-check-label" for="pinnedVisible">Afficher la rubrique épinglée</label>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Titre</label>
+        <input type="text" class="form-control form-control-sm" id="pinnedTitle" name="pinned_title" placeholder="Ex: 🎓 Félicitations à nos diplômées ! 🎓">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Signature</label>
+        <input type="text" class="form-control form-control-sm" id="pinnedSignature" name="pinned_signature" placeholder="Ex: Directrice">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Texte</label>
+        <textarea class="form-control form-control-sm" id="pinnedText" name="pinned_text" rows="5" placeholder="Le message à afficher..."></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Image (optionnelle)</label>
+        <div class="d-flex align-items-center gap-3">
+          <div id="pinnedImgPreview" style="width:80px;height:80px;border-radius:12px;background:var(--cl-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+            <i class="bi bi-image text-muted" style="font-size:1.5rem"></i>
+          </div>
+          <div>
+            <label class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-upload"></i> Choisir une image
+              <input type="file" id="pinnedImageFile" accept="image/*" style="display:none">
+            </label>
+            <button class="btn btn-sm btn-outline-danger" id="pinnedImageClear" style="display:none"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="form-section">
     <div class="form-section-title"><i class="bi bi-palette"></i> Framework CSS</div>
     <p class="text-muted mb-3 ems-text-085">Choisissez le framework CSS utilisé pour l'interface. Le mode Tailwind ajoute les utilitaires Tailwind CSS en complément du CSS actuel.</p>
@@ -594,6 +635,51 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
         // Pre-fill generator with current counts
         if (config.ems_nb_etages) document.getElementById('genNbEtages').value = config.ems_nb_etages;
         if (config.ems_nb_modules) document.getElementById('genNbModules').value = config.ems_nb_modules;
+
+        // Pinned section
+        const pv = document.getElementById('pinnedVisible');
+        if (pv) pv.checked = config.pinned_visible === '1';
+        const pt = document.getElementById('pinnedTitle');
+        if (pt) pt.value = config.pinned_title || '';
+        const ptxt = document.getElementById('pinnedText');
+        if (ptxt) ptxt.value = config.pinned_text || '';
+        const ps = document.getElementById('pinnedSignature');
+        if (ps) ps.value = config.pinned_signature || '';
+
+        // Pinned image preview
+        if (config.pinned_image) {
+            const prev = document.getElementById('pinnedImgPreview');
+            prev.innerHTML = `<img src="${escapeHtml(config.pinned_image)}" style="width:100%;height:100%;object-fit:cover">`;
+            document.getElementById('pinnedImageClear').style.display = '';
+        }
+
+        // Pinned image upload
+        document.getElementById('pinnedImageFile')?.addEventListener('change', async (e) => {
+            if (!e.target.files[0]) return;
+            const fd = new FormData();
+            fd.append('image', e.target.files[0]);
+            fd.append('action', 'admin_upload_pinned_image');
+            const res = await fetch('/spocspace/admin/api.php', {
+                method: 'POST', body: fd,
+                headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            }).then(r => r.json());
+            e.target.value = '';
+            if (res.success) {
+                config.pinned_image = res.image_url;
+                document.getElementById('pinnedImgPreview').innerHTML = `<img src="${escapeHtml(res.image_url)}" style="width:100%;height:100%;object-fit:cover">`;
+                document.getElementById('pinnedImageClear').style.display = '';
+                showToast('Image mise à jour', 'success');
+            } else showToast(res.error || 'Erreur', 'danger');
+        });
+
+        document.getElementById('pinnedImageClear')?.addEventListener('click', () => {
+            config.pinned_image = '';
+            document.getElementById('pinnedImgPreview').innerHTML = '<i class="bi bi-image text-muted" style="font-size:1.5rem"></i>';
+            document.getElementById('pinnedImageClear').style.display = 'none';
+            markDirty();
+        });
+
+        [pv, pt, ptxt, ps].forEach(el => el?.addEventListener('input', markDirty));
 
         renderModuleCards();
 
@@ -981,6 +1067,12 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
         // CSS mode
         const selectedCssMode = document.querySelector('input[name="css_mode"]:checked');
         if (selectedCssMode) values.css_mode = selectedCssMode.value;
+        // Pinned section
+        values.pinned_visible = document.getElementById('pinnedVisible')?.checked ? '1' : '0';
+        values.pinned_title = document.getElementById('pinnedTitle')?.value || '';
+        values.pinned_text = document.getElementById('pinnedText')?.value || '';
+        values.pinned_signature = document.getElementById('pinnedSignature')?.value || '';
+        values.pinned_image = config.pinned_image || '';
 
         const res = await adminApiPost('admin_save_config', { values });
         if (res.success) {

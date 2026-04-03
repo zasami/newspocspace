@@ -135,11 +135,16 @@ function renderEditor(id) {
     container.querySelectorAll('[data-field]').forEach(el => {
         el.addEventListener('input', () => markUnsaved());
     });
+    container.querySelectorAll('[data-content]').forEach(el => {
+        el.addEventListener('input', () => markUnsaved());
+    });
 }
 
 // ── Type-specific editors ──
 function renderTypeEditor(s) {
     const content = s.content || {};
+    // Custom editors by section_key
+    if (s.section_key === 'pinned') return renderPinnedEditor(content);
     switch (s.section_type) {
         case 'hero': return renderHeroEditor(content);
         case 'cards':
@@ -152,6 +157,101 @@ function renderTypeEditor(s) {
         default: return renderJsonEditor(content);
     }
 }
+
+function renderPinnedEditor(content) {
+    const title = content.title || '';
+    const text = content.text || '';
+    const signature = content.signature || '';
+    const image = content.image || '';
+    return `
+    <div class="wa-section-box">
+        <div class="wa-section-box-title"><i class="bi bi-pin-angle"></i> Rubrique épinglée</div>
+        <p style="font-size:.85rem;color:#888;margin:0 0 12px">Ce bloc s'affiche sur la page d'accueil du site, avant "Formation continue".</p>
+        <div class="wa-form-group">
+            <label>Titre</label>
+            <input type="text" class="wa-input" value="${esc(title)}" data-content="title" placeholder="Ex: 🎓 Félicitations à nos diplômées ! 🎓">
+        </div>
+        <div class="wa-form-group">
+            <label>Texte</label>
+            <div class="wa-rte-toolbar">
+                <button type="button" class="wa-rte-btn" data-cmd="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="wa-rte-btn" data-cmd="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="wa-rte-btn" data-cmd="underline" title="Souligné"><i class="bi bi-type-underline"></i></button>
+                <span class="wa-rte-sep"></span>
+                <button type="button" class="wa-rte-btn" data-cmd="insertUnorderedList" title="Liste"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="wa-rte-btn" data-cmd="insertOrderedList" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+                <span class="wa-rte-sep"></span>
+                <button type="button" class="wa-rte-btn" data-cmd="justifyLeft" title="Aligner à gauche"><i class="bi bi-text-left"></i></button>
+                <button type="button" class="wa-rte-btn" data-cmd="justifyCenter" title="Centrer"><i class="bi bi-text-center"></i></button>
+                <button type="button" class="wa-rte-btn" data-cmd="justifyRight" title="Aligner à droite"><i class="bi bi-text-right"></i></button>
+                <span class="wa-rte-sep"></span>
+                <button type="button" class="wa-rte-btn" data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Citation"><i class="bi bi-blockquote-left"></i></button>
+            </div>
+            <div class="wa-rte-editor" contenteditable="true" id="waPinnedText" data-content="text">${text}</div>
+        </div>
+        <div class="wa-form-group">
+            <label>Signature</label>
+            <input type="text" class="wa-input" value="${esc(signature)}" data-content="signature" placeholder="Ex: Directrice">
+        </div>
+        <div class="wa-form-group">
+            <label>Image (optionnelle)</label>
+            <div class="wa-img-upload">
+                <div class="wa-img-preview" id="waPinnedImgPreview">
+                    ${image ? `<img src="${esc(image)}">` : '<i class="bi bi-image" style="font-size:1.5rem;color:#bbb"></i>'}
+                </div>
+                <div>
+                    <label class="wa-btn wa-btn-sm wa-btn-ghost" style="cursor:pointer">
+                        <i class="bi bi-upload"></i> Télécharger une image
+                        <input type="file" id="waPinnedImgFile" accept="image/*" style="display:none">
+                    </label>
+                    ${image ? `<button class="wa-btn wa-btn-sm wa-btn-ghost" id="waPinnedImgClear" style="color:#e53e3e"><i class="bi bi-trash"></i></button>` : ''}
+                    <input type="hidden" id="waPinnedImgUrl" data-content="image" value="${esc(image)}">
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── Rich text editor toolbar ──
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.wa-rte-btn');
+    if (!btn) return;
+    e.preventDefault();
+    const cmd = btn.dataset.cmd;
+    const val = btn.dataset.val || null;
+    document.execCommand(cmd, false, val);
+    document.getElementById('waPinnedText')?.focus();
+});
+
+// ── Pinned image upload ──
+document.addEventListener('change', async function(e) {
+    if (e.target.id !== 'waPinnedImgFile' || !e.target.files[0]) return;
+    const fd = new FormData();
+    fd.append('image', e.target.files[0]);
+    fd.append('action', 'admin_upload_pinned_image');
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const res = await fetch('/spocspace/admin/api.php', {
+        method: 'POST', body: fd,
+        headers: { 'X-CSRF-Token': csrf }
+    }).then(r => r.json());
+    e.target.value = '';
+    if (res.success && res.image_url) {
+        document.getElementById('waPinnedImgUrl').value = res.image_url;
+        document.getElementById('waPinnedImgPreview').innerHTML = `<img src="${esc(res.image_url)}">`;
+        markUnsaved();
+        toast('Image téléchargée');
+    } else {
+        toast(res.error || 'Erreur upload', 'error');
+    }
+});
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#waPinnedImgClear')) {
+        document.getElementById('waPinnedImgUrl').value = '';
+        document.getElementById('waPinnedImgPreview').innerHTML = '<i class="bi bi-image" style="font-size:1.5rem;color:#bbb"></i>';
+        e.target.closest('#waPinnedImgClear')?.remove();
+        markUnsaved();
+    }
+});
 
 function renderHeroEditor(content) {
     const stats = content.stats || [];
@@ -350,7 +450,8 @@ function collectData() {
             return;
         }
 
-        setNestedValue(content, path, el.value);
+        const val = el.hasAttribute('contenteditable') ? el.innerHTML : el.value;
+        setNestedValue(content, path, val);
     });
 
     data.content = content;

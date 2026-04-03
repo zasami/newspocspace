@@ -37,9 +37,10 @@ $sectionTypes = [
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — Site Vitrine EMS</title>
+<meta name="csrf-token" content="<?= h($_SESSION['ss_csrf_token'] ?? '') ?>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/admin.css">
+<link rel="stylesheet" href="assets/css/admin.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -164,6 +165,6 @@ window.__WA_SECTIONS = <?= json_encode(array_map(function($s) {
 }, $sections), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;
 window.__WA_TYPES = <?= json_encode($sectionTypes, JSON_UNESCAPED_UNICODE) ?>;
 </script>
-<script src="assets/js/admin.js"></script>
+<script src="assets/js/admin.js?v=<?= time() ?>"></script>
 </body>
 </html>

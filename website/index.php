@@ -866,6 +866,41 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
       </div>
     </div>
+    <!-- Rubrique épinglée -->
+    <?php if (ws_visible($cms, 'pinned')):
+        $pinned = ws_content($cms, 'pinned');
+        $pinnedTitle = $pinned['title'] ?? '';
+        $pinnedText  = $pinned['text'] ?? '';
+        $pinnedSig   = $pinned['signature'] ?? '';
+        $pinnedImg   = $pinned['image'] ?? '';
+    ?>
+    <div class="ws-team-cta ws-cta-pinned">
+      <div class="row align-items-center g-4">
+        <?php if ($pinnedImg): ?>
+        <div class="col-lg-5 text-center">
+          <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img">
+        </div>
+        <div class="col-lg-7">
+        <?php else: ?>
+        <div class="col-12">
+        <?php endif; ?>
+          <h4><?= $pinnedTitle ?></h4>
+          <div class="ws-pinned-text"><?= $pinnedText ?></div>
+          <?php if ($pinnedSig):
+            $sigParts = array_map('trim', explode(',', $pinnedSig, 2));
+          ?>
+          <div class="ws-pinned-signature">
+            <span class="ws-pinned-sig-name"><?= h($sigParts[0]) ?></span>
+            <?php if (!empty($sigParts[1])): ?>
+            <span class="ws-pinned-sig-role"><?= h($sigParts[1]) ?></span>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Formation continue -->
     <div class="ws-team-cta ws-cta-formation">
       <div class="row align-items-center g-4">

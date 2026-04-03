@@ -85,6 +85,8 @@ function admin_save_config()
         'feature_votes', 'feature_covoiturage', 'feature_fiches_salaire',
         // CSS mode
         'css_mode',
+        // Pinned section (website)
+        'pinned_visible', 'pinned_title', 'pinned_text', 'pinned_signature', 'pinned_image',
     ];
 
     $userId = $_SESSION['ss_user']['id'];
@@ -95,7 +97,7 @@ function admin_save_config()
     );
 
     $saved = 0;
-    $longKeys = ['planning_tabs_config', 'pv_structure_options'];
+    $longKeys = ['planning_tabs_config', 'pv_structure_options', 'pinned_text'];
     foreach ($values as $key => $val) {
         if (!in_array($key, $allowedKeys)) continue;
         $maxLen = in_array($key, $longKeys) ? 5000 : 500;
@@ -162,6 +164,54 @@ function admin_upload_logo()
     );
 
     respond(['success' => true, 'logo_url' => $logoUrl, 'message' => 'Logo mis à jour']);
+}
+
+/**
+ * Upload pinned section image → convert to WebP
+ */
+function admin_upload_pinned_image()
+{
+    require_admin();
+
+    if (empty($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        bad_request('Aucun fichier ou erreur d\'upload');
+    }
+
+    $file = $_FILES['image'];
+    if ($file['size'] > 5 * 1024 * 1024) bad_request('Fichier trop volumineux (max 5 Mo)');
+
+    $mime = mime_content_type($file['tmp_name']);
+    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
+        bad_request('Format non supporté (JPG, PNG, GIF, WebP)');
+    }
+
+    $uploadDir = __DIR__ . '/../../storage/logos/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+        'image/png' => imagecreatefrompng($file['tmp_name']),
+        'image/gif' => imagecreatefromgif($file['tmp_name']),
+        'image/webp' => imagecreatefromwebp($file['tmp_name']),
+        default => null,
+    };
+    if (!$img) bad_request('Impossible de lire l\'image');
+
+    imagesavealpha($img, true);
+    $filename = 'pinned_' . time() . '.webp';
+    $destPath = $uploadDir . $filename;
+    imagewebp($img, $destPath, 85);
+    imagedestroy($img);
+
+    $imageUrl = '/spocspace/storage/logos/' . $filename;
+    $userId = $_SESSION['ss_user']['id'];
+    Db::exec(
+        "INSERT INTO ems_config (config_key, config_value, updated_by) VALUES ('pinned_image', ?, ?)
+         ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), updated_by = VALUES(updated_by)",
+        [$imageUrl, $userId]
+    );
+
+    respond(['success' => true, 'image_url' => $imageUrl, 'message' => 'Image mise à jour']);
 }
 
 /**
