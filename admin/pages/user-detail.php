@@ -40,6 +40,8 @@ if ($userId) {
 .ud-plan-sticky { position: sticky; left: 0; background: #fff; z-index: 2; border-right: 2px solid var(--cl-border, #E8E5E0) !important; }
 .ud-plan-sticky-end { position: sticky; right: 0; background: #fff; z-index: 2; border-left: 2px solid var(--cl-border, #E8E5E0) !important; }
 .ud-plan-weekend { background: #faf8f5 !important; }
+.ud-plan-scroll.grabbing { cursor: grabbing; user-select: none; }
+.ud-plan-scroll.grabbing * { pointer-events: none; }
 .ud-stat-card { flex: 1; min-width: 100px; text-align: center; padding: 12px 8px; border-radius: 12px; background: var(--cl-bg, #F7F5F2); border: 1px solid var(--cl-border-light, #F0EDE8); }
 .ud-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
 .ud-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 2px; }
@@ -180,7 +182,7 @@ if ($userId) {
           <strong><i class="bi bi-calendar3 me-1"></i> Planning mensuel</strong>
           <input type="month" class="form-control form-control-sm ud-width-auto" id="udPlanMois">
         </div>
-        <div class="table-responsive" style="overflow-x:auto">
+        <div class="table-responsive ud-plan-scroll" id="udPlanScroll" style="overflow-x:auto;cursor:grab">
           <table class="table table-sm table-bordered mb-0" id="udPlanTable">
             <thead id="udPlanHead"></thead>
             <tbody id="udPlanBody"><tr><td class="text-center text-muted py-3">Chargement...</td></tr></tbody>
@@ -712,6 +714,26 @@ if ($userId) {
             }
         };
     }
+
+    // ── Drag-to-scroll on planning grid ──
+    (function() {
+        const el = document.getElementById('udPlanScroll');
+        if (!el) return;
+        let down = false, startX, scrollL;
+        el.addEventListener('mousedown', e => {
+            if (e.target.closest('a,button,input,select')) return;
+            down = true; startX = e.pageX - el.offsetLeft; scrollL = el.scrollLeft;
+            el.classList.add('grabbing');
+        });
+        el.addEventListener('mousemove', e => {
+            if (!down) return;
+            e.preventDefault();
+            el.scrollLeft = scrollL - (e.pageX - el.offsetLeft - startX);
+        });
+        const stop = () => { down = false; el.classList.remove('grabbing'); };
+        el.addEventListener('mouseup', stop);
+        el.addEventListener('mouseleave', stop);
+    })();
 
     window.initUserdetailPage = initUserdetailPage;
 })();
