@@ -296,3 +296,27 @@ export function destroyEditor(editor) {
     }
     editor.destroy();
 }
+
+/**
+ * Create a bare editor (no toolbar) for inline use
+ * @param {HTMLElement} element - The element to mount the editor in
+ * @param {Object} options
+ * @param {string} options.placeholder - Placeholder text
+ * @param {string} options.content - Initial HTML content
+ * @returns {Object|null} editor instance
+ */
+export async function createBareEditor(element, options = {}) {
+    const loaded = await loadLib();
+    if (!loaded) return null;
+    const { placeholder = '', content = '' } = options;
+    return new EditorClass({
+        element,
+        extensions: [
+            StarterKit.configure({ heading: false, codeBlock: false, blockquote: false }),
+            Highlight,
+            Placeholder.configure({ placeholder }),
+        ],
+        content,
+        editable: true,
+    });
+}

@@ -41,12 +41,20 @@
             <div class="mur-composer" id="murComposer">
                 <div class="mur-composer-row">
                     <div class="mur-composer-avatar" id="composerAvatar"></div>
-                    <div class="mur-composer-wrap">
-                        <textarea id="composerBody" class="mur-composer-input" placeholder="Quoi de neuf ?" rows="1"></textarea>
-                        <div class="mur-composer-icons">
-                            <label class="mur-composer-icon-btn" title="Photo"><i class="bi bi-camera"></i><input type="file" id="composerFiles" multiple accept="image/*" style="display:none"></label>
-                            <label class="mur-composer-icon-btn" title="Vidéo"><i class="bi bi-camera-video"></i></label>
-                            <label class="mur-composer-icon-btn" title="Pièce jointe"><i class="bi bi-paperclip"></i></label>
+                    <div class="mur-composer-wrap" id="composerWrap">
+                        <div id="composerEditor" class="mur-composer-editor"></div>
+                        <div class="mur-composer-bar">
+                            <div class="mur-composer-toolbar" id="composerToolbar">
+                                <button type="button" class="mur-tb-btn" data-action="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+                                <button type="button" class="mur-tb-btn" data-action="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+                                <button type="button" class="mur-tb-btn" data-action="highlight" title="Surligner"><i class="bi bi-brush"></i></button>
+                                <button type="button" class="mur-tb-btn" data-action="emoji" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                            </div>
+                            <div class="mur-composer-icons">
+                                <label class="mur-composer-icon-btn" title="Photo"><i class="bi bi-camera"></i><input type="file" id="composerFiles" multiple accept="image/*" style="display:none"></label>
+                                <label class="mur-composer-icon-btn" title="Vidéo"><i class="bi bi-camera-video"></i></label>
+                                <label class="mur-composer-icon-btn" title="Pièce jointe"><i class="bi bi-paperclip"></i></label>
+                            </div>
                         </div>
                     </div>
                 </div>

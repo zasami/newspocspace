@@ -6,18 +6,11 @@ $ssrEnCours = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut = '
 $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut = 'terminee'");
 ?>
 <style>
-/* ── Stat cards ── */
-.rhf-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-.rhf-stat-card { flex: 1; min-width: 140px; text-align: center; padding: 14px 10px; border-radius: 12px; border: 1px solid var(--cl-border-light, #F0EDE8); }
-.rhf-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 6px; }
-.rhf-stat-val { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
-.rhf-stat-lbl { font-size: .72rem; color: var(--cl-text-muted); margin-top: 2px; }
+/* stat cards use global .stat-card from admin.css */
 
-/* ── Table ── */
-.rhf-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.rhf-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 10px 14px; border-bottom: 1.5px solid var(--cl-border); text-align: left; }
-.rhf-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .88rem; }
-.rhf-table tr:hover td { background: var(--cl-bg); }
+/* ── Table overrides ── */
+#rhfBody .table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); }
+#rhfBody .table td { vertical-align: middle; font-size: .88rem; }
 
 /* ── Badges ── */
 .rhf-badge { font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
@@ -39,9 +32,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 /* ── Detail sections ── */
 .rhf-detail-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); margin-bottom: 4px; }
 .rhf-detail-val { font-size: .88rem; }
-.rhf-participant-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
-.rhf-participant-table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); padding: 8px 10px; border-bottom: 1.5px solid var(--cl-border); text-align: left; }
-.rhf-participant-table td { padding: 8px 10px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); vertical-align: middle; font-size: .85rem; }
+/* participant table uses .table too */
 .rhf-search-box { position: relative; }
 .rhf-search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--cl-surface, #fff); border: 1px solid var(--cl-border); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
 .rhf-search-results.show { display: block; }
@@ -82,26 +73,42 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 </div>
 
 <!-- Stat cards -->
-<div class="rhf-stats">
-  <div class="rhf-stat-card">
-    <div class="rhf-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-mortarboard"></i></div>
-    <div class="rhf-stat-val" id="rhfStatTotal"><?= $ssrTotalFormations ?></div>
-    <div class="rhf-stat-lbl">Total formations</div>
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-teal"><i class="bi bi-mortarboard"></i></div>
+      <div>
+        <div class="stat-value" id="rhfStatTotal"><?= $ssrTotalFormations ?></div>
+        <div class="stat-label">Total formations</div>
+      </div>
+    </div>
   </div>
-  <div class="rhf-stat-card">
-    <div class="rhf-stat-icon" style="background:#B8C9D4;color:#3B4F6B"><i class="bi bi-calendar-check"></i></div>
-    <div class="rhf-stat-val" id="rhfStatPlanifiees"><?= $ssrPlanifiees ?></div>
-    <div class="rhf-stat-lbl">Planifiées</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-green"><i class="bi bi-calendar-check"></i></div>
+      <div>
+        <div class="stat-value" id="rhfStatPlanifiees"><?= $ssrPlanifiees ?></div>
+        <div class="stat-label">Planifiées</div>
+      </div>
+    </div>
   </div>
-  <div class="rhf-stat-card">
-    <div class="rhf-stat-icon" style="background:#D4C4A8;color:#6B5B3E"><i class="bi bi-play-circle"></i></div>
-    <div class="rhf-stat-val" id="rhfStatEnCours"><?= $ssrEnCours ?></div>
-    <div class="rhf-stat-lbl">En cours</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-orange"><i class="bi bi-play-circle"></i></div>
+      <div>
+        <div class="stat-value" id="rhfStatEnCours"><?= $ssrEnCours ?></div>
+        <div class="stat-label">En cours</div>
+      </div>
+    </div>
   </div>
-  <div class="rhf-stat-card">
-    <div class="rhf-stat-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-check-circle"></i></div>
-    <div class="rhf-stat-val" id="rhfStatTerminees"><?= $ssrTerminees ?></div>
-    <div class="rhf-stat-lbl">Terminées</div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-teal"><i class="bi bi-check-circle"></i></div>
+      <div>
+        <div class="stat-value" id="rhfStatTerminees"><?= $ssrTerminees ?></div>
+        <div class="stat-label">Terminées</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -120,8 +127,10 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 </div>
 
 <!-- Table body -->
-<div id="rhfBody">
-  <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+<div class="card">
+  <div class="table-responsive" id="rhfBody">
+    <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
+  </div>
 </div>
 
 <!-- ═══ Modal: Formation create/edit ═══ -->
@@ -323,7 +332,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             el.innerHTML = '<div class="rhf-empty"><i class="bi bi-mortarboard"></i>Aucune formation</div>';
             return;
         }
-        let html = '<table class="rhf-table"><thead><tr><th>Titre</th><th>Type</th><th>Formateur</th><th>Dates</th><th>Durée</th><th>Participants</th><th>Oblig.</th><th>Statut</th><th style="width:100px">Actions</th></tr></thead><tbody>';
+        let html = '<table class="table table-hover mb-0"><thead><tr><th>Titre</th><th>Type</th><th>Formateur</th><th>Dates</th><th>Durée</th><th>Participants</th><th>Oblig.</th><th>Statut</th><th style="width:100px">Actions</th></tr></thead><tbody>';
         formationsData.forEach(f => {
             const typeCls = f.type_formation || 'interne';
             const statutCls = f.statut || 'planifiee';
@@ -508,7 +517,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             </div>`;
 
             if (participants.length) {
-                html += '<table class="rhf-participant-table"><thead><tr><th>Nom</th><th>Fonction</th><th>Statut</th><th style="width:100px">Actions</th></tr></thead><tbody>';
+                html += '<div class="card mt-2"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Nom</th><th>Fonction</th><th>Statut</th><th style="width:100px">Actions</th></tr></thead><tbody>';
                 participants.forEach(p => {
                     const pStatut = p.statut_participation || 'inscrit';
                     html += `<tr>
@@ -523,7 +532,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
                         <td><button class="rhf-row-btn danger" data-remove-part="${p.id}" title="Retirer"><i class="bi bi-x-lg"></i></button></td>
                     </tr>`;
                 });
-                html += '</tbody></table>';
+                html += '</tbody></table></div></div>';
             } else {
                 html += '<p class="text-muted small">Aucun participant inscrit.</p>';
             }

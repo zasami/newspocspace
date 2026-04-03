@@ -2,6 +2,8 @@
  * Mur social — 3-column wall with hero, media, gallery, lightbox
  */
 import { apiPost, escapeHtml, toast } from '../helpers.js';
+import { createBareEditor, getHTML, destroyEditor } from '../rich-editor.js';
+import { EmojiPicker } from './emoji_picker.js';
 
 let currentPage = 1;
 let totalPages = 1;
@@ -11,6 +13,8 @@ let activeCategory = 'all';
 let pendingFiles = [];
 let allGalleryUrls = [];
 let lightboxIndex = 0;
+let composerEditor = null;
+let composerEmojiPicker = null;
 
 const CAT_LABELS = { general: 'Général', info: 'Info', evenement: 'Événement', social: 'Social' };
 const CAT_COLORS = { general: '#bcd2cb', info: '#B8C9D4', evenement: '#D4C4A8', social: '#D0C4D8' };
@@ -27,7 +31,7 @@ export async function init() {
     if (cfgRes.success) {
         wallConfig = cfgRes.config;
         setupHero();
-        setupComposer(user);
+        await setupComposer(user);
         renderCategoryNav();
         renderRules();
     }
@@ -49,6 +53,8 @@ export async function init() {
 }
 
 export function destroy() {
+    if (composerEditor) { destroyEditor(composerEditor); composerEditor = null; }
+    if (composerEmojiPicker) { composerEmojiPicker.destroy(); composerEmojiPicker = null; }
     currentPage = 1; totalPages = 1; loading = false;
     wallConfig = {}; activeCategory = 'all'; pendingFiles = [];
     allGalleryUrls = []; lightboxIndex = 0;
@@ -224,7 +230,7 @@ function navigateLightbox(dir) {
 // ══════════════════════════════════════
 // COMPOSER
 // ══════════════════════════════════════
-function setupComposer(user) {
+async function setupComposer(user) {
     const av = document.getElementById('composerAvatar');
     if (av) {
         if (user.photo) av.innerHTML = `<img src="${escapeHtml(user.photo)}" alt="">`;
@@ -251,18 +257,61 @@ function setupComposer(user) {
     });
 
     document.getElementById('btnPost')?.addEventListener('click', submitPost);
-    const textarea = document.getElementById('composerBody');
-    if (textarea) {
-        setupMentionAutocomplete(textarea);
-        textarea.addEventListener('keydown', (e) => {
-            if (textarea.parentElement?.querySelector('.mur-mention-dropdown')) return;
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
-        });
-        textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; });
-        textarea.addEventListener('blur', () => { if (!textarea.value.trim()) textarea.style.height = ''; });
-        const wrap = textarea.closest('.mur-composer-wrap');
-        if (wrap) wrap.addEventListener('click', (e) => { if (!e.target.closest('.mur-composer-icon-btn')) textarea.focus(); });
+
+    // TipTap editor
+    const editorEl = document.getElementById('composerEditor');
+    if (editorEl) {
+        composerEditor = await createBareEditor(editorEl, { placeholder: 'Quoi de neuf ?' });
+        if (composerEditor) {
+            // Ctrl+Enter to submit
+            editorEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    submitPost();
+                }
+            });
+
+            // Toolbar buttons
+            const toolbar = document.getElementById('composerToolbar');
+            if (toolbar) {
+                toolbar.querySelectorAll('.mur-tb-btn').forEach(btn => {
+                    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep editor focus
+                    btn.addEventListener('click', () => {
+                        const action = btn.dataset.action;
+                        if (action === 'bold') composerEditor.chain().focus().toggleBold().run();
+                        else if (action === 'italic') composerEditor.chain().focus().toggleItalic().run();
+                        else if (action === 'highlight') composerEditor.chain().focus().toggleHighlight().run();
+                        else if (action === 'emoji') {
+                            if (!composerEmojiPicker) {
+                                btn.classList.add('zkr-emoji-trigger');
+                                composerEmojiPicker = new EmojiPicker();
+                                composerEmojiPicker.init(btn, (emoji) => {
+                                    composerEditor.chain().focus().insertContent(emoji).run();
+                                });
+                                composerEmojiPicker.toggle();
+                            }
+                        }
+                    });
+                });
+
+                // Update active states
+                composerEditor.on('selectionUpdate', () => updateToolbarActive(toolbar));
+                composerEditor.on('update', () => updateToolbarActive(toolbar));
+            }
+        }
     }
+}
+
+function updateToolbarActive(toolbar) {
+    if (!composerEditor) return;
+    toolbar.querySelectorAll('.mur-tb-btn').forEach(btn => {
+        const action = btn.dataset.action;
+        let active = false;
+        if (action === 'bold') active = composerEditor.isActive('bold');
+        else if (action === 'italic') active = composerEditor.isActive('italic');
+        else if (action === 'highlight') active = composerEditor.isActive('highlight');
+        btn.classList.toggle('active', active);
+    });
 }
 
 function renderFilePreview() {
@@ -286,14 +335,12 @@ function renderFilePreview() {
 }
 
 async function submitPost() {
-    const bodyEl = document.getElementById('composerBody');
-    const body = bodyEl?.value?.trim();
+    const body = composerEditor ? getHTML(composerEditor) : '';
     if (!body && !pendingFiles.length) return;
 
     const btn = document.getElementById('btnPost');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner spinner-sm"></span>'; }
 
-    // Create post first
     const data = {
         body: body || '',
         category: document.getElementById('composerCategory')?.value || 'general',
@@ -323,14 +370,13 @@ async function submitPost() {
     }
 
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send-fill"></i> Publier'; }
-    bodyEl.value = '';
-    bodyEl.style.height = 'auto';
+    if (composerEditor) composerEditor.commands.setContent('');
     pendingFiles = [];
     renderFilePreview();
     toast(res.message || 'Post publié');
     currentPage = 1;
     loadFeed(false);
-    loadGallery(); // Refresh gallery
+    loadGallery();
     const el = document.getElementById('murStatComments');
     if (el) el.textContent = parseInt(el.textContent || '0') + 1;
 }
