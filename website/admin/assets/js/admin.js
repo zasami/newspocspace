@@ -12,10 +12,11 @@ let activeId = null;
 let unsavedChanges = {};
 
 // ── API helper ──
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 async function api(action, data = {}) {
     const res = await fetch(API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
         body: JSON.stringify({ action, ...data })
     });
     return res.json();

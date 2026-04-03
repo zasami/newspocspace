@@ -386,7 +386,11 @@ case 'famille_get_file':
 
     if (!$filePath) not_found('Fichier introuvable');
 
-    $absPath = __DIR__ . '/../' . $filePath;
+    $absPath = realpath(__DIR__ . '/../' . $filePath);
+    $allowedBase = realpath(__DIR__ . '/../uploads/');
+    if (!$absPath || !$allowedBase || !str_starts_with($absPath, $allowedBase)) {
+        not_found('Fichier introuvable');
+    }
     if (!file_exists($absPath)) not_found('Fichier introuvable sur le serveur');
 
     // Serve binary (encrypted content)
@@ -399,6 +403,7 @@ case 'famille_get_file':
 // ── Famille: Réservation repas ─────────────────────────────────────────────
 
 case 'famille_reserver':
+    famille_rate_check(); // brute-force protection
     $email = trim($input['email'] ?? '');
     $password = trim($input['password'] ?? '');
     $residentId = $input['resident_id'] ?? '';
@@ -474,6 +479,7 @@ case 'get_offres':
     break;
 
 case 'submit_candidature':
+    famille_rate_check(); // anti-spam: 5 per 15 min per IP
     $offre_id     = trim($input['offre_id'] ?? '');
     $nom          = trim($input['nom'] ?? '');
     $prenom       = trim($input['prenom'] ?? '');
@@ -543,6 +549,22 @@ case 'submit_candidature':
         }
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        // Validate MIME type (not just extension)
+        $allowedMimes = [
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+        ];
+        $realMime = mime_content_type($file['tmp_name']);
+        if (isset($allowedMimes[$ext]) && $realMime !== $allowedMimes[$ext]) {
+            // Allow some flexibility (e.g., docx detected as application/zip)
+            if (!in_array($realMime, ['application/zip', 'application/octet-stream'])) {
+                respond(['success' => false, 'message' => "Le contenu du fichier $fieldName ne correspond pas à son extension."], 400);
+            }
+        }
         if (!in_array($ext, $allowedExt)) {
             respond(['success' => false, 'message' => "Type de fichier non autorisé pour $fieldName. Formats acceptés : " . implode(', ', $allowedExt)], 400);
         }
@@ -592,6 +614,40 @@ case 'track_candidature':
         'success' => true,
         'candidature' => $candidature,
     ]);
+    break;
+
+// ── Contact form ──────────────────────────────────────────────────────────
+
+case 'contact_submit':
+    famille_rate_check(); // anti-spam
+
+    $nom = Sanitize::text($input['nom'] ?? '', 100);
+    $email = Sanitize::email($input['email'] ?? '');
+    $sujet = Sanitize::text($input['sujet'] ?? 'general', 100);
+    $message = Sanitize::text($input['message'] ?? '', 5000);
+
+    if (!$nom || !$email || !$message) {
+        respond(['success' => false, 'message' => 'Veuillez remplir tous les champs obligatoires.'], 400);
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        respond(['success' => false, 'message' => 'Adresse email invalide.'], 400);
+    }
+
+    // Store in DB
+    $id = Uuid::v4();
+    Db::exec(
+        "INSERT INTO contact_messages (id, nom, email, sujet, message, ip_address) VALUES (?, ?, ?, ?, ?, ?)",
+        [$id, $nom, $email, $sujet, $message, $_SERVER['REMOTE_ADDR'] ?? '']
+    );
+
+    // Send notification email to admin
+    $adminEmail = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_email'");
+    if ($adminEmail && function_exists('mail')) {
+        $headers = "From: $email\r\nReply-To: $email\r\nContent-Type: text/plain; charset=UTF-8";
+        @mail($adminEmail, "[EMS Contact] $sujet — $nom", "Nom: $nom\nEmail: $email\nSujet: $sujet\n\n$message", $headers);
+    }
+
+    respond(['success' => true, 'message' => 'Votre message a été envoyé.']);
     break;
 
 default:

@@ -1,0 +1,415 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.08"/>
+    </filter>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+    <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+    <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E65100"/>
+      <stop offset="100%" stop-color="#BF360C"/>
+    </linearGradient>
+    <linearGradient id="gPurple" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6A1B9A"/>
+      <stop offset="100%" stop-color="#4A148C"/>
+    </linearGradient>
+    <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00695C"/>
+      <stop offset="100%" stop-color="#004D40"/>
+    </linearGradient>
+    <linearGradient id="gRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C62828"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F9A825"/>
+      <stop offset="100%" stop-color="#F57F17"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="1600" fill="#FAFAF8" rx="0"/>
+
+  <!-- Title -->
+  <text x="600" y="45" text-anchor="middle" font-size="22" font-weight="800" fill="#2d4a43">Architecture SpocSpace</text>
+  <text x="600" y="68" text-anchor="middle" font-size="12" fill="#8D8D8D">EMS La Terrassiere SA — Systeme de gestion complet</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- USERS ROW -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="600" y="105" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">UTILISATEURS</text>
+
+  <!-- Collaborateur -->
+  <rect x="40" y="118" width="160" height="52" rx="12" fill="#bcd2cb" filter="url(#shadow)"/>
+  <text x="120" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#2d4a43">Collaborateur</text>
+  <text x="120" y="156" text-anchor="middle" font-size="9" fill="#2d4a43" opacity=".7">SPA Employee</text>
+
+  <!-- Responsable -->
+  <rect x="220" y="118" width="160" height="52" rx="12" fill="#B8C9D4" filter="url(#shadow)"/>
+  <text x="300" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#3B4F6B">Responsable</text>
+  <text x="300" y="156" text-anchor="middle" font-size="9" fill="#3B4F6B" opacity=".7">Admin + SPA</text>
+
+  <!-- Admin / Direction -->
+  <rect x="400" y="118" width="160" height="52" rx="12" fill="#D4C4A8" filter="url(#shadow)"/>
+  <text x="480" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#6B5B3E">Admin / Direction</text>
+  <text x="480" y="156" text-anchor="middle" font-size="9" fill="#6B5B3E" opacity=".7">Acces complet</text>
+
+  <!-- Soignant -->
+  <rect x="580" y="118" width="160" height="52" rx="12" fill="#D0C4D8" filter="url(#shadow)"/>
+  <text x="660" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#5B4B6B">Soignant</text>
+  <text x="660" y="156" text-anchor="middle" font-size="9" fill="#5B4B6B" opacity=".7">SpocCare</text>
+
+  <!-- Famille -->
+  <rect x="760" y="118" width="160" height="52" rx="12" fill="#E2B8AE" filter="url(#shadow)"/>
+  <text x="840" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#7B3B2C">Famille</text>
+  <text x="840" y="156" text-anchor="middle" font-size="9" fill="#7B3B2C" opacity=".7">Espace Famille</text>
+
+  <!-- Public -->
+  <rect x="940" y="118" width="160" height="52" rx="12" fill="#E8E5E0" filter="url(#shadow)"/>
+  <text x="1020" y="140" text-anchor="middle" font-size="11" font-weight="700" fill="#555">Visiteur</text>
+  <text x="1020" y="156" text-anchor="middle" font-size="9" fill="#555" opacity=".7">Site public</text>
+
+  <!-- Arrows down -->
+  <line x1="120" y1="170" x2="120" y2="205" stroke="#bcd2cb" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="300" y1="170" x2="300" y2="205" stroke="#B8C9D4" stroke-width="2"/>
+  <line x1="480" y1="170" x2="480" y2="205" stroke="#D4C4A8" stroke-width="2"/>
+  <line x1="660" y1="170" x2="660" y2="205" stroke="#D0C4D8" stroke-width="2"/>
+  <line x1="840" y1="170" x2="840" y2="205" stroke="#E2B8AE" stroke-width="2"/>
+  <line x1="1020" y1="170" x2="1020" y2="205" stroke="#E8E5E0" stroke-width="2"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- APPLICATIONS ROW -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="600" y="200" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">APPLICATIONS</text>
+
+  <!-- SpocSpace SPA -->
+  <rect x="20" y="215" width="200" height="90" rx="14" fill="url(#gGreen)" filter="url(#shadow)"/>
+  <text x="120" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">SpocSpace SPA</text>
+  <text x="120" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/</text>
+  <text x="120" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Planning, Desirs, Absences</text>
+  <text x="120" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Messages, Mur social, PV</text>
+
+  <!-- Admin Panel -->
+  <rect x="240" y="215" width="200" height="90" rx="14" fill="url(#gBlue)" filter="url(#shadow)"/>
+  <text x="340" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Admin Panel</text>
+  <text x="340" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/admin/</text>
+  <text x="340" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Gestion users, Planning IA</text>
+  <text x="340" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">RH, Config, Statistiques</text>
+
+  <!-- SpocCare -->
+  <rect x="460" y="215" width="200" height="90" rx="14" fill="url(#gPurple)" filter="url(#shadow)"/>
+  <text x="560" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">SpocCare</text>
+  <text x="560" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/care/</text>
+  <text x="560" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Residents, Marquage linge</text>
+  <text x="560" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Menus, Protection, Hygiene</text>
+
+  <!-- Site Vitrine -->
+  <rect x="680" y="215" width="200" height="90" rx="14" fill="url(#gTeal)" filter="url(#shadow)"/>
+  <text x="780" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Site Vitrine</text>
+  <text x="780" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/website/</text>
+  <text x="780" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Presentation EMS, Menus</text>
+  <text x="780" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Animations, Recrutement</text>
+
+  <!-- Espace Famille -->
+  <rect x="900" y="215" width="200" height="90" rx="14" fill="url(#gOrange)" filter="url(#shadow)"/>
+  <text x="1000" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Espace Famille</text>
+  <text x="1000" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/website/famille.php</text>
+  <text x="1000" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Activites, Medical, Galerie</text>
+  <text x="1000" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Chiffrement E2EE</text>
+
+  <!-- Arrows down -->
+  <line x1="120" y1="305" x2="120" y2="340" stroke="#2E7D32" stroke-width="2"/>
+  <line x1="340" y1="305" x2="340" y2="340" stroke="#1565C0" stroke-width="2"/>
+  <line x1="560" y1="305" x2="560" y2="340" stroke="#6A1B9A" stroke-width="2"/>
+  <line x1="780" y1="305" x2="780" y2="340" stroke="#00695C" stroke-width="2"/>
+  <line x1="1000" y1="305" x2="1000" y2="340" stroke="#E65100" stroke-width="2"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- API LAYER -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="600" y="335" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">API LAYER</text>
+
+  <!-- Employee API -->
+  <rect x="20" y="348" width="200" height="60" rx="10" fill="#fff" stroke="#2E7D32" stroke-width="2" filter="url(#shadow)"/>
+  <text x="120" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#2E7D32">api.php</text>
+  <text x="120" y="388" text-anchor="middle" font-size="8" fill="#888">21 modules — 62+ actions</text>
+  <text x="120" y="400" text-anchor="middle" font-size="8" fill="#888">Session + CSRF</text>
+
+  <!-- Admin API -->
+  <rect x="240" y="348" width="200" height="60" rx="10" fill="#fff" stroke="#1565C0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="340" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#1565C0">admin/api.php</text>
+  <text x="340" y="388" text-anchor="middle" font-size="8" fill="#888">36 modules — 100+ actions</text>
+  <text x="340" y="400" text-anchor="middle" font-size="8" fill="#888">Session + CSRF + Roles</text>
+
+  <!-- Care API -->
+  <rect x="460" y="348" width="200" height="60" rx="10" fill="#fff" stroke="#6A1B9A" stroke-width="2" filter="url(#shadow)"/>
+  <text x="560" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#6A1B9A">care/api.php</text>
+  <text x="560" y="388" text-anchor="middle" font-size="8" fill="#888">6 modules</text>
+  <text x="560" y="400" text-anchor="middle" font-size="8" fill="#888">Session auth</text>
+
+  <!-- Website API -->
+  <rect x="680" y="348" width="200" height="60" rx="10" fill="#fff" stroke="#00695C" stroke-width="2" filter="url(#shadow)"/>
+  <text x="780" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#00695C">website/api.php</text>
+  <text x="780" y="388" text-anchor="middle" font-size="8" fill="#888">Menus, Contact, Candidatures</text>
+  <text x="780" y="400" text-anchor="middle" font-size="8" fill="#888">Public + Rate limiting</text>
+
+  <!-- Famille API (same file) -->
+  <rect x="900" y="348" width="200" height="60" rx="10" fill="#fff" stroke="#E65100" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1000" y="372" text-anchor="middle" font-size="11" font-weight="600" fill="#E65100">website/api.php</text>
+  <text x="1000" y="388" text-anchor="middle" font-size="8" fill="#888">famille_* actions</text>
+  <text x="1000" y="400" text-anchor="middle" font-size="8" fill="#888">Token auth + E2EE</text>
+
+  <!-- CMS API (small) -->
+  <rect x="790" y="415" width="180" height="32" rx="8" fill="#fff" stroke="#00695C" stroke-width="1.5"/>
+  <text x="880" y="435" text-anchor="middle" font-size="9" font-weight="600" fill="#00695C">website/admin/api/sections.php</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SHARED CORE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="600" y="475" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">NOYAU PARTAGE</text>
+
+  <!-- Big shared core box -->
+  <rect x="40" y="488" width="1120" height="100" rx="16" fill="#F7F5F2" stroke="#E8E5E0" stroke-width="2" filter="url(#shadow)"/>
+
+  <!-- init.php -->
+  <rect x="60" y="500" width="130" height="40" rx="8" fill="#2E7D32"/>
+  <text x="125" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">init.php</text>
+  <text x="125" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">Bootstrap + Session</text>
+
+  <!-- Db -->
+  <rect x="200" y="500" width="90" height="40" rx="8" fill="#5D4037"/>
+  <text x="245" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Db.php</text>
+  <text x="245" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">PDO wrapper</text>
+
+  <!-- Auth -->
+  <rect x="300" y="500" width="90" height="40" rx="8" fill="#C62828"/>
+  <text x="345" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Auth.php</text>
+  <text x="345" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">Login + Roles</text>
+
+  <!-- Sanitize -->
+  <rect x="400" y="500" width="100" height="40" rx="8" fill="#E65100"/>
+  <text x="450" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Sanitize.php</text>
+  <text x="450" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">Input cleaning</text>
+
+  <!-- Uuid -->
+  <rect x="510" y="500" width="80" height="40" rx="8" fill="#6A1B9A"/>
+  <text x="550" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Uuid.php</text>
+  <text x="550" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">UUID v4</text>
+
+  <!-- Crypto -->
+  <rect x="600" y="500" width="90" height="40" rx="8" fill="#1565C0"/>
+  <text x="645" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Crypto.php</text>
+  <text x="645" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">AES-256-GCM</text>
+
+  <!-- Mailer -->
+  <rect x="700" y="500" width="90" height="40" rx="8" fill="#00695C"/>
+  <text x="745" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Mailer.php</text>
+  <text x="745" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">IMAP / SMTP</text>
+
+  <!-- Permission -->
+  <rect x="800" y="500" width="105" height="40" rx="8" fill="#F57F17"/>
+  <text x="852" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Permission.php</text>
+  <text x="852" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">RBAC</text>
+
+  <!-- Notification -->
+  <rect x="915" y="500" width="110" height="40" rx="8" fill="#AD1457"/>
+  <text x="970" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Notification.php</text>
+  <text x="970" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">Push alerts</text>
+
+  <!-- Config -->
+  <rect x="1035" y="500" width="110" height="40" rx="8" fill="#37474F"/>
+  <text x="1090" y="518" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">config.php</text>
+  <text x="1090" y="530" text-anchor="middle" font-size="7" fill="#fff" opacity=".8">ENV + constants</text>
+
+  <!-- Security badges -->
+  <text x="120" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">HSTS</text>
+  <text x="200" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">CSP</text>
+  <text x="280" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">CSRF</text>
+  <text x="380" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">Rate Limit</text>
+  <text x="490" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">HttpOnly Cookies</text>
+  <text x="630" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">Prepared Statements</text>
+  <text x="780" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">bcrypt</text>
+  <text x="880" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">E2EE</text>
+  <text x="990" y="576" text-anchor="middle" font-size="8" fill="#2E7D32" font-weight="600">XSS Protection</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- DATABASE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="600" y="610" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">BASE DE DONNEES — MySQL (69 tables)</text>
+
+  <rect x="40" y="625" width="1120" height="260" rx="16" fill="#fff" stroke="#5D4037" stroke-width="2" filter="url(#shadow)"/>
+
+  <!-- DB Groups -->
+  <!-- Users & Auth -->
+  <rect x="60" y="640" width="160" height="105" rx="10" fill="#bcd2cb" opacity=".3"/>
+  <text x="140" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#2d4a43">Utilisateurs</text>
+  <text x="140" y="672" text-anchor="middle" font-size="7.5" fill="#555">users</text>
+  <text x="140" y="684" text-anchor="middle" font-size="7.5" fill="#555">fonctions</text>
+  <text x="140" y="696" text-anchor="middle" font-size="7.5" fill="#555">user_modules</text>
+  <text x="140" y="708" text-anchor="middle" font-size="7.5" fill="#555">user_permissions</text>
+  <text x="140" y="720" text-anchor="middle" font-size="7.5" fill="#555">connexions</text>
+  <text x="140" y="732" text-anchor="middle" font-size="7.5" fill="#555">rate_limits</text>
+
+  <!-- Planning -->
+  <rect x="230" y="640" width="160" height="105" rx="10" fill="#B8C9D4" opacity=".3"/>
+  <text x="310" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#3B4F6B">Planning</text>
+  <text x="310" y="672" text-anchor="middle" font-size="7.5" fill="#555">plannings</text>
+  <text x="310" y="684" text-anchor="middle" font-size="7.5" fill="#555">planning_assignations</text>
+  <text x="310" y="696" text-anchor="middle" font-size="7.5" fill="#555">horaires_types</text>
+  <text x="310" y="708" text-anchor="middle" font-size="7.5" fill="#555">modules / etages / groupes</text>
+  <text x="310" y="720" text-anchor="middle" font-size="7.5" fill="#555">desirs / desirs_permanents</text>
+  <text x="310" y="732" text-anchor="middle" font-size="7.5" fill="#555">besoins_couverture</text>
+
+  <!-- RH -->
+  <rect x="400" y="640" width="160" height="105" rx="10" fill="#D4C4A8" opacity=".3"/>
+  <text x="480" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#6B5B3E">RH</text>
+  <text x="480" y="672" text-anchor="middle" font-size="7.5" fill="#555">absences</text>
+  <text x="480" y="684" text-anchor="middle" font-size="7.5" fill="#555">vacances</text>
+  <text x="480" y="696" text-anchor="middle" font-size="7.5" fill="#555">changements_horaire</text>
+  <text x="480" y="708" text-anchor="middle" font-size="7.5" fill="#555">fiches_salaire</text>
+  <text x="480" y="720" text-anchor="middle" font-size="7.5" fill="#555">formations</text>
+  <text x="480" y="732" text-anchor="middle" font-size="7.5" fill="#555">offres_emploi / candidatures</text>
+
+  <!-- Communication -->
+  <rect x="570" y="640" width="160" height="105" rx="10" fill="#D0C4D8" opacity=".3"/>
+  <text x="650" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#5B4B6B">Communication</text>
+  <text x="650" y="672" text-anchor="middle" font-size="7.5" fill="#555">messages / emails</text>
+  <text x="650" y="684" text-anchor="middle" font-size="7.5" fill="#555">email_attachments</text>
+  <text x="650" y="696" text-anchor="middle" font-size="7.5" fill="#555">notifications / alerts</text>
+  <text x="650" y="708" text-anchor="middle" font-size="7.5" fill="#555">mur_posts / comments / likes</text>
+  <text x="650" y="720" text-anchor="middle" font-size="7.5" fill="#555">pv / pv_comments</text>
+  <text x="650" y="732" text-anchor="middle" font-size="7.5" fill="#555">sondages / votes</text>
+
+  <!-- Residents & Famille -->
+  <rect x="740" y="640" width="160" height="105" rx="10" fill="#E2B8AE" opacity=".3"/>
+  <text x="820" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#7B3B2C">Residents / Famille</text>
+  <text x="820" y="672" text-anchor="middle" font-size="7.5" fill="#555">residents</text>
+  <text x="820" y="684" text-anchor="middle" font-size="7.5" fill="#555">famille_sessions</text>
+  <text x="820" y="696" text-anchor="middle" font-size="7.5" fill="#555">famille_activites / photos</text>
+  <text x="820" y="708" text-anchor="middle" font-size="7.5" fill="#555">famille_medical / fichiers</text>
+  <text x="820" y="720" text-anchor="middle" font-size="7.5" fill="#555">famille_galerie / photos</text>
+  <text x="820" y="732" text-anchor="middle" font-size="7.5" fill="#555">famille_encryption_keys</text>
+
+  <!-- Config & Systeme -->
+  <rect x="910" y="640" width="235" height="105" rx="10" fill="#E8E5E0" opacity=".4"/>
+  <text x="1027" y="658" text-anchor="middle" font-size="9" font-weight="700" fill="#555">Config / Systeme</text>
+  <text x="1027" y="672" text-anchor="middle" font-size="7.5" fill="#555">ems_config</text>
+  <text x="1027" y="684" text-anchor="middle" font-size="7.5" fill="#555">website_sections (CMS)</text>
+  <text x="1027" y="696" text-anchor="middle" font-size="7.5" fill="#555">menus / menu_reservations</text>
+  <text x="1027" y="708" text-anchor="middle" font-size="7.5" fill="#555">documents / document_services</text>
+  <text x="1027" y="720" text-anchor="middle" font-size="7.5" fill="#555">ia_usage_log / ia_human_rules</text>
+  <text x="1027" y="732" text-anchor="middle" font-size="7.5" fill="#555">geo_pays / geo_regions / geo_villes</text>
+
+  <!-- Cuisine / Care bottom row -->
+  <rect x="60" y="755" width="240" height="50" rx="10" fill="#00695C" opacity=".1"/>
+  <text x="180" y="773" text-anchor="middle" font-size="9" font-weight="700" fill="#00695C">Cuisine</text>
+  <text x="180" y="788" text-anchor="middle" font-size="7.5" fill="#555">menus, reservations_famille, visiteurs</text>
+
+  <rect x="310" y="755" width="240" height="50" rx="10" fill="#6A1B9A" opacity=".1"/>
+  <text x="430" y="773" text-anchor="middle" font-size="9" font-weight="700" fill="#6A1B9A">Soins / Care</text>
+  <text x="430" y="788" text-anchor="middle" font-size="7.5" fill="#555">marquages, protection, hygiene</text>
+
+  <rect x="560" y="755" width="240" height="50" rx="10" fill="#1565C0" opacity=".1"/>
+  <text x="680" y="773" text-anchor="middle" font-size="9" font-weight="700" fill="#1565C0">Admin</text>
+  <text x="680" y="788" text-anchor="middle" font-size="7.5" fill="#555">admin_todos, admin_notes, agenda_events</text>
+
+  <rect x="810" y="755" width="335" height="50" rx="10" fill="#E65100" opacity=".1"/>
+  <text x="977" y="773" text-anchor="middle" font-size="9" font-weight="700" fill="#E65100">Recrutement</text>
+  <text x="977" y="788" text-anchor="middle" font-size="7.5" fill="#555">candidatures, candidature_documents, contact_messages</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STORAGE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="300" y="920" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">STOCKAGE FICHIERS</text>
+
+  <rect x="40" y="935" width="520" height="130" rx="16" fill="#fff" stroke="#5D4037" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <text x="60" y="958" font-size="9" font-weight="700" fill="#5D4037">storage/</text>
+  <text x="70" y="972" font-size="8" fill="#555">avatars/ — Photos profil collaborateurs</text>
+  <text x="70" y="984" font-size="8" fill="#555">logos/ — Logos EMS + images epinglees</text>
+  <text x="70" y="996" font-size="8" fill="#555">documents/ — Documents partages (versions)</text>
+  <text x="70" y="1008" font-size="8" fill="#555">pv/ — Audio + transcription PV</text>
+  <text x="70" y="1020" font-size="8" fill="#555">mur/ — Medias du mur social</text>
+  <text x="70" y="1032" font-size="8" fill="#555">candidatures/ — Pieces jointes candidats</text>
+  <text x="70" y="1044" font-size="8" fill="#555">justificatifs/ — Justificatifs d'absence</text>
+
+  <text x="320" y="958" font-size="9" font-weight="700" fill="#5D4037">uploads/</text>
+  <text x="330" y="972" font-size="8" fill="#555">famille/{resident_id}/activites/</text>
+  <text x="330" y="984" font-size="8" fill="#555">famille/{resident_id}/medical/</text>
+  <text x="330" y="996" font-size="8" fill="#555">famille/{resident_id}/galerie/</text>
+  <text x="330" y="1012" font-size="8" fill="#E65100" font-weight="600">Fichiers chiffres E2EE (.enc)</text>
+  <text x="330" y="1024" font-size="8" fill="#E65100" font-weight="600">Acces bloque par .htaccess</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- EXTERNAL SERVICES -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="880" y="920" text-anchor="middle" font-size="11" font-weight="700" fill="#999" letter-spacing="2">SERVICES EXTERNES</text>
+
+  <rect x="600" y="935" width="560" height="130" rx="16" fill="#fff" stroke="#1565C0" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <!-- AI Services -->
+  <rect x="620" y="950" width="120" height="45" rx="8" fill="#F3E5F5"/>
+  <text x="680" y="970" text-anchor="middle" font-size="9" font-weight="700" fill="#6A1B9A">Claude API</text>
+  <text x="680" y="983" text-anchor="middle" font-size="7" fill="#6A1B9A">Planning IA, PV, Sondages</text>
+
+  <rect x="750" y="950" width="120" height="45" rx="8" fill="#E3F2FD"/>
+  <text x="810" y="970" text-anchor="middle" font-size="9" font-weight="700" fill="#1565C0">Gemini API</text>
+  <text x="810" y="983" text-anchor="middle" font-size="7" fill="#1565C0">Planning IA (alt)</text>
+
+  <rect x="880" y="950" width="120" height="45" rx="8" fill="#E8F5E9"/>
+  <text x="940" y="970" text-anchor="middle" font-size="9" font-weight="700" fill="#2E7D32">Deepgram</text>
+  <text x="940" y="983" text-anchor="middle" font-size="7" fill="#2E7D32">Transcription audio</text>
+
+  <rect x="1010" y="950" width="130" height="45" rx="8" fill="#FFF3E0"/>
+  <text x="1075" y="970" text-anchor="middle" font-size="9" font-weight="700" fill="#E65100">Email IMAP/SMTP</text>
+  <text x="1075" y="983" text-anchor="middle" font-size="7" fill="#E65100">7 providers supportes</text>
+
+  <!-- Bottom services -->
+  <rect x="620" y="1005" width="120" height="45" rx="8" fill="#FCE4EC"/>
+  <text x="680" y="1025" text-anchor="middle" font-size="9" font-weight="700" fill="#C62828">FEGEMS</text>
+  <text x="680" y="1038" text-anchor="middle" font-size="7" fill="#C62828">Import formations</text>
+
+  <rect x="750" y="1005" width="120" height="45" rx="8" fill="#E0F2F1"/>
+  <text x="810" y="1025" text-anchor="middle" font-size="9" font-weight="700" fill="#00695C">Pixabay</text>
+  <text x="810" y="1038" text-anchor="middle" font-size="7" fill="#00695C">Recherche images</text>
+
+  <rect x="880" y="1005" width="120" height="45" rx="8" fill="#FFFDE7"/>
+  <text x="940" y="1025" text-anchor="middle" font-size="9" font-weight="700" fill="#F57F17">Google Fonts</text>
+  <text x="940" y="1038" text-anchor="middle" font-size="7" fill="#F57F17">Inter, Playfair</text>
+
+  <rect x="1010" y="1005" width="130" height="45" rx="8" fill="#F3E5F5"/>
+  <text x="1075" y="1025" text-anchor="middle" font-size="9" font-weight="700" fill="#6A1B9A">Infomaniak</text>
+  <text x="1075" y="1038" text-anchor="middle" font-size="7" fill="#6A1B9A">Hebergement + DB</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- STATS FOOTER -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <rect x="40" y="1090" width="1120" height="55" rx="12" fill="#2d4a43"/>
+  <text x="130" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#bcd2cb">7</text>
+  <text x="130" y="1130" text-anchor="middle" font-size="8" fill="#bcd2cb" opacity=".8">Applications</text>
+
+  <text x="280" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#B8C9D4">4</text>
+  <text x="280" y="1130" text-anchor="middle" font-size="8" fill="#B8C9D4" opacity=".8">API Routers</text>
+
+  <text x="430" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#D4C4A8">69</text>
+  <text x="430" y="1130" text-anchor="middle" font-size="8" fill="#D4C4A8" opacity=".8">Tables DB</text>
+
+  <text x="580" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#D0C4D8">160+</text>
+  <text x="580" y="1130" text-anchor="middle" font-size="8" fill="#D0C4D8" opacity=".8">Actions API</text>
+
+  <text x="730" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#E2B8AE">8</text>
+  <text x="730" y="1130" text-anchor="middle" font-size="8" fill="#E2B8AE" opacity=".8">Core Classes</text>
+
+  <text x="880" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#bcd2cb">6</text>
+  <text x="880" y="1130" text-anchor="middle" font-size="8" fill="#bcd2cb" opacity=".8">Services Externes</text>
+
+  <text x="1030" y="1114" text-anchor="middle" font-size="18" font-weight="800" fill="#F9A825">E2EE</text>
+  <text x="1030" y="1130" text-anchor="middle" font-size="8" fill="#F9A825" opacity=".8">Chiffrement bout-en-bout</text>
+
+</svg>

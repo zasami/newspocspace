@@ -57,7 +57,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <section class="ws-hero ws-hero-video" id="hero">
   <div class="ws-hero-video-wrap">
     <video class="ws-hero-vid" autoplay muted loop playsinline preload="metadata"
-           data-playlist='<?= json_encode($heroVideos) ?>'>
+           data-playlist='<?= json_encode($heroVideos, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>'>
       <source src="<?= h($heroVideos[0] ?? '') ?>" type="video/mp4">
     </video>
     <div class="ws-hero-video-overlay"></div>
@@ -65,7 +65,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-hero-content">
       <img src="EMS-Terrassire-SA-logo-web-1920w.webp" alt="E.M.S. La Terrassière SA" class="ws-hero-logo" fetchpriority="high" width="400" height="131">
-      <h1 class="ws-hero-title"><?= ws_get($cms, 'hero', 'title') ?></h1>
+      <h1 class="ws-hero-title"><?= ws_safe(ws_get($cms, 'hero', 'title') ?? '') ?></h1>
       <p class="ws-hero-desc"><?= h(ws_get($cms, 'hero', 'subtitle')) ?></p>
       <div class="ws-hero-actions">
         <a href="<?= h($ctaPrimary['href'] ?? '#contact') ?>" class="ws-btn ws-btn-primary"><i class="bi <?= h($ctaPrimary['icon'] ?? '') ?>"></i> <?= h($ctaPrimary['text'] ?? '') ?></a>
@@ -100,7 +100,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'about', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'about', 'badge_text')) ?></div>
-      <h2 class="ws-section-title"><?= ws_get($cms, 'about', 'title') ?></h2>
+      <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'about', 'title') ?? '') ?></h2>
       <p class="ws-section-desc"><?= h(ws_get($cms, 'about', 'subtitle')) ?></p>
     </div>
     <div class="row g-4">
@@ -133,7 +133,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'services', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'services', 'badge_text')) ?></div>
-      <h2 class="ws-section-title"><?= ws_get($cms, 'services', 'title') ?></h2>
+      <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'services', 'title') ?? '') ?></h2>
     </div>
     <div class="row g-4">
       <?php foreach ($svcCards as $c): ?>
@@ -160,7 +160,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'life', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'life', 'badge_text')) ?></div>
-      <h2 class="ws-section-title"><?= ws_get($cms, 'life', 'title') ?></h2>
+      <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'life', 'title') ?? '') ?></h2>
       <p class="ws-section-desc"><?= h(ws_get($cms, 'life', 'subtitle')) ?></p>
     </div>
     <div class="ws-timeline">
@@ -886,8 +886,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         <?php else: ?>
         <div class="col-12">
         <?php endif; ?>
-          <h4><?= $pinnedTitle ?></h4>
-          <div class="ws-pinned-text"><?= $pinnedText ?></div>
+          <h4><?= h($pinnedTitle) ?></h4>
+          <div class="ws-pinned-text"><?= ws_safe($pinnedText) ?></div>
           <?php if ($pinnedSig):
             $sigParts = array_map('trim', explode(',', $pinnedSig, 2));
           ?>
@@ -1026,7 +1026,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'values', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'values', 'badge_text')) ?></div>
-      <h2 class="ws-section-title"><?= ws_get($cms, 'values', 'title') ?></h2>
+      <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'values', 'title') ?? '') ?></h2>
     </div>
     <div class="row g-4">
       <?php foreach ($valCards as $c): ?>
@@ -1051,7 +1051,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'contact', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'contact', 'badge_text')) ?></div>
-      <h2 class="ws-section-title"><?= ws_get($cms, 'contact', 'title') ?></h2>
+      <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'contact', 'title') ?? '') ?></h2>
       <p class="ws-section-desc"><?= h(ws_get($cms, 'contact', 'subtitle')) ?></p>
     </div>
     <div class="row g-4">

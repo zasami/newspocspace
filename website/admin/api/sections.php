@@ -17,6 +17,17 @@ $userId = $_SESSION['ss_user']['id'];
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $input['action'] ?? ($_GET['action'] ?? '');
 
+// CSRF protection on write actions
+$readActions = ['list', 'get'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, $readActions)) {
+    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($input['_csrf'] ?? '');
+    if (empty($_SESSION['ss_csrf_token']) || !$csrfToken || !hash_equals($_SESSION['ss_csrf_token'], $csrfToken)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+}
+
 switch ($action) {
 
 // ── Liste toutes les sections ──

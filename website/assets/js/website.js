@@ -91,22 +91,37 @@ document.querySelectorAll('.ws-video-divider video, .ws-video-card video').forEa
   videoObserver.observe(v);
 });
 
-// Contact form (basic)
+// Contact form — sends to backend
 const form = document.getElementById('contactForm');
 if (form) {
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
     const origHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check-lg"></i> Message envoyé !';
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Envoi...';
     btn.disabled = true;
-    btn.style.background = '#16A34A';
-    setTimeout(() => {
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
-      btn.style.background = '';
-      form.reset();
-    }, 3000);
+    try {
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      data.action = 'contact_submit';
+      const res = await fetch('/spocspace/website/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(r => r.json());
+      if (res.success) {
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Message envoyé !';
+        btn.style.background = '#16A34A';
+        form.reset();
+      } else {
+        btn.innerHTML = '<i class="bi bi-x-lg"></i> ' + (res.message || 'Erreur');
+        btn.style.background = '#dc2626';
+      }
+    } catch(err) {
+      btn.innerHTML = '<i class="bi bi-x-lg"></i> Erreur réseau';
+      btn.style.background = '#dc2626';
+    }
+    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; btn.style.background = ''; }, 3000);
   });
 }
 

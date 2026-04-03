@@ -36,6 +36,13 @@ function ws_visible(array $sections, string $key): bool {
     return isset($sections[$key]);
 }
 
+/**
+ * Sanitize CMS HTML — only allow safe formatting tags
+ */
+function ws_safe(string $html): string {
+    return strip_tags($html, '<span><br><strong><b><em><i><u><p><ul><ol><li><blockquote><a><h1><h2><h3><h4><h5><h6>');
+}
+
 function ws_render_cards(array $cards, string $colClass = 'col-md-4', string $cardClass = 'ws-card ws-card-icon'): string {
     $html = '';
     foreach ($cards as $c) {
