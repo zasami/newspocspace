@@ -48,6 +48,10 @@
                                 <button type="button" class="mur-tb-btn" data-action="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
                                 <button type="button" class="mur-tb-btn" data-action="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
                                 <button type="button" class="mur-tb-btn" data-action="highlight" title="Surligner"><i class="bi bi-brush"></i></button>
+                                <span class="mur-tb-sep"></span>
+                                <button type="button" class="mur-tb-btn" data-action="bulletList" title="Liste à puces"><i class="bi bi-list-ul"></i></button>
+                                <button type="button" class="mur-tb-btn" data-action="orderedList" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+                                <span class="mur-tb-sep"></span>
                                 <button type="button" class="mur-tb-btn mur-tb-emoji" data-action="emoji" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
                                 <select id="composerCategory" class="mur-composer-cat"></select>
                             </div>

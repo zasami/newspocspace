@@ -3037,7 +3037,8 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-composer-avatar { width: 40px; height: 40px; border-radius: 50%; background: #B8C9D4; color: #3B4F6B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .82rem; flex-shrink: 0; overflow: hidden; }
 .mur-composer-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .mur-composer-wrap { flex: 1; position: relative; display: flex; align-items: center; border: 1.5px solid var(--ss-border, #e5e7eb); border-radius: 22px; background: var(--ss-bg, #F7F5F2); transition: border-color .25s ease, background .25s ease, border-radius .25s ease; overflow: hidden; }
-.mur-composer-wrap:focus-within { border-color: #bcd2cb; background: #fff; flex-wrap: wrap; border-radius: 14px; }
+.mur-composer-wrap:focus-within,
+.mur-composer-wrap.mur-composer-expanded { border-color: #bcd2cb; background: #fff; flex-wrap: wrap; border-radius: 14px; }
 
 /* Editor content area */
 .mur-composer-editor { flex: 1; min-width: 0; }
@@ -3046,20 +3047,26 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-composer-editor .ProseMirror p:last-child { margin-bottom: 0; }
 .mur-composer-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--ss-muted, #999); pointer-events: none; float: left; height: 0; }
 .mur-composer-editor .ProseMirror mark { background: #fef3cd; padding: .05em .15em; border-radius: 2px; }
-.mur-composer-wrap:focus-within .mur-composer-editor { flex-basis: 100%; }
-.mur-composer-wrap:focus-within .mur-composer-editor .ProseMirror { min-height: 100px; padding-right: 16px; }
+.mur-composer-editor .ProseMirror ul, .mur-composer-editor .ProseMirror ol { padding-left: 1.4rem; margin: .2rem 0; font-size: .88rem; }
+.mur-composer-wrap:focus-within .mur-composer-editor,
+.mur-composer-wrap.mur-composer-expanded .mur-composer-editor { flex-basis: 100%; }
+.mur-composer-wrap:focus-within .mur-composer-editor .ProseMirror,
+.mur-composer-wrap.mur-composer-expanded .mur-composer-editor .ProseMirror { min-height: 100px; padding-right: 16px; }
 
 /* Bottom bar: inline with editor (icons only), wraps below on focus (toolbar + icons) */
 .mur-composer-bar { display: flex; align-items: center; flex-shrink: 0; padding-right: 8px; }
-.mur-composer-wrap:focus-within .mur-composer-bar { flex-basis: 100%; justify-content: space-between; padding: 4px 8px 6px; border-top: 1px solid var(--ss-border, #e5e7eb); }
+.mur-composer-wrap:focus-within .mur-composer-bar,
+.mur-composer-wrap.mur-composer-expanded .mur-composer-bar { flex-basis: 100%; justify-content: space-between; padding: 4px 8px 6px; border-top: 1px solid var(--ss-border, #e5e7eb); }
 
-/* Mini toolbar — slides in on focus */
-.mur-composer-toolbar { display: flex; align-items: center; gap: 2px; max-width: 0; opacity: 0; overflow: hidden; transition: max-width .3s ease, opacity .25s ease .05s; }
-.mur-composer-wrap:focus-within .mur-composer-toolbar { max-width: 300px; opacity: 1; }
-.mur-tb-btn { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); border: none; background: none; font-size: .88rem; transition: all .15s; }
+/* Mini toolbar — smooth fade in/out */
+.mur-composer-toolbar { display: flex; align-items: center; gap: 2px; max-width: 0; opacity: 0; overflow: hidden; transition: opacity .2s ease, max-width .25s ease .2s; }
+.mur-composer-wrap:focus-within .mur-composer-toolbar,
+.mur-composer-wrap.mur-composer-expanded .mur-composer-toolbar { max-width: 500px; opacity: 1; transition: max-width .25s ease, opacity .2s ease .1s; }
+.mur-tb-btn { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); border: none; background: none; font-size: .88rem; transition: all .15s; flex-shrink: 0; }
 .mur-tb-btn:hover { background: rgba(188,210,203,.25); color: #2d4a43; }
 .mur-tb-btn.active { background: rgba(188,210,203,.4); color: #2d4a43; }
-.mur-composer-cat { border: 1px solid var(--ss-border, #e5e7eb); border-radius: 6px; padding: 3px 8px; font-size: .75rem; background: var(--ss-surface, #fff); cursor: pointer; margin-left: 4px; color: var(--ss-text, #333); white-space: nowrap; }
+.mur-tb-sep { width: 1px; height: 18px; background: var(--ss-border, #e5e7eb); margin: 0 3px; flex-shrink: 0; }
+.mur-composer-cat { border: 1px solid var(--ss-border, #e5e7eb); border-radius: 6px; padding: 4px 10px; font-size: .85rem; background: var(--ss-surface, #fff); cursor: pointer; margin-left: 6px; color: var(--ss-text, #333); white-space: nowrap; }
 
 /* Media icons (always visible, right side) */
 .mur-composer-icons { display: flex; gap: 2px; }

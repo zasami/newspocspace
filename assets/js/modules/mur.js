@@ -273,6 +273,7 @@ async function setupComposer(user) {
 
             // Toolbar buttons
             const toolbar = document.getElementById('composerToolbar');
+            const wrap = document.getElementById('composerWrap');
             if (toolbar) {
                 toolbar.querySelectorAll('.mur-tb-btn:not([data-action="emoji"])').forEach(btn => {
                     btn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -281,17 +282,23 @@ async function setupComposer(user) {
                         if (action === 'bold') composerEditor.chain().focus().toggleBold().run();
                         else if (action === 'italic') composerEditor.chain().focus().toggleItalic().run();
                         else if (action === 'highlight') composerEditor.chain().focus().toggleHighlight().run();
+                        else if (action === 'bulletList') composerEditor.chain().focus().toggleBulletList().run();
+                        else if (action === 'orderedList') composerEditor.chain().focus().toggleOrderedList().run();
                     });
                 });
 
-                // Emoji picker — let EmojiPicker manage its own click toggle
+                // Emoji picker — keep wrap expanded while picker is open
                 const emojiBtn = toolbar.querySelector('[data-action="emoji"]');
-                if (emojiBtn) {
+                if (emojiBtn && wrap) {
                     emojiBtn.classList.add('zkr-emoji-trigger');
                     composerEmojiPicker = new EmojiPicker();
                     composerEmojiPicker.init(emojiBtn, (emoji) => {
                         composerEditor.chain().focus().insertContent(emoji).run();
                     });
+                    const origOpen = composerEmojiPicker.open.bind(composerEmojiPicker);
+                    const origClose = composerEmojiPicker.close.bind(composerEmojiPicker);
+                    composerEmojiPicker.open = function() { origOpen(); wrap.classList.add('mur-composer-expanded'); };
+                    composerEmojiPicker.close = function() { origClose(); wrap.classList.remove('mur-composer-expanded'); };
                 }
 
                 // Category select — prevent focus steal
@@ -314,6 +321,8 @@ function updateToolbarActive(toolbar) {
         if (action === 'bold') active = composerEditor.isActive('bold');
         else if (action === 'italic') active = composerEditor.isActive('italic');
         else if (action === 'highlight') active = composerEditor.isActive('highlight');
+        else if (action === 'bulletList') active = composerEditor.isActive('bulletList');
+        else if (action === 'orderedList') active = composerEditor.isActive('orderedList');
         btn.classList.toggle('active', active);
     });
 }
