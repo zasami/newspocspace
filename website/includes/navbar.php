@@ -19,7 +19,7 @@ function wsNavHref($target) {
   <div class="container">
     <div class="ws-nav-inner">
       <a href="/spocspace/website/" class="ws-logo">
-        <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-logo-img">
+        <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.webp" alt="E.M.S. La Terrassière SA" class="ws-logo-img">
       </a>
       <button class="ws-nav-toggle" id="wsNavToggle" aria-label="Menu">
         <i class="bi bi-list"></i>

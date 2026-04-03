@@ -33,10 +33,14 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <meta name="keywords" content="EMS, Terrassière, Genève, maison de retraite, personnes âgées, soins, accompagnement, médico-social">
 <meta name="theme-color" content="#2E7D32">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="../assets/css/vendor/bootstrap.min.css">
-<link rel="stylesheet" href="../assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/website.css">
+<link rel="stylesheet" href="../assets/css/vendor/bootstrap-icons.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="../assets/css/vendor/bootstrap-icons.min.css"></noscript>
+<link rel="stylesheet" href="assets/css/website.css?v=<?= filemtime(__DIR__ . '/assets/css/website.css') ?>">
 </head>
 <body>
 
@@ -52,7 +56,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 ?>
 <section class="ws-hero ws-hero-video" id="hero">
   <div class="ws-hero-video-wrap">
-    <video class="ws-hero-vid" autoplay muted loop playsinline
+    <video class="ws-hero-vid" autoplay muted loop playsinline preload="metadata"
            data-playlist='<?= json_encode($heroVideos) ?>'>
       <source src="<?= h($heroVideos[0] ?? '') ?>" type="video/mp4">
     </video>
@@ -60,7 +64,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   </div>
   <div class="container">
     <div class="ws-hero-content">
-      <img src="EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-hero-logo">
+      <img src="EMS-Terrassire-SA-logo-web-1920w.webp" alt="E.M.S. La Terrassière SA" class="ws-hero-logo" fetchpriority="high" width="400" height="131">
       <h1 class="ws-hero-title"><?= ws_get($cms, 'hero', 'title') ?></h1>
       <p class="ws-hero-desc"><?= h(ws_get($cms, 'hero', 'subtitle')) ?></p>
       <div class="ws-hero-actions">
@@ -111,8 +115,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     $q1 = ws_content($cms, 'quote1');
 ?>
 <section class="ws-video-divider">
-  <video autoplay muted loop playsinline>
-    <source src="<?= h($q1['video'] ?? 'assets/video/229069_medium.mp4') ?>" type="video/mp4">
+  <video muted loop playsinline preload="none" class="ws-lazy-video" data-src="<?= h($q1['video'] ?? 'assets/video/229069_medium.mp4') ?>">
   </video>
   <div class="ws-video-divider-overlay"></div>
   <div class="ws-video-divider-content">
@@ -181,8 +184,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     $q2 = ws_content($cms, 'quote2');
 ?>
 <section class="ws-video-divider">
-  <video autoplay muted loop playsinline>
-    <source src="<?= h($q2['video'] ?? 'assets/video/229071_medium.mp4') ?>" type="video/mp4">
+  <video muted loop playsinline preload="none" class="ws-lazy-video" data-src="<?= h($q2['video'] ?? 'assets/video/229071_medium.mp4') ?>">
   </video>
   <div class="ws-video-divider-overlay"></div>
   <div class="ws-video-divider-content">
@@ -878,7 +880,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       <div class="row align-items-center g-4">
         <?php if ($pinnedImg): ?>
         <div class="col-lg-5 text-center">
-          <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img">
+          <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img" loading="lazy">
         </div>
         <div class="col-lg-7">
         <?php else: ?>
@@ -1138,19 +1140,25 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <!-- ═══ FLOATING SIDE WIDGET ═══ -->
 <div class="ws-side-widget" id="wsSideWidget">
   <a href="#contact" class="ws-sw-btn" title="Contactez-nous">
-    <i class="bi bi-envelope-fill"></i>
+    <img src="/spocspace/website/assets/img/webp/email.webp" alt="" class="ws-sw-icon" loading="lazy">
     <span class="ws-sw-label">Contactez-nous</span>
   </a>
   <a href="#menu-semaine" class="ws-sw-btn" title="Menu de la semaine">
-    <i class="bi bi-egg-fried"></i>
+    <img src="/spocspace/website/assets/img/webp/menu.webp" alt="" class="ws-sw-icon" loading="lazy">
     <span class="ws-sw-label">Menu de la semaine</span>
   </a>
+  <?php
+    // Icône animation dynamique par mois (animation_{mois}-white.webp, fallback: animation.webp)
+    $animMonth = (int) date('n');
+    $animIcon = "assets/img/webp/animation_{$animMonth}.webp";
+    if (!file_exists(__DIR__ . '/' . $animIcon)) $animIcon = 'assets/img/webp/animation.webp';
+  ?>
   <a href="#programme-animation" class="ws-sw-btn" title="Programme animation">
-    <i class="bi bi-calendar-event"></i>
+    <img src="/spocspace/website/<?= $animIcon ?>" alt="" class="ws-sw-icon" loading="lazy">
     <span class="ws-sw-label">Programme animation</span>
   </a>
   <a href="/spocspace/website/famille.php" class="ws-sw-btn" title="Espace Famille">
-    <i class="bi bi-house-heart-fill"></i>
+    <img src="/spocspace/website/assets/img/webp/famille.webp" alt="" class="ws-sw-icon" loading="lazy">
     <span class="ws-sw-label">Espace Famille</span>
   </a>
   <!-- Cachés par défaut, à réactiver plus tard -->
@@ -1164,7 +1172,29 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   </a>
 </div>
 
-<script src="../assets/js/vendor/bootstrap.bundle.min.js"></script>
-<script src="assets/js/website.js"></script>
+<script src="../assets/js/vendor/bootstrap.bundle.min.js" defer></script>
+<script src="assets/js/website.js" defer></script>
+<script>
+// Lazy-load videos when they enter viewport
+if ('IntersectionObserver' in window) {
+    const vObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                const v = e.target;
+                if (v.dataset.src && !v.querySelector('source')) {
+                    const s = document.createElement('source');
+                    s.src = v.dataset.src;
+                    s.type = 'video/mp4';
+                    v.appendChild(s);
+                    v.load();
+                    v.play();
+                }
+                vObs.unobserve(v);
+            }
+        });
+    }, { rootMargin: '200px' });
+    document.querySelectorAll('.ws-lazy-video').forEach(v => vObs.observe(v));
+}
+</script>
 </body>
 </html>

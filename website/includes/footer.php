@@ -3,7 +3,7 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px">
       <div>
         <div class="ws-footer-brand">
-          <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.png" alt="E.M.S. La Terrassière SA" class="ws-footer-logo">
+          <img src="/spocspace/website/EMS-Terrassire-SA-logo-web-1920w.webp" alt="E.M.S. La Terrassière SA" class="ws-footer-logo">
         </div>
         <p class="ws-footer-desc">
           Établissement médico-social au service des personnes âgées à Genève.
