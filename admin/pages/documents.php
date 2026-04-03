@@ -464,7 +464,7 @@ $docServices = Db::fetchAll(
             stage.innerHTML = '<div class="doc-lb-word-wrap">'
                 + '<div class="doc-lb-word-header"><h6><i class="bi bi-file-earmark-pdf-fill" style="color:#7B3B2C"></i> ' + escapeHtml(titre) + '</h6>'
                 + '<button class="doc-lb-word-close" id="docLbWordClose"><i class="bi bi-x-lg"></i></button></div>'
-                + '<div style="flex:1;overflow:hidden"><iframe id="docLbIframe" src="' + url + '#toolbar=1&view=FitH" style="width:100%;height:100%;border:none"></iframe></div>'
+                + '<div style="flex:1;overflow:hidden"><iframe id="docLbIframe" sandbox="allow-same-origin allow-scripts" src="' + url + '#view=FitH" style="width:100%;height:100%;border:none"></iframe></div>'
                 + '<div class="doc-lb-word-footer">'
                 + '<div class="d-flex align-items-center gap-2 ms-auto">'
                 + '<a class="btn btn-sm btn-outline-secondary" href="' + url + '" download><i class="bi bi-download"></i> Télécharger</a>'
