@@ -596,6 +596,7 @@ function admin_save_imported_formations()
     if (empty($items) || !is_array($items)) bad_request('Aucune formation à importer');
 
     $imported = 0;
+    $skipped = 0;
     foreach ($items as $f) {
         $titre = Sanitize::text($f['titre'] ?? '', 255);
         if (!$titre) continue;
@@ -604,31 +605,181 @@ function admin_save_imported_formations()
         $url = $f['url'] ?? '';
         if ($url) {
             $existing = Db::fetch("SELECT id FROM formations WHERE source_url = ?", [$url]);
-            if ($existing) continue;
+            if ($existing) { $skipped++; continue; }
         }
+
+        // Scrape detail page for full info
+        $detail = $url ? _scrape_fegems_detail($url) : [];
 
         $id = Uuid::v4();
         Db::exec(
-            "INSERT INTO formations (id, titre, description, type, formateur, lieu, date_debut, date_fin, modalite, categorie, source_url, image_url, statut, created_by)
-             VALUES (?, ?, ?, 'externe', ?, ?, ?, ?, ?, ?, ?, ?, 'planifiee', ?)",
+            "INSERT INTO formations (id, titre, description, type, formateur, lieu, date_debut, date_fin,
+                modalite, categorie, source_url, image_url, objectifs, public_cible, intervenants,
+                tarif_membres, tarif_non_membres, tarif_externes, sessions, date_cloture_inscription,
+                places_restantes, info_complementaire, statut, created_by)
+             VALUES (?, ?, ?, 'externe', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'planifiee', ?)",
             [
                 $id, $titre,
-                Sanitize::text($f['description'] ?? '', 10000),
-                Sanitize::text($f['formateur'] ?? '', 255),
-                Sanitize::text($f['lieu'] ?? '', 255),
+                Sanitize::text($detail['descriptif'] ?? $f['description'] ?? '', 10000),
+                Sanitize::text($detail['intervenants'] ?? $f['formateur'] ?? '', 255),
+                Sanitize::text($detail['lieu'] ?? $f['lieu'] ?? '', 255),
                 Sanitize::date($f['date_debut'] ?? '') ?: null,
                 Sanitize::date($f['date_fin'] ?? '') ?: null,
                 Sanitize::text($f['modalite'] ?? '', 100),
                 Sanitize::text($f['categories'] ?? $f['categorie'] ?? '', 255),
                 $url ?: null,
                 $f['image_url'] ?? null,
+                Sanitize::text($detail['objectifs'] ?? '', 10000),
+                Sanitize::text($detail['public_cible'] ?? '', 500),
+                Sanitize::text($detail['intervenants'] ?? '', 500),
+                Sanitize::text($detail['tarif_membres'] ?? '', 100),
+                Sanitize::text($detail['tarif_non_membres'] ?? '', 100),
+                Sanitize::text($detail['tarif_externes'] ?? '', 100),
+                Sanitize::text($detail['sessions'] ?? '', 10000),
+                Sanitize::date($detail['date_cloture'] ?? '') ?: null,
+                Sanitize::text($detail['places_restantes'] ?? '', 50),
+                Sanitize::text($detail['info_complementaire'] ?? '', 10000),
                 $_SESSION['ss_user']['id'],
             ]
         );
         $imported++;
     }
 
-    respond(['success' => true, 'message' => "$imported formation(s) importée(s)", 'imported' => $imported]);
+    $msg = "$imported formation(s) importée(s)";
+    if ($skipped) $msg .= " ($skipped déjà existante(s))";
+    respond(['success' => true, 'message' => $msg, 'imported' => $imported, 'skipped' => $skipped]);
+}
+
+/**
+ * Scrape a single FEGEMS formation detail page
+ */
+function _scrape_fegems_detail(string $url): array
+{
+    $ctx = stream_context_create(['http' => ['timeout' => 8]]);
+    $html = @file_get_contents($url, false, $ctx);
+    if (!$html) return [];
+
+    $dom = new DOMDocument();
+    @$dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NOERROR);
+    $xpath = new DOMXPath($dom);
+
+    $result = [];
+
+    // Extract sections by h3.module-title headings
+    // Structure: h3 is inside div.module-text. Content can be:
+    //   a) sibling elements of h3 within the same parent div
+    //   b) the next sibling div.module of the parent div (when heading is alone)
+    $headings = $xpath->query("//h3[contains(@class, 'module-title')]");
+    foreach ($headings as $h3) {
+        $label = mb_strtolower(trim($h3->textContent));
+
+        // Strategy A: content in sibling elements after h3 within same parent
+        $parts = [];
+        $node = $h3->nextSibling;
+        while ($node) {
+            if ($node->nodeType === XML_ELEMENT_NODE) {
+                $txt = trim($node->textContent);
+                if ($txt) $parts[] = $txt;
+            }
+            $node = $node->nextSibling;
+        }
+        $content = implode("\n", $parts);
+
+        // Strategy B: next sibling module of the parent div
+        if (!$content) {
+            $parentMod = $h3->parentNode;
+            $nextMod = $parentMod->nextSibling;
+            while ($nextMod && $nextMod->nodeType !== XML_ELEMENT_NODE) $nextMod = $nextMod->nextSibling;
+            if ($nextMod) {
+                $content = trim($nextMod->textContent);
+            }
+        }
+
+        // Strategy C: parent's full text minus the heading text
+        if (!$content) {
+            $parent = $h3->parentNode;
+            $full = trim($parent->textContent);
+            $heading = trim($h3->textContent);
+            $content = trim(mb_substr($full, mb_strlen($heading)));
+        }
+
+        if (preg_match('/objectif/', $label)) {
+            $result['objectifs'] = $content;
+        } elseif (preg_match('/descriptif/', $label)) {
+            $result['descriptif'] = $content;
+        } elseif (preg_match('/public/', $label)) {
+            $result['public_cible'] = $content;
+        } elseif (preg_match('/intervenant/', $label)) {
+            $result['intervenants'] = $content;
+        } elseif (preg_match('/tarif/', $label)) {
+            // Parse tariffs — use [\d\'\.,\-\s]+ to catch "0.-" and "1'832.00"
+            $result['tarifs_raw'] = $content;
+            if (preg_match('/(?<!non[- ])membres?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $content, $m)) {
+                $result['tarif_membres'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+            }
+            if (preg_match('/non[- ]membres?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $content, $m)) {
+                $result['tarif_non_membres'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+            }
+            if (preg_match('/externes?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $content, $m)) {
+                $result['tarif_externes'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+            }
+        } elseif (preg_match('/date\s*(et\s*heure|&|\/\s*h)/i', $label) || preg_match('/horaire/', $label)) {
+            // Clean up session text: normalize whitespace, keep line breaks between sessions
+            $content = preg_replace('/\s+/', ' ', $content);
+            $content = preg_replace('/\s*,\s*/', ', ', $content);
+            // Split into individual session lines
+            $sessions = preg_split('/(?=\d{2}\.\d{2}\.\d{4})/', $content, -1, PREG_SPLIT_NO_EMPTY);
+            $result['sessions'] = implode("\n", array_map('trim', $sessions));
+        } elseif (preg_match('/lieu/', $label)) {
+            $result['lieu'] = preg_replace('/\s+/', ' ', $content);
+        } elseif (preg_match('/information|info/i', $label) && !preg_match('/cl[oô]ture/i', $label)) {
+            $result['info_complementaire'] = $content;
+        } elseif (preg_match('/cl[oô]ture/', $label)) {
+            $result['date_cloture_raw'] = $content;
+        }
+    }
+
+    // Try alternative: look for all module-text divs and match by content
+    $textModules = $xpath->query("//div[contains(@class, 'module-text')]");
+    foreach ($textModules as $mod) {
+        $text = trim($mod->textContent);
+
+        // Date de clôture — often a standalone line
+        if (preg_match('/cl[oô]ture.*?(\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{4})/i', $text, $m)) {
+            $result['date_cloture_raw'] = $m[1];
+        }
+        // Places restantes
+        if (preg_match('/(\d+)\s*places?\s*restantes?/i', $text, $m)) {
+            $result['places_restantes'] = $m[1] . ' places';
+        }
+
+        // Tarifs block — fallback parsing from text modules
+        if (!isset($result['tarif_membres']) && preg_match('/(?<!non[- ])membres?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $text, $m)) {
+            $result['tarif_membres'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+        }
+        if (!isset($result['tarif_non_membres']) && preg_match('/non[- ]membres?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $text, $m)) {
+            $result['tarif_non_membres'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+        }
+        if (!isset($result['tarif_externes']) && preg_match('/externes?\s*:?\s*((?:CHF\s*)?[\d\'\.\,]+[\.\-]*)/i', $text, $m)) {
+            $result['tarif_externes'] = 'CHF ' . trim(preg_replace('/^CHF\s*/i', '', $m[1]));
+        }
+    }
+
+    // Parse date cloture to Y-m-d
+    if (!empty($result['date_cloture_raw'])) {
+        $raw = $result['date_cloture_raw'];
+        if (preg_match('/(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})/', $raw, $dm)) {
+            $result['date_cloture'] = "$dm[3]-$dm[2]-$dm[1]";
+        }
+    }
+
+    // Featured image (larger)
+    $featImg = $xpath->query("//div[contains(@class, 'post-image')]//img")->item(0);
+    if ($featImg) {
+        $result['image_large'] = $featImg->getAttribute('src');
+    }
+
+    return $result;
 }
 
 function admin_import_formations_file()
