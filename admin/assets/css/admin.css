@@ -1443,7 +1443,16 @@ body.ss-immersive .ss-immersive-pill {
   position: relative;
   transition: background var(--cl-transition);
 }
+.tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover td { background: rgba(188,210,203,.12); }
+.tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover .col-user,
+.tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover .col-taux,
+.tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover .col-total { background: rgba(188,210,203,.18); }
 .tr-grid .dc:hover { background: var(--cl-accent-bg) !important; }
+.tr-grid .col-user-link { cursor: pointer; }
+.tr-grid .col-user-link:hover { color: var(--cl-accent, #2d4a43); text-decoration: underline; }
+.tr-grid-wrap.grabbing { cursor: grabbing; user-select: none; }
+.tr-grid-wrap.grabbing * { pointer-events: none; }
+.tr-grid-wrap { cursor: grab; }
 /* Shift code badge */
 .tr-grid .shift-code {
   display: inline-block;

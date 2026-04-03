@@ -13,6 +13,10 @@ window.adminApiPost = async function adminApiPost(action, data = {}) {
 
     try {
         const res = await fetch('/spocspace/admin/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
+        if ((res.status === 401 || res.status === 403) && action !== 'admin_session_ping') {
+            window.__ssShowSessionExpired?.();
+            return { success: false, message: 'Session expirée' };
+        }
         const json = await res.json();
         if (json.csrf) window.__SS_ADMIN__.csrfToken = json.csrf;
         if (!res.ok && !json.message) json.message = `Erreur ${res.status}`;

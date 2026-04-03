@@ -573,6 +573,50 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
 
 })();
 </script>
+<!-- ═══ MODAL: Session expirée ═══ -->
+<div class="modal fade" id="sessionExpiredModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="border-radius:16px;border:none;overflow:hidden">
+      <div class="modal-body text-center py-4 px-4">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(210,180,145,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;color:#d4a017">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <h6 class="fw-bold mb-2">Session expirée</h6>
+        <p class="text-muted small mb-3">Votre session a expiré par inactivité. Veuillez vous reconnecter pour continuer.</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <a href="/spocspace/admin/logout" class="btn btn-sm btn-outline-secondary" style="border-radius:8px"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a>
+          <a href="/spocspace/login" class="btn btn-sm btn-primary" style="border-radius:8px;background:var(--cl-accent,#bcd2cb);border-color:var(--cl-accent,#bcd2cb);color:#2d4a43"><i class="bi bi-box-arrow-in-right me-1"></i>Connexion</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script nonce="<?= $cspNonce ?>">
+(function() {
+    let shown = false;
+    window.__ssShowSessionExpired = function() {
+        if (shown) return;
+        shown = true;
+        const modal = new bootstrap.Modal(document.getElementById('sessionExpiredModal'));
+        modal.show();
+    };
+    // Heartbeat: check session every 2 minutes
+    setInterval(async () => {
+        if (shown) return;
+        try {
+            const res = await fetch('/spocspace/admin/api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'admin_session_ping' })
+            });
+            if (res.status === 401 || res.status === 403) {
+                window.__ssShowSessionExpired();
+            }
+        } catch(e) {}
+    }, 120000);
+})();
+</script>
+
 <!-- ═══ MODAL: Confirmation globale ═══ -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered">

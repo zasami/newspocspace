@@ -61,3 +61,8 @@ function admin_get_dashboard_stats()
         'recent_absences' => $recentAbsences,
     ]);
 }
+
+function admin_session_ping()
+{
+    respond(['success' => true, 'ts' => time()]);
+}

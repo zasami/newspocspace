@@ -1103,7 +1103,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
                     html += `<tr><td class="col-user">
                         <span class="fn-badge">${escapeHtml(u.fonction_code || '?')}</span>
-                        ${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}
+                        <span class="col-user-link" data-user-id="${u.id}">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</span>
                     </td><td class="col-taux">${Math.round(u.taux)}</td>`;
 
                     days.forEach(d => {
@@ -1183,6 +1183,33 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         content.querySelectorAll('.dc').forEach(cell => {
             cell.addEventListener('click', () => openCellModal(cell));
         });
+
+        // Click on user name → open user-detail
+        content.querySelectorAll('.col-user-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const uid = link.dataset.userId;
+                if (uid) window.location.href = '/spocspace/admin/?page=user-detail&id=' + encodeURIComponent(uid);
+            });
+        });
+
+        // Drag-to-scroll on grid
+        const gridWrap = content.querySelector('.tr-grid-wrap');
+        if (gridWrap) {
+            let gDown = false, gStartX, gScrollL;
+            gridWrap.addEventListener('mousedown', e => {
+                if (e.target.closest('a,button,input,select,.col-user-link')) return;
+                gDown = true; gStartX = e.pageX - gridWrap.offsetLeft; gScrollL = gridWrap.scrollLeft;
+                gridWrap.classList.add('grabbing');
+            });
+            gridWrap.addEventListener('mousemove', e => {
+                if (!gDown) return; e.preventDefault();
+                gridWrap.scrollLeft = gScrollL - (e.pageX - gridWrap.offsetLeft - gStartX);
+            });
+            const gStop = () => { gDown = false; gridWrap.classList.remove('grabbing'); };
+            gridWrap.addEventListener('mouseup', gStop);
+            gridWrap.addEventListener('mouseleave', gStop);
+        }
     }
 
     // ── Cell modal ──
