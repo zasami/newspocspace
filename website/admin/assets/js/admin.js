@@ -108,12 +108,10 @@ function renderEditor(id) {
         <div class="wa-section-box-title"><i class="bi bi-type-h1"></i> En-tête de section</div>
         <div class="wa-form-group">
             <label>Badge — Icône</label>
-            <div class="wa-icon-input" style="display:flex;align-items:center;gap:8px">
-                <div class="wa-icon-preview" style="cursor:pointer" onclick="WA.openIconPicker('badge_icon')" title="Choisir une icône"><i class="bi ${s.badge_icon || 'bi-square'}"></i></div>
-                <input type="text" class="wa-input wa-input-sm" value="${esc(s.badge_icon || '')}" data-field="badge_icon" placeholder="bi-feather"
-                    oninput="this.previousElementSibling.querySelector('i').className='bi '+this.value">
-                <button type="button" class="wa-btn wa-btn-sm wa-btn-ghost" onclick="WA.openIconPicker('badge_icon')" title="Parcourir les icônes"><i class="bi bi-grid-3x3-gap"></i></button>
+            <div class="wa-icon-pick-btn" onclick="WA.openIconPicker('badge_icon')" title="Choisir une icône">
+                <i class="bi ${s.badge_icon || 'bi-square'}"></i>
             </div>
+            <input type="hidden" value="${esc(s.badge_icon || '')}" data-field="badge_icon">
         </div>
         <div class="wa-form-group">
             <label>Badge — Texte</label>
@@ -199,18 +197,20 @@ function renderPinnedEditor(content) {
         </div>
         <div class="wa-form-group">
             <label>Image (optionnelle)</label>
-            <div class="wa-img-upload">
-                <div class="wa-img-preview" id="waPinnedImgPreview">
-                    ${image ? `<img src="${esc(image)}">` : '<i class="bi bi-image" style="font-size:1.5rem;color:#bbb"></i>'}
-                </div>
-                <div>
-                    <label class="wa-btn wa-btn-sm wa-btn-ghost" style="cursor:pointer">
-                        <i class="bi bi-upload"></i> Télécharger une image
-                        <input type="file" id="waPinnedImgFile" accept="image/*" style="display:none">
-                    </label>
-                    ${image ? `<button class="wa-btn wa-btn-sm wa-btn-ghost" id="waPinnedImgClear" style="color:#e53e3e"><i class="bi bi-trash"></i></button>` : ''}
-                    <input type="hidden" id="waPinnedImgUrl" data-content="image" value="${esc(image)}">
-                </div>
+            <div class="wa-dropzone ${image ? 'has-image' : ''}" id="waPinnedDropzone">
+                <input type="file" id="waPinnedImgFile" accept="image/*" style="display:none">
+                <input type="hidden" id="waPinnedImgUrl" data-content="image" value="${esc(image)}">
+                ${image
+                    ? `<img src="${esc(image)}" class="wa-dropzone-img" id="waPinnedImgTag">
+                       <div class="wa-dropzone-actions" id="waPinnedImgActions">
+                           <button type="button" class="wa-dropzone-btn" id="waPinnedImgChange" title="Modifier"><i class="bi bi-pencil"></i></button>
+                           <button type="button" class="wa-dropzone-btn wa-dropzone-btn-danger" id="waPinnedImgClear" title="Supprimer"><i class="bi bi-trash"></i></button>
+                       </div>`
+                    : `<div class="wa-dropzone-placeholder" id="waPinnedPlaceholder">
+                           <i class="bi bi-plus-lg"></i>
+                           <span>Cliquer ou glisser une image</span>
+                       </div>`
+                }
             </div>
         </div>
     </div>`;
@@ -227,33 +227,112 @@ document.addEventListener('click', function(e) {
     document.getElementById('waPinnedText')?.focus();
 });
 
-// ── Pinned image upload ──
-document.addEventListener('change', async function(e) {
-    if (e.target.id !== 'waPinnedImgFile' || !e.target.files[0]) return;
+// ── Pinned image — dropzone ──
+
+async function uploadPinnedImage(file) {
     const fd = new FormData();
-    fd.append('image', e.target.files[0]);
+    fd.append('image', file);
     fd.append('action', 'admin_upload_pinned_image');
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const res = await fetch('/spocspace/admin/api.php', {
         method: 'POST', body: fd,
         headers: { 'X-CSRF-Token': csrf }
     }).then(r => r.json());
-    e.target.value = '';
     if (res.success && res.image_url) {
-        document.getElementById('waPinnedImgUrl').value = res.image_url;
-        document.getElementById('waPinnedImgPreview').innerHTML = `<img src="${esc(res.image_url)}">`;
+        setPinnedImage(res.image_url);
         markUnsaved();
         toast('Image téléchargée');
     } else {
         toast(res.error || 'Erreur upload', 'error');
     }
-});
+}
+
+function setPinnedImage(url) {
+    const dz = document.getElementById('waPinnedDropzone');
+    if (!dz) return;
+    document.getElementById('waPinnedImgUrl').value = url;
+    if (url) {
+        dz.classList.add('has-image');
+        // Remove placeholder if present
+        document.getElementById('waPinnedPlaceholder')?.remove();
+        // Add or update img + actions
+        let img = document.getElementById('waPinnedImgTag');
+        if (!img) {
+            img = document.createElement('img');
+            img.id = 'waPinnedImgTag';
+            img.className = 'wa-dropzone-img';
+            dz.insertBefore(img, dz.firstChild);
+        }
+        img.src = url;
+        if (!document.getElementById('waPinnedImgActions')) {
+            dz.insertAdjacentHTML('beforeend',
+                `<div class="wa-dropzone-actions" id="waPinnedImgActions">
+                    <button type="button" class="wa-dropzone-btn" id="waPinnedImgChange" title="Modifier"><i class="bi bi-pencil"></i></button>
+                    <button type="button" class="wa-dropzone-btn wa-dropzone-btn-danger" id="waPinnedImgClear" title="Supprimer"><i class="bi bi-trash"></i></button>
+                </div>`);
+        }
+    } else {
+        dz.classList.remove('has-image');
+        document.getElementById('waPinnedImgTag')?.remove();
+        document.getElementById('waPinnedImgActions')?.remove();
+        if (!document.getElementById('waPinnedPlaceholder')) {
+            dz.insertAdjacentHTML('beforeend',
+                `<div class="wa-dropzone-placeholder" id="waPinnedPlaceholder">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Cliquer ou glisser une image</span>
+                </div>`);
+        }
+    }
+}
+
+// Click on dropzone (placeholder or change button) → open file picker
 document.addEventListener('click', function(e) {
+    const dz = document.getElementById('waPinnedDropzone');
+    if (!dz) return;
+    // Click placeholder or change button
+    if (e.target.closest('#waPinnedPlaceholder') || e.target.closest('#waPinnedImgChange')) {
+        document.getElementById('waPinnedImgFile')?.click();
+        return;
+    }
+    // Click dropzone itself (not on actions or image)
+    if (e.target === dz && !dz.classList.contains('has-image')) {
+        document.getElementById('waPinnedImgFile')?.click();
+        return;
+    }
+    // Delete
     if (e.target.closest('#waPinnedImgClear')) {
-        document.getElementById('waPinnedImgUrl').value = '';
-        document.getElementById('waPinnedImgPreview').innerHTML = '<i class="bi bi-image" style="font-size:1.5rem;color:#bbb"></i>';
-        e.target.closest('#waPinnedImgClear')?.remove();
+        setPinnedImage('');
         markUnsaved();
+    }
+});
+
+// File input change
+document.addEventListener('change', function(e) {
+    if (e.target.id !== 'waPinnedImgFile' || !e.target.files[0]) return;
+    uploadPinnedImage(e.target.files[0]);
+    e.target.value = '';
+});
+
+// Drag & drop
+document.addEventListener('dragover', function(e) {
+    const dz = document.getElementById('waPinnedDropzone');
+    if (!dz || !dz.contains(e.target)) return;
+    e.preventDefault();
+    dz.classList.add('dragging');
+});
+document.addEventListener('dragleave', function(e) {
+    const dz = document.getElementById('waPinnedDropzone');
+    if (!dz) return;
+    if (!dz.contains(e.relatedTarget)) dz.classList.remove('dragging');
+});
+document.addEventListener('drop', function(e) {
+    const dz = document.getElementById('waPinnedDropzone');
+    if (!dz || !dz.contains(e.target)) return;
+    e.preventDefault();
+    dz.classList.remove('dragging');
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+        uploadPinnedImage(file);
     }
 });
 
@@ -328,12 +407,10 @@ function renderCardsEditor(content) {
         html += `
         <div class="wa-card-edit" data-idx="${i}">
             <div class="wa-card-edit-header">
-                <div class="wa-icon-input" style="display:flex;align-items:center;gap:6px">
-                    <div class="wa-card-edit-icon" style="cursor:pointer" onclick="WA.openIconPicker('cards.${i}.icon')" title="Choisir"><i class="bi ${c.icon || 'bi-square'}"></i></div>
-                    <input type="text" class="wa-input wa-input-sm" value="${esc(c.icon || '')}" data-content="cards.${i}.icon" placeholder="bi-icon" style="width:110px"
-                        oninput="this.previousElementSibling.querySelector('i').className='bi '+this.value">
-                    <button type="button" class="wa-btn-icon" onclick="WA.openIconPicker('cards.${i}.icon')" title="Parcourir"><i class="bi bi-grid-3x3-gap"></i></button>
+                <div class="wa-icon-pick-btn wa-icon-pick-sm" onclick="WA.openIconPicker('cards.${i}.icon')" title="Choisir une icône">
+                    <i class="bi ${c.icon || 'bi-square'}"></i>
                 </div>
+                <input type="hidden" value="${esc(c.icon || '')}" data-content="cards.${i}.icon">
                 <button class="wa-btn-icon" onclick="WA.removeCard(${i})" title="Supprimer"><i class="bi bi-trash"></i></button>
             </div>
             <div class="wa-form-group">
@@ -802,9 +879,13 @@ document.getElementById('waIconGrid')?.addEventListener('click', (e) => {
     if (input) {
         input.value = icon;
         input.dispatchEvent(new Event('input', { bubbles: true }));
-        // Update preview icon
-        const preview = input.closest('.wa-icon-input')?.querySelector('i.bi');
-        if (preview) preview.className = 'bi ' + icon;
+        // Update the icon pick button preview (sibling or nearby .wa-icon-pick-btn)
+        const parent = input.parentElement;
+        const pickBtn = parent?.querySelector('.wa-icon-pick-btn') || input.previousElementSibling;
+        if (pickBtn) {
+            const iEl = pickBtn.querySelector('i.bi') || pickBtn;
+            if (iEl.tagName === 'I') iEl.className = 'bi ' + icon;
+        }
     }
 
     closeIconPicker();
