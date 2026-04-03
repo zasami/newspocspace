@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <div id="mur-page">
 
     <!-- Hero banner -->

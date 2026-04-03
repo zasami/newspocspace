@@ -305,9 +305,15 @@ async function setupComposer(user) {
                 const catSelect = toolbar.querySelector('#composerCategory');
                 if (catSelect) catSelect.addEventListener('mousedown', (e) => e.stopPropagation());
 
-                // Update active states
+                // Update active states + keep expanded when has content
                 composerEditor.on('selectionUpdate', () => updateToolbarActive(toolbar));
-                composerEditor.on('update', () => updateToolbarActive(toolbar));
+                composerEditor.on('update', () => {
+                    updateToolbarActive(toolbar);
+                    if (wrap) {
+                        const hasContent = composerEditor.getHTML() !== '<p></p>';
+                        wrap.classList.toggle('mur-composer-expanded', hasContent);
+                    }
+                });
             }
         }
     }
@@ -384,6 +390,7 @@ async function submitPost() {
 
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send-fill"></i> Publier'; }
     if (composerEditor) composerEditor.commands.setContent('');
+    document.getElementById('composerWrap')?.classList.remove('mur-composer-expanded');
     pendingFiles = [];
     renderFilePreview();
     toast(res.message || 'Post publié');
