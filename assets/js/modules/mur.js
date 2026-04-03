@@ -274,25 +274,29 @@ async function setupComposer(user) {
             // Toolbar buttons
             const toolbar = document.getElementById('composerToolbar');
             if (toolbar) {
-                toolbar.querySelectorAll('.mur-tb-btn').forEach(btn => {
-                    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep editor focus
+                toolbar.querySelectorAll('.mur-tb-btn:not([data-action="emoji"])').forEach(btn => {
+                    btn.addEventListener('mousedown', (e) => e.preventDefault());
                     btn.addEventListener('click', () => {
                         const action = btn.dataset.action;
                         if (action === 'bold') composerEditor.chain().focus().toggleBold().run();
                         else if (action === 'italic') composerEditor.chain().focus().toggleItalic().run();
                         else if (action === 'highlight') composerEditor.chain().focus().toggleHighlight().run();
-                        else if (action === 'emoji') {
-                            if (!composerEmojiPicker) {
-                                btn.classList.add('zkr-emoji-trigger');
-                                composerEmojiPicker = new EmojiPicker();
-                                composerEmojiPicker.init(btn, (emoji) => {
-                                    composerEditor.chain().focus().insertContent(emoji).run();
-                                });
-                                composerEmojiPicker.toggle();
-                            }
-                        }
                     });
                 });
+
+                // Emoji picker — let EmojiPicker manage its own click toggle
+                const emojiBtn = toolbar.querySelector('[data-action="emoji"]');
+                if (emojiBtn) {
+                    emojiBtn.classList.add('zkr-emoji-trigger');
+                    composerEmojiPicker = new EmojiPicker();
+                    composerEmojiPicker.init(emojiBtn, (emoji) => {
+                        composerEditor.chain().focus().insertContent(emoji).run();
+                    });
+                }
+
+                // Category select — prevent focus steal
+                const catSelect = toolbar.querySelector('#composerCategory');
+                if (catSelect) catSelect.addEventListener('mousedown', (e) => e.stopPropagation());
 
                 // Update active states
                 composerEditor.on('selectionUpdate', () => updateToolbarActive(toolbar));

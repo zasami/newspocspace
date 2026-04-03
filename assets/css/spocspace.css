@@ -3036,7 +3036,7 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-composer-row { display: flex; gap: 12px; }
 .mur-composer-avatar { width: 40px; height: 40px; border-radius: 50%; background: #B8C9D4; color: #3B4F6B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .82rem; flex-shrink: 0; overflow: hidden; }
 .mur-composer-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.mur-composer-wrap { flex: 1; display: flex; flex-direction: column; border: 1.5px solid var(--ss-border, #e5e7eb); border-radius: 14px; background: var(--ss-bg, #F7F5F2); transition: border-color .25s ease, background .25s ease; overflow: hidden; }
+.mur-composer-wrap { flex: 1; display: flex; flex-direction: column; border: 1.5px solid var(--ss-border, #e5e7eb); border-radius: 22px; background: var(--ss-bg, #F7F5F2); transition: border-color .25s ease, background .25s ease; overflow: hidden; }
 .mur-composer-wrap:focus-within { border-color: #bcd2cb; background: #fff; }
 
 /* Editor content area */
@@ -3047,17 +3047,19 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-composer-editor .ProseMirror mark { background: #fef3cd; padding: .05em .15em; border-radius: 2px; }
 .mur-composer-wrap:focus-within .mur-composer-editor .ProseMirror { min-height: 100px; }
 
-/* Bottom bar: toolbar left + icons right — hidden until focus */
-.mur-composer-bar { display: none; align-items: center; justify-content: space-between; padding: 4px 8px 6px; border-top: 1px solid var(--ss-border, #e5e7eb); }
-.mur-composer-wrap:focus-within .mur-composer-bar { display: flex; }
+/* Bottom bar: always visible — icons right, toolbar appears on focus */
+.mur-composer-bar { display: flex; align-items: center; justify-content: flex-end; padding: 2px 8px 4px; }
+.mur-composer-wrap:focus-within .mur-composer-bar { justify-content: space-between; border-top: 1px solid var(--ss-border, #e5e7eb); padding: 4px 8px 6px; }
 
-/* Mini toolbar (bold, italic, highlight, emoji) */
-.mur-composer-toolbar { display: flex; gap: 2px; }
+/* Mini toolbar (bold, italic, highlight, emoji, category) — hidden until focus */
+.mur-composer-toolbar { display: none; align-items: center; gap: 2px; }
+.mur-composer-wrap:focus-within .mur-composer-toolbar { display: flex; }
 .mur-tb-btn { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); border: none; background: none; font-size: .88rem; transition: all .15s; }
 .mur-tb-btn:hover { background: rgba(188,210,203,.25); color: #2d4a43; }
 .mur-tb-btn.active { background: rgba(188,210,203,.4); color: #2d4a43; }
+.mur-composer-cat { border: 1px solid var(--ss-border, #e5e7eb); border-radius: 6px; padding: 3px 8px; font-size: .75rem; background: var(--ss-surface, #fff); cursor: pointer; margin-left: 4px; color: var(--ss-text, #333); }
 
-/* Media icons (right side) */
+/* Media icons (right side, always visible) */
 .mur-composer-icons { display: flex; gap: 2px; }
 .mur-composer-icon-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ss-muted, #888); transition: all .15s; font-size: 1rem; }
 .mur-composer-icon-btn:hover { background: rgba(188,210,203,.2); color: #2d4a43; }

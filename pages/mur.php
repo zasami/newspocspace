@@ -48,7 +48,8 @@
                                 <button type="button" class="mur-tb-btn" data-action="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
                                 <button type="button" class="mur-tb-btn" data-action="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
                                 <button type="button" class="mur-tb-btn" data-action="highlight" title="Surligner"><i class="bi bi-brush"></i></button>
-                                <button type="button" class="mur-tb-btn" data-action="emoji" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                                <button type="button" class="mur-tb-btn mur-tb-emoji" data-action="emoji" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                                <select id="composerCategory" class="mur-composer-cat"></select>
                             </div>
                             <div class="mur-composer-icons">
                                 <label class="mur-composer-icon-btn" title="Photo"><i class="bi bi-camera"></i><input type="file" id="composerFiles" multiple accept="image/*" style="display:none"></label>
@@ -60,7 +61,6 @@
                 </div>
                 <div class="mur-composer-preview" id="composerPreview" style="display:none"></div>
                 <div class="mur-composer-bottom">
-                    <select id="composerCategory" class="mur-select"></select>
                     <label class="mur-composer-anon" id="composerAnonWrap" style="display:none">
                         <input type="checkbox" id="composerAnon"> Anonyme
                     </label>
