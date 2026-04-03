@@ -170,6 +170,7 @@ return [
         'admin_get_formations', 'admin_create_formation', 'admin_update_formation', 'admin_delete_formation',
         'admin_get_formation_detail', 'admin_add_formation_participant', 'admin_remove_formation_participant',
         'admin_update_formation_participant',
+        'admin_import_fegems_formations', 'admin_save_imported_formations', 'admin_import_formations_file',
     ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',

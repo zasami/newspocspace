@@ -328,7 +328,7 @@ function admin_get_formations()
     require_responsable();
 
     $formations = Db::fetchAll(
-        "SELECT f.*,
+        "SELECT f.*, f.type AS type_formation,
                 (SELECT COUNT(*) FROM formation_participants fp WHERE fp.formation_id = f.id) AS nb_participants,
                 u.prenom AS created_prenom, u.nom AS created_nom
          FROM formations f
@@ -336,7 +336,14 @@ function admin_get_formations()
          ORDER BY f.date_debut DESC, f.created_at DESC"
     );
 
-    respond(['success' => true, 'formations' => $formations]);
+    $stats = [
+        'total' => (int) Db::getOne("SELECT COUNT(*) FROM formations"),
+        'planifiee' => (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut = 'planifiee'"),
+        'en_cours' => (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut = 'en_cours'"),
+        'terminee' => (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut = 'terminee'"),
+    ];
+
+    respond(['success' => true, 'formations' => $formations, 'stats' => $stats]);
 }
 
 function admin_create_formation()
@@ -354,7 +361,7 @@ function admin_create_formation()
         [
             $id, $titre,
             Sanitize::text($params['description'] ?? '', 10000),
-            in_array($params['type'] ?? '', ['interne','externe','e-learning','certificat']) ? $params['type'] : 'interne',
+            in_array($params['type_formation'] ?? $params['type'] ?? '', ['interne','externe','e-learning','certificat']) ? ($params['type_formation'] ?? $params['type']) : 'interne',
             Sanitize::text($params['formateur'] ?? '', 255),
             Sanitize::text($params['lieu'] ?? '', 255),
             Sanitize::date($params['date_debut'] ?? '') ?: null,
@@ -385,7 +392,8 @@ function admin_update_formation()
     foreach ($textFields as $f => $max) {
         if (isset($params[$f])) { $sets[] = "$f = ?"; $binds[] = Sanitize::text($params[$f], $max); }
     }
-    if (isset($params['type'])) { $sets[] = 'type = ?'; $binds[] = in_array($params['type'], ['interne','externe','e-learning','certificat']) ? $params['type'] : 'interne'; }
+    $typeVal = $params['type_formation'] ?? $params['type'] ?? null;
+    if ($typeVal !== null) { $sets[] = 'type = ?'; $binds[] = in_array($typeVal, ['interne','externe','e-learning','certificat']) ? $typeVal : 'interne'; }
     if (isset($params['date_debut'])) { $sets[] = 'date_debut = ?'; $binds[] = Sanitize::date($params['date_debut']) ?: null; }
     if (isset($params['date_fin'])) { $sets[] = 'date_fin = ?'; $binds[] = Sanitize::date($params['date_fin']) ?: null; }
     if (isset($params['duree_heures'])) { $sets[] = 'duree_heures = ?'; $binds[] = $params['duree_heures']; }
@@ -423,7 +431,7 @@ function admin_get_formation_detail()
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $formation = Db::fetch("SELECT * FROM formations WHERE id = ?", [$id]);
+    $formation = Db::fetch("SELECT *, type AS type_formation FROM formations WHERE id = ?", [$id]);
     if (!$formation) not_found();
 
     $formation['participants'] = Db::fetchAll(
@@ -483,4 +491,191 @@ function admin_update_formation_participant()
     $binds[] = $id;
     Db::exec("UPDATE formation_participants SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
     respond(['success' => true, 'message' => 'Participant mis à jour']);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMPORT FORMATIONS — FEGEMS scrape
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function admin_import_fegems_formations()
+{
+    require_admin();
+
+    $html = @file_get_contents('https://www.fegems.ch/formation/');
+    if (!$html) bad_request('Impossible de contacter fegems.ch');
+
+    $dom = new DOMDocument();
+    @$dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NOERROR);
+    $xpath = new DOMXPath($dom);
+
+    $articles = $xpath->query("//article[contains(@class, 'formation')]");
+    $formations = [];
+
+    foreach ($articles as $article) {
+        // Title + URL
+        $titleNode = $xpath->query(".//h2[contains(@class, 'fancy-heading')]//span[contains(@class, 'main-head')]/a", $article)->item(0);
+        if (!$titleNode) continue;
+        $titre = trim($titleNode->textContent);
+        $url = $titleNode->getAttribute('href');
+
+        // Image
+        $imgNode = $xpath->query(".//div[contains(@class, 'image-wrap')]//img", $article)->item(0);
+        $imageUrl = $imgNode ? $imgNode->getAttribute('src') : '';
+        // Try to get larger image by removing size suffix
+        if ($imageUrl) {
+            $imageUrl = preg_replace('/-\d+x\d+\./', '.', $imageUrl);
+        }
+
+        // Date — icon block with alarm-clock
+        $dateText = '';
+        $iconBlocks = $xpath->query(".//div[contains(@class, 'module-icon')]", $article);
+        foreach ($iconBlocks as $block) {
+            $svg = $xpath->query(".//svg[contains(@class, 'alarm-clock')]", $block)->item(0);
+            if ($svg) {
+                $span = $xpath->query(".//span", $block)->item(0);
+                $dateText = $span ? trim($span->textContent) : '';
+                break;
+            }
+        }
+
+        // Modalite — icon block with info-alt
+        $modalite = '';
+        foreach ($iconBlocks as $block) {
+            $svg = $xpath->query(".//svg[contains(@class, 'info-alt')]", $block)->item(0);
+            if ($svg) {
+                $span = $xpath->query(".//span", $block)->item(0);
+                $modalite = $span ? trim($span->textContent) : '';
+                $modalite = preg_replace('/^Modalit[eé]\s*:\s*/i', '', $modalite);
+                break;
+            }
+        }
+
+        // Categories from article classes
+        $classes = $article->getAttribute('class');
+        $cats = [];
+        if (preg_match_all('/certification-thematiques-([a-z0-9-]+)/', $classes, $m)) {
+            $cats = $m[1];
+        }
+
+        // Parse dates
+        $dateDebut = null;
+        $dateFin = null;
+        if (preg_match('/Du\s+(\d{2})\.(\d{2})\.(\d{4})\s+au\s+(\d{2})\.(\d{2})\.(\d{4})/i', $dateText, $dm)) {
+            $dateDebut = "$dm[3]-$dm[2]-$dm[1]";
+            $dateFin = "$dm[6]-$dm[5]-$dm[4]";
+        } elseif (preg_match('/Le\s+(\d{2})\.(\d{2})\.(\d{4})/i', $dateText, $dm)) {
+            $dateDebut = "$dm[3]-$dm[2]-$dm[1]";
+            $dateFin = $dateDebut;
+        }
+
+        $formations[] = [
+            'titre' => $titre,
+            'url' => $url,
+            'image_url' => $imageUrl,
+            'date_text' => $dateText,
+            'date_debut' => $dateDebut,
+            'date_fin' => $dateFin,
+            'modalite' => $modalite,
+            'categories' => implode(', ', array_map(function($s) {
+                return ucfirst(str_replace('-', ' ', $s));
+            }, $cats)),
+        ];
+    }
+
+    if (empty($formations)) bad_request('Aucune formation trouvée sur le site FEGEMS');
+
+    respond(['success' => true, 'formations' => $formations, 'count' => count($formations)]);
+}
+
+function admin_save_imported_formations()
+{
+    require_admin();
+    global $params;
+
+    $items = $params['formations'] ?? [];
+    if (empty($items) || !is_array($items)) bad_request('Aucune formation à importer');
+
+    $imported = 0;
+    foreach ($items as $f) {
+        $titre = Sanitize::text($f['titre'] ?? '', 255);
+        if (!$titre) continue;
+
+        // Skip if already imported (same source_url)
+        $url = $f['url'] ?? '';
+        if ($url) {
+            $existing = Db::fetch("SELECT id FROM formations WHERE source_url = ?", [$url]);
+            if ($existing) continue;
+        }
+
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO formations (id, titre, description, type, formateur, lieu, date_debut, date_fin, modalite, categorie, source_url, image_url, statut, created_by)
+             VALUES (?, ?, ?, 'externe', ?, ?, ?, ?, ?, ?, ?, ?, 'planifiee', ?)",
+            [
+                $id, $titre,
+                Sanitize::text($f['description'] ?? '', 10000),
+                Sanitize::text($f['formateur'] ?? '', 255),
+                Sanitize::text($f['lieu'] ?? '', 255),
+                Sanitize::date($f['date_debut'] ?? '') ?: null,
+                Sanitize::date($f['date_fin'] ?? '') ?: null,
+                Sanitize::text($f['modalite'] ?? '', 100),
+                Sanitize::text($f['categories'] ?? $f['categorie'] ?? '', 255),
+                $url ?: null,
+                $f['image_url'] ?? null,
+                $_SESSION['ss_user']['id'],
+            ]
+        );
+        $imported++;
+    }
+
+    respond(['success' => true, 'message' => "$imported formation(s) importée(s)", 'imported' => $imported]);
+}
+
+function admin_import_formations_file()
+{
+    require_admin();
+
+    if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        bad_request('Fichier manquant');
+    }
+
+    $file = $_FILES['file'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if (!in_array($ext, ['csv', 'txt'])) {
+        bad_request('Format non supporté. Utilisez un fichier CSV (séparateur ; ou ,).');
+    }
+
+    $content = file_get_contents($file['tmp_name']);
+    $lines = array_filter(explode("\n", str_replace("\r\n", "\n", $content)));
+    if (count($lines) < 2) bad_request('Fichier vide ou incomplet');
+
+    $sep = substr_count($lines[0], ';') > substr_count($lines[0], ',') ? ';' : ',';
+    $header = str_getcsv(array_shift($lines), $sep);
+    $headerMap = array_flip(array_map('strtolower', array_map('trim', $header)));
+
+    $formations = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (!$line) continue;
+        $row = str_getcsv($line, $sep);
+
+        $titre = trim($row[$headerMap['titre'] ?? $headerMap['title'] ?? $headerMap['nom'] ?? 0] ?? '');
+        if (!$titre) continue;
+
+        $formations[] = [
+            'titre' => $titre,
+            'description' => trim($row[$headerMap['description'] ?? $headerMap['desc'] ?? 999] ?? ''),
+            'formateur' => trim($row[$headerMap['formateur'] ?? $headerMap['trainer'] ?? 999] ?? ''),
+            'lieu' => trim($row[$headerMap['lieu'] ?? $headerMap['location'] ?? 999] ?? ''),
+            'date_debut' => trim($row[$headerMap['date_debut'] ?? $headerMap['date'] ?? 999] ?? ''),
+            'date_fin' => trim($row[$headerMap['date_fin'] ?? 999] ?? ''),
+            'modalite' => trim($row[$headerMap['modalite'] ?? $headerMap['modalité'] ?? 999] ?? ''),
+            'categories' => trim($row[$headerMap['categorie'] ?? $headerMap['catégorie'] ?? $headerMap['category'] ?? 999] ?? ''),
+        ];
+    }
+
+    if (empty($formations)) bad_request('Aucune formation trouvée dans le fichier');
+
+    respond(['success' => true, 'formations' => $formations, 'count' => count($formations)]);
 }
