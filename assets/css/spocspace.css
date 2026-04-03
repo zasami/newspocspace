@@ -2807,7 +2807,8 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .ss-alert-meta { font-size: 0.78rem; color: #999; }
 
 /* Content */
-.ss-alert-content { padding: 1.25rem 1.5rem; }
+.ss-alert-content { padding: 1.25rem 1.5rem; max-height: 55vh; overflow-y: auto; scroll-behavior: smooth; }
+.ss-alert-btn:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.3); }
 .ss-alert-message {
   display: flex; gap: 12px; align-items: flex-start;
   padding: 1rem 1.15rem; border-radius: 10px;

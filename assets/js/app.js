@@ -641,12 +641,12 @@ function showAlertModal(alert) {
                 <div class="ss-alert-content">
                     <div class="ss-alert-message ${isHaute ? 'ss-alert-message--danger' : ''}">
                         <i class="bi ${isHaute ? 'bi-exclamation-circle' : 'bi-info-circle'} ss-alert-message-icon"></i>
-                        <div class="ss-alert-message-text">${escapeHtml(alert.message)}</div>
+                        <div class="ss-alert-message-text">${alert.message}</div>
                     </div>
                 </div>
                 <div class="ss-alert-footer">
-                    <button class="ss-alert-btn ${isHaute ? 'ss-alert-btn-danger' : ''}">
-                        <i class="bi bi-check-lg"></i> J'ai pris connaissance
+                    <button class="ss-alert-btn ${isHaute ? 'ss-alert-btn-danger' : ''}" disabled>
+                        <i class="bi bi-lock"></i> Lire le message complet
                     </button>
                 </div>
             </div>
@@ -654,7 +654,28 @@ function showAlertModal(alert) {
         document.body.appendChild(overlay);
         requestAnimationFrame(() => overlay.classList.add('show'));
 
-        overlay.querySelector('.ss-alert-btn').addEventListener('click', () => {
+        const btn = overlay.querySelector('.ss-alert-btn');
+        const content = overlay.querySelector('.ss-alert-content');
+        const btnTextReady = `<i class="bi bi-check-lg"></i> J'ai pris connaissance`;
+        const btnTextLocked = `<i class="bi bi-lock"></i> Lire le message complet`;
+
+        function checkScroll() {
+            // Content is short enough (no overflow) or scrolled to bottom
+            const isShort = content.scrollHeight <= content.clientHeight + 5;
+            const isBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
+            if (isShort || isBottom) {
+                btn.disabled = false;
+                btn.innerHTML = btnTextReady;
+                content.removeEventListener('scroll', checkScroll);
+            }
+        }
+
+        content.addEventListener('scroll', checkScroll);
+        // Check immediately (short content = unlock right away)
+        setTimeout(checkScroll, 100);
+
+        btn.addEventListener('click', () => {
+            if (btn.disabled) return;
             overlay.classList.remove('show');
             setTimeout(() => { overlay.remove(); resolve(); }, 300);
         });

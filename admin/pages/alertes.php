@@ -386,7 +386,7 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
                     <i class="bi bi-eye"></i> ${res.read_count} / ${res.total_users} lu${res.read_count > 1 ? 's' : ''}
                 </span>
             </div>
-            <div id="alertDetailMsgBox" class="al-msg-box" data-open="0">${escapeHtml(a.message || '')}</div>`;
+            <div id="alertDetailMsgBox" class="al-msg-box" data-open="0">${a.message || ''}</div>`;
 
         detailUsersData = res.users;
         document.getElementById('countAll').textContent    = res.total_users;
