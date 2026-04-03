@@ -229,6 +229,13 @@ export class EmojiPicker {
       showBelow = true;
     }
 
+    // Si en dessous et dépasse le bas de l'écran, remonter pour rester visible
+    if (showBelow && top + pickerHeight > window.innerHeight - 10) {
+      top = window.innerHeight - pickerHeight - 10;
+      // Si ça remonte trop haut, caler au minimum
+      if (top < minTop) top = minTop;
+    }
+
     // Vérifier qu'on ne dépasse pas à droite
     if (left + pickerWidth > window.innerWidth - 10) {
       left = window.innerWidth - pickerWidth - 10;
@@ -237,6 +244,18 @@ export class EmojiPicker {
     // Vérifier qu'on ne dépasse pas à gauche
     if (left < 10) {
       left = 10;
+    }
+
+    // Limiter la hauteur si le picker ne rentre pas dans le viewport
+    const maxAvailable = window.innerHeight - top - 10;
+    const emojiBody = this.picker.querySelector('.zkr-emoji-body');
+    if (pickerHeight > maxAvailable && emojiBody) {
+      const headerHeight = this.picker.querySelector('.zkr-emoji-header')?.offsetHeight || 0;
+      emojiBody.style.maxHeight = (maxAvailable - headerHeight - 10) + 'px';
+      emojiBody.style.overflowY = 'auto';
+    } else if (emojiBody) {
+      emojiBody.style.maxHeight = '';
+      emojiBody.style.overflowY = '';
     }
 
     // Calculer la position du triangle (caret) pour qu'il pointe vers le bouton
