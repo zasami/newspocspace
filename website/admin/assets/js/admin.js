@@ -108,9 +108,11 @@ function renderEditor(id) {
         <div class="wa-section-box-title"><i class="bi bi-type-h1"></i> En-tête de section</div>
         <div class="wa-form-group">
             <label>Badge — Icône</label>
-            <div class="wa-icon-input">
-                <div class="wa-icon-preview"><i class="bi ${s.badge_icon || 'bi-square'}"></i></div>
-                <input type="text" class="wa-input wa-input-sm" value="${esc(s.badge_icon || '')}" data-field="badge_icon" placeholder="bi-feather">
+            <div class="wa-icon-input" style="display:flex;align-items:center;gap:8px">
+                <div class="wa-icon-preview" style="cursor:pointer" onclick="WA.openIconPicker('badge_icon')" title="Choisir une icône"><i class="bi ${s.badge_icon || 'bi-square'}"></i></div>
+                <input type="text" class="wa-input wa-input-sm" value="${esc(s.badge_icon || '')}" data-field="badge_icon" placeholder="bi-feather"
+                    oninput="this.previousElementSibling.querySelector('i').className='bi '+this.value">
+                <button type="button" class="wa-btn wa-btn-sm wa-btn-ghost" onclick="WA.openIconPicker('badge_icon')" title="Parcourir les icônes"><i class="bi bi-grid-3x3-gap"></i></button>
             </div>
         </div>
         <div class="wa-form-group">
@@ -118,8 +120,9 @@ function renderEditor(id) {
             <input type="text" class="wa-input" value="${esc(s.badge_text || '')}" data-field="badge_text" placeholder="Ex: Notre engagement">
         </div>
         <div class="wa-form-group">
-            <label>Titre de la section</label>
+            <label>Titre de la section <small style="color:var(--wa-text-muted);font-weight:normal">(HTML autorisé : &lt;span class="ws-accent"&gt;mot&lt;/span&gt;)</small></label>
             <input type="text" class="wa-input" value="${esc(s.title || '')}" data-field="title" placeholder="Titre de la section">
+            ${s.title ? `<div style="margin-top:6px;padding:8px 12px;background:var(--wa-bg);border-radius:8px;font-size:13px">Aperçu : ${s.title}</div>` : ''}
         </div>
         <div class="wa-form-group">
             <label>Sous-titre / Description</label>
@@ -325,10 +328,11 @@ function renderCardsEditor(content) {
         html += `
         <div class="wa-card-edit" data-idx="${i}">
             <div class="wa-card-edit-header">
-                <div class="wa-icon-input">
-                    <div class="wa-card-edit-icon"><i class="bi ${c.icon || 'bi-square'}"></i></div>
-                    <input type="text" class="wa-input wa-input-sm" value="${esc(c.icon || '')}" data-content="cards.${i}.icon" placeholder="bi-icon" style="width:120px"
+                <div class="wa-icon-input" style="display:flex;align-items:center;gap:6px">
+                    <div class="wa-card-edit-icon" style="cursor:pointer" onclick="WA.openIconPicker('cards.${i}.icon')" title="Choisir"><i class="bi ${c.icon || 'bi-square'}"></i></div>
+                    <input type="text" class="wa-input wa-input-sm" value="${esc(c.icon || '')}" data-content="cards.${i}.icon" placeholder="bi-icon" style="width:110px"
                         oninput="this.previousElementSibling.querySelector('i').className='bi '+this.value">
+                    <button type="button" class="wa-btn-icon" onclick="WA.openIconPicker('cards.${i}.icon')" title="Parcourir"><i class="bi bi-grid-3x3-gap"></i></button>
                 </div>
                 <button class="wa-btn-icon" onclick="WA.removeCard(${i})" title="Supprimer"><i class="bi bi-trash"></i></button>
             </div>
@@ -702,7 +706,112 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ICON PICKER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let iconPickerTarget = null; // 'badge_icon' or 'cards.0.icon' etc.
+let iconPickerCat = null; // active category filter
+
+function openIconPicker(targetField) {
+    iconPickerTarget = targetField;
+    iconPickerCat = null;
+    const modal = document.getElementById('waIconModal');
+    modal.style.display = '';
+    document.getElementById('waIconSearch').value = '';
+    renderIconCats();
+    renderIconGrid('');
+    setTimeout(() => document.getElementById('waIconSearch').focus(), 100);
+}
+
+function closeIconPicker() {
+    document.getElementById('waIconModal').style.display = 'none';
+    iconPickerTarget = null;
+}
+
+document.getElementById('waIconModalClose')?.addEventListener('click', closeIconPicker);
+document.getElementById('waIconModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'waIconModal') closeIconPicker();
+});
+
+function renderIconCats() {
+    const BI = window.__BI_ICONS || {};
+    const cats = Object.keys(BI);
+    let html = `<div class="wa-ip-cat ${!iconPickerCat ? 'active' : ''}" data-cat="">Tout (${Object.values(BI).flat().length})</div>`;
+    cats.forEach(cat => {
+        const count = BI[cat].length;
+        html += `<div class="wa-ip-cat ${iconPickerCat === cat ? 'active' : ''}" data-cat="${esc(cat)}">${esc(cat)} (${count})</div>`;
+    });
+    document.getElementById('waIconCats').innerHTML = html;
+}
+
+document.getElementById('waIconCats')?.addEventListener('click', (e) => {
+    const cat = e.target.closest('.wa-ip-cat');
+    if (!cat) return;
+    iconPickerCat = cat.dataset.cat || null;
+    renderIconCats();
+    renderIconGrid(document.getElementById('waIconSearch').value);
+});
+
+document.getElementById('waIconSearch')?.addEventListener('input', (e) => {
+    renderIconGrid(e.target.value);
+});
+
+function renderIconGrid(search) {
+    const BI = window.__BI_ICONS || {};
+    const q = (search || '').toLowerCase().trim();
+    const grid = document.getElementById('waIconGrid');
+    let html = '';
+    let total = 0;
+
+    const catsToShow = iconPickerCat ? { [iconPickerCat]: BI[iconPickerCat] || [] } : BI;
+
+    for (const [cat, icons] of Object.entries(catsToShow)) {
+        const filtered = icons.filter(ic => !q || ic.toLowerCase().includes(q));
+        if (!filtered.length) continue;
+
+        html += `<div class="wa-ip-cat-title">${esc(cat)} (${filtered.length})</div>`;
+        filtered.forEach(ic => {
+            const shortName = ic.replace('bi-', '');
+            html += `<div class="wa-ip-icon" data-icon="${esc(ic)}" title="${esc(ic)}">
+                <i class="bi ${ic}"></i>
+                <span class="wa-ip-name">${esc(shortName)}</span>
+            </div>`;
+            total++;
+        });
+    }
+
+    if (!total) {
+        html = '<div class="wa-ip-empty"><i class="bi bi-search" style="font-size:2rem;opacity:.2;display:block;margin-bottom:8px"></i>Aucune icône trouvée</div>';
+    }
+
+    grid.innerHTML = html;
+}
+
+document.getElementById('waIconGrid')?.addEventListener('click', (e) => {
+    const el = e.target.closest('.wa-ip-icon');
+    if (!el || !iconPickerTarget) return;
+
+    const icon = el.dataset.icon;
+    const container = document.getElementById('waEditorContent');
+
+    // Find the target input (data-field or data-content)
+    let input = container?.querySelector(`[data-field="${iconPickerTarget}"]`)
+             || container?.querySelector(`[data-content="${iconPickerTarget}"]`);
+
+    if (input) {
+        input.value = icon;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        // Update preview icon
+        const preview = input.closest('.wa-icon-input')?.querySelector('i.bi');
+        if (preview) preview.className = 'bi ' + icon;
+    }
+
+    closeIconPicker();
+    markUnsaved();
+});
+
 // ── Expose to global for onclick handlers ──
-window.WA = { save, deleteSection, addCard, removeCard, addTimelineItem, removeTimelineItem, addStat, removeStat };
+window.WA = { save, deleteSection, addCard, removeCard, addTimelineItem, removeTimelineItem, addStat, removeStat, openIconPicker };
 
 })();

@@ -171,6 +171,24 @@ $sectionTypes = [
     </div>
 </div>
 
+<!-- ═══ Modal: Icon picker ═══ -->
+<div class="wa-modal-overlay" id="waIconModal" style="display:none">
+    <div class="wa-modal wa-modal-lg">
+        <div class="wa-modal-header">
+            <h3><i class="bi bi-grid-3x3-gap"></i> Choisir une icône</h3>
+            <button class="wa-modal-close" id="waIconModalClose">&times;</button>
+        </div>
+        <div class="wa-modal-body" style="padding:0">
+            <div class="wa-ip-search">
+                <i class="bi bi-search"></i>
+                <input type="text" class="wa-input" id="waIconSearch" placeholder="Rechercher une icône..." autofocus>
+            </div>
+            <div class="wa-ip-cats" id="waIconCats"></div>
+            <div class="wa-ip-grid" id="waIconGrid"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Section data for JS -->
 <script>
 window.__WA_SECTIONS = <?= json_encode(array_map(function($s) {
@@ -180,6 +198,7 @@ window.__WA_SECTIONS = <?= json_encode(array_map(function($s) {
 window.__WA_TYPES = <?= json_encode($sectionTypes, JSON_UNESCAPED_UNICODE) ?>;
 window.__WA_LABELS = <?= json_encode($sectionLabels, JSON_UNESCAPED_UNICODE) ?>;
 </script>
+<script src="assets/js/bootstrap-icons-data.js"></script>
 <script src="assets/js/admin.js?v=<?= time() ?>"></script>
 </body>
 </html>
