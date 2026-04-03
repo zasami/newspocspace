@@ -165,15 +165,37 @@ $existingConfig = Db::fetch(
     }
 
     // Save
+    const previousEmail = existing?.email_address || '';
     document.getElementById('emcSaveBtn')?.addEventListener('click', async () => {
         const data = getFormData();
         if (!data.email_address || !data.username || !data.imap_host || !data.smtp_host) {
             showToast('Remplissez tous les champs obligatoires', 'error');
             return;
         }
+
+        // Confirmation if email address changed
+        if (previousEmail && data.email_address !== previousEmail) {
+            const ok = await adminConfirm({
+                title: 'Changement de compte email',
+                text: `Vous changez de compte email :<br><br>`
+                    + `<strong>${escapeHtml(previousEmail)}</strong> → <strong>${escapeHtml(data.email_address)}</strong><br><br>`
+                    + `La boîte de réception affichera désormais les emails du nouveau compte. `
+                    + `Les emails de l'ancien compte resteront sur votre ancien serveur (<em>${escapeHtml(previousEmail)}</em>).`,
+                icon: 'bi-envelope-exclamation',
+                type: 'warning',
+                okText: 'Confirmer le changement',
+            });
+            if (!ok) return;
+        }
+
         const res = await adminApiPost('admin_email_ext_save_config', data);
-        if (res.success) showToast('Configuration enregistrée', 'success');
-        else showToast(res.message || 'Erreur', 'error');
+        if (res.success) {
+            showToast('Configuration enregistrée', 'success');
+            // Reload page to update previousEmail reference
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showToast(res.message || 'Erreur', 'error');
+        }
     });
 
     // Test

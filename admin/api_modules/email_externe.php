@@ -87,6 +87,12 @@ function admin_email_ext_save_config()
     }
 
     if ($existing) {
+        // If email address changed, clear cached emails from old account
+        $oldEmail = Db::getOne("SELECT email_address FROM email_externe_config WHERE user_id = ?", [$user['id']]);
+        if ($oldEmail && $oldEmail !== $emailAddress) {
+            Db::exec("DELETE FROM email_externe_cache WHERE user_id = ?", [$user['id']]);
+        }
+
         Db::exec(
             "UPDATE email_externe_config SET provider = ?, email_address = ?, display_name = ?,
              imap_host = ?, imap_port = ?, imap_encryption = ?,
