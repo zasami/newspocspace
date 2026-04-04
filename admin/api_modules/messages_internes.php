@@ -17,12 +17,16 @@ function admin_get_all_messages()
     $where = "e.is_draft = 0";
     $binds = [];
 
-    if ($tab === 'inbox') {
-        $where .= " AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
+    if ($tab === 'trash') {
+        $where .= " AND e.sender_deleted = 1";
+    } elseif ($tab === 'inbox') {
+        $where .= " AND e.sender_deleted = 0 AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
         $binds[] = $adminId;
     } elseif ($tab === 'sent') {
         $where .= " AND e.from_user_id = ? AND e.sender_deleted = 0";
         $binds[] = $adminId;
+    } else {
+        $where .= " AND e.sender_deleted = 0";
     }
 
     if ($search) {
@@ -198,19 +202,58 @@ function admin_send_message()
 function admin_delete_message()
 {
     global $params;
-    require_admin();
+    require_responsable();
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
     $email = Db::fetch("SELECT id FROM messages WHERE id = ?", [$id]);
-    if (!$email) not_found('Email non trouvé');
+    if (!$email) not_found('Message non trouvé');
 
-    // Hard delete for admin
+    // Soft delete → move to trash
+    Db::exec("UPDATE messages SET sender_deleted = 1 WHERE id = ?", [$id]);
+
+    respond(['success' => true]);
+}
+
+function admin_restore_message()
+{
+    global $params;
+    require_responsable();
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    Db::exec("UPDATE messages SET sender_deleted = 0 WHERE id = ?", [$id]);
+
+    respond(['success' => true]);
+}
+
+function admin_purge_message()
+{
+    global $params;
+    require_admin();
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    // Hard delete — permanent
     Db::exec("DELETE FROM message_attachments WHERE email_id = ?", [$id]);
     Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$id]);
     Db::exec("DELETE FROM messages WHERE id = ?", [$id]);
 
     respond(['success' => true]);
+}
+
+function admin_purge_all_trash()
+{
+    require_admin();
+
+    $trashed = Db::fetchAll("SELECT id FROM messages WHERE sender_deleted = 1");
+    foreach ($trashed as $msg) {
+        Db::exec("DELETE FROM message_attachments WHERE email_id = ?", [$msg['id']]);
+        Db::exec("DELETE FROM message_recipients WHERE email_id = ?", [$msg['id']]);
+        Db::exec("DELETE FROM messages WHERE id = ?", [$msg['id']]);
+    }
+
+    respond(['success' => true, 'purged' => count($trashed)]);
 }
 
 function admin_get_message_stats()
@@ -223,8 +266,9 @@ function admin_get_message_stats()
     $userId = $_SESSION['ss_user']['id'] ?? '';
     $unread = (int)Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
     $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
+    $trash = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND sender_deleted = 1");
 
-    respond(['success' => true, 'stats' => compact('total', 'today', 'week', 'unread', 'attachments')]);
+    respond(['success' => true, 'stats' => compact('total', 'today', 'week', 'unread', 'attachments', 'trash')]);
 }
 
 function admin_download_message_attachment()

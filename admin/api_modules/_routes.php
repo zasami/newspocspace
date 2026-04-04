@@ -39,7 +39,8 @@ return [
     ],
     'messages_internes' => [
         'admin_get_all_messages', 'admin_get_message_detail', 'admin_get_message_contacts',
-        'admin_send_message', 'admin_delete_message', 'admin_get_message_stats',
+        'admin_send_message', 'admin_delete_message', 'admin_restore_message',
+        'admin_purge_message', 'admin_purge_all_trash', 'admin_get_message_stats',
         'admin_upload_message_attachment', 'admin_download_message_attachment',
         'admin_get_unread_counts',
     ],

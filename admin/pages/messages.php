@@ -74,8 +74,9 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
     <div class="adm-email-left-header">
       <div class="email-tabs" id="emailTabs">
         <div class="email-tabs-slider" id="emailTabsSlider"></div>
-        <button class="email-tab active" data-tab="inbox">Boîte de réception <span class="email-unread-badge" id="badgeInbox"><?= $emailStatsUnread > 0 ? $emailStatsUnread : '' ?></span></button>
+        <button class="email-tab active" data-tab="inbox">Réception <span class="email-unread-badge" id="badgeInbox"><?= $emailStatsUnread > 0 ? $emailStatsUnread : '' ?></span></button>
         <button class="email-tab" data-tab="sent">Envoyés</button>
+        <button class="email-tab" data-tab="trash"><i class="bi bi-trash3"></i> Corbeille <span class="email-unread-badge" id="badgeTrash"></span></button>
       </div>
     </div>
 
@@ -166,16 +167,19 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
         document.getElementById('emailNext')?.addEventListener('click', () => { if (currentPage < totalPagesVal) { currentPage++; loadList(); } });
 
         // Tab switching
+        const tabOrder = ['inbox', 'sent', 'trash'];
         document.querySelectorAll('#emailTabs .email-tab').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tab = btn.dataset.tab;
                 if (tab === currentTab) return;
                 currentTab = tab;
                 currentPage = 1;
+                selectedId = null;
                 document.querySelectorAll('#emailTabs .email-tab').forEach(t => t.classList.remove('active'));
                 btn.classList.add('active');
                 const slider = document.getElementById('emailTabsSlider');
-                if (slider) slider.classList.toggle('right', tab === 'sent');
+                if (slider) { slider.className = 'email-tabs-slider'; const idx = tabOrder.indexOf(tab); if (idx > 0) slider.classList.add('pos-' + idx); }
+                document.getElementById('emailDetailCard').innerHTML = '<div class="adm-email-empty email-empty-padded"><i class="bi bi-envelope-open email-empty-icon"></i><p class="mb-0 email-empty-text">Sélectionnez un message</p></div>';
                 loadList();
             });
         });
@@ -243,6 +247,15 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             `${s.total} messages · ${s.today} aujourd'hui · ${s.unread} non lu(s) · ${s.attachments} pièce(s) jointe(s)`;
         const badge = document.getElementById('badgeInbox');
         if (badge) badge.textContent = parseInt(s.unread) > 0 ? s.unread : '';
+        const trashBadge = document.getElementById('badgeTrash');
+        if (trashBadge) trashBadge.textContent = parseInt(s.trash) > 0 ? s.trash : '';
+    }
+
+    function clearDetailAndReload() {
+        selectedId = null;
+        document.getElementById('emailDetailCard').innerHTML = '<div class="adm-email-empty email-empty-padded"><i class="bi bi-envelope-open email-empty-icon"></i><p class="mb-0 email-empty-text">Sélectionnez un message</p></div>';
+        loadList();
+        loadStats();
     }
 
     function renderAdminPagination() {
@@ -275,7 +288,9 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
         renderAdminPagination();
 
         if (!emails.length) {
-            container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-envelope-open email-empty-icon--sm"></i><p class="mt-1 mb-0">Aucun message</p></div>';
+            container.innerHTML = currentTab === 'trash'
+                ? '<div class="text-center text-muted py-4"><i class="bi bi-trash3" style="font-size:1.5rem;opacity:.2"></i><p class="mt-2 mb-0">La corbeille est vide</p></div>'
+                : '<div class="text-center text-muted py-4"><i class="bi bi-envelope-open email-empty-icon--sm"></i><p class="mt-1 mb-0">Aucun message</p></div>';
             return;
         }
 
@@ -284,14 +299,25 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
         };
 
-        container.innerHTML = emails.map(e => {
+        // Trash toolbar
+        let toolbarHtml = '';
+        if (currentTab === 'trash') {
+            toolbarHtml = `<div class="d-flex align-items-center gap-2 px-3 py-2" style="border-bottom:1px solid var(--cl-border-light);font-size:.78rem">
+                <label class="d-flex align-items-center gap-1 mb-0" style="cursor:pointer"><input type="checkbox" id="trashSelectAll"> <span class="text-muted">Tout</span></label>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" id="trashDeleteSel" style="font-size:.72rem" disabled><i class="bi bi-trash3"></i> Supprimer sélection</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 ms-auto" id="trashEmptyAll" style="font-size:.72rem"><i class="bi bi-trash3-fill"></i> Vider la corbeille</button>
+            </div>`;
+        }
+
+        const itemsHtml = emails.map(e => {
             const date = formatEmailDate(e.created_at);
-            const preview = stripHtml(e.contenu).substring(0, 80);
             const hasUnread = parseInt(e.my_read) === 0;
             const fromName = (e.from_prenom || '') + ' ' + (e.from_nom || '');
             const toName = e.to_names || '—';
+            const checkbox = currentTab === 'trash' ? `<input type="checkbox" class="trash-cb" data-id="${e.id}" style="margin-right:6px;flex-shrink:0">` : '';
             return `
                 <div class="adm-email-item ${e.id === selectedId ? 'selected' : ''} ${hasUnread ? 'unread' : ''}" data-id="${e.id}">
+                    ${checkbox}
                     <div class="adm-email-item-avatar">${escapeHtml(initials(fromName))}</div>
                     <div class="adm-email-item-content">
                         <div class="adm-email-item-top">
@@ -307,8 +333,12 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
                 </div>`;
         }).join('');
 
+        container.innerHTML = toolbarHtml + itemsHtml;
+
+        // Item click → load detail
         container.querySelectorAll('.adm-email-item').forEach(el => {
-            el.addEventListener('click', () => {
+            el.addEventListener('click', (ev) => {
+                if (ev.target.closest('.trash-cb')) return;
                 selectedId = el.dataset.id;
                 container.querySelectorAll('.adm-email-item').forEach(x => x.classList.remove('selected'));
                 el.classList.add('selected');
@@ -316,6 +346,41 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
                 loadDetail(selectedId);
             });
         });
+
+        // Trash toolbar events
+        if (currentTab === 'trash') {
+            const selAllCb = container.querySelector('#trashSelectAll');
+            const delSelBtn = container.querySelector('#trashDeleteSel');
+            const emptyBtn = container.querySelector('#trashEmptyAll');
+
+            selAllCb?.addEventListener('change', () => {
+                container.querySelectorAll('.trash-cb').forEach(cb => { cb.checked = selAllCb.checked; });
+                delSelBtn.disabled = !selAllCb.checked;
+            });
+            container.querySelectorAll('.trash-cb').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const checked = container.querySelectorAll('.trash-cb:checked');
+                    delSelBtn.disabled = checked.length === 0;
+                    selAllCb.checked = checked.length === container.querySelectorAll('.trash-cb').length;
+                });
+            });
+
+            delSelBtn?.addEventListener('click', async () => {
+                const ids = Array.from(container.querySelectorAll('.trash-cb:checked')).map(cb => cb.dataset.id);
+                if (!ids.length) return;
+                if (!await adminConfirm({ title: 'Supprimer définitivement', text: `Supprimer définitivement <strong>${ids.length}</strong> message(s) ? Cette action est irréversible.`, icon: 'bi-trash3', type: 'danger', okText: 'Supprimer définitivement' })) return;
+                for (const id of ids) await adminApiPost('admin_purge_message', { id });
+                showToast(`${ids.length} message(s) supprimé(s)`, 'success');
+                clearDetailAndReload();
+            });
+
+            emptyBtn?.addEventListener('click', async () => {
+                if (!await adminConfirm({ title: 'Vider la corbeille', text: 'Tous les messages de la corbeille seront supprimés définitivement. Cette action est irréversible.', icon: 'bi-trash3-fill', type: 'danger', okText: 'Vider la corbeille' })) return;
+                const r = await adminApiPost('admin_purge_all_trash');
+                if (r.success) { showToast('Corbeille vidée', 'success'); clearDetailAndReload(); }
+                else showToast(r.message || 'Erreur', 'error');
+            });
+        }
     }
 
     async function loadDetail(id) {
@@ -410,10 +475,13 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             <div class="adm-email-detail-header">
                 <h5 class="adm-email-detail-subject">${escapeHtml(e.sujet)}</h5>
                 <div class="adm-email-detail-actions">
-                    <button class="btn btn-sm btn-outline-danger" id="btnDetailDelete" title="Supprimer"><i class="bi bi-trash"></i></button>
-                    <button class="adm-email-btn" id="btnDetailForward"><i class="bi bi-forward"></i> Transférer</button>
-                    <button class="adm-email-btn" id="btnDetailReplyAll"><i class="bi bi-reply-all"></i> Rép. tous</button>
-                    <button class="adm-email-btn" id="btnDetailReply"><i class="bi bi-reply"></i> Répondre</button>
+                    <button class="btn btn-sm btn-outline-danger" id="btnDetailDelete" title="${currentTab === 'trash' ? 'Supprimer définitivement' : 'Corbeille'}"><i class="bi bi-trash"></i></button>
+                    ${currentTab === 'trash'
+                        ? '<button class="btn btn-sm btn-outline-success" id="btnDetailRestore" title="Restaurer"><i class="bi bi-arrow-counterclockwise"></i> Restaurer</button>'
+                        : '<button class="adm-email-btn" id="btnDetailForward"><i class="bi bi-forward"></i> Transférer</button>'
+                        + '<button class="adm-email-btn" id="btnDetailReplyAll"><i class="bi bi-reply-all"></i> Rép. tous</button>'
+                        + '<button class="adm-email-btn" id="btnDetailReply"><i class="bi bi-reply"></i> Répondre</button>'
+                    }
                 </div>
             </div>
             <div class="adm-email-detail-body">
@@ -445,17 +513,25 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             openForward(e);
         });
         card.querySelector('#btnDetailDelete')?.addEventListener('click', async () => {
-            if (!await adminConfirm({ title: 'Supprimer le message', text: 'Supprimer définitivement ce message ? Cette action est irréversible.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
-            const r = await adminApiPost('admin_delete_message', { id: e.id });
-            if (r.success) {
-                showToast('Message supprimé', 'success');
-                selectedId = null;
-                document.getElementById('emailDetailCard').innerHTML = '<div class="adm-email-empty email-empty-padded"><i class="bi bi-envelope-open email-empty-icon"></i><p class="mb-0 email-empty-text">Sélectionnez un message</p></div>';
-                loadList();
-                loadStats();
+            if (currentTab === 'trash') {
+                // Permanent delete from trash
+                if (!await adminConfirm({ title: 'Supprimer définitivement', text: 'Ce message sera supprimé définitivement. Cette action est irréversible.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer définitivement' })) return;
+                const r = await adminApiPost('admin_purge_message', { id: e.id });
+                if (r.success) { showToast('Message supprimé définitivement', 'success'); clearDetailAndReload(); }
+                else showToast(r.message || 'Erreur', 'error');
             } else {
-                showToast(r.message || 'Erreur', 'error');
+                // Soft delete → move to trash
+                if (!await adminConfirm({ title: 'Mettre à la corbeille', text: 'Déplacer ce message dans la corbeille ?', icon: 'bi-trash3', type: 'warning', okText: 'Mettre à la corbeille' })) return;
+                const r = await adminApiPost('admin_delete_message', { id: e.id });
+                if (r.success) { showToast('Message déplacé dans la corbeille', 'success'); clearDetailAndReload(); }
+                else showToast(r.message || 'Erreur', 'error');
             }
+        });
+        // Restore button (only in trash view)
+        card.querySelector('#btnDetailRestore')?.addEventListener('click', async () => {
+            const r = await adminApiPost('admin_restore_message', { id: e.id });
+            if (r.success) { showToast('Message restauré', 'success'); clearDetailAndReload(); }
+            else showToast(r.message || 'Erreur', 'error');
         });
     }
 
