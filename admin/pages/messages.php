@@ -445,7 +445,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             openForward(e);
         });
         card.querySelector('#btnDetailDelete')?.addEventListener('click', async () => {
-            if (!confirm('Supprimer définitivement ce message ?')) return;
+            if (!await adminConfirm({ title: 'Supprimer le message', text: 'Supprimer définitivement ce message ? Cette action est irréversible.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
             const r = await adminApiPost('admin_delete_message', { id: e.id });
             if (r.success) {
                 showToast('Message supprimé', 'success');

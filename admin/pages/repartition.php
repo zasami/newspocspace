@@ -70,14 +70,15 @@ if ($planningIds) {
     $phPlan  = implode(',', array_fill(0, count($planningIds), '?'));
     $qParams = array_merge($planningIds, [$weekStart, $weekEnd]);
     $repAssignments = Db::fetchAll(
-        "SELECT pa.date_jour, pa.user_id, pa.statut, pa.notes,
+        "SELECT pa.id AS assignation_id, pa.planning_id, pa.date_jour, pa.user_id,
+                pa.horaire_type_id, pa.statut, pa.notes, pa.updated_at,
                 u.prenom AS user_prenom, u.nom AS user_nom,
                 f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
                 ht.code AS horaire_code, ht.couleur AS horaire_couleur,
                 ht.heure_debut, ht.heure_fin,
                 m.code AS module_code, m.id AS module_id,
                 g.code AS groupe_code, g.id AS groupe_id,
-                e.code AS etage_code
+                e.code AS etage_code, e.id AS etage_id
          FROM planning_assignations pa
          JOIN users u ON u.id = pa.user_id
          LEFT JOIN fonctions f ON f.id = u.fonction_id
@@ -118,6 +119,9 @@ for ($i = 0; $i < 7; $i++) {
     <button class="btn btn-outline-primary btn-sm" id="repToday" title="Semaine courante">Aujourd'hui</button>
   </div>
   <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-outline-secondary btn-sm" id="repToggleEdit" title="Mode édition">
+      <i class="bi bi-pencil-square"></i> Éditer
+    </button>
     <input type="date" class="form-control form-control-sm rep-date-picker" id="repDatePicker" value="<?= h($weekStart) ?>">
     <button class="btn btn-outline-secondary btn-sm" id="repPrint" title="Imprimer">
       <i class="bi bi-printer"></i>
@@ -152,6 +156,97 @@ for ($i = 0; $i < 7; $i++) {
   <div class="text-center py-5 text-muted">
     <div class="spinner-border spinner-border-sm me-2" role="status"></div>
     Chargement de la répartition...
+  </div>
+</div>
+
+<!-- Edit popover (hidden, positioned via JS) -->
+<div id="repEditPopover" class="rep-edit-popover" style="display:none;">
+  <div class="rep-edit-popover-header">
+    <span id="repEditTitle"></span>
+    <button type="button" class="btn-close btn-close-sm" id="repEditClose"></button>
+  </div>
+  <div class="rep-edit-popover-body">
+    <div class="mb-2">
+      <label class="form-label rep-edit-label">Horaire</label>
+      <select id="repEditHoraire" class="form-select form-select-sm"></select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label rep-edit-label">Module</label>
+      <select id="repEditModule" class="form-select form-select-sm"></select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label rep-edit-label">Étage / Groupe</label>
+      <select id="repEditGroupe" class="form-select form-select-sm"></select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label rep-edit-label">Statut</label>
+      <select id="repEditStatut" class="form-select form-select-sm">
+        <option value="present">Présent</option>
+        <option value="absent">Absent</option>
+        <option value="remplace">Remplacé</option>
+        <option value="interim">Intérim</option>
+        <option value="entraide">Entraide</option>
+        <option value="repos">Repos</option>
+        <option value="vacant">Vacant</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label rep-edit-label">Notes</label>
+      <input type="text" id="repEditNotes" class="form-control form-control-sm" maxlength="500" placeholder="Notes...">
+    </div>
+    <div class="d-flex gap-1">
+      <button class="btn btn-sm btn-success flex-fill" id="repEditSave"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      <button class="btn btn-sm btn-outline-warning" id="repEditAbsent" title="Marquer absent"><i class="bi bi-person-x"></i></button>
+      <button class="btn btn-sm btn-outline-danger" id="repEditDelete" title="Supprimer"><i class="bi bi-trash"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Absence modal -->
+<div class="modal fade" id="repAbsenceModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title"><i class="bi bi-person-x me-1"></i>Marquer absent</h6>
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label rep-edit-label">Type d'absence</label>
+          <select id="repAbsType" class="form-select form-select-sm">
+            <option value="maladie">Maladie</option>
+            <option value="vacances">Vacances</option>
+            <option value="accident">Accident</option>
+            <option value="formation">Formation</option>
+            <option value="conge_special">Congé spécial</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label rep-edit-label">Motif (optionnel)</label>
+          <input type="text" id="repAbsMotif" class="form-control form-control-sm" maxlength="500">
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="repAbsMulti">
+          <label class="form-check-label rep-edit-label" for="repAbsMulti">Plusieurs jours</label>
+        </div>
+        <div id="repAbsMultiDates" style="display:none;">
+          <div class="row g-1">
+            <div class="col-6">
+              <label class="form-label rep-edit-label">Du</label>
+              <input type="date" id="repAbsDebut" class="form-control form-control-sm">
+            </div>
+            <div class="col-6">
+              <label class="form-label rep-edit-label">Au</label>
+              <input type="date" id="repAbsFin" class="form-control form-control-sm">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-sm btn-warning" id="repAbsSave"><i class="bi bi-check-lg"></i> Confirmer</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -264,6 +359,32 @@ for ($i = 0; $i < 7; $i++) {
   color: #d0d0d0;
 }
 
+/* Edit mode: clickable cells */
+.rep-edit-mode .rep-table td.cell-day {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rep-edit-mode .rep-table td.cell-day:hover {
+  background: #e8f5e9 !important;
+  outline: 2px solid #4CAF50;
+  outline-offset: -2px;
+}
+
+/* Modified cell indicator */
+.rep-table td.cell-day.rep-modified {
+  position: relative;
+}
+.rep-table td.cell-day.rep-modified::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background: #FF9800;
+  border-radius: 50%;
+}
+
 /* Function group border */
 .rep-table tr.fn-group-first td {
   border-top: 2px solid #adb5bd;
@@ -316,6 +437,14 @@ for ($i = 0; $i < 7; $i++) {
   opacity: 0.5;
 }
 
+/* Absence icon in cell */
+.rep-abs-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
 /* Module colors */
 .rep-mod-M1  { background: #2196F3; }
 .rep-mod-M2  { background: #4CAF50; }
@@ -333,11 +462,54 @@ for ($i = 0; $i < 7; $i++) {
   gap: 3px;
 }
 
+/* Edit toggle active state */
+#repToggleEdit.active {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: #fff;
+}
+
+/* Edit popover */
+.rep-edit-popover {
+  position: fixed;
+  z-index: 1050;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 260px;
+  font-size: 0.8rem;
+}
+.rep-edit-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+.rep-edit-popover-body {
+  padding: 0.5rem 0.6rem;
+}
+.rep-edit-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+.btn-close-sm {
+  font-size: 0.6rem;
+  padding: 0.3rem;
+}
+
 /* Print */
 @media print {
   .admin-sidebar, .admin-topbar, .sidebar-overlay,
-  #repPrevWeek, #repNextWeek, #repToday, #repDatePicker, #repPrint,
-  #repPlanningStatus,
+  #repPrevWeek, #repNextWeek, #repToday, #repDatePicker, #repPrint, #repToggleEdit,
+  #repPlanningStatus, #repEditPopover, #repAbsenceModal,
   .topbar-search, .topbar-right { display: none !important; }
   .admin-main { margin-left: 0 !important; }
   .admin-content { padding: 0.5rem !important; }
@@ -355,6 +527,8 @@ for ($i = 0; $i < 7; $i++) {
 (function() {
 
   let currentWeekISO = <?= json_encode($weekIso) ?>;
+  let editMode = false;
+  let editingCell = null; // { assignation_id, planning_id, user_id, date, updated_at, ... }
   let data = {
     success: true,
     week_start: <?= json_encode($weekStart) ?>,
@@ -368,6 +542,8 @@ for ($i = 0; $i < 7; $i++) {
     plannings: <?= json_encode(array_values($repPlannings), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
     assignments: <?= json_encode(array_values($repAssignments), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
     users: <?= json_encode(array_values($repUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    modified_ids: [],
+    absences: [],
   };
 
   // ─── ISO week helpers ───
@@ -425,6 +601,7 @@ for ($i = 0; $i < 7; $i++) {
       statusEl.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette periode</span>';
     }
 
+    hideEditPopover();
     renderLegend();
     renderGrid();
   }
@@ -441,6 +618,21 @@ for ($i = 0; $i < 7; $i++) {
         '</span>';
     });
     el.innerHTML = html;
+  }
+
+  // ─── Build absence index (user_id+date → type) ───
+  function buildAbsenceIndex() {
+    const idx = {};
+    (data.absences || []).forEach(function(a) {
+      const start = new Date(a.date_debut);
+      const end = new Date(a.date_fin);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const ds = dateToStr(d);
+        const key = a.user_id + '|' + ds;
+        idx[key] = a.type;
+      }
+    });
+    return idx;
   }
 
   // ─── Build employee-centric index grouped by HOME module ───
@@ -474,6 +666,7 @@ for ($i = 0; $i < 7; $i++) {
         home_module_code: mc,
         home_module_nom: u.home_module_nom || '',
         home_module_ordre: u.home_module_ordre || 999,
+        home_module_id: u.home_module_id || null,
         days: assignByUser[uid] || {}
       };
     });
@@ -481,9 +674,30 @@ for ($i = 0; $i < 7; $i++) {
     return idx;
   }
 
+  // ─── Absence icon helper ───
+  function absenceIcon(type) {
+    if (type === 'vacances') {
+      return '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V" title="Vacances">';
+    }
+    const icons = {
+      maladie: 'bi-bandaid', accident: 'bi-exclamation-triangle',
+      formation: 'bi-mortarboard', conge_special: 'bi-calendar-heart',
+      autre: 'bi-question-circle'
+    };
+    const ic = icons[type] || 'bi-dash-circle';
+    return '<i class="bi ' + ic + ' rep-abs-icon" title="' + escapeHtml(type) + '"></i>';
+  }
+
   // ─── Render a single day cell for one employee ───
-  function renderDayCell(entries, homeModuleCode) {
+  function renderDayCell(entries, homeModuleCode, userId, date, absIdx) {
+    // Check for absence
+    const absKey = userId + '|' + date;
+    const absType = absIdx[absKey] || null;
+
     if (!entries || entries.length === 0) {
+      if (absType) {
+        return absenceIcon(absType);
+      }
       return '<span class="rep-empty-dash">—</span>';
     }
     return entries.map(function(a) {
@@ -491,6 +705,11 @@ for ($i = 0; $i < 7; $i++) {
       var code = escapeHtml(a.horaire_code || '?');
       var cls  = a.statut === 'absent' ? ' rep-absent' : '';
       var html = '<span class="' + cls + '">';
+
+      if (a.statut === 'absent' && absType) {
+        html += absenceIcon(absType) + ' ';
+      }
+
       html += '<span class="rep-badge" style="background:' + bg + '">' + code + '</span>';
       if (a.etage_code || a.groupe_code) {
         var loc = a.etage_code && a.groupe_code
@@ -518,7 +737,7 @@ for ($i = 0; $i < 7; $i++) {
   }
 
   // ─── Render one module section ───
-  function renderModuleSection(mod, modData, days) {
+  function renderModuleSection(mod, modData, days, absIdx, modifiedSet) {
     var modColors = {
       'M1': 'rep-mod-M1', 'M2': 'rep-mod-M2', 'M3': 'rep-mod-M3',
       'M4': 'rep-mod-M4', 'NUIT': 'rep-mod-NUIT', 'POOL': 'rep-mod-POOL',
@@ -572,7 +791,34 @@ for ($i = 0; $i < 7; $i++) {
           var entries = u.days[d.date] || [];
           var weCls   = d.is_weekend ? ' weekend' : '';
           var emptCls = entries.length === 0 ? ' empty-cell' : '';
-          html += '<td class="cell-day' + weCls + emptCls + '">' + renderDayCell(entries, u.home_module_code) + '</td>';
+
+          // Check if any entry in this cell has been modified
+          var modCls = '';
+          entries.forEach(function(e) {
+            if (e.assignation_id && modifiedSet.has(e.assignation_id)) {
+              modCls = ' rep-modified';
+            }
+          });
+
+          // Data attributes for edit mode
+          var firstEntry = entries[0] || null;
+          var dataAttrs = ' data-user-id="' + u.user_id + '" data-date="' + d.date + '"';
+          if (firstEntry) {
+            dataAttrs += ' data-assignation-id="' + (firstEntry.assignation_id || '') + '"';
+            dataAttrs += ' data-planning-id="' + (firstEntry.planning_id || '') + '"';
+            dataAttrs += ' data-horaire-type-id="' + (firstEntry.horaire_type_id || '') + '"';
+            dataAttrs += ' data-module-id="' + (firstEntry.module_id || '') + '"';
+            dataAttrs += ' data-groupe-id="' + (firstEntry.groupe_id || '') + '"';
+            dataAttrs += ' data-etage-id="' + (firstEntry.etage_id || '') + '"';
+            dataAttrs += ' data-statut="' + (firstEntry.statut || 'present') + '"';
+            dataAttrs += ' data-notes="' + escapeHtml(firstEntry.notes || '') + '"';
+            dataAttrs += ' data-updated-at="' + (firstEntry.updated_at || '') + '"';
+          }
+          dataAttrs += ' data-user-name="' + escapeHtml(fullName) + '"';
+          dataAttrs += ' data-home-module-id="' + (u.home_module_id || '') + '"';
+
+          html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + '>' +
+            renderDayCell(entries, u.home_module_code, u.user_id, d.date, absIdx) + '</td>';
         });
 
         html += '</tr>';
@@ -586,6 +832,8 @@ for ($i = 0; $i < 7; $i++) {
   // ─── Render the full grid ───
   function renderGrid() {
     var idx    = buildIndex();
+    var absIdx = buildAbsenceIndex();
+    var modifiedSet = new Set(data.modified_ids || []);
     var modules   = data.modules || [];
     var days      = data.days || [];
     var html      = '';
@@ -606,8 +854,7 @@ for ($i = 0; $i < 7; $i++) {
     if (Object.keys(rsData).length > 0) {
       html += renderModuleSection(
         { code: 'RS', nom: 'Direction / Responsables' },
-        rsData,
-        days
+        rsData, days, absIdx, modifiedSet
       );
     }
 
@@ -621,8 +868,7 @@ for ($i = 0; $i < 7; $i++) {
       if (Object.keys(poolData).length > 0) {
         html += renderModuleSection(
           { code: 'POOL', nom: 'Pool / Non assigné' },
-          poolData,
-          days
+          poolData, days, absIdx, modifiedSet
         );
       }
     }
@@ -640,14 +886,278 @@ for ($i = 0; $i < 7; $i++) {
 
       if (Object.keys(filtered).length === 0) return;
 
-      html += renderModuleSection(mod, filtered, days);
+      html += renderModuleSection(mod, filtered, days, absIdx, modifiedSet);
     });
 
     document.getElementById('repGrid').innerHTML = html ||
       '<div class="text-center text-muted py-4"><i class="bi bi-calendar-x rep-empty-state-icon"></i>Aucune donnée pour cette semaine.</div>';
   }
 
-  // ─── Event listeners ───
+  // ─── Edit mode toggle ───
+  const toggleBtn = document.getElementById('repToggleEdit');
+  toggleBtn.addEventListener('click', function() {
+    editMode = !editMode;
+    toggleBtn.classList.toggle('active', editMode);
+    toggleBtn.innerHTML = editMode
+      ? '<i class="bi bi-eye"></i> Lecture'
+      : '<i class="bi bi-pencil-square"></i> Éditer';
+    document.getElementById('repGrid').classList.toggle('rep-edit-mode', editMode);
+    if (!editMode) hideEditPopover();
+  });
+
+  // ─── Cell click → edit popover ───
+  document.getElementById('repGrid').addEventListener('click', function(e) {
+    if (!editMode) return;
+    const cell = e.target.closest('td.cell-day');
+    if (!cell) return;
+
+    const userId = cell.dataset.userId;
+    const date   = cell.dataset.date;
+    if (!userId || !date) return;
+
+    editingCell = {
+      assignation_id:  cell.dataset.assignationId || '',
+      planning_id:     cell.dataset.planningId || '',
+      user_id:         userId,
+      date:            date,
+      horaire_type_id: cell.dataset.horaireTypeId || '',
+      module_id:       cell.dataset.moduleId || '',
+      groupe_id:       cell.dataset.groupeId || '',
+      etage_id:        cell.dataset.etageId || '',
+      statut:          cell.dataset.statut || 'present',
+      notes:           cell.dataset.notes || '',
+      updated_at:      cell.dataset.updatedAt || '',
+      user_name:       cell.dataset.userName || '',
+      home_module_id:  cell.dataset.homeModuleId || '',
+      cellEl:          cell,
+    };
+
+    showEditPopover(cell);
+  });
+
+  // ─── Populate module → étage/groupe cascading selects ───
+  function populateModuleSelect() {
+    const sel = document.getElementById('repEditModule');
+    sel.innerHTML = '<option value="">— Aucun —</option>';
+    (data.modules || []).forEach(function(m) {
+      sel.innerHTML += '<option value="' + m.id + '">' + escapeHtml(m.code + ' — ' + m.nom) + '</option>';
+    });
+  }
+
+  function populateGroupeSelect(moduleId) {
+    const sel = document.getElementById('repEditGroupe');
+    sel.innerHTML = '<option value="">— Aucun —</option>';
+    if (!moduleId) return;
+
+    const mod = (data.modules || []).find(m => m.id === moduleId);
+    if (!mod) return;
+
+    (mod.etages || []).forEach(function(et) {
+      (et.groupes || []).forEach(function(gr) {
+        sel.innerHTML += '<option value="' + gr.id + '" data-etage-id="' + et.id + '">'
+          + escapeHtml(et.code + '-' + gr.code) + '</option>';
+      });
+      // If no groupes, show étage only (selectable as étage with no groupe)
+      if (!et.groupes || et.groupes.length === 0) {
+        sel.innerHTML += '<option value="" data-etage-id="' + et.id + '">'
+          + escapeHtml(et.code) + ' (étage)</option>';
+      }
+    });
+  }
+
+  function populateHoraireSelect() {
+    const sel = document.getElementById('repEditHoraire');
+    sel.innerHTML = '<option value="">— Aucun —</option>';
+    (data.horaires || []).forEach(function(h) {
+      const time = (h.heure_debut || '').substring(0, 5) + '-' + (h.heure_fin || '').substring(0, 5);
+      sel.innerHTML += '<option value="' + h.id + '">' + escapeHtml(h.code) + ' (' + time + ')</option>';
+    });
+  }
+
+  // ─── Show / Hide edit popover ───
+  function showEditPopover(cellEl) {
+    const pop = document.getElementById('repEditPopover');
+
+    // Title
+    document.getElementById('repEditTitle').textContent =
+      (editingCell.user_name || 'Employé') + ' — ' + editingCell.date;
+
+    // Populate selects
+    populateHoraireSelect();
+    populateModuleSelect();
+
+    // Set current values
+    document.getElementById('repEditHoraire').value = editingCell.horaire_type_id || '';
+    document.getElementById('repEditModule').value = editingCell.module_id || '';
+    populateGroupeSelect(editingCell.module_id || '');
+    document.getElementById('repEditGroupe').value = editingCell.groupe_id || '';
+    document.getElementById('repEditStatut').value = editingCell.statut || 'present';
+    document.getElementById('repEditNotes').value = editingCell.notes || '';
+
+    // Show/hide delete button based on whether assignation exists
+    document.getElementById('repEditDelete').style.display = editingCell.assignation_id ? '' : 'none';
+    document.getElementById('repEditAbsent').style.display = editingCell.assignation_id ? '' : 'none';
+
+    // Position popover near cell
+    const rect = cellEl.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+
+    // Keep in viewport
+    if (top + 300 > window.innerHeight) {
+      top = rect.top - 310;
+    }
+    if (left + 260 > window.innerWidth) {
+      left = window.innerWidth - 270;
+    }
+    if (left < 10) left = 10;
+
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+    pop.style.display = 'block';
+  }
+
+  function hideEditPopover() {
+    document.getElementById('repEditPopover').style.display = 'none';
+    editingCell = null;
+  }
+
+  // Module change → update groupe select
+  document.getElementById('repEditModule').addEventListener('change', function() {
+    populateGroupeSelect(this.value);
+  });
+
+  // Close popover
+  document.getElementById('repEditClose').addEventListener('click', hideEditPopover);
+
+  // Close popover on outside click
+  document.addEventListener('mousedown', function(e) {
+    const pop = document.getElementById('repEditPopover');
+    if (pop.style.display === 'none') return;
+    if (pop.contains(e.target)) return;
+    if (e.target.closest('td.cell-day')) return; // clicking another cell will reopen
+    hideEditPopover();
+  });
+
+  // ─── Save cell ───
+  document.getElementById('repEditSave').addEventListener('click', async function() {
+    if (!editingCell) return;
+
+    const groupeSel = document.getElementById('repEditGroupe');
+    const selectedOpt = groupeSel.options[groupeSel.selectedIndex];
+    const etageId = selectedOpt ? (selectedOpt.dataset.etageId || '') : '';
+
+    const params = {
+      assignation_id:  editingCell.assignation_id || '',
+      planning_id:     editingCell.planning_id || '',
+      user_id:         editingCell.user_id,
+      date_jour:       editingCell.date,
+      horaire_type_id: document.getElementById('repEditHoraire').value || null,
+      module_id:       document.getElementById('repEditModule').value || null,
+      groupe_id:       groupeSel.value || null,
+      etage_id:        etageId || null,
+      statut:          document.getElementById('repEditStatut').value,
+      notes:           document.getElementById('repEditNotes').value,
+      expected_updated_at: editingCell.updated_at || null,
+    };
+
+    this.disabled = true;
+    const res = await adminApiPost('admin_save_repartition_cell', params);
+    this.disabled = false;
+
+    if (res.conflict) {
+      toast('Conflit : cette cellule a été modifiée. Rechargement...', 'error');
+      loadWeek(currentWeekISO);
+      return;
+    }
+
+    if (!res.success) {
+      toast(res.message || 'Erreur', 'error');
+      return;
+    }
+
+    toast('Enregistré', 'success');
+    hideEditPopover();
+    loadWeek(currentWeekISO);
+  });
+
+  // ─── Delete cell ───
+  document.getElementById('repEditDelete').addEventListener('click', async function() {
+    if (!editingCell || !editingCell.assignation_id) return;
+    if (!confirm('Supprimer cette assignation ?')) return;
+
+    this.disabled = true;
+    const res = await adminApiPost('admin_delete_repartition_cell', {
+      assignation_id: editingCell.assignation_id,
+    });
+    this.disabled = false;
+
+    if (!res.success) {
+      toast(res.message || 'Erreur', 'error');
+      return;
+    }
+
+    toast('Supprimé', 'success');
+    hideEditPopover();
+    loadWeek(currentWeekISO);
+  });
+
+  // ─── Mark absent button → open absence modal ───
+  let absenceModal = null;
+  document.getElementById('repEditAbsent').addEventListener('click', function() {
+    if (!editingCell || !editingCell.assignation_id) return;
+    document.getElementById('repAbsDebut').value = editingCell.date;
+    document.getElementById('repAbsFin').value = editingCell.date;
+    document.getElementById('repAbsMulti').checked = false;
+    document.getElementById('repAbsMultiDates').style.display = 'none';
+    document.getElementById('repAbsMotif').value = '';
+    if (!absenceModal) {
+      absenceModal = new bootstrap.Modal(document.getElementById('repAbsenceModal'));
+    }
+    absenceModal.show();
+  });
+
+  // Toggle multi-day dates
+  document.getElementById('repAbsMulti').addEventListener('change', function() {
+    document.getElementById('repAbsMultiDates').style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Save absence
+  document.getElementById('repAbsSave').addEventListener('click', async function() {
+    if (!editingCell || !editingCell.assignation_id) return;
+
+    const multi = document.getElementById('repAbsMulti').checked;
+    const params = {
+      assignation_id: editingCell.assignation_id,
+      absence_type: document.getElementById('repAbsType').value,
+      motif: document.getElementById('repAbsMotif').value,
+    };
+
+    if (multi) {
+      params.date_debut = document.getElementById('repAbsDebut').value;
+      params.date_fin = document.getElementById('repAbsFin').value;
+      if (!params.date_debut || !params.date_fin) {
+        toast('Dates requises', 'error');
+        return;
+      }
+    }
+
+    this.disabled = true;
+    const res = await adminApiPost('admin_mark_absent_repartition', params);
+    this.disabled = false;
+
+    if (!res.success) {
+      toast(res.message || 'Erreur', 'error');
+      return;
+    }
+
+    toast('Absence enregistrée', 'success');
+    if (absenceModal) absenceModal.hide();
+    hideEditPopover();
+    loadWeek(currentWeekISO);
+  });
+
+  // ─── Event listeners — navigation ───
   document.getElementById('repPrevWeek').addEventListener('click', function() {
     if (!currentWeekISO) return;
     var mon = getMondayOfISOWeek(currentWeekISO);

@@ -147,6 +147,27 @@ function admin_get_repartition()
         ];
     }
 
+    // IDs of assignations that have been modified from répartition
+    $modifiedIds = [];
+    if ($assignments) {
+        $aIds = array_column($assignments, 'assignation_id');
+        $phA = implode(',', array_fill(0, count($aIds), '?'));
+        $modRows = Db::fetchAll(
+            "SELECT DISTINCT planning_assignation_id FROM planning_modifications WHERE planning_assignation_id IN ($phA)",
+            $aIds
+        );
+        $modifiedIds = array_column($modRows, 'planning_assignation_id');
+    }
+
+    // Absences for the week
+    $absences = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin, type, motif
+         FROM absences
+         WHERE statut = 'valide' AND date_debut <= ? AND date_fin >= ?
+         ORDER BY date_debut",
+        [$weekEnd, $weekStart]
+    );
+
     respond([
         'success' => true,
         'week_start' => $weekStart,
@@ -160,5 +181,202 @@ function admin_get_repartition()
         'plannings' => $plannings,
         'assignments' => $assignments,
         'users' => $users,
+        'modified_ids' => $modifiedIds,
+        'absences' => $absences,
     ]);
+}
+
+// ─── Save répartition cell ──────────────────────────────────────────────────
+function admin_save_repartition_cell()
+{
+    global $params;
+    require_responsable();
+
+    $assignationId = $params['assignation_id'] ?? '';
+    $planningId    = $params['planning_id'] ?? '';
+    $userId        = $params['user_id'] ?? '';
+    $dateJour      = Sanitize::date($params['date_jour'] ?? '');
+    $horaireTypeId = $params['horaire_type_id'] ?? null;
+    $moduleId      = $params['module_id'] ?? null;
+    $groupeId      = $params['groupe_id'] ?? null;
+    $etageId       = $params['etage_id'] ?? null;
+    $statut        = $params['statut'] ?? 'present';
+    $notes         = Sanitize::text($params['notes'] ?? '', 500);
+
+    if (!$userId || !$dateJour) {
+        bad_request('user_id et date_jour requis');
+    }
+
+    $adminId = $_SESSION['ss_user']['id'];
+
+    // If editing existing assignation
+    if ($assignationId) {
+        $existing = Db::fetch(
+            "SELECT * FROM planning_assignations WHERE id = ?",
+            [$assignationId]
+        );
+        if (!$existing) not_found('Assignation introuvable');
+
+        // Optimistic locking
+        $expectedUpdatedAt = $params['expected_updated_at'] ?? null;
+        if ($expectedUpdatedAt && $existing['updated_at'] && $expectedUpdatedAt !== $existing['updated_at']) {
+            respond([
+                'success' => false,
+                'conflict' => true,
+                'message' => 'Cette cellule a été modifiée par un autre utilisateur.',
+            ]);
+            return;
+        }
+
+        // Log modifications
+        $fields = [
+            'horaire_type_id' => $horaireTypeId,
+            'module_id'       => $moduleId,
+            'groupe_id'       => $groupeId,
+            'statut'          => $statut,
+            'notes'           => $notes,
+        ];
+        foreach ($fields as $champ => $newVal) {
+            $oldVal = $existing[$champ] ?? null;
+            if ((string)$oldVal !== (string)$newVal) {
+                Db::exec(
+                    "INSERT INTO planning_modifications (id, planning_assignation_id, user_id_modified_by, champ, ancienne_valeur, nouvelle_valeur, source)
+                     VALUES (?, ?, ?, ?, ?, ?, 'repartition')",
+                    [Uuid::v4(), $assignationId, $adminId, $champ, $oldVal, $newVal]
+                );
+            }
+        }
+
+        Db::exec(
+            "UPDATE planning_assignations
+             SET horaire_type_id = ?, module_id = ?, groupe_id = ?, etage_id = ?, statut = ?, notes = ?, updated_at = NOW()
+             WHERE id = ?",
+            [$horaireTypeId, $moduleId, $groupeId, $etageId, $statut, $notes, $assignationId]
+        );
+
+        respond(['success' => true, 'id' => $assignationId, 'message' => 'Cellule mise à jour']);
+
+    } else {
+        // Create new assignation — need planning_id
+        if (!$planningId) {
+            // Find planning for this date
+            $mois = substr($dateJour, 0, 7);
+            $planning = Db::fetch("SELECT id FROM plannings WHERE mois_annee = ?", [$mois]);
+            if (!$planning) bad_request('Aucun planning trouvé pour ' . $mois);
+            $planningId = $planning['id'];
+        }
+
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, etage_id, statut, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $planningId, $userId, $dateJour, $horaireTypeId, $moduleId, $groupeId, $etageId, $statut, $notes]
+        );
+
+        respond(['success' => true, 'id' => $id, 'message' => 'Assignation créée']);
+    }
+}
+
+// ─── Mark absent from répartition ───────────────────────────────────────────
+function admin_mark_absent_repartition()
+{
+    global $params;
+    require_responsable();
+
+    $assignationId = $params['assignation_id'] ?? '';
+    $absenceType   = Sanitize::text($params['absence_type'] ?? 'maladie', 50);
+    $motif         = Sanitize::text($params['motif'] ?? '', 500);
+    $dateDebut     = Sanitize::date($params['date_debut'] ?? '');
+    $dateFin       = Sanitize::date($params['date_fin'] ?? '');
+
+    if (!$assignationId) bad_request('assignation_id requis');
+
+    $existing = Db::fetch("SELECT * FROM planning_assignations WHERE id = ?", [$assignationId]);
+    if (!$existing) not_found('Assignation introuvable');
+
+    $adminId = $_SESSION['ss_user']['id'];
+    $userId  = $existing['user_id'];
+
+    // Log the status change
+    if ($existing['statut'] !== 'absent') {
+        Db::exec(
+            "INSERT INTO planning_modifications (id, planning_assignation_id, user_id_modified_by, champ, ancienne_valeur, nouvelle_valeur, source)
+             VALUES (?, ?, ?, 'statut', ?, 'absent', 'repartition')",
+            [Uuid::v4(), $assignationId, $adminId, $existing['statut']]
+        );
+    }
+
+    // Update the assignation status
+    Db::exec(
+        "UPDATE planning_assignations SET statut = 'absent', updated_at = NOW() WHERE id = ?",
+        [$assignationId]
+    );
+
+    // If multi-day absence, create in absences table
+    if ($dateDebut && $dateFin && $dateDebut !== $dateFin) {
+        $absId = Uuid::v4();
+        Db::exec(
+            "INSERT INTO absences (id, user_id, type, date_debut, date_fin, motif, statut, valide_par, valide_at, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'valide', ?, NOW(), NOW())",
+            [$absId, $userId, $absenceType, $dateDebut, $dateFin, $motif, $adminId]
+        );
+
+        // Also update other assignations in the date range
+        $planningId = $existing['planning_id'];
+        Db::exec(
+            "UPDATE planning_assignations
+             SET statut = 'absent', updated_at = NOW()
+             WHERE planning_id = ? AND user_id = ? AND date_jour BETWEEN ? AND ? AND id != ?",
+            [$planningId, $userId, $dateDebut, $dateFin, $assignationId]
+        );
+    }
+
+    respond(['success' => true, 'message' => 'Absence enregistrée']);
+}
+
+// ─── Delete assignation from répartition ─────────────────────────────────────
+function admin_delete_repartition_cell()
+{
+    global $params;
+    require_responsable();
+
+    $assignationId = $params['assignation_id'] ?? '';
+    if (!$assignationId) bad_request('assignation_id requis');
+
+    $existing = Db::fetch("SELECT * FROM planning_assignations WHERE id = ?", [$assignationId]);
+    if (!$existing) not_found('Assignation introuvable');
+
+    $adminId = $_SESSION['ss_user']['id'];
+
+    // Log deletion
+    Db::exec(
+        "INSERT INTO planning_modifications (id, planning_assignation_id, user_id_modified_by, champ, ancienne_valeur, nouvelle_valeur, source)
+         VALUES (?, ?, ?, 'deleted', 'exists', 'deleted', 'repartition')",
+        [Uuid::v4(), $assignationId, $adminId]
+    );
+
+    Db::exec("DELETE FROM planning_assignations WHERE id = ?", [$assignationId]);
+
+    respond(['success' => true, 'message' => 'Assignation supprimée']);
+}
+
+// ─── Get modification history ────────────────────────────────────────────────
+function admin_get_repartition_modifications()
+{
+    global $params;
+    require_responsable();
+
+    $assignationId = $params['assignation_id'] ?? '';
+    if (!$assignationId) bad_request('assignation_id requis');
+
+    $mods = Db::fetchAll(
+        "SELECT pm.*, u.prenom, u.nom
+         FROM planning_modifications pm
+         JOIN users u ON u.id = pm.user_id_modified_by
+         WHERE pm.planning_assignation_id = ?
+         ORDER BY pm.created_at DESC",
+        [$assignationId]
+    );
+
+    respond(['success' => true, 'modifications' => $mods]);
 }

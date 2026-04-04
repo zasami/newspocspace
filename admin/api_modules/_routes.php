@@ -56,6 +56,10 @@ return [
     ],
     'repartition' => [
         'admin_get_repartition',
+        'admin_save_repartition_cell',
+        'admin_mark_absent_repartition',
+        'admin_delete_repartition_cell',
+        'admin_get_repartition_modifications',
     ],
     'vacances' => [
         'admin_get_vacances', 'admin_validate_vacances', 'admin_bulk_validate_vacances',
