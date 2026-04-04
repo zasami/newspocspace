@@ -110,14 +110,15 @@ function admin_get_repartition()
         $phPlan = implode(',', array_fill(0, count($planningIds), '?'));
         $qParams = array_merge($planningIds, [$weekStart, $weekEnd]);
         $assignments = Db::fetchAll(
-            "SELECT pa.date_jour, pa.user_id, pa.statut, pa.notes,
+            "SELECT pa.id AS assignation_id, pa.planning_id, pa.date_jour, pa.user_id,
+                    pa.horaire_type_id, pa.statut, pa.notes, pa.updated_at,
                     u.prenom AS user_prenom, u.nom AS user_nom,
                     f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
                     ht.code AS horaire_code, ht.couleur AS horaire_couleur,
                     ht.heure_debut, ht.heure_fin,
                     m.code AS module_code, m.id AS module_id,
                     g.code AS groupe_code, g.id AS groupe_id,
-                    e.code AS etage_code
+                    e.code AS etage_code, e.id AS etage_id
              FROM planning_assignations pa
              JOIN users u ON u.id = pa.user_id
              LEFT JOIN fonctions f ON f.id = u.fonction_id
