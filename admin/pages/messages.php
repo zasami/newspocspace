@@ -304,8 +304,8 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
         if (currentTab === 'trash') {
             toolbarHtml = `<div class="d-flex align-items-center gap-2 px-3 py-2" style="border-bottom:1px solid var(--cl-border-light);font-size:.78rem">
                 <label class="d-flex align-items-center gap-1 mb-0" style="cursor:pointer"><input type="checkbox" id="trashSelectAll"> <span class="text-muted">Tout</span></label>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2" id="trashDeleteSel" style="font-size:.72rem" disabled><i class="bi bi-trash3"></i> Supprimer sélection</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 ms-auto" id="trashEmptyAll" style="font-size:.72rem"><i class="bi bi-trash3-fill"></i> Vider la corbeille</button>
+                <button class="adm-email-btn-delete" id="trashDeleteSel" style="font-size:.72rem;padding:4px 10px" disabled><i class="bi bi-trash3"></i> Supprimer sélection</button>
+                <button class="adm-email-btn-delete" id="trashEmptyAll" style="font-size:.72rem;padding:4px 10px;margin-left:auto"><i class="bi bi-trash3-fill"></i> Vider la corbeille</button>
             </div>`;
         }
 
@@ -475,9 +475,9 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             <div class="adm-email-detail-header">
                 <h5 class="adm-email-detail-subject">${escapeHtml(e.sujet)}</h5>
                 <div class="adm-email-detail-actions">
-                    <button class="btn btn-sm btn-outline-danger" id="btnDetailDelete" title="${currentTab === 'trash' ? 'Supprimer définitivement' : 'Corbeille'}"><i class="bi bi-trash"></i></button>
+                    <button class="adm-email-btn-delete" id="btnDetailDelete" title="${currentTab === 'trash' ? 'Supprimer définitivement' : 'Corbeille'}"><i class="bi bi-trash3"></i>${currentTab === 'trash' ? ' Supprimer' : ''}</button>
                     ${currentTab === 'trash'
-                        ? '<button class="btn btn-sm btn-outline-success" id="btnDetailRestore" title="Restaurer"><i class="bi bi-arrow-counterclockwise"></i> Restaurer</button>'
+                        ? '<button class="adm-email-btn" id="btnDetailRestore"><i class="bi bi-arrow-counterclockwise"></i> Restaurer</button>'
                         : '<button class="adm-email-btn" id="btnDetailForward"><i class="bi bi-forward"></i> Transférer</button>'
                         + '<button class="adm-email-btn" id="btnDetailReplyAll"><i class="bi bi-reply-all"></i> Rép. tous</button>'
                         + '<button class="adm-email-btn" id="btnDetailReply"><i class="bi bi-reply"></i> Répondre</button>'
