@@ -1,7 +1,7 @@
 <?php
 // ─── Données serveur — semaine courante ──────────────────────────────────────
 $dto = new DateTime();
-$dow = (int)$dto->format('N'); // 1=Mon
+$dow = (int)$dto->format('N');
 $dto->modify('-' . ($dow - 1) . ' days');
 $weekStart = $dto->format('Y-m-d');
 
@@ -49,13 +49,13 @@ $repFonctions = Db::fetchAll("SELECT id, nom, code, ordre FROM fonctions ORDER B
 $repUsers = Db::fetchAll(
     "SELECT u.id, u.prenom, u.nom, u.employee_id,
             f.id AS fonction_id, f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
-            hm.id AS home_module_id, hm.code AS home_module_code, hm.nom AS home_module_nom, hm.ordre AS home_module_ordre
+            hm.id AS home_module_id, hm.code AS home_module_code
      FROM users u
      LEFT JOIN fonctions f ON f.id = u.fonction_id
      LEFT JOIN user_modules um ON um.user_id = u.id AND um.is_principal = 1
      LEFT JOIN modules hm ON hm.id = um.module_id
      WHERE u.is_active = 1
-     ORDER BY hm.ordre, f.ordre, u.nom"
+     ORDER BY f.ordre, u.nom"
 );
 
 $moisStart = $dtoStart->format('Y-m');
@@ -71,27 +71,43 @@ if ($planningIds) {
     $qParams = array_merge($planningIds, [$weekStart, $weekEnd]);
     $repAssignments = Db::fetchAll(
         "SELECT pa.id AS assignation_id, pa.planning_id, pa.date_jour, pa.user_id,
-                pa.horaire_type_id, pa.statut, pa.notes, pa.updated_at,
+                pa.horaire_type_id, pa.module_id, pa.groupe_id, pa.etage_id,
+                pa.statut, pa.notes, pa.updated_at,
                 u.prenom AS user_prenom, u.nom AS user_nom,
                 f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
                 ht.code AS horaire_code, ht.couleur AS horaire_couleur,
                 ht.heure_debut, ht.heure_fin,
-                m.code AS module_code, m.id AS module_id,
-                g.code AS groupe_code, g.id AS groupe_id,
-                e.code AS etage_code, e.id AS etage_id
+                m.code AS module_code,
+                g.code AS groupe_code,
+                e.code AS etage_code
          FROM planning_assignations pa
          JOIN users u ON u.id = pa.user_id
          LEFT JOIN fonctions f ON f.id = u.fonction_id
          LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
          LEFT JOIN modules m ON m.id = pa.module_id
          LEFT JOIN groupes g ON g.id = pa.groupe_id
-         LEFT JOIN etages e ON e.id = g.etage_id
+         LEFT JOIN etages e ON e.id = pa.etage_id
          WHERE pa.planning_id IN ($phPlan)
            AND pa.date_jour BETWEEN ? AND ?
          ORDER BY pa.date_jour, m.ordre, f.ordre, u.nom",
         $qParams
     );
 }
+
+// Modified IDs
+$repModifiedIds = [];
+if ($repAssignments) {
+    $aIds = array_column($repAssignments, 'assignation_id');
+    $phA = implode(',', array_fill(0, count($aIds), '?'));
+    $modRows = Db::fetchAll("SELECT DISTINCT planning_assignation_id FROM planning_modifications WHERE planning_assignation_id IN ($phA)", $aIds);
+    $repModifiedIds = array_column($modRows, 'planning_assignation_id');
+}
+
+// Absences
+$repAbsences = Db::fetchAll(
+    "SELECT user_id, date_debut, date_fin, type, motif FROM absences WHERE statut = 'valide' AND date_debut <= ? AND date_fin >= ? ORDER BY date_debut",
+    [$weekEnd, $weekStart]
+);
 
 $frDays  = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 $repDays = [];
@@ -109,39 +125,29 @@ for ($i = 0; $i < 7; $i++) {
 <!-- Week navigator -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-outline-secondary btn-sm" id="repPrevWeek" title="Semaine precedente">
-      <i class="bi bi-chevron-left"></i>
-    </button>
+    <button class="btn btn-outline-secondary btn-sm" id="repPrevWeek" title="Semaine précédente"><i class="bi bi-chevron-left"></i></button>
     <h6 class="mb-0 fw-semibold rep-week-label" id="repWeekLabel"><?= h($weekLabel) ?></h6>
-    <button class="btn btn-outline-secondary btn-sm" id="repNextWeek" title="Semaine suivante">
-      <i class="bi bi-chevron-right"></i>
-    </button>
-    <button class="btn btn-outline-primary btn-sm" id="repToday" title="Semaine courante">Aujourd'hui</button>
+    <button class="btn btn-outline-secondary btn-sm" id="repNextWeek" title="Semaine suivante"><i class="bi bi-chevron-right"></i></button>
+    <button class="btn btn-outline-primary btn-sm" id="repToday">Aujourd'hui</button>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-outline-secondary btn-sm" id="repToggleEdit" title="Mode édition">
-      <i class="bi bi-pencil-square"></i> Éditer
-    </button>
-    <input type="date" class="form-control form-control-sm rep-date-picker" id="repDatePicker" value="<?= h($weekStart) ?>">
-    <button class="btn btn-outline-secondary btn-sm" id="repPrint" title="Imprimer">
-      <i class="bi bi-printer"></i>
-    </button>
+    <button class="btn btn-outline-secondary btn-sm" id="repToggleEdit" title="Mode édition"><i class="bi bi-pencil-square"></i> Éditer</button>
+    <input type="date" class="form-control form-control-sm" style="width:160px" id="repDatePicker" value="<?= h($weekStart) ?>">
+    <button class="btn btn-outline-secondary btn-sm" id="repPrint" title="Imprimer"><i class="bi bi-printer"></i></button>
   </div>
 </div>
 
-<!-- Planning status -->
-<div id="repPlanningStatus" class="mb-2 rep-planning-status">
+<div id="repPlanningStatus" class="mb-2" style="font-size:.8rem">
   <?php if (!empty($repPlannings)):
     $colors = ['brouillon' => 'secondary', 'provisoire' => 'info', 'final' => 'success'];
     $badges = array_map(fn($p) => '<span class="badge bg-' . ($colors[$p['statut']] ?? 'secondary') . ' me-1">' . h($p['mois_annee']) . ' : ' . h($p['statut']) . '</span>', $repPlannings);
     echo '<i class="bi bi-info-circle me-1"></i>Planning(s) : ' . implode('', $badges);
   else: ?>
-    <span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette periode</span>
+    <span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette période</span>
   <?php endif; ?>
 </div>
 
-<!-- Legend -->
-<div class="mb-3 d-flex flex-wrap gap-2 align-items-center rep-legend" id="repLegend">
+<div class="mb-3 d-flex flex-wrap gap-2 align-items-center" style="font-size:.75rem" id="repLegend">
   <span class="text-muted fw-medium">Légende :</span>
   <?php foreach ($repHoraires as $h): ?>
     <span class="rep-legend-item">
@@ -151,51 +157,31 @@ for ($i = 0; $i < 7; $i++) {
   <?php endforeach; ?>
 </div>
 
-<!-- Planning grid container -->
 <div id="repGrid" class="rep-grid-container">
-  <div class="text-center py-5 text-muted">
-    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-    Chargement de la répartition...
-  </div>
+  <div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Chargement...</div>
 </div>
 
-<!-- Edit popover (hidden, positioned via JS) -->
+<!-- Edit popover -->
 <div id="repEditPopover" class="rep-edit-popover" style="display:none;">
   <div class="rep-edit-popover-header">
     <span id="repEditTitle"></span>
-    <button type="button" class="btn-close btn-close-sm" id="repEditClose"></button>
+    <button type="button" class="btn-close" style="font-size:.6rem;padding:.3rem" id="repEditClose"></button>
   </div>
   <div class="rep-edit-popover-body">
-    <div class="mb-2">
-      <label class="form-label rep-edit-label">Horaire</label>
-      <select id="repEditHoraire" class="form-select form-select-sm"></select>
-    </div>
-    <div class="mb-2">
-      <label class="form-label rep-edit-label">Module</label>
-      <select id="repEditModule" class="form-select form-select-sm"></select>
-    </div>
-    <div class="mb-2">
-      <label class="form-label rep-edit-label">Étage / Groupe</label>
-      <select id="repEditGroupe" class="form-select form-select-sm"></select>
-    </div>
-    <div class="mb-2">
-      <label class="form-label rep-edit-label">Statut</label>
+    <div class="mb-2"><label class="rep-edit-label">Horaire</label><select id="repEditHoraire" class="form-select form-select-sm"></select></div>
+    <div class="mb-2"><label class="rep-edit-label">Module</label><select id="repEditModule" class="form-select form-select-sm"></select></div>
+    <div class="mb-2"><label class="rep-edit-label">Étage / Groupe</label><select id="repEditGroupe" class="form-select form-select-sm"></select></div>
+    <div class="mb-2"><label class="rep-edit-label">Statut</label>
       <select id="repEditStatut" class="form-select form-select-sm">
-        <option value="present">Présent</option>
-        <option value="absent">Absent</option>
-        <option value="remplace">Remplacé</option>
-        <option value="interim">Intérim</option>
-        <option value="entraide">Entraide</option>
-        <option value="repos">Repos</option>
+        <option value="present">Présent</option><option value="absent">Absent</option>
+        <option value="remplace">Remplacé</option><option value="interim">Intérim</option>
+        <option value="entraide">Entraide</option><option value="repos">Repos</option>
         <option value="vacant">Vacant</option>
       </select>
     </div>
-    <div class="mb-2">
-      <label class="form-label rep-edit-label">Notes</label>
-      <input type="text" id="repEditNotes" class="form-control form-control-sm" maxlength="500" placeholder="Notes...">
-    </div>
+    <div class="mb-2"><label class="rep-edit-label">Notes</label><input type="text" id="repEditNotes" class="form-control form-control-sm" maxlength="500"></div>
     <div class="d-flex gap-1">
-      <button class="btn btn-sm btn-success flex-fill" id="repEditSave"><i class="bi bi-check-lg"></i> Enregistrer</button>
+      <button class="btn btn-sm btn-success flex-fill" id="repEditSave"><i class="bi bi-check-lg"></i> OK</button>
       <button class="btn btn-sm btn-outline-warning" id="repEditAbsent" title="Marquer absent"><i class="bi bi-person-x"></i></button>
       <button class="btn btn-sm btn-outline-danger" id="repEditDelete" title="Supprimer"><i class="bi bi-trash"></i></button>
     </div>
@@ -206,341 +192,90 @@ for ($i = 0; $i < 7; $i++) {
 <div class="modal fade" id="repAbsenceModal" tabindex="-1">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
-      <div class="modal-header py-2">
-        <h6 class="modal-title"><i class="bi bi-person-x me-1"></i>Marquer absent</h6>
-        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button>
-      </div>
+      <div class="modal-header py-2"><h6 class="modal-title"><i class="bi bi-person-x me-1"></i>Marquer absent</h6><button type="button" class="btn-close" style="font-size:.6rem" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2">
-          <label class="form-label rep-edit-label">Type d'absence</label>
+        <div class="mb-2"><label class="rep-edit-label">Type</label>
           <select id="repAbsType" class="form-select form-select-sm">
-            <option value="maladie">Maladie</option>
-            <option value="vacances">Vacances</option>
-            <option value="accident">Accident</option>
-            <option value="formation">Formation</option>
-            <option value="conge_special">Congé spécial</option>
-            <option value="autre">Autre</option>
+            <option value="maladie">Maladie</option><option value="vacances">Vacances</option>
+            <option value="accident">Accident</option><option value="formation">Formation</option>
+            <option value="conge_special">Congé spécial</option><option value="autre">Autre</option>
           </select>
         </div>
-        <div class="mb-2">
-          <label class="form-label rep-edit-label">Motif (optionnel)</label>
-          <input type="text" id="repAbsMotif" class="form-control form-control-sm" maxlength="500">
-        </div>
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" id="repAbsMulti">
-          <label class="form-check-label rep-edit-label" for="repAbsMulti">Plusieurs jours</label>
-        </div>
-        <div id="repAbsMultiDates" style="display:none;">
-          <div class="row g-1">
-            <div class="col-6">
-              <label class="form-label rep-edit-label">Du</label>
-              <input type="date" id="repAbsDebut" class="form-control form-control-sm">
-            </div>
-            <div class="col-6">
-              <label class="form-label rep-edit-label">Au</label>
-              <input type="date" id="repAbsFin" class="form-control form-control-sm">
-            </div>
-          </div>
-        </div>
+        <div class="mb-2"><label class="rep-edit-label">Motif</label><input type="text" id="repAbsMotif" class="form-control form-control-sm" maxlength="500"></div>
+        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="repAbsMulti"><label class="form-check-label rep-edit-label" for="repAbsMulti">Plusieurs jours</label></div>
+        <div id="repAbsMultiDates" style="display:none"><div class="row g-1"><div class="col-6"><label class="rep-edit-label">Du</label><input type="date" id="repAbsDebut" class="form-control form-control-sm"></div><div class="col-6"><label class="rep-edit-label">Au</label><input type="date" id="repAbsFin" class="form-control form-control-sm"></div></div></div>
       </div>
-      <div class="modal-footer py-1">
-        <button class="btn btn-sm btn-warning" id="repAbsSave"><i class="bi bi-check-lg"></i> Confirmer</button>
-      </div>
+      <div class="modal-footer py-1"><button class="btn btn-sm btn-warning" id="repAbsSave"><i class="bi bi-check-lg"></i> Confirmer</button></div>
     </div>
   </div>
 </div>
 
-<!-- Styles -->
 <style>
-/* Layout helpers */
-.rep-week-label { min-width: 260px; text-align: center; }
-.rep-date-picker { width: 160px; }
-.rep-planning-status { font-size: 0.8rem; }
-.rep-legend { font-size: 0.75rem; }
+.rep-grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+.rep-legend-item { display: inline-flex; align-items: center; gap: 3px; }
+.rep-badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 0.62rem; font-weight: 600; color: #fff; white-space: nowrap; line-height: 1.3; }
 
-/* Empty cell dash */
-.rep-empty-dash { color: #d0d0d0; }
-
-/* Empty state */
-.rep-empty-state-icon { font-size: 2rem; opacity: .3; display: block; margin-bottom: 8px; }
-
-.rep-grid-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 10px;
-}
-
-/* Module section */
-.rep-module-section {
-  margin-bottom: 1.5rem;
-}
-.rep-module-header {
-  padding: 0.45rem 0.75rem;
-  font-weight: 600;
-  font-size: 0.88rem;
-  color: #fff;
-  border-radius: 4px 4px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.rep-module-header .badge {
-  font-size: 0.7rem;
-  background: rgba(255,255,255,0.25);
-}
+/* Module sections */
+.rep-module-section { margin-bottom: 1.2rem; }
+.rep-module-header { padding: .4rem .75rem; font-weight: 600; font-size: .85rem; color: #fff; border-radius: 4px 4px 0 0; display: flex; align-items: center; gap: .5rem; }
+.rep-module-header .badge { font-size: .68rem; background: rgba(255,255,255,.25); }
 
 /* Table */
-.rep-table {
-  width: 100%;
-  min-width: 860px;
-  border-collapse: collapse;
-  font-size: 0.78rem;
-  table-layout: fixed;
-}
-.rep-table th,
-.rep-table td {
-  border: 1px solid #dee2e6;
-  padding: 0.25rem 0.4rem;
-  vertical-align: middle;
-}
-.rep-table thead th {
-  background: #f1f3f5;
-  font-weight: 600;
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  font-size: 0.73rem;
-}
-.rep-table th.col-fn {
-  width: 90px;
-  text-align: left;
-}
-.rep-table th.col-name {
-  width: 130px;
-  text-align: left;
-}
-.rep-table th.col-day {
-  width: calc((100% - 220px) / 7);
-}
+.rep-table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: .76rem; table-layout: fixed; }
+.rep-table th, .rep-table td { border: 1px solid #dee2e6; padding: .2rem .35rem; vertical-align: middle; }
+.rep-table thead th { background: #f1f3f5; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 2; font-size: .72rem; }
+.rep-table th.col-fn { width: 75px; text-align: center; }
+.rep-table th.col-slot { width: 50px; text-align: center; }
+.rep-table th.col-day { text-align: center; }
 
-/* Function cell (rowspan) */
-.rep-table td.cell-fn {
-  font-weight: 600;
-  font-size: 0.73rem;
-  color: #333;
-  background: #f8f9fa;
-  vertical-align: middle;
-  text-align: center;
-  border-right: 2px solid #ccc;
-}
+/* Function cell */
+.rep-table td.cell-fn { font-weight: 700; font-size: .7rem; color: #333; background: #f8f9fa; text-align: center; border-right: 2px solid #ccc; }
+.rep-table td.cell-slot { font-size: .68rem; font-weight: 600; color: #555; background: #fdfdfd; text-align: center; white-space: nowrap; }
+.rep-table tr.fn-group-first td { border-top: 2px solid #adb5bd; }
 
-/* Employee name */
-.rep-table td.cell-name {
-  font-size: 0.75rem;
-  color: #222;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background: #fdfdfd;
-  font-weight: 500;
-}
+/* Day cells — slot view */
+.rep-table td.cell-day { text-align: center; min-height: 30px; position: relative; line-height: 1.2; }
+.rep-table td.cell-day.weekend { background: #fefcf3; }
+.rep-table td.cell-day.empty-cell { color: #d0d0d0; }
+.rep-cell-name { font-size: .72rem; font-weight: 600; color: #222; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rep-cell-horaire { display: block; margin-top: 1px; }
+.rep-cell-notes { font-size: .56rem; color: #999; display: block; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto; }
+.rep-absent .rep-cell-name { text-decoration: line-through; opacity: .5; }
+.rep-abs-icon { width: 14px; height: 14px; vertical-align: middle; opacity: .7; }
+.rep-mod-tag { font-size: .58rem; color: #c0392b; font-style: italic; font-weight: 600; }
 
-/* Day cells */
-.rep-table td.cell-day {
-  text-align: center;
-  min-height: 28px;
-  position: relative;
-}
-.rep-table td.cell-day.weekend {
-  background: #fefcf3;
-}
-.rep-table td.cell-day.empty-cell {
-  color: #d0d0d0;
-}
+/* Modified indicator */
+.rep-table td.cell-day.rep-modified::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; background: #FF9800; border-radius: 50%; }
 
-/* Edit mode: clickable cells */
-.rep-edit-mode .rep-table td.cell-day {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.rep-edit-mode .rep-table td.cell-day:hover {
-  background: #e8f5e9 !important;
-  outline: 2px solid #4CAF50;
-  outline-offset: -2px;
-}
+/* Edit mode */
+.rep-edit-mode .rep-table td.cell-day { cursor: pointer; transition: background .15s; }
+.rep-edit-mode .rep-table td.cell-day:hover { background: #e8f5e9 !important; outline: 2px solid #4CAF50; outline-offset: -2px; }
+#repToggleEdit.active { background: #4CAF50; border-color: #4CAF50; color: #fff; }
 
 /* Drag & drop */
-.rep-edit-mode .rep-table td.cell-day[draggable="true"] {
-  cursor: grab;
-}
-.rep-edit-mode .rep-table td.cell-day[draggable="true"]:active {
-  cursor: grabbing;
-}
-.rep-table td.cell-day.rep-drag-over {
-  background: #bbdefb !important;
-  outline: 2px dashed #1976D2;
-  outline-offset: -2px;
-}
-.rep-module-header.rep-drag-over-mod {
-  outline: 3px dashed #fff;
-  outline-offset: -3px;
-  opacity: 0.85;
-}
-.rep-table td.cell-day.rep-dragging {
-  opacity: 0.4;
-}
+.rep-edit-mode .rep-table td.cell-day[draggable="true"] { cursor: grab; }
+.rep-table td.cell-day.rep-drag-over { background: #bbdefb !important; outline: 2px dashed #1976D2; outline-offset: -2px; }
+.rep-module-header.rep-drag-over-mod { outline: 3px dashed #fff; outline-offset: -3px; opacity: .85; }
+.rep-table td.cell-day.rep-dragging { opacity: .4; }
 
-/* Modified cell indicator */
-.rep-table td.cell-day.rep-modified {
-  position: relative;
-}
-.rep-table td.cell-day.rep-modified::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 6px;
-  height: 6px;
-  background: #FF9800;
-  border-radius: 50%;
-}
-
-/* Function group border */
-.rep-table tr.fn-group-first td {
-  border-top: 2px solid #adb5bd;
-}
-
-/* Horaire badge */
-.rep-badge {
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 0.66rem;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  line-height: 1.3;
-}
-
-/* Etage / groupe code (combined as "1-B") */
-.rep-etage {
-  font-size: 0.62rem;
-  color: #555;
-  font-weight: 600;
-  margin-left: 2px;
-}
-/* Module tag (shown when employee works outside home module) */
-.rep-mod-tag {
-  font-size: 0.6rem;
-  color: #c0392b;
-  font-style: italic;
-  font-weight: 600;
-  margin-left: 2px;
-}
-
-/* Notes indicator */
-.rep-notes {
-  font-size: 0.58rem;
-  color: #999;
-  display: block;
-  line-height: 1.1;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin: 0 auto;
-}
-
-/* Absent */
-.rep-absent {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-
-/* Absence icon in cell */
-.rep-abs-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  opacity: 0.7;
-}
+/* Edit popover */
+.rep-edit-popover { position: absolute; z-index: 1050; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.15); width: 260px; font-size: .8rem; }
+.rep-edit-popover-header { display: flex; align-items: center; justify-content: space-between; padding: .4rem .6rem; background: #f8f9fa; border-bottom: 1px solid #dee2e6; border-radius: 8px 8px 0 0; font-weight: 600; font-size: .76rem; }
+.rep-edit-popover-body { padding: .5rem .6rem; }
+.rep-edit-label { font-size: .68rem; font-weight: 600; color: #555; margin-bottom: 2px; display: block; }
 
 /* Module colors */
-.rep-mod-M1  { background: #2196F3; }
-.rep-mod-M2  { background: #4CAF50; }
-.rep-mod-M3  { background: #FF9800; }
-.rep-mod-M4  { background: #9C27B0; }
-.rep-mod-NUIT { background: #37474F; }
-.rep-mod-POOL { background: #795548; }
-.rep-mod-RS  { background: #607D8B; }
-.rep-mod-DEFAULT { background: #6c757d; }
+.rep-mod-M1 { background: #2196F3; } .rep-mod-M2 { background: #4CAF50; }
+.rep-mod-M3 { background: #FF9800; } .rep-mod-M4 { background: #9C27B0; }
+.rep-mod-NUIT { background: #37474F; } .rep-mod-POOL { background: #795548; }
+.rep-mod-RS { background: #607D8B; } .rep-mod-DEFAULT { background: #6c757d; }
 
-/* Legend badges */
-.rep-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-/* Edit toggle active state */
-#repToggleEdit.active {
-  background: #4CAF50;
-  border-color: #4CAF50;
-  color: #fff;
-}
-
-/* Edit popover — absolute to body, repositioned on scroll */
-.rep-edit-popover {
-  position: absolute;
-  z-index: 1050;
-  background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  width: 260px;
-  font-size: 0.8rem;
-}
-.rep-edit-popover-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4rem 0.6rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  border-radius: 8px 8px 0 0;
-  font-weight: 600;
-  font-size: 0.78rem;
-}
-.rep-edit-popover-body {
-  padding: 0.5rem 0.6rem;
-}
-.rep-edit-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 2px;
-}
-.btn-close-sm {
-  font-size: 0.6rem;
-  padding: 0.3rem;
-}
-
-/* Print */
 @media print {
-  .admin-sidebar, .admin-topbar, .sidebar-overlay,
-  #repPrevWeek, #repNextWeek, #repToday, #repDatePicker, #repPrint, #repToggleEdit,
-  #repPlanningStatus, #repEditPopover, #repAbsenceModal,
-  .topbar-search, .topbar-right { display: none !important; }
-  .admin-main { margin-left: 0 !important; }
-  .admin-content { padding: 0.5rem !important; }
-  .rep-grid-container { overflow: visible; }
-  .rep-table { min-width: 0; font-size: 0.68rem; }
+  .admin-sidebar, .admin-topbar, .sidebar-overlay, #repPrevWeek, #repNextWeek, #repToday, #repDatePicker, #repPrint, #repToggleEdit, #repPlanningStatus, #repEditPopover, #repAbsenceModal, .topbar-search, .topbar-right { display: none !important; }
+  .admin-main { margin-left: 0 !important; } .admin-content { padding: .5rem !important; }
+  .rep-grid-container { overflow: visible; } .rep-table { min-width: 0; font-size: .66rem; }
   .rep-module-section { page-break-inside: avoid; }
-  .rep-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .rep-module-header { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .rep-table td.cell-day.weekend { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .rep-table td.cell-fn { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rep-badge, .rep-module-header, .rep-table td.cell-fn, .rep-table td.cell-day.weekend { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 </style>
 
@@ -549,7 +284,9 @@ for ($i = 0; $i < 7; $i++) {
 
   let currentWeekISO = <?= json_encode($weekIso) ?>;
   let editMode = false;
-  let editingCell = null; // { assignation_id, planning_id, user_id, date, updated_at, ... }
+  let editingCell = null;
+  let dragData = null;
+
   let data = {
     success: true,
     week_start: <?= json_encode($weekStart) ?>,
@@ -563,44 +300,300 @@ for ($i = 0; $i < 7; $i++) {
     plannings: <?= json_encode(array_values($repPlannings), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
     assignments: <?= json_encode(array_values($repAssignments), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
     users: <?= json_encode(array_values($repUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
-    modified_ids: [],
-    absences: [],
+    modified_ids: <?= json_encode($repModifiedIds, JSON_HEX_TAG | JSON_HEX_APOS) ?>,
+    absences: <?= json_encode(array_values($repAbsences), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
   };
 
-  // ─── ISO week helpers ───
+  // ─── Helpers ───
   function dateToStr(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
-
-  function getMondayOfISOWeek(isoWeek) {
-    const m = isoWeek.match(/^(\d{4})-W(\d{2})$/);
+  function getMondayOfISOWeek(iso) {
+    const m = iso.match(/^(\d{4})-W(\d{2})$/);
     if (!m) return null;
-    const yr = parseInt(m[1]), wk = parseInt(m[2]);
-    const jan4 = new Date(yr, 0, 4);
+    const jan4 = new Date(parseInt(m[1]), 0, 4);
     const dow = jan4.getDay() || 7;
-    const week1Mon = new Date(jan4);
-    week1Mon.setDate(jan4.getDate() - dow + 1);
-    const target = new Date(week1Mon);
-    target.setDate(week1Mon.getDate() + (wk - 1) * 7);
-    return target;
+    const w1Mon = new Date(jan4);
+    w1Mon.setDate(jan4.getDate() - dow + 1);
+    const t = new Date(w1Mon);
+    t.setDate(w1Mon.getDate() + (parseInt(m[2]) - 1) * 7);
+    return t;
   }
 
-  // ─── Load data ───
-  async function loadWeek(weekOrDate) {
-    const params = {};
-    if (weekOrDate && weekOrDate.includes('-W')) {
-      params.semaine = weekOrDate;
-    } else if (weekOrDate) {
-      params.date = weekOrDate;
+  // Horaire sort key (by start time)
+  const horaireOrder = {};
+  (data.horaires || []).forEach(function(h) {
+    horaireOrder[h.id] = h.heure_debut || '99:99';
+  });
+
+  // ─── Build absence index ───
+  function buildAbsIdx() {
+    const idx = {};
+    (data.absences || []).forEach(function(a) {
+      const s = new Date(a.date_debut), e = new Date(a.date_fin);
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        idx[a.user_id + '|' + dateToStr(d)] = a.type;
+      }
+    });
+    return idx;
+  }
+
+  // ─── Build slot-based structure ───
+  function buildSections() {
+    const days = data.days || [];
+    const dateList = days.map(d => d.date);
+    const modifiedSet = new Set(data.modified_ids || []);
+    const absIdx = buildAbsIdx();
+
+    // Group assignments by assigned module_id
+    const byMod = {};
+    (data.assignments || []).forEach(function(a) {
+      const mid = a.module_id || '_NONE';
+      if (!byMod[mid]) byMod[mid] = [];
+      byMod[mid].push(a);
+    });
+
+    // Get function metadata
+    const fnMap = {};
+    (data.fonctions || []).forEach(function(f) { fnMap[f.code] = f; });
+
+    // Evening horaire codes (S3, S4, D4, C2)
+    const soirCodes = new Set(['S3', 'S4', 'D4', 'C2']);
+
+    function buildModuleSlots(mod, assigns) {
+      // Group by fonction_code
+      const byFn = {};
+      assigns.forEach(function(a) {
+        const fc = a.fonction_code || '_NONE';
+        if (!byFn[fc]) byFn[fc] = [];
+        byFn[fc].push(a);
+      });
+
+      // Sort function codes by ordre
+      const fnCodes = Object.keys(byFn).sort(function(a, b) {
+        return ((fnMap[a] || {}).ordre || 99) - ((fnMap[b] || {}).ordre || 99);
+      });
+
+      const sections = [];
+
+      fnCodes.forEach(function(fc) {
+        const fnAssigns = byFn[fc];
+        const fnInfo = fnMap[fc] || { nom: fc, ordre: 99 };
+        let slots = [];
+
+        if (fc === 'AS' && mod && mod.etages && mod.etages.length > 0) {
+          // AS: one slot per étage-groupe + soir slot
+          const usedIds = new Set();
+
+          mod.etages.forEach(function(et) {
+            (et.groupes || []).forEach(function(gr) {
+              const slotDays = {};
+              dateList.forEach(function(dt) {
+                // Find assignment for this étage-groupe on this date
+                const match = fnAssigns.find(function(a) {
+                  return a.date_jour === dt && a.groupe_id === gr.id && !soirCodes.has(a.horaire_code);
+                });
+                if (match) {
+                  slotDays[dt] = match;
+                  usedIds.add(match.assignation_id);
+                }
+              });
+              slots.push({ label: et.code.replace('E', '') + '-' + gr.code.replace(/^\d+-/, ''), days: slotDays });
+            });
+          });
+
+          // Soir slot(s): remaining assignments not matched to a groupe
+          const soirAssigns = fnAssigns.filter(a => !usedIds.has(a.assignation_id));
+          if (soirAssigns.length > 0) {
+            // Group soir by day, may have multiple per day
+            const soirByDay = {};
+            soirAssigns.forEach(function(a) {
+              if (!soirByDay[a.date_jour]) soirByDay[a.date_jour] = [];
+              soirByDay[a.date_jour].push(a);
+            });
+            const maxSoir = Math.max(...Object.values(soirByDay).map(arr => arr.length), 0);
+            for (let s = 0; s < maxSoir; s++) {
+              const slotDays = {};
+              dateList.forEach(function(dt) {
+                if (soirByDay[dt] && soirByDay[dt][s]) slotDays[dt] = soirByDay[dt][s];
+              });
+              slots.push({ label: 'Soir' + (maxSoir > 1 ? ' ' + (s + 1) : ''), days: slotDays });
+            }
+          }
+        } else {
+          // Generic: determine slots by max per day, sorted by horaire start
+          const byDay = {};
+          dateList.forEach(function(dt) {
+            byDay[dt] = fnAssigns.filter(a => a.date_jour === dt)
+              .sort(function(a, b) {
+                return (horaireOrder[a.horaire_type_id] || '99').localeCompare(horaireOrder[b.horaire_type_id] || '99');
+              });
+          });
+          const maxSlots = Math.max(...dateList.map(dt => (byDay[dt] || []).length), 0);
+          for (let s = 0; s < maxSlots; s++) {
+            const slotDays = {};
+            dateList.forEach(function(dt) {
+              if (byDay[dt] && byDay[dt][s]) slotDays[dt] = byDay[dt][s];
+            });
+            slots.push({ label: maxSlots > 1 ? String(s + 1) : '', days: slotDays });
+          }
+        }
+
+        if (slots.length > 0) {
+          sections.push({ code: fc, nom: fnInfo.nom || fc, slots: slots });
+        }
+      });
+
+      return sections;
     }
 
-    document.getElementById('repGrid').innerHTML =
-      '<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Chargement...</div>';
+    // Build ordered module sections
+    const result = [];
+    const modules = data.modules || [];
+
+    // RS/RUV section (collect RS + RUV from all modules)
+    const rsAssigns = (data.assignments || []).filter(a => a.fonction_code === 'RS' || a.fonction_code === 'RUV');
+    if (rsAssigns.length > 0) {
+      const rsSections = buildModuleSlots(null, rsAssigns);
+      result.push({ module: { id: '', code: 'RS', nom: 'RS / RUVs', etages: [] }, functions: rsSections });
+    }
+
+    // Regular modules
+    modules.forEach(function(mod) {
+      const assigns = (byMod[mod.id] || []).filter(a => a.fonction_code !== 'RS' && a.fonction_code !== 'RUV');
+      if (assigns.length === 0) return;
+      const fnSections = buildModuleSlots(mod, assigns);
+      if (fnSections.length > 0) {
+        result.push({ module: mod, functions: fnSections });
+      }
+    });
+
+    // Unassigned (no module)
+    if (byMod['_NONE']) {
+      const noneAssigns = byMod['_NONE'].filter(a => a.fonction_code !== 'RS' && a.fonction_code !== 'RUV');
+      if (noneAssigns.length > 0) {
+        const fnSections = buildModuleSlots(null, noneAssigns);
+        result.push({ module: { id: '', code: 'POOL', nom: 'Pool / Non assigné', etages: [] }, functions: fnSections });
+      }
+    }
+
+    return { sections: result, modifiedSet, absIdx };
+  }
+
+  // ─── Render cell content ───
+  function renderCell(a, absIdx) {
+    if (!a) return '<span style="color:#d0d0d0">—</span>';
+
+    const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
+    const isAbsent = a.statut === 'absent';
+    let html = '<div class="' + (isAbsent ? 'rep-absent' : '') + '">';
+
+    if (isAbsent && absType) {
+      if (absType === 'vacances') {
+        html += '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V"> ';
+      } else {
+        const icons = { maladie:'bi-bandaid', accident:'bi-exclamation-triangle', formation:'bi-mortarboard', conge_special:'bi-calendar-heart' };
+        html += '<i class="bi ' + (icons[absType] || 'bi-dash-circle') + ' rep-abs-icon"></i> ';
+      }
+    }
+
+    html += '<span class="rep-cell-name">' + escapeHtml(a.user_prenom || '') + '</span>';
+
+    const bg = a.horaire_couleur || '#6c757d';
+    html += '<span class="rep-cell-horaire"><span class="rep-badge" style="background:' + bg + '">' + escapeHtml(a.horaire_code || '?') + '</span></span>';
+
+    if (a.notes) html += '<span class="rep-cell-notes" title="' + escapeHtml(a.notes) + '">' + escapeHtml(a.notes) + '</span>';
+    html += '</div>';
+    return html;
+  }
+
+  // ─── Render grid ───
+  function renderGrid() {
+    const { sections, modifiedSet, absIdx } = buildSections();
+    const days = data.days || [];
+    if (sections.length === 0) {
+      document.getElementById('repGrid').innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-calendar-x" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px"></i>Aucune donnée pour cette semaine.</div>';
+      return;
+    }
+
+    const modColors = { M1:'rep-mod-M1', M2:'rep-mod-M2', M3:'rep-mod-M3', M4:'rep-mod-M4', NUIT:'rep-mod-NUIT', POOL:'rep-mod-POOL', RS:'rep-mod-RS' };
+
+    let html = '';
+    sections.forEach(function(sec) {
+      const mod = sec.module;
+      const colorCls = modColors[mod.code] || 'rep-mod-DEFAULT';
+      let totalSlots = 0;
+      sec.functions.forEach(fn => totalSlots += fn.slots.length);
+
+      html += '<div class="rep-module-section" data-section-module-id="' + (mod.id || '') + '">';
+      html += '<div class="rep-module-header ' + colorCls + '" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code) + '">';
+      html += '<i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code);
+      html += ' <span class="badge">' + totalSlots + ' poste(s)</span></div>';
+
+      html += '<table class="rep-table"><thead><tr>';
+      html += '<th class="col-fn">Fonction</th><th class="col-slot">Poste</th>';
+      days.forEach(function(d) {
+        html += '<th class="col-day' + (d.is_weekend ? ' weekend' : '') + '">' + escapeHtml(d.label) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      sec.functions.forEach(function(fn) {
+        fn.slots.forEach(function(slot, si) {
+          const trCls = si === 0 ? ' class="fn-group-first"' : '';
+          html += '<tr' + trCls + '>';
+
+          if (si === 0) {
+            html += '<td class="cell-fn" rowspan="' + fn.slots.length + '">' + escapeHtml(fn.nom) + '</td>';
+          }
+
+          html += '<td class="cell-slot">' + escapeHtml(slot.label) + '</td>';
+
+          days.forEach(function(d) {
+            const a = slot.days[d.date] || null;
+            const weCls = d.is_weekend ? ' weekend' : '';
+            const emptCls = !a ? ' empty-cell' : '';
+            const modCls = a && a.assignation_id && modifiedSet.has(a.assignation_id) ? ' rep-modified' : '';
+
+            let dataAttrs = ' data-date="' + d.date + '"';
+            if (a) {
+              dataAttrs += ' data-assignation-id="' + (a.assignation_id || '') + '"';
+              dataAttrs += ' data-planning-id="' + (a.planning_id || '') + '"';
+              dataAttrs += ' data-user-id="' + (a.user_id || '') + '"';
+              dataAttrs += ' data-horaire-type-id="' + (a.horaire_type_id || '') + '"';
+              dataAttrs += ' data-module-id="' + (a.module_id || '') + '"';
+              dataAttrs += ' data-groupe-id="' + (a.groupe_id || '') + '"';
+              dataAttrs += ' data-etage-id="' + (a.etage_id || '') + '"';
+              dataAttrs += ' data-statut="' + (a.statut || 'present') + '"';
+              dataAttrs += ' data-notes="' + escapeHtml(a.notes || '') + '"';
+              dataAttrs += ' data-updated-at="' + (a.updated_at || '') + '"';
+              dataAttrs += ' data-user-name="' + escapeHtml((a.user_prenom || '') + ' ' + (a.user_nom || '')) + '"';
+            }
+            const dragAttr = a && a.assignation_id ? ' draggable="true"' : '';
+
+            html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + dragAttr + '>' + renderCell(a, absIdx) + '</td>';
+          });
+
+          html += '</tr>';
+        });
+      });
+
+      html += '</tbody></table></div>';
+    });
+
+    document.getElementById('repGrid').innerHTML = html;
+  }
+
+  // ─── Load week via API ───
+  async function loadWeek(weekOrDate) {
+    const params = {};
+    if (weekOrDate && weekOrDate.includes('-W')) params.semaine = weekOrDate;
+    else if (weekOrDate) params.date = weekOrDate;
+
+    document.getElementById('repGrid').innerHTML = '<div class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Chargement...</div>';
 
     const res = await adminApiPost('admin_get_repartition', params);
     if (!res.success) {
-      document.getElementById('repGrid').innerHTML =
-        '<div class="alert alert-danger">Erreur : ' + escapeHtml(res.message || 'Erreur inconnue') + '</div>';
+      document.getElementById('repGrid').innerHTML = '<div class="alert alert-danger">Erreur : ' + escapeHtml(res.message || 'Erreur') + '</div>';
       return;
     }
 
@@ -609,544 +602,166 @@ for ($i = 0; $i < 7; $i++) {
     document.getElementById('repWeekLabel').textContent = res.week_label;
     document.getElementById('repDatePicker').value = res.week_start;
 
-    // Planning status
     const statusEl = document.getElementById('repPlanningStatus');
     if (res.plannings && res.plannings.length) {
       const colors = { brouillon: 'secondary', provisoire: 'info', final: 'success' };
-      const badges = res.plannings.map(p =>
-        '<span class="badge bg-' + (colors[p.statut] || 'secondary') + ' me-1">' +
-        escapeHtml(p.mois_annee) + ' : ' + escapeHtml(p.statut) + '</span>'
+      statusEl.innerHTML = '<i class="bi bi-info-circle me-1"></i>Planning(s) : ' + res.plannings.map(p =>
+        '<span class="badge bg-' + (colors[p.statut] || 'secondary') + ' me-1">' + escapeHtml(p.mois_annee) + ' : ' + escapeHtml(p.statut) + '</span>'
       ).join('');
-      statusEl.innerHTML = '<i class="bi bi-info-circle me-1"></i>Planning(s) : ' + badges;
     } else {
-      statusEl.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette periode</span>';
+      statusEl.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Aucun planning pour cette période</span>';
     }
 
     hideEditPopover();
-    renderLegend();
     renderGrid();
   }
 
-  // ─── Legend ───
-  function renderLegend() {
-    const el = document.getElementById('repLegend');
-    let html = '<span class="text-muted fw-medium">Légende :</span>';
-    (data.horaires || []).forEach(function(h) {
-      const bg = h.couleur || '#6c757d';
-      html += '<span class="rep-legend-item">' +
-        '<span class="rep-badge" style="background:' + escapeHtml(bg) + '">' + escapeHtml(h.code) + '</span>' +
-        '<span class="text-muted">' + escapeHtml((h.heure_debut || '').substring(0, 5)) + '-' + escapeHtml((h.heure_fin || '').substring(0, 5)) + '</span>' +
-        '</span>';
-    });
-    el.innerHTML = html;
-  }
-
-  // ─── Build absence index (user_id+date → type) ───
-  function buildAbsenceIndex() {
-    const idx = {};
-    (data.absences || []).forEach(function(a) {
-      const start = new Date(a.date_debut);
-      const end = new Date(a.date_fin);
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const ds = dateToStr(d);
-        const key = a.user_id + '|' + ds;
-        idx[key] = a.type;
-      }
-    });
-    return idx;
-  }
-
-  // ─── Build employee-centric index grouped by HOME module ───
-  function buildIndex() {
-    var assignByUser = {};
-    (data.assignments || []).forEach(function(a) {
-      var uid = a.user_id;
-      if (!assignByUser[uid]) assignByUser[uid] = {};
-      var dt = a.date_jour;
-      if (!assignByUser[uid][dt]) assignByUser[uid][dt] = [];
-      assignByUser[uid][dt].push(a);
-    });
-
-    var idx = {};
-    (data.users || []).forEach(function(u) {
-      var mc  = u.home_module_code || '_NONE';
-      var fc  = u.fonction_code || '_NONE';
-      var uid = u.id;
-
-      if (!idx[mc]) idx[mc] = {};
-      if (!idx[mc][fc]) idx[mc][fc] = {};
-
-      idx[mc][fc][uid] = {
-        user_id: uid,
-        prenom: u.prenom,
-        nom: u.nom,
-        employee_id: u.employee_id,
-        fonction_code: fc,
-        fonction_nom: u.fonction_nom || fc,
-        fonction_ordre: u.fonction_ordre || 999,
-        home_module_code: mc,
-        home_module_nom: u.home_module_nom || '',
-        home_module_ordre: u.home_module_ordre || 999,
-        home_module_id: u.home_module_id || null,
-        days: assignByUser[uid] || {}
-      };
-    });
-
-    return idx;
-  }
-
-  // ─── Absence icon helper ───
-  function absenceIcon(type) {
-    if (type === 'vacances') {
-      return '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V" title="Vacances">';
-    }
-    const icons = {
-      maladie: 'bi-bandaid', accident: 'bi-exclamation-triangle',
-      formation: 'bi-mortarboard', conge_special: 'bi-calendar-heart',
-      autre: 'bi-question-circle'
-    };
-    const ic = icons[type] || 'bi-dash-circle';
-    return '<i class="bi ' + ic + ' rep-abs-icon" title="' + escapeHtml(type) + '"></i>';
-  }
-
-  // ─── Render a single day cell for one employee ───
-  function renderDayCell(entries, homeModuleCode, userId, date, absIdx) {
-    // Check for absence
-    const absKey = userId + '|' + date;
-    const absType = absIdx[absKey] || null;
-
-    if (!entries || entries.length === 0) {
-      if (absType) {
-        return absenceIcon(absType);
-      }
-      return '<span class="rep-empty-dash">—</span>';
-    }
-    return entries.map(function(a) {
-      var bg   = a.horaire_couleur || '#6c757d';
-      var code = escapeHtml(a.horaire_code || '?');
-      var cls  = a.statut === 'absent' ? ' rep-absent' : '';
-      var html = '<span class="' + cls + '">';
-
-      if (a.statut === 'absent' && absType) {
-        html += absenceIcon(absType) + ' ';
-      }
-
-      html += '<span class="rep-badge" style="background:' + bg + '">' + code + '</span>';
-      if (a.etage_code || a.groupe_code) {
-        var loc = a.etage_code && a.groupe_code
-          ? escapeHtml(a.etage_code) + '-' + escapeHtml(a.groupe_code)
-          : escapeHtml(a.etage_code || a.groupe_code);
-        html += '<span class="rep-etage">' + loc + '</span>';
-      }
-      if (a.module_code && homeModuleCode && a.module_code !== homeModuleCode && homeModuleCode !== '_NONE') {
-        html += '<span class="rep-mod-tag">' + escapeHtml(a.module_code) + '</span>';
-      }
-      html += '</span>';
-      if (a.notes) {
-        html += '<span class="rep-notes" title="' + escapeHtml(a.notes) + '">' + escapeHtml(a.notes) + '</span>';
-      }
-      return html;
-    }).join(' ');
-  }
-
-  // ─── Day column headers ───
-  function dayHeaders() {
-    return (data.days || []).map(function(d) {
-      var cls = d.is_weekend ? 'col-day weekend' : 'col-day';
-      return '<th class="' + cls + '">' + escapeHtml(d.label) + '</th>';
-    }).join('');
-  }
-
-  // ─── Render one module section ───
-  function renderModuleSection(mod, modData, days, absIdx, modifiedSet) {
-    var modColors = {
-      'M1': 'rep-mod-M1', 'M2': 'rep-mod-M2', 'M3': 'rep-mod-M3',
-      'M4': 'rep-mod-M4', 'NUIT': 'rep-mod-NUIT', 'POOL': 'rep-mod-POOL',
-      'RS': 'rep-mod-RS'
-    };
-    var colorCls = modColors[mod.code] || 'rep-mod-DEFAULT';
-
-    var fnCodes = Object.keys(modData);
-    var fnMeta = {};
-    fnCodes.forEach(function(fc) {
-      var firstUser = modData[fc][Object.keys(modData[fc])[0]];
-      fnMeta[fc] = {
-        code: fc,
-        nom: firstUser ? firstUser.fonction_nom : fc,
-        ordre: firstUser ? firstUser.fonction_ordre : 999
-      };
-    });
-    fnCodes.sort(function(a, b) { return (fnMeta[a].ordre || 999) - (fnMeta[b].ordre || 999); });
-
-    var empCount = 0;
-    fnCodes.forEach(function(fc) { empCount += Object.keys(modData[fc]).length; });
-
-    var html = '<div class="rep-module-section" data-section-module-id="' + (mod.id || '') + '">';
-    html += '<div class="rep-module-header ' + colorCls + '" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">' +
-      '<i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code) +
-      ' <span class="badge">' + empCount + ' employé(s)</span></div>';
-    html += '<table class="rep-table"><thead><tr>' +
-      '<th class="col-fn">Fonction</th>' +
-      '<th class="col-name">Employé</th>' +
-      dayHeaders() +
-      '</tr></thead><tbody>';
-
-    fnCodes.forEach(function(fc) {
-      var users = Object.values(modData[fc]).sort(function(a, b) {
-        return (a.nom || '').localeCompare(b.nom || '');
-      });
-
-      users.forEach(function(u, i) {
-        var trCls = i === 0 ? ' class="fn-group-first"' : '';
-        html += '<tr' + trCls + '>';
-
-        if (i === 0) {
-          html += '<td class="cell-fn" rowspan="' + users.length + '">' +
-            escapeHtml(fnMeta[fc].nom || fc) + '</td>';
-        }
-
-        var fullName = (u.prenom || '') + ' ' + (u.nom || '');
-        html += '<td class="cell-name" title="' + escapeHtml(fullName) + '">' + escapeHtml(fullName) + '</td>';
-
-        days.forEach(function(d) {
-          var entries = u.days[d.date] || [];
-          var weCls   = d.is_weekend ? ' weekend' : '';
-          var emptCls = entries.length === 0 ? ' empty-cell' : '';
-
-          // Check if any entry in this cell has been modified
-          var modCls = '';
-          entries.forEach(function(e) {
-            if (e.assignation_id && modifiedSet.has(e.assignation_id)) {
-              modCls = ' rep-modified';
-            }
-          });
-
-          // Data attributes for edit mode
-          var firstEntry = entries[0] || null;
-          var dataAttrs = ' data-user-id="' + u.user_id + '" data-date="' + d.date + '"';
-          if (firstEntry) {
-            dataAttrs += ' data-assignation-id="' + (firstEntry.assignation_id || '') + '"';
-            dataAttrs += ' data-planning-id="' + (firstEntry.planning_id || '') + '"';
-            dataAttrs += ' data-horaire-type-id="' + (firstEntry.horaire_type_id || '') + '"';
-            dataAttrs += ' data-module-id="' + (firstEntry.module_id || '') + '"';
-            dataAttrs += ' data-groupe-id="' + (firstEntry.groupe_id || '') + '"';
-            dataAttrs += ' data-etage-id="' + (firstEntry.etage_id || '') + '"';
-            dataAttrs += ' data-statut="' + (firstEntry.statut || 'present') + '"';
-            dataAttrs += ' data-notes="' + escapeHtml(firstEntry.notes || '') + '"';
-            dataAttrs += ' data-updated-at="' + (firstEntry.updated_at || '') + '"';
-          }
-          dataAttrs += ' data-user-name="' + escapeHtml(fullName) + '"';
-          dataAttrs += ' data-home-module-id="' + (u.home_module_id || '') + '"';
-
-          var dragAttr = firstEntry && firstEntry.assignation_id ? ' draggable="true"' : '';
-          html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + dragAttr + '>' +
-            renderDayCell(entries, u.home_module_code, u.user_id, d.date, absIdx) + '</td>';
-        });
-
-        html += '</tr>';
-      });
-    });
-
-    html += '</tbody></table></div>';
-    return html;
-  }
-
-  // ─── Render the full grid ───
-  function renderGrid() {
-    var idx    = buildIndex();
-    var absIdx = buildAbsenceIndex();
-    var modifiedSet = new Set(data.modified_ids || []);
-    var modules   = data.modules || [];
-    var days      = data.days || [];
-    var html      = '';
-
-    var rsRuvCodes = ['RS', 'RUV'];
-    var rsData = {};
-    Object.keys(idx).forEach(function(mc) {
-      rsRuvCodes.forEach(function(fc) {
-        if (idx[mc][fc]) {
-          if (!rsData[fc]) rsData[fc] = {};
-          Object.keys(idx[mc][fc]).forEach(function(uid) {
-            rsData[fc][uid] = idx[mc][fc][uid];
-          });
-        }
-      });
-    });
-
-    if (Object.keys(rsData).length > 0) {
-      html += renderModuleSection(
-        { code: 'RS', nom: 'Direction / Responsables' },
-        rsData, days, absIdx, modifiedSet
-      );
-    }
-
-    if (idx['_NONE']) {
-      var poolData = {};
-      Object.keys(idx['_NONE']).forEach(function(fc) {
-        if (rsRuvCodes.indexOf(fc) === -1) {
-          poolData[fc] = idx['_NONE'][fc];
-        }
-      });
-      if (Object.keys(poolData).length > 0) {
-        html += renderModuleSection(
-          { code: 'POOL', nom: 'Pool / Non assigné' },
-          poolData, days, absIdx, modifiedSet
-        );
-      }
-    }
-
-    modules.forEach(function(mod) {
-      var modData = idx[mod.code];
-      if (!modData) return;
-
-      var filtered = {};
-      Object.keys(modData).forEach(function(fc) {
-        if (rsRuvCodes.indexOf(fc) === -1) {
-          filtered[fc] = modData[fc];
-        }
-      });
-
-      if (Object.keys(filtered).length === 0) return;
-
-      html += renderModuleSection(mod, filtered, days, absIdx, modifiedSet);
-    });
-
-    document.getElementById('repGrid').innerHTML = html ||
-      '<div class="text-center text-muted py-4"><i class="bi bi-calendar-x rep-empty-state-icon"></i>Aucune donnée pour cette semaine.</div>';
-  }
-
   // ─── Edit mode toggle ───
-  const toggleBtn = document.getElementById('repToggleEdit');
-  toggleBtn.addEventListener('click', function() {
+  document.getElementById('repToggleEdit').addEventListener('click', function() {
     editMode = !editMode;
-    toggleBtn.classList.toggle('active', editMode);
-    toggleBtn.innerHTML = editMode
-      ? '<i class="bi bi-eye"></i> Lecture'
-      : '<i class="bi bi-pencil-square"></i> Éditer';
+    this.classList.toggle('active', editMode);
+    this.innerHTML = editMode ? '<i class="bi bi-eye"></i> Lecture' : '<i class="bi bi-pencil-square"></i> Éditer';
     document.getElementById('repGrid').classList.toggle('rep-edit-mode', editMode);
     if (!editMode) hideEditPopover();
   });
 
-  // ─── Cell click → edit popover ───
-  document.getElementById('repGrid').addEventListener('click', function(e) {
-    if (!editMode) return;
-    const cell = e.target.closest('td.cell-day');
-    if (!cell) return;
-
-    const userId = cell.dataset.userId;
-    const date   = cell.dataset.date;
-    if (!userId || !date) return;
-
-    editingCell = {
-      assignation_id:  cell.dataset.assignationId || '',
-      planning_id:     cell.dataset.planningId || '',
-      user_id:         userId,
-      date:            date,
-      horaire_type_id: cell.dataset.horaireTypeId || '',
-      module_id:       cell.dataset.moduleId || '',
-      groupe_id:       cell.dataset.groupeId || '',
-      etage_id:        cell.dataset.etageId || '',
-      statut:          cell.dataset.statut || 'present',
-      notes:           cell.dataset.notes || '',
-      updated_at:      cell.dataset.updatedAt || '',
-      user_name:       cell.dataset.userName || '',
-      home_module_id:  cell.dataset.homeModuleId || '',
-      cellEl:          cell,
-    };
-
-    showEditPopover(cell);
-  });
-
-  // ─── Populate module → étage/groupe cascading selects ───
-  function populateModuleSelect() {
-    const sel = document.getElementById('repEditModule');
-    sel.innerHTML = '<option value="">— Aucun —</option>';
-    (data.modules || []).forEach(function(m) {
-      sel.innerHTML += '<option value="' + m.id + '">' + escapeHtml(m.code + ' — ' + m.nom) + '</option>';
-    });
-  }
-
-  function populateGroupeSelect(moduleId) {
-    const sel = document.getElementById('repEditGroupe');
-    sel.innerHTML = '<option value="">— Aucun —</option>';
-    if (!moduleId) return;
-
-    const mod = (data.modules || []).find(m => m.id === moduleId);
-    if (!mod) return;
-
-    (mod.etages || []).forEach(function(et) {
-      (et.groupes || []).forEach(function(gr) {
-        sel.innerHTML += '<option value="' + gr.id + '" data-etage-id="' + et.id + '">'
-          + escapeHtml(et.code + '-' + gr.code) + '</option>';
-      });
-      // If no groupes, show étage only (selectable as étage with no groupe)
-      if (!et.groupes || et.groupes.length === 0) {
-        sel.innerHTML += '<option value="" data-etage-id="' + et.id + '">'
-          + escapeHtml(et.code) + ' (étage)</option>';
-      }
-    });
-  }
-
-  function populateHoraireSelect() {
-    const sel = document.getElementById('repEditHoraire');
-    sel.innerHTML = '<option value="">— Aucun —</option>';
-    (data.horaires || []).forEach(function(h) {
-      const time = (h.heure_debut || '').substring(0, 5) + '-' + (h.heure_fin || '').substring(0, 5);
-      sel.innerHTML += '<option value="' + h.id + '">' + escapeHtml(h.code) + ' (' + time + ')</option>';
-    });
-  }
-
-  // ─── Show / Hide edit popover (follows cell on scroll) ───
+  // ─── Edit popover ───
   let _popScrollHandler = null;
 
   function positionPopover(cellEl) {
     const pop = document.getElementById('repEditPopover');
     const rect = cellEl.getBoundingClientRect();
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-
-    let top = rect.bottom + scrollY + 4;
-    let left = rect.left + scrollX;
-
-    // Keep in viewport vertically
-    if (rect.bottom + 310 > window.innerHeight) {
-      top = rect.top + scrollY - 310;
-    }
-    // Keep in viewport horizontally
-    if (rect.left + 260 > window.innerWidth) {
-      left = window.innerWidth + scrollX - 270;
-    }
-    if (left < scrollX + 10) left = scrollX + 10;
-
+    const sy = window.pageYOffset || document.documentElement.scrollTop;
+    const sx = window.pageXOffset || document.documentElement.scrollLeft;
+    let top = rect.bottom + sy + 4, left = rect.left + sx;
+    if (rect.bottom + 310 > window.innerHeight) top = rect.top + sy - 310;
+    if (rect.left + 260 > window.innerWidth) left = window.innerWidth + sx - 270;
+    if (left < sx + 10) left = sx + 10;
     pop.style.top = top + 'px';
     pop.style.left = left + 'px';
   }
 
   function showEditPopover(cellEl) {
     const pop = document.getElementById('repEditPopover');
-
-    // Title
-    document.getElementById('repEditTitle').textContent =
-      (editingCell.user_name || 'Employé') + ' — ' + editingCell.date;
+    document.getElementById('repEditTitle').textContent = (editingCell.user_name || 'Nouveau') + ' — ' + editingCell.date;
 
     // Populate selects
-    populateHoraireSelect();
-    populateModuleSelect();
+    const hSel = document.getElementById('repEditHoraire');
+    hSel.innerHTML = '<option value="">—</option>';
+    (data.horaires || []).forEach(h => { hSel.innerHTML += '<option value="' + h.id + '">' + escapeHtml(h.code) + ' (' + (h.heure_debut||'').substring(0,5) + '-' + (h.heure_fin||'').substring(0,5) + ')</option>'; });
 
-    // Set current values
-    document.getElementById('repEditHoraire').value = editingCell.horaire_type_id || '';
-    document.getElementById('repEditModule').value = editingCell.module_id || '';
+    const mSel = document.getElementById('repEditModule');
+    mSel.innerHTML = '<option value="">—</option>';
+    (data.modules || []).forEach(m => { mSel.innerHTML += '<option value="' + m.id + '">' + escapeHtml(m.code + ' — ' + m.nom) + '</option>'; });
+
+    hSel.value = editingCell.horaire_type_id || '';
+    mSel.value = editingCell.module_id || '';
     populateGroupeSelect(editingCell.module_id || '');
     document.getElementById('repEditGroupe').value = editingCell.groupe_id || '';
     document.getElementById('repEditStatut').value = editingCell.statut || 'present';
     document.getElementById('repEditNotes').value = editingCell.notes || '';
 
-    // Show/hide delete button based on whether assignation exists
     document.getElementById('repEditDelete').style.display = editingCell.assignation_id ? '' : 'none';
     document.getElementById('repEditAbsent').style.display = editingCell.assignation_id ? '' : 'none';
 
-    // Position and show
     pop.style.display = 'block';
     positionPopover(cellEl);
-
-    // Track scroll to reposition
-    if (_popScrollHandler) {
-      window.removeEventListener('scroll', _popScrollHandler, true);
-    }
-    _popScrollHandler = function() { positionPopover(cellEl); };
+    if (_popScrollHandler) window.removeEventListener('scroll', _popScrollHandler, true);
+    _popScrollHandler = () => positionPopover(cellEl);
     window.addEventListener('scroll', _popScrollHandler, true);
   }
 
   function hideEditPopover() {
     document.getElementById('repEditPopover').style.display = 'none';
     editingCell = null;
-    if (_popScrollHandler) {
-      window.removeEventListener('scroll', _popScrollHandler, true);
-      _popScrollHandler = null;
-    }
+    if (_popScrollHandler) { window.removeEventListener('scroll', _popScrollHandler, true); _popScrollHandler = null; }
   }
 
-  // Module change → update groupe select
-  document.getElementById('repEditModule').addEventListener('change', function() {
-    populateGroupeSelect(this.value);
-  });
+  function populateGroupeSelect(moduleId) {
+    const sel = document.getElementById('repEditGroupe');
+    sel.innerHTML = '<option value="">—</option>';
+    if (!moduleId) return;
+    const mod = (data.modules || []).find(m => m.id === moduleId);
+    if (!mod) return;
+    (mod.etages || []).forEach(et => {
+      (et.groupes || []).forEach(gr => {
+        sel.innerHTML += '<option value="' + gr.id + '" data-etage-id="' + et.id + '">' + escapeHtml(et.code + '-' + gr.code) + '</option>';
+      });
+      if (!et.groupes || et.groupes.length === 0) {
+        sel.innerHTML += '<option value="" data-etage-id="' + et.id + '">' + escapeHtml(et.code) + '</option>';
+      }
+    });
+  }
 
-  // Close popover
+  document.getElementById('repEditModule').addEventListener('change', function() { populateGroupeSelect(this.value); });
   document.getElementById('repEditClose').addEventListener('click', hideEditPopover);
-
-  // Close popover on outside click
   document.addEventListener('mousedown', function(e) {
     const pop = document.getElementById('repEditPopover');
     if (pop.style.display === 'none') return;
-    if (pop.contains(e.target)) return;
-    if (e.target.closest('td.cell-day')) return; // clicking another cell will reopen
+    if (pop.contains(e.target) || e.target.closest('td.cell-day')) return;
     hideEditPopover();
   });
 
-  // ─── Save cell ───
+  // Cell click
+  document.getElementById('repGrid').addEventListener('click', function(e) {
+    if (!editMode) return;
+    const cell = e.target.closest('td.cell-day');
+    if (!cell) return;
+    editingCell = {
+      assignation_id: cell.dataset.assignationId || '',
+      planning_id: cell.dataset.planningId || '',
+      user_id: cell.dataset.userId || '',
+      date: cell.dataset.date || '',
+      horaire_type_id: cell.dataset.horaireTypeId || '',
+      module_id: cell.dataset.moduleId || '',
+      groupe_id: cell.dataset.groupeId || '',
+      etage_id: cell.dataset.etageId || '',
+      statut: cell.dataset.statut || 'present',
+      notes: cell.dataset.notes || '',
+      updated_at: cell.dataset.updatedAt || '',
+      user_name: cell.dataset.userName || '',
+      cellEl: cell,
+    };
+    showEditPopover(cell);
+  });
+
+  // Save
   document.getElementById('repEditSave').addEventListener('click', async function() {
     if (!editingCell) return;
-
-    const groupeSel = document.getElementById('repEditGroupe');
-    const selectedOpt = groupeSel.options[groupeSel.selectedIndex];
-    const etageId = selectedOpt ? (selectedOpt.dataset.etageId || '') : '';
-
-    const params = {
-      assignation_id:  editingCell.assignation_id || '',
-      planning_id:     editingCell.planning_id || '',
-      user_id:         editingCell.user_id,
-      date_jour:       editingCell.date,
+    const gSel = document.getElementById('repEditGroupe');
+    const opt = gSel.options[gSel.selectedIndex];
+    const p = {
+      assignation_id: editingCell.assignation_id || '',
+      planning_id: editingCell.planning_id || '',
+      user_id: editingCell.user_id,
+      date_jour: editingCell.date,
       horaire_type_id: document.getElementById('repEditHoraire').value || null,
-      module_id:       document.getElementById('repEditModule').value || null,
-      groupe_id:       groupeSel.value || null,
-      etage_id:        etageId || null,
-      statut:          document.getElementById('repEditStatut').value,
-      notes:           document.getElementById('repEditNotes').value,
+      module_id: document.getElementById('repEditModule').value || null,
+      groupe_id: gSel.value || null,
+      etage_id: opt ? (opt.dataset.etageId || null) : null,
+      statut: document.getElementById('repEditStatut').value,
+      notes: document.getElementById('repEditNotes').value,
       expected_updated_at: editingCell.updated_at || null,
     };
-
     this.disabled = true;
-    const res = await adminApiPost('admin_save_repartition_cell', params);
+    const res = await adminApiPost('admin_save_repartition_cell', p);
     this.disabled = false;
-
-    if (res.conflict) {
-      toast('Conflit : cette cellule a été modifiée. Rechargement...', 'error');
-      loadWeek(currentWeekISO);
-      return;
-    }
-
-    if (!res.success) {
-      toast(res.message || 'Erreur', 'error');
-      return;
-    }
-
-    toast('Enregistré', 'success');
-    hideEditPopover();
-    loadWeek(currentWeekISO);
+    if (res.conflict) { toast('Conflit. Rechargement...', 'error'); loadWeek(currentWeekISO); return; }
+    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
+    toast('Enregistré', 'success'); hideEditPopover(); loadWeek(currentWeekISO);
   });
 
-  // ─── Delete cell ───
+  // Delete
   document.getElementById('repEditDelete').addEventListener('click', async function() {
-    if (!editingCell || !editingCell.assignation_id) return;
-    if (!confirm('Supprimer cette assignation ?')) return;
-
+    if (!editingCell || !editingCell.assignation_id || !confirm('Supprimer ?')) return;
     this.disabled = true;
-    const res = await adminApiPost('admin_delete_repartition_cell', {
-      assignation_id: editingCell.assignation_id,
-    });
+    const res = await adminApiPost('admin_delete_repartition_cell', { assignation_id: editingCell.assignation_id });
     this.disabled = false;
-
-    if (!res.success) {
-      toast(res.message || 'Erreur', 'error');
-      return;
-    }
-
-    toast('Supprimé', 'success');
-    hideEditPopover();
-    loadWeek(currentWeekISO);
+    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
+    toast('Supprimé', 'success'); hideEditPopover(); loadWeek(currentWeekISO);
   });
 
-  // ─── Mark absent button → open absence modal ───
+  // Absent
   let absenceModal = null;
   document.getElementById('repEditAbsent').addEventListener('click', function() {
     if (!editingCell || !editingCell.assignation_id) return;
@@ -1155,254 +770,111 @@ for ($i = 0; $i < 7; $i++) {
     document.getElementById('repAbsMulti').checked = false;
     document.getElementById('repAbsMultiDates').style.display = 'none';
     document.getElementById('repAbsMotif').value = '';
-    if (!absenceModal) {
-      absenceModal = new bootstrap.Modal(document.getElementById('repAbsenceModal'));
-    }
+    if (!absenceModal) absenceModal = new bootstrap.Modal(document.getElementById('repAbsenceModal'));
     absenceModal.show();
   });
-
-  // Toggle multi-day dates
   document.getElementById('repAbsMulti').addEventListener('change', function() {
     document.getElementById('repAbsMultiDates').style.display = this.checked ? 'block' : 'none';
   });
-
-  // Save absence
   document.getElementById('repAbsSave').addEventListener('click', async function() {
     if (!editingCell || !editingCell.assignation_id) return;
-
     const multi = document.getElementById('repAbsMulti').checked;
-    const params = {
-      assignation_id: editingCell.assignation_id,
-      absence_type: document.getElementById('repAbsType').value,
-      motif: document.getElementById('repAbsMotif').value,
-    };
-
-    if (multi) {
-      params.date_debut = document.getElementById('repAbsDebut').value;
-      params.date_fin = document.getElementById('repAbsFin').value;
-      if (!params.date_debut || !params.date_fin) {
-        toast('Dates requises', 'error');
-        return;
-      }
-    }
-
+    const p = { assignation_id: editingCell.assignation_id, absence_type: document.getElementById('repAbsType').value, motif: document.getElementById('repAbsMotif').value };
+    if (multi) { p.date_debut = document.getElementById('repAbsDebut').value; p.date_fin = document.getElementById('repAbsFin').value; if (!p.date_debut || !p.date_fin) { toast('Dates requises', 'error'); return; } }
     this.disabled = true;
-    const res = await adminApiPost('admin_mark_absent_repartition', params);
+    const res = await adminApiPost('admin_mark_absent_repartition', p);
     this.disabled = false;
-
-    if (!res.success) {
-      toast(res.message || 'Erreur', 'error');
-      return;
-    }
-
+    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
     toast('Absence enregistrée', 'success');
-    if (absenceModal) absenceModal.hide();
-    hideEditPopover();
-    loadWeek(currentWeekISO);
+    if (absenceModal) absenceModal.hide(); hideEditPopover(); loadWeek(currentWeekISO);
   });
 
   // ─── Drag & Drop ───
-  let dragData = null;
-
-  document.getElementById('repGrid').addEventListener('dragstart', function(e) {
+  const grid = document.getElementById('repGrid');
+  grid.addEventListener('dragstart', function(e) {
     if (!editMode) { e.preventDefault(); return; }
     const cell = e.target.closest('td.cell-day');
     if (!cell || !cell.dataset.assignationId) { e.preventDefault(); return; }
-
     cell.classList.add('rep-dragging');
-    dragData = {
-      assignation_id:  cell.dataset.assignationId,
-      planning_id:     cell.dataset.planningId,
-      user_id:         cell.dataset.userId,
-      date:            cell.dataset.date,
-      horaire_type_id: cell.dataset.horaireTypeId,
-      module_id:       cell.dataset.moduleId,
-      groupe_id:       cell.dataset.groupeId,
-      etage_id:        cell.dataset.etageId,
-      statut:          cell.dataset.statut,
-      notes:           cell.dataset.notes,
-      updated_at:      cell.dataset.updatedAt,
-      user_name:       cell.dataset.userName,
-    };
+    dragData = { assignation_id: cell.dataset.assignationId, planning_id: cell.dataset.planningId, user_id: cell.dataset.userId, date: cell.dataset.date, horaire_type_id: cell.dataset.horaireTypeId, module_id: cell.dataset.moduleId, groupe_id: cell.dataset.groupeId, etage_id: cell.dataset.etageId, statut: cell.dataset.statut, notes: cell.dataset.notes, updated_at: cell.dataset.updatedAt, user_name: cell.dataset.userName };
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', dragData.assignation_id);
   });
-
-  document.getElementById('repGrid').addEventListener('dragend', function(e) {
+  grid.addEventListener('dragend', function(e) {
     const cell = e.target.closest('td.cell-day');
     if (cell) cell.classList.remove('rep-dragging');
-    // Remove all drag-over highlights
-    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
-      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
-    });
+    document.querySelectorAll('.rep-drag-over,.rep-drag-over-mod').forEach(el => el.classList.remove('rep-drag-over', 'rep-drag-over-mod'));
     dragData = null;
   });
-
-  document.getElementById('repGrid').addEventListener('dragover', function(e) {
+  grid.addEventListener('dragover', function(e) {
     if (!editMode || !dragData) return;
-    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
-    const cell = e.target.closest('td.cell-day');
-    if (modHeader || cell) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
+    if (e.target.closest('.rep-module-header[data-drop-module-id]') || e.target.closest('td.cell-day')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
   });
-
-  document.getElementById('repGrid').addEventListener('dragenter', function(e) {
+  grid.addEventListener('dragenter', function(e) {
     if (!editMode || !dragData) return;
-    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
+    document.querySelectorAll('.rep-drag-over,.rep-drag-over-mod').forEach(el => el.classList.remove('rep-drag-over', 'rep-drag-over-mod'));
+    const mh = e.target.closest('.rep-module-header[data-drop-module-id]');
+    if (mh) mh.classList.add('rep-drag-over-mod');
     const cell = e.target.closest('td.cell-day');
-    // Clear previous highlights
-    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
-      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
-    });
-    if (modHeader) modHeader.classList.add('rep-drag-over-mod');
     if (cell) cell.classList.add('rep-drag-over');
   });
-
-  document.getElementById('repGrid').addEventListener('dragleave', function(e) {
-    const modHeader = e.target.closest('.rep-module-header');
-    if (modHeader) modHeader.classList.remove('rep-drag-over-mod');
-    const cell = e.target.closest('td.cell-day');
-    if (cell) cell.classList.remove('rep-drag-over');
-  });
-
-  document.getElementById('repGrid').addEventListener('drop', async function(e) {
+  grid.addEventListener('drop', async function(e) {
     e.preventDefault();
     if (!editMode || !dragData) return;
+    document.querySelectorAll('.rep-drag-over,.rep-drag-over-mod').forEach(el => el.classList.remove('rep-drag-over', 'rep-drag-over-mod'));
 
-    // Remove highlights
-    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
-      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
-    });
-
-    // Determine target module
-    let targetModuleId = null;
-    let targetModuleCode = '';
-    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
+    let targetModId = null;
+    const mh = e.target.closest('.rep-module-header[data-drop-module-id]');
     const cell = e.target.closest('td.cell-day');
+    if (mh) targetModId = mh.dataset.dropModuleId;
+    else if (cell) { const sec = cell.closest('.rep-module-section'); if (sec) targetModId = sec.dataset.sectionModuleId; }
+    if (!targetModId || targetModId === dragData.module_id) { dragData = null; return; }
 
-    if (modHeader) {
-      targetModuleId = modHeader.dataset.dropModuleId;
-      targetModuleCode = modHeader.dataset.dropModuleCode;
-    } else if (cell) {
-      // Find the module section this cell belongs to
-      const section = cell.closest('.rep-module-section');
-      if (section) targetModuleId = section.dataset.sectionModuleId;
-    }
+    const tMod = (data.modules || []).find(m => m.id === targetModId);
+    if (!tMod) { dragData = null; return; }
 
-    if (!targetModuleId || targetModuleId === dragData.module_id) {
-      dragData = null;
-      return; // same module, nothing to do
-    }
-
-    // Find target module and its étages/groupes
-    const targetMod = (data.modules || []).find(m => m.id === targetModuleId);
-    if (!targetMod) { dragData = null; return; }
-
-    // Build list of étage-groupe options
-    let groupeOptions = [];
-    (targetMod.etages || []).forEach(function(et) {
-      if (et.groupes && et.groupes.length > 0) {
-        et.groupes.forEach(function(gr) {
-          groupeOptions.push({ etageId: et.id, groupeId: gr.id, label: et.code + '-' + gr.code });
-        });
-      } else {
-        groupeOptions.push({ etageId: et.id, groupeId: null, label: et.code + ' (étage)' });
-      }
+    let opts = [];
+    (tMod.etages || []).forEach(et => {
+      (et.groupes || []).forEach(gr => opts.push({ etageId: et.id, groupeId: gr.id, label: et.code + '-' + gr.code }));
+      if (!et.groupes || !et.groupes.length) opts.push({ etageId: et.id, groupeId: null, label: et.code });
     });
 
-    let chosenEtageId = null;
-    let chosenGroupeId = null;
-
-    if (groupeOptions.length === 0) {
-      // Module has no étages/groupes — just move to module
-    } else if (groupeOptions.length === 1) {
-      // Only one option — auto-select
-      chosenEtageId = groupeOptions[0].etageId;
-      chosenGroupeId = groupeOptions[0].groupeId;
-    } else {
-      // Multiple options — quick prompt
-      const labels = groupeOptions.map((g, i) => (i + 1) + '. ' + g.label).join('\n');
-      const choice = prompt(
-        'Déplacer ' + dragData.user_name + ' vers ' + targetMod.code + '\n\nChoisir étage/groupe :\n' + labels + '\n\n(Entrez le numéro)'
-      );
+    let eId = null, gId = null;
+    if (opts.length === 1) { eId = opts[0].etageId; gId = opts[0].groupeId; }
+    else if (opts.length > 1) {
+      const choice = prompt('Déplacer vers ' + tMod.code + '\n\n' + opts.map((o, i) => (i + 1) + '. ' + o.label).join('\n') + '\n\nNuméro :');
       if (!choice) { dragData = null; return; }
       const idx = parseInt(choice) - 1;
-      if (idx < 0 || idx >= groupeOptions.length) { dragData = null; return; }
-      chosenEtageId = groupeOptions[idx].etageId;
-      chosenGroupeId = groupeOptions[idx].groupeId;
+      if (idx < 0 || idx >= opts.length) { dragData = null; return; }
+      eId = opts[idx].etageId; gId = opts[idx].groupeId;
     }
 
-    // Save the move
-    const params = {
-      assignation_id:  dragData.assignation_id,
-      planning_id:     dragData.planning_id,
-      user_id:         dragData.user_id,
-      date_jour:       dragData.date,
-      horaire_type_id: dragData.horaire_type_id || null,
-      module_id:       targetModuleId,
-      groupe_id:       chosenGroupeId,
-      etage_id:        chosenEtageId,
-      statut:          dragData.statut || 'present',
-      notes:           dragData.notes || '',
+    const res = await adminApiPost('admin_save_repartition_cell', {
+      assignation_id: dragData.assignation_id, planning_id: dragData.planning_id, user_id: dragData.user_id,
+      date_jour: dragData.date, horaire_type_id: dragData.horaire_type_id || null,
+      module_id: targetModId, groupe_id: gId, etage_id: eId,
+      statut: dragData.statut || 'present', notes: dragData.notes || '',
       expected_updated_at: dragData.updated_at || null,
-    };
-
-    const res = await adminApiPost('admin_save_repartition_cell', params);
+    });
     dragData = null;
-
-    if (res.conflict) {
-      toast('Conflit détecté. Rechargement...', 'error');
-      loadWeek(currentWeekISO);
-      return;
-    }
-    if (!res.success) {
-      toast(res.message || 'Erreur', 'error');
-      return;
-    }
-
-    toast('Déplacé vers ' + targetMod.code, 'success');
-    loadWeek(currentWeekISO);
+    if (res.conflict) { toast('Conflit. Rechargement...', 'error'); loadWeek(currentWeekISO); return; }
+    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
+    toast('Déplacé vers ' + tMod.code, 'success'); loadWeek(currentWeekISO);
   });
 
-  // ─── Event listeners — navigation ───
+  // ─── Navigation ───
   document.getElementById('repPrevWeek').addEventListener('click', function() {
-    if (!currentWeekISO) return;
-    var mon = getMondayOfISOWeek(currentWeekISO);
-    if (mon) {
-      mon.setDate(mon.getDate() - 7);
-      loadWeek(dateToStr(mon));
-    }
+    const mon = getMondayOfISOWeek(currentWeekISO); if (mon) { mon.setDate(mon.getDate() - 7); loadWeek(dateToStr(mon)); }
   });
-
   document.getElementById('repNextWeek').addEventListener('click', function() {
-    if (!currentWeekISO) return;
-    var mon = getMondayOfISOWeek(currentWeekISO);
-    if (mon) {
-      mon.setDate(mon.getDate() + 7);
-      loadWeek(dateToStr(mon));
-    }
+    const mon = getMondayOfISOWeek(currentWeekISO); if (mon) { mon.setDate(mon.getDate() + 7); loadWeek(dateToStr(mon)); }
   });
+  document.getElementById('repToday').addEventListener('click', () => loadWeek(null));
+  document.getElementById('repDatePicker').addEventListener('change', e => { if (e.target.value) loadWeek(e.target.value); });
+  document.getElementById('repPrint').addEventListener('click', () => window.print());
 
-  document.getElementById('repToday').addEventListener('click', function() {
-    loadWeek(null);
-  });
-
-  document.getElementById('repDatePicker').addEventListener('change', function(e) {
-    if (e.target.value) loadWeek(e.target.value);
-  });
-
-  document.getElementById('repPrint').addEventListener('click', function() {
-    window.print();
-  });
-
-  // ─── Init — render synchronously from injected data ───
-  function initRepartitionPage() {
-    renderGrid();
-  }
-
-  window.initRepartitionPage = initRepartitionPage;
+  // ─── Init ───
+  window.initRepartitionPage = function() { renderGrid(); };
 
 })();
 </script>
