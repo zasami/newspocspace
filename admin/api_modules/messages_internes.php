@@ -42,7 +42,7 @@ function admin_get_all_messages()
 
     $emails = Db::fetchAll(
         "SELECT e.id, e.sujet, e.contenu, e.from_user_id, e.thread_id, e.created_at,
-                uf.prenom AS from_prenom, uf.nom AS from_nom,
+                uf.prenom AS from_prenom, uf.nom AS from_nom, uf.photo AS from_photo,
                 (SELECT GROUP_CONCAT(CONCAT(u2.prenom, ' ', u2.nom) SEPARATOR ', ')
                  FROM message_recipients er2 JOIN users u2 ON u2.id = er2.user_id
                  WHERE er2.email_id = e.id AND er2.type = 'to') AS to_names,

@@ -16,6 +16,7 @@ $emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
 $emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
 $emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['ss_user']['id'] ?? '']);
 $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
+$emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND sender_deleted = 1");
 ?>
 <!-- Admin Emails Page — Split-view email client -->
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
@@ -76,7 +77,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
         <div class="email-tabs-slider" id="emailTabsSlider"></div>
         <button class="email-tab active" data-tab="inbox">Réception <span class="email-unread-badge" id="badgeInbox"><?= $emailStatsUnread > 0 ? $emailStatsUnread : '' ?></span></button>
         <button class="email-tab" data-tab="sent">Envoyés</button>
-        <button class="email-tab" data-tab="trash"><i class="bi bi-trash3"></i> Corbeille <span class="email-trash-badge" id="badgeTrash"></span></button>
+        <button class="email-tab" data-tab="trash"><i class="bi bi-trash3"></i> Corbeille <span class="email-trash-badge" id="badgeTrash"><?= $emailStatsTrash > 0 ? $emailStatsTrash : '' ?></span></button>
       </div>
     </div>
 
@@ -318,7 +319,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
             return `
                 <div class="adm-email-item ${e.id === selectedId ? 'selected' : ''} ${hasUnread ? 'unread' : ''}" data-id="${e.id}">
                     ${checkbox}
-                    <div class="adm-email-item-avatar">${escapeHtml(initials(fromName))}</div>
+                    <div class="adm-email-item-avatar">${e.from_photo ? `<img src="${escapeHtml(e.from_photo)}" alt="">` : escapeHtml(initials(fromName))}</div>
                     <div class="adm-email-item-content">
                         <div class="adm-email-item-top">
                             <span class="adm-email-item-sender">${escapeHtml(fromName)}</span>

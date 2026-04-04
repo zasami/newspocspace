@@ -1799,7 +1799,9 @@ body.ss-immersive .ss-immersive-pill {
   letter-spacing: 0.5px;
   flex-shrink: 0;
   position: relative;
+  overflow: hidden;
 }
+.adm-email-item-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .adm-email-item.unread .adm-email-item-avatar::after {
   content: '';
   position: absolute;
