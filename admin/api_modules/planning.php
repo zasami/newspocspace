@@ -29,10 +29,22 @@ function admin_get_planning()
         );
     }
 
+    // Load validated absences for this month
+    $moisStart = $mois . '-01';
+    $moisEnd = date('Y-m-t', strtotime($moisStart));
+    $absences = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin, type, motif
+         FROM absences
+         WHERE statut = 'valide' AND date_debut <= ? AND date_fin >= ?
+         ORDER BY date_debut",
+        [$moisEnd, $moisStart]
+    );
+
     respond([
         'success' => true,
         'planning' => $planning,
         'assignations' => $assignations,
+        'absences' => $absences,
     ]);
 }
 

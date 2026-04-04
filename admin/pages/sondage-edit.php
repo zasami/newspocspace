@@ -99,18 +99,31 @@ if ($isEdit) {
 .se-title-input::placeholder { color: var(--cl-text-muted); }
 .se-title-input:focus { box-shadow: none; }
 
-.se-desc-input {
-  border: none;
-  background: transparent;
-  width: 100%;
-  resize: none;
-  padding: 0;
-  color: var(--cl-text-secondary);
-  font-size: 0.9rem;
-  outline: none;
-  min-height: 40px;
+/* ── Description RTE (same as CMS website admin) ── */
+.se-desc-toolbar {
+  display: flex; align-items: center; gap: 2px; padding: 6px 8px;
+  border: 1px solid var(--cl-border, #E8E5E0); border-bottom: none;
+  border-radius: 10px 10px 0 0; background: var(--cl-bg, #F7F5F2); flex-wrap: wrap;
 }
-.se-desc-input::placeholder { color: var(--cl-text-muted); }
+.se-desc-toolbar button {
+  width: 32px; height: 32px; border: none; background: none; border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--cl-text-muted, #888); transition: all .15s;
+}
+.se-desc-toolbar button:hover { background: var(--cl-surface, #fff); color: var(--cl-text, #333); }
+.se-desc-toolbar .sep { width: 1px; height: 20px; background: var(--cl-border, #E8E5E0); margin: 0 4px; }
+.se-desc-editor {
+  border: 1px solid var(--cl-border, #E8E5E0); border-radius: 0 0 10px 10px;
+  padding: 12px 14px; min-height: 120px; max-height: 300px; overflow-y: auto;
+  font-size: 0.9rem; font-family: inherit; line-height: 1.7; color: var(--cl-text, #333);
+  outline: none; background: var(--cl-surface, #fff);
+}
+.se-desc-editor:empty::before { content: attr(data-placeholder); color: var(--cl-text-muted); pointer-events: none; }
+.se-desc-editor:focus { border-color: var(--cl-border, #E8E5E0); }
+.se-desc-editor p { margin: 0 0 8px; }
+.se-desc-editor b, .se-desc-editor strong { font-weight: 700; }
+.se-desc-editor ul, .se-desc-editor ol { margin: 4px 0; padding-left: 20px; }
+.se-desc-editor blockquote { border-left: 3px solid var(--cl-border, #D4C4A8); margin: 6px 0; padding: 6px 14px; background: rgba(212,196,168,.08); border-radius: 0 6px 6px 0; font-style: italic; }
 
 /* ── Anonymous toggle ── */
 .se-toggle {
@@ -259,8 +272,12 @@ if ($isEdit) {
   color: var(--cl-text-muted);
   cursor: pointer;
   font-size: 0.85rem;
-  padding: 4px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
   transition: all 0.2s;
 }
 .se-option-remove:hover { color: #DC2626; background: rgba(220,38,38,0.08); }
@@ -435,6 +452,13 @@ if ($isEdit) {
 .se-ai-modal-header { border-bottom: 1px solid var(--cl-border); background: linear-gradient(135deg, rgba(111,66,193,.05), rgba(0,180,160,.05)); }
 .se-ai-generate-btn { background: linear-gradient(135deg, #6f42c1, #00b4a0); color: #fff; border: none; }
 
+/* ── AI choice radio cards ── */
+.se-ai-choice { display: flex; align-items: center; gap: 6px; flex: 1; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--cl-border); cursor: pointer; transition: all .2s; font-size: .82rem; }
+.se-ai-choice:hover { border-color: var(--cl-accent, #2d4a43); }
+.se-ai-choice:has(input:checked) { border-color: var(--cl-accent, #2d4a43); background: rgba(45,74,67,.05); }
+.se-ai-choice input { margin: 0; }
+.se-ai-choice span { display: flex; align-items: center; gap: 5px; }
+
 /* ── Question removal animation ── */
 .se-question-removing { transition: opacity 0.2s, transform 0.2s; opacity: 0; transform: scale(0.97); }
 
@@ -465,7 +489,25 @@ if ($isEdit) {
     <div class="se-section">
       <input type="text" class="se-title-input" id="seTitre" placeholder="Titre du sondage" maxlength="255">
       <div class="mt-2">
-        <textarea class="se-desc-input" id="seDescription" placeholder="Description (optionnelle)" rows="2"></textarea>
+        <div class="se-desc-toolbar" id="seDescToolbar">
+          <button type="button" data-cmd="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+          <button type="button" data-cmd="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+          <button type="button" data-cmd="underline" title="Souligné"><i class="bi bi-type-underline"></i></button>
+          <button type="button" data-cmd="strikeThrough" title="Barré"><i class="bi bi-type-strikethrough"></i></button>
+          <span class="sep"></span>
+          <button type="button" data-cmd="hiliteColor" data-val="#FFF9C4" title="Surligner"><i class="bi bi-highlighter"></i></button>
+          <span class="sep"></span>
+          <button type="button" data-cmd="justifyLeft" title="Gauche"><i class="bi bi-text-left"></i></button>
+          <button type="button" data-cmd="justifyCenter" title="Centrer"><i class="bi bi-text-center"></i></button>
+          <button type="button" data-cmd="justifyRight" title="Droite"><i class="bi bi-text-right"></i></button>
+          <button type="button" data-cmd="justifyFull" title="Justifier"><i class="bi bi-justify"></i></button>
+          <span class="sep"></span>
+          <button type="button" data-cmd="insertUnorderedList" title="Liste à puces"><i class="bi bi-list-ul"></i></button>
+          <button type="button" data-cmd="insertOrderedList" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+          <span class="sep"></span>
+          <button type="button" data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Citation"><i class="bi bi-blockquote-left"></i></button>
+        </div>
+        <div class="se-desc-editor" contenteditable="true" id="seDescription" data-placeholder="Description / Introduction (optionnelle)"></div>
       </div>
       <div class="se-toggle">
         <div class="form-check form-switch mb-0">
@@ -515,9 +557,26 @@ if ($isEdit) {
             <div class="zs-select" id="aiLangue" data-placeholder="Langue"></div>
           </div>
         </div>
-        <div class="form-check mb-3">
+        <div class="form-check mb-2">
           <input type="checkbox" class="form-check-input" id="aiAnonyme">
           <label class="form-check-label" for="aiAnonyme">Sondage anonyme (questions plus personnelles autorisées)</label>
+        </div>
+        <div class="form-check mb-3">
+          <input type="checkbox" class="form-check-input" id="aiGenIntro" checked>
+          <label class="form-check-label" for="aiGenIntro">Générer aussi le texte d'introduction du sondage</label>
+        </div>
+        <div id="aiExistingQuestions" class="mb-3 d-none">
+          <label class="form-label fw-bold">Questions existantes détectées</label>
+          <div class="d-flex gap-2">
+            <label class="se-ai-choice">
+              <input type="radio" name="aiKeepQuestions" value="keep" checked>
+              <span><i class="bi bi-plus-lg"></i> Ajouter aux questions existantes</span>
+            </label>
+            <label class="se-ai-choice">
+              <input type="radio" name="aiKeepQuestions" value="replace">
+              <span><i class="bi bi-arrow-repeat"></i> Remplacer toutes les questions</span>
+            </label>
+          </div>
         </div>
         <div id="aiError" class="alert alert-danger small d-none"></div>
       </div>
@@ -612,6 +671,9 @@ if ($isEdit) {
         document.getElementById('btnAiGenerate')?.addEventListener('click', () => {
             document.getElementById('aiTheme').value = document.getElementById('seTitre')?.value || '';
             document.getElementById('aiError').classList.add('d-none');
+            // Show keep/replace choice if questions exist
+            const hasQuestions = document.querySelectorAll('.se-question').length > 0;
+            document.getElementById('aiExistingQuestions').classList.toggle('d-none', !hasQuestions);
             new bootstrap.Modal('#aiModal').show();
         });
         document.getElementById('aiGenerateBtn')?.addEventListener('click', generateWithAI);
@@ -623,9 +685,16 @@ if ($isEdit) {
         document.getElementById('seDescription').addEventListener('input', markDirty);
         document.getElementById('seAnonymous').addEventListener('change', markDirty);
 
-        // Auto-resize description
-        const descEl = document.getElementById('seDescription');
-        descEl.addEventListener('input', () => { descEl.style.height = 'auto'; descEl.style.height = descEl.scrollHeight + 'px'; });
+        // Description toolbar
+        document.getElementById('seDescToolbar')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            e.preventDefault();
+            const cmd = btn.dataset.cmd;
+            const val = btn.dataset.val || null;
+            document.execCommand(cmd, false, val);
+            document.getElementById('seDescription')?.focus();
+        });
 
         // Auto-save draft before any navigation away
         async function guardNavigation(e, targetHref) {
@@ -664,10 +733,7 @@ if ($isEdit) {
     // ── Populate form from sondage + questions data ──
     function populateFromData(sondage, questions) {
         document.getElementById('seTitre').value = sondage.titre;
-        const descEl = document.getElementById('seDescription');
-        descEl.value = sondage.description || '';
-        descEl.style.height = 'auto';
-        descEl.style.height = descEl.scrollHeight + 'px';
+        document.getElementById('seDescription').innerHTML = sondage.description || '';
         document.getElementById('seAnonymous').checked = sondage.is_anonymous == 1;
 
         document.getElementById('seQuestionsWrap').innerHTML = '';
@@ -862,7 +928,7 @@ if ($isEdit) {
     // ── Collect form data ──
     function collectData() {
         const titre = document.getElementById('seTitre').value.trim();
-        const description = document.getElementById('seDescription').value.trim();
+        const description = document.getElementById('seDescription').innerHTML.trim();
         const isAnonymous = document.getElementById('seAnonymous').checked ? 1 : 0;
 
         const questions = [];
@@ -889,7 +955,7 @@ if ($isEdit) {
         const container = document.getElementById('previewContent');
         let html = `
             <div class="se-preview-title">${escapeHtml(d.titre)}</div>
-            ${d.description ? '<div class="se-preview-desc">' + escapeHtml(d.description) + '</div>' : ''}
+            ${d.description ? '<div class="se-preview-desc">' + d.description + '</div>' : ''}
             ${d.is_anonymous ? '<div class="se-preview-anon"><i class="bi bi-incognito"></i> Réponses anonymes</div>' : ''}
         `;
 
@@ -932,6 +998,8 @@ if ($isEdit) {
         const nbQuestions = parseInt(document.getElementById('aiNbQuestions').value) || 5;
         const langue = zerdaSelect.getValue('#aiLangue');
         const anonyme = document.getElementById('aiAnonyme').checked;
+        const genIntro = document.getElementById('aiGenIntro').checked;
+        const keepMode = document.querySelector('input[name="aiKeepQuestions"]:checked')?.value || 'keep';
         const errorDiv = document.getElementById('aiError');
 
         if (!theme) { errorDiv.textContent = 'Veuillez saisir un thème'; errorDiv.classList.remove('d-none'); return; }
@@ -942,13 +1010,22 @@ if ($isEdit) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération en cours...';
 
         try {
-            const res = await adminApiPost('admin_generate_sondage_questions', { theme, nb_questions: nbQuestions, langue, anonyme });
+            const res = await adminApiPost('admin_generate_sondage_questions', {
+                theme, nb_questions: nbQuestions, langue, anonyme, generate_intro: genIntro
+            });
             if (res.success && res.questions?.length) {
                 bootstrap.Modal.getInstance('#aiModal')?.hide();
-                // Remove empty placeholder questions before adding AI ones
-                document.querySelectorAll('.se-question').forEach(block => {
-                    if (!block.querySelector('.q-text')?.value.trim()) block.remove();
-                });
+
+                if (keepMode === 'replace') {
+                    // Remove all existing questions
+                    document.querySelectorAll('.se-question').forEach(block => block.remove());
+                } else {
+                    // Remove only empty placeholder questions
+                    document.querySelectorAll('.se-question').forEach(block => {
+                        if (!block.querySelector('.q-text')?.value.trim()) block.remove();
+                    });
+                }
+
                 res.questions.forEach(q => {
                     addQuestion({
                         question: q.question,
@@ -956,6 +1033,15 @@ if ($isEdit) {
                         options: q.options || [],
                     }, true);
                 });
+
+                // Set generated intro if available
+                if (res.introduction) {
+                    const descEl = document.getElementById('seDescription');
+                    if (descEl && (!descEl.innerHTML.trim() || keepMode === 'replace')) {
+                        descEl.innerHTML = '<p>' + res.introduction.replace(/\n/g, '</p><p>') + '</p>';
+                    }
+                }
+
                 markDirty();
                 toast(`${res.questions.length} question(s) générée(s) par l'IA`, 'success');
             } else {

@@ -125,7 +125,7 @@ function displaySondage(sondage, questions, mesReponses) {
                 · ${new Date(sondage.created_at).toLocaleDateString('fr-FR')}
                 ${sondage.is_anonymous == 1 ? ' · <i class="bi bi-incognito"></i> Réponses anonymes' : ''}
             </p>
-            ${sondage.description ? '<div class="sondage-description-box">' + escapeHtml(sondage.description) + '</div>' : ''}
+            ${sondage.description ? '<div class="sondage-description-box">' + sondage.description + '</div>' : ''}
             
             ${questionsHtml}
 

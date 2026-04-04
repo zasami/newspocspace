@@ -767,6 +767,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 (function() {
     let planning = null;
     let assignations = [];
+    let absencesData = [];
+    let absIdx = {};
     let refs = {
         success: true,
         users: <?= json_encode(array_values($planningUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
@@ -954,6 +956,18 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         const res = await adminApiPost('admin_get_planning', { mois });
         planning = res.planning || null;
         assignations = res.assignations || [];
+        absencesData = res.absences || [];
+
+        // Build absence lookup: userId_date → type
+        absIdx = {};
+        absencesData.forEach(a => {
+            const start = new Date(a.date_debut + 'T00:00:00');
+            const end = new Date(a.date_fin + 'T00:00:00');
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const key = a.user_id + '_' + fmtISO(d);
+                absIdx[key] = a.type;
+            }
+        });
 
         updateToolbar();
 
@@ -1115,7 +1129,24 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                         let cellClass = 'dc' + (isWe ? ' td-we' : '');
                         let cellContent = '';
 
-                        if (a) {
+                        // Check absence for this cell
+                        const absType = absIdx[key];
+
+                        if (absType) {
+                            // Absence icon by type
+                            const absIcons = {
+                                vacances: '<img src="/spocspace/assets/webp/vacances_1.webp" class="dc-abs-icon" title="Vacances">',
+                                maladie: '<i class="bi bi-thermometer-half dc-abs-bi" style="color:#DC2626" title="Maladie"></i>',
+                                accident: '<i class="bi bi-bandaid dc-abs-bi" style="color:#E65100" title="Accident"></i>',
+                                conge_special: '<i class="bi bi-calendar-heart dc-abs-bi" style="color:#7C3AED" title="Congé spécial"></i>',
+                                formation: '<i class="bi bi-mortarboard dc-abs-bi" style="color:#1565C0" title="Formation"></i>',
+                                maternite: '<i class="bi bi-balloon-heart dc-abs-bi" style="color:#EC4899" title="Maternité"></i>',
+                                paternite: '<i class="bi bi-balloon dc-abs-bi" style="color:#3B82F6" title="Paternité"></i>',
+                                autre: '<i class="bi bi-dash-circle dc-abs-bi" style="color:#888" title="Autre"></i>',
+                            };
+                            cellClass += ' dc-absence';
+                            cellContent = absIcons[absType] || absIcons.autre;
+                        } else if (a) {
                             if (a.statut === 'absent') cellClass += ' dc-absent';
                             else if (a.statut === 'repos') cellClass += ' dc-repos';
                             else if (a.statut === 'vacant') cellClass += ' dc-vacant';

@@ -57,6 +57,20 @@ if ($userId) {
 .btn-desir-valider:hover { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
 .btn-desir-refuser { background: var(--cl-bg); border: 1px solid var(--cl-border); color: #7B3B2C; }
 .btn-desir-refuser:hover { background: #E2B8AE; color: #7B3B2C; border-color: #E2B8AE; }
+
+/* Permissions modal — Preset cards */
+.perm-presets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.perm-preset-card { position: relative; border: 1.5px solid var(--cl-border, #E8E5E0); border-radius: 12px; padding: 14px 10px 12px; text-align: center; cursor: pointer; transition: all .2s; background: var(--cl-bg, #F7F5F2); }
+.perm-preset-card:hover { border-color: var(--cl-border-hover, #D4D0CA); background: var(--cl-surface, #fff); }
+.perm-preset-active { border-color: #1A1A1A !important; background: var(--cl-surface, #fff) !important; }
+.perm-preset-check { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; background: #1A1A1A; color: #fff; font-size: .65rem; display: none; align-items: center; justify-content: center; }
+.perm-preset-active .perm-preset-check { display: flex; }
+.perm-preset-icon { font-size: 1.3rem; color: var(--cl-text-secondary); display: block; margin-bottom: 6px; }
+.perm-preset-active .perm-preset-icon { color: #1A1A1A; }
+.perm-preset-label { font-weight: 600; font-size: .82rem; margin-bottom: 2px; }
+.perm-preset-desc { font-size: .7rem; color: var(--cl-text-muted); line-height: 1.3; }
+.perm-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.perm-col-title { font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-secondary); padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1.5px solid var(--cl-border); }
 </style>
 <div id="userDetailPage">
   <div class="mb-3">
@@ -74,18 +88,18 @@ if ($userId) {
 
   <!-- Modal Permissions -->
   <div class="modal fade" id="udPermModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:620px">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title"><i class="bi bi-shield-check"></i> Accès SpocSpace</h5>
-          <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+          <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="modal-body" id="udPermBody">
           <p class="text-muted small">Chargement...</p>
         </div>
-        <div class="modal-footer d-flex">
+        <div class="modal-footer">
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
-          <button type="button" class="btn btn-sm btn-primary ms-auto" id="udPermSaveBtn"><i class="bi bi-check-lg"></i> Sauvegarder</button>
+          <button type="button" class="btn btn-sm btn-primary" id="udPermSaveBtn"><i class="bi bi-check-lg"></i> Sauvegarder</button>
         </div>
       </div>
     </div>
@@ -634,72 +648,107 @@ if ($userId) {
         }
 
         const perms = res.permissions;
-        const groups = {
-            'Pages': Object.entries(perms).filter(([k]) => k.startsWith('page_')),
-            'Cuisine': Object.entries(perms).filter(([k]) => k.startsWith('cuisine_')),
-        };
+        const pageEntries = Object.entries(perms).filter(([k]) => k.startsWith('page_'));
+        const cuisineEntries = Object.entries(perms).filter(([k]) => k.startsWith('cuisine_'));
+        const allPageKeys = pageEntries.map(([k]) => k);
+        const allCuisineKeys = cuisineEntries.map(([k]) => k);
+        const allKeys = [...allPageKeys, ...allCuisineKeys];
+        const soinsKeys = allKeys.filter(k => k !== 'page_emails');
 
-        panel.innerHTML = '';
-
-        // Presets
-        const presetRow = document.createElement('div');
-        presetRow.className = 'mb-3 d-flex gap-1 flex-wrap';
         const presets = [
-            { label: 'Standard (tout)', fn: () => setAll(true) },
-            { label: 'Cuisine complet', fn: () => applyPreset(['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_messages']) },
-            { label: 'Hôtellerie', fn: () => applyPreset(['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_messages']) },
-            { label: 'Aucun accès', fn: () => setAll(false) },
+            { id: 'standard', label: 'Standard', desc: 'Accès complet (email inclus)', icon: 'bi-person-check', keys: null },
+            { id: 'infirmiere', label: 'Infirmière', desc: 'Tout accès + email', icon: 'bi-heart-pulse', keys: null },
+            { id: 'assc', label: 'ASSC', desc: 'Tout sauf email externe', icon: 'bi-clipboard2-pulse', keys: soinsKeys },
+            { id: 'aide_soignant', label: 'Aide soignant', desc: 'Tout sauf email et cuisine', icon: 'bi-bandaid',
+              keys: allPageKeys.filter(k => k !== 'page_emails' && k !== 'page_cuisine') },
+            { id: 'cuisine', label: 'Cuisine complet', desc: 'Cuisine + menus + réservations', icon: 'bi-egg-fried',
+              keys: ['page_cuisine','cuisine_saisie_menu','cuisine_reservations_collab','cuisine_reservations_famille','cuisine_table_vip','page_messages'] },
+            { id: 'hotellerie', label: 'Hôtellerie', desc: 'Cuisine + réservations famille', icon: 'bi-building',
+              keys: ['page_cuisine','cuisine_reservations_famille','cuisine_reservations_collab','page_messages'] },
+            { id: 'none', label: 'Aucun accès', desc: 'Tout désactivé', icon: 'bi-slash-circle', keys: [] },
         ];
-        presets.forEach(p => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn btn-outline-secondary btn-sm';
-            btn.textContent = p.label;
-            btn.addEventListener('click', p.fn);
-            presetRow.appendChild(btn);
-        });
-        panel.appendChild(presetRow);
 
-        // Groups
-        for (const [groupName, entries] of Object.entries(groups)) {
-            const h = document.createElement('div');
-            h.className = 'fw-semibold small mb-1 mt-2';
-            h.textContent = groupName;
-            panel.appendChild(h);
+        function detectActivePreset() {
+            for (const p of presets) {
+                if (p.keys === null) {
+                    if ([...panel.querySelectorAll('input[data-key]')].every(el => el.checked)) return p.id;
+                } else if (p.keys.length === 0) {
+                    if ([...panel.querySelectorAll('input[data-key]')].every(el => !el.checked)) return p.id;
+                } else {
+                    const match = [...panel.querySelectorAll('input[data-key]')].every(el =>
+                        p.keys.includes(el.dataset.key) ? el.checked : !el.checked
+                    );
+                    if (match) return p.id;
+                }
+            }
+            return null;
+        }
 
-            entries.forEach(([key, info]) => {
-                const wrap = document.createElement('div');
-                wrap.className = 'form-check form-switch';
-
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.className = 'form-check-input';
-                input.id = 'udperm_' + key;
-                input.dataset.key = key;
-                input.checked = info.granted === 1;
-
-                const label = document.createElement('label');
-                label.className = 'form-check-label small';
-                label.htmlFor = input.id;
-                label.textContent = info.label;
-
-                wrap.appendChild(input);
-                wrap.appendChild(label);
-                panel.appendChild(wrap);
+        function updatePresetCards() {
+            const active = detectActivePreset();
+            panel.querySelectorAll('.perm-preset-card').forEach(card => {
+                card.classList.toggle('perm-preset-active', card.dataset.preset === active);
             });
         }
 
         function setAll(val) {
             panel.querySelectorAll('input[data-key]').forEach(el => { el.checked = val; });
+            updatePresetCards();
         }
 
-        function applyPreset(allowed) {
+        function applyPreset(keys) {
+            if (keys === null) { setAll(true); return; }
             panel.querySelectorAll('input[data-key]').forEach(el => {
-                el.checked = allowed.includes(el.dataset.key);
+                el.checked = keys.includes(el.dataset.key);
             });
+            updatePresetCards();
         }
 
-        // Save handler
+        panel.innerHTML =
+            '<div class="perm-presets-grid">'
+            + presets.map(p =>
+                '<div class="perm-preset-card" data-preset="' + p.id + '">'
+                + '<div class="perm-preset-check"><i class="bi bi-check-lg"></i></div>'
+                + '<i class="bi ' + p.icon + ' perm-preset-icon"></i>'
+                + '<div class="perm-preset-label">' + p.label + '</div>'
+                + '<div class="perm-preset-desc">' + p.desc + '</div>'
+                + '</div>'
+            ).join('')
+            + '</div>'
+            + '<div class="perm-columns">'
+            + '<div class="perm-col">'
+            + '<div class="perm-col-title">Général</div>'
+            + pageEntries.map(([key, info]) =>
+                '<div class="form-check form-switch">'
+                + '<input type="checkbox" class="form-check-input" id="udp_' + key + '" data-key="' + key + '"' + (info.granted === 1 ? ' checked' : '') + '>'
+                + '<label class="form-check-label small" for="udp_' + key + '">' + escapeHtml(info.label) + '</label>'
+                + '</div>'
+            ).join('')
+            + '</div>'
+            + '<div class="perm-col">'
+            + '<div class="perm-col-title">Cuisine</div>'
+            + cuisineEntries.map(([key, info]) =>
+                '<div class="form-check form-switch">'
+                + '<input type="checkbox" class="form-check-input" id="udp_' + key + '" data-key="' + key + '"' + (info.granted === 1 ? ' checked' : '') + '>'
+                + '<label class="form-check-label small" for="udp_' + key + '">' + escapeHtml(info.label) + '</label>'
+                + '</div>'
+            ).join('')
+            + '</div>'
+            + '</div>';
+
+        panel.querySelectorAll('.perm-preset-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const p = presets.find(x => x.id === card.dataset.preset);
+                if (p) applyPreset(p.keys);
+            });
+        });
+
+        panel.querySelectorAll('input[data-key]').forEach(el => {
+            el.addEventListener('change', updatePresetCards);
+        });
+
+        updatePresetCards();
+
         document.getElementById('udPermSaveBtn').onclick = async () => {
             const data = {};
             panel.querySelectorAll('input[data-key]').forEach(el => {

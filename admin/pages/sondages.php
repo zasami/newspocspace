@@ -257,16 +257,16 @@ $sondageInitList = Db::fetchAll(
         let actions = '';
         if (s.statut === 'brouillon') {
             actions = `
-                <button class="btn btn-success btn-sm me-1" data-action="toggle" data-statut="ouvert"><i class="bi bi-play-fill"></i> Ouvrir</button>
+                <button class="btn btn-sm me-1" style="background:#bcd2cb;color:#2d4a43" data-action="toggle" data-statut="ouvert"><i class="bi bi-play-fill"></i> Ouvrir</button>
                 <button class="btn btn-outline-dark btn-sm me-1" data-action="edit"><i class="bi bi-pencil"></i> Modifier</button>
                 <button class="btn btn-outline-danger btn-sm" data-action="delete"><i class="bi bi-trash"></i></button>`;
         } else if (s.statut === 'ouvert') {
             actions = `
-                <button class="btn btn-light btn-sm me-1" data-action="toggle" data-statut="ferme"><i class="bi bi-stop-fill"></i> Fermer</button>
+                <button class="btn btn-sm me-1" style="background:#D4C4A8;color:#6B5B3E" data-action="toggle" data-statut="ferme"><i class="bi bi-stop-fill"></i> Fermer</button>
                 <button class="btn btn-outline-danger btn-sm" data-action="delete"><i class="bi bi-trash"></i></button>`;
         } else {
             actions = `
-                <button class="btn btn-outline-success btn-sm me-1" data-action="toggle" data-statut="ouvert"><i class="bi bi-play-fill"></i> Réouvrir</button>
+                <button class="btn btn-sm me-1" style="background:#bcd2cb;color:#2d4a43" data-action="toggle" data-statut="ouvert"><i class="bi bi-play-fill"></i> Réouvrir</button>
                 <button class="btn btn-outline-danger btn-sm" data-action="delete"><i class="bi bi-trash"></i></button>`;
         }
 
@@ -346,7 +346,7 @@ $sondageInitList = Db::fetchAll(
                 <div class="d-flex">${actions}</div>
             </div>
             <div class="card-body admin-sondage-body">
-                ${s.description ? '<p class="text-muted mb-3">' + escapeHtml(s.description) + '</p>' : ''}
+                ${s.description ? '<div class="text-muted mb-3" style="font-size:.9rem;line-height:1.6">' + s.description + '</div>' : ''}
                 ${questions.length > 0 ? questionsHtml : '<div class="text-muted text-center py-3">Aucune question</div>'}
             </div>`;
     }

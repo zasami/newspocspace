@@ -266,6 +266,7 @@ function admin_generate_sondage_questions()
     $nbQuestions = min(20, max(1, intval($params['nb_questions'] ?? 5)));
     $langue = in_array($params['langue'] ?? '', ['fr', 'de', 'en', 'it']) ? $params['langue'] : 'fr';
     $anonyme = !empty($params['anonyme']);
+    $generateIntro = !empty($params['generate_intro']);
 
     if (empty($theme)) bad_request('Thème requis');
 
@@ -282,6 +283,16 @@ function admin_generate_sondage_questions()
 
     $langLabel = ['fr' => 'français', 'de' => 'allemand', 'en' => 'anglais', 'it' => 'italien'][$langue] ?? 'français';
 
+    $introInstruction = $generateIntro
+        ? "\n- Ajoute aussi un champ \"introduction\" : un texte d'introduction bienveillant et professionnel (2-3 phrases) " .
+          "qui explique l'objectif du sondage aux collaborateurs, les encourage à participer et précise si c'est anonyme ou non.\n"
+        : "";
+
+    $introFormat = $generateIntro
+        ? "{\n  \"introduction\": \"Texte d'intro...\",\n  \"questions\": [\n"
+        : "[\n";
+    $introFormatEnd = $generateIntro ? "  ]\n}" : "]\n";
+
     $prompt = "Tu es un expert RH dans un EMS (établissement médico-social) en Suisse. " .
         "Génère exactement $nbQuestions questions de sondage en $langLabel sur le thème: \"$theme\".\n\n" .
         "Règles:\n" .
@@ -289,13 +300,14 @@ function admin_generate_sondage_questions()
         "- Mix de types: choix_unique (échelle 1-5 ou oui/non), choix_multiple, texte_libre\n" .
         "- Les questions doivent être neutres et professionnelles\n" .
         ($anonyme ? "- Le sondage est anonyme, les questions peuvent être plus personnelles\n" : "") .
+        $introInstruction .
         "- Retourne UNIQUEMENT un JSON valide, sans texte autour\n\n" .
         "Format JSON attendu:\n" .
-        "[\n" .
-        "  {\"question\": \"...\", \"type\": \"choix_unique\", \"options\": [\"Tout à fait\", \"Plutôt oui\", \"Neutre\", \"Plutôt non\", \"Pas du tout\"]},\n" .
-        "  {\"question\": \"...\", \"type\": \"choix_multiple\", \"options\": [\"Option A\", \"Option B\", \"Option C\"]},\n" .
-        "  {\"question\": \"...\", \"type\": \"texte_libre\", \"options\": []}\n" .
-        "]\n";
+        $introFormat .
+        "    {\"question\": \"...\", \"type\": \"choix_unique\", \"options\": [\"Tout à fait\", \"Plutôt oui\", \"Neutre\", \"Plutôt non\", \"Pas du tout\"]},\n" .
+        "    {\"question\": \"...\", \"type\": \"choix_multiple\", \"options\": [\"Option A\", \"Option B\", \"Option C\"]},\n" .
+        "    {\"question\": \"...\", \"type\": \"texte_libre\", \"options\": []}\n" .
+        $introFormatEnd;
 
     $questions = null;
     $iaError = null;
@@ -354,8 +366,12 @@ function admin_generate_sondage_questions()
         if ($httpCode === 200) {
             $resp = json_decode($raw, true);
             $text = $resp['content'][0]['text'] ?? '';
-            // Extract JSON from response
-            if (preg_match('/\[[\s\S]*\]/', $text, $matches)) {
+            // Extract JSON from response — try object first, then array
+            $questions = json_decode($text, true);
+            if (!$questions && preg_match('/\{[\s\S]*\}/', $text, $matches)) {
+                $questions = json_decode($matches[0], true);
+            }
+            if (!$questions && preg_match('/\[[\s\S]*\]/', $text, $matches)) {
                 $questions = json_decode($matches[0], true);
             }
         } else {
@@ -364,6 +380,14 @@ function admin_generate_sondage_questions()
     }
 
     if ($iaError) bad_request($iaError);
+
+    // Parse response — may be {introduction, questions} or just [questions]
+    $introduction = null;
+    if ($generateIntro && is_array($questions) && isset($questions['questions'])) {
+        $introduction = $questions['introduction'] ?? null;
+        $questions = $questions['questions'];
+    }
+
     if (!is_array($questions) || empty($questions)) bad_request('L\'IA n\'a pas pu générer de questions valides. Réessayez.');
 
     // Validate structure
@@ -388,8 +412,10 @@ function admin_generate_sondage_questions()
              strlen($prompt), strlen($raw ?? ''), $_SESSION['ss_user']['id']]
         );
     } catch (\Exception $e) {
-        // Non-critical — don't block the response if logging fails
+        // Non-critical
     }
 
-    respond(['success' => true, 'questions' => $validated]);
+    $response = ['success' => true, 'questions' => $validated];
+    if ($introduction) $response['introduction'] = $introduction;
+    respond($response);
 }

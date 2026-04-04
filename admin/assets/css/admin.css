@@ -1484,6 +1484,9 @@ body.ss-immersive .ss-immersive-pill {
 .tr-grid .dc-absent { background: #FEE2E2; }
 .tr-grid .dc-repos  { background: var(--cl-bg); }
 .tr-grid .dc-vacant { background: #FFFBEB; }
+.tr-grid .dc-absence { background: rgba(188,210,203,.12); }
+.dc-abs-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
+.dc-abs-bi { font-size: .85rem; vertical-align: middle; }
 /* Vacation */
 .tr-grid .dc-vv { background: #bcd2cb !important; }
 .tr-grid .dc-va { background: #FDE68A !important; }
