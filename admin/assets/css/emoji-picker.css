@@ -20,31 +20,8 @@
   max-height: 380px;
 }
 
-/* Triangle pointant vers le bouton */
-.zkr-emoji-picker::after {
-  content: '';
-  position: absolute;
-  bottom: -7px;
-  left: calc(var(--caret-offset, 20px) - 7px);
-  width: 14px;
-  height: 14px;
-  background: var(--bs-body-bg, #fff);
-  border-right: 1px solid var(--bs-border-color, #dee2e6);
-  border-bottom: 1px solid var(--bs-border-color, #dee2e6);
-  transform: rotate(45deg);
-  z-index: 100;
-  pointer-events: none;
-}
-
-/* Triangle inversé quand le picker est en dessous du bouton */
-.zkr-emoji-picker-below::after {
-  bottom: auto;
-  top: -7px;
-  border-right: none;
-  border-bottom: none;
-  border-left: 1px solid var(--bs-border-color, #dee2e6);
-  border-top: 1px solid var(--bs-border-color, #dee2e6);
-}
+/* No caret triangle */
+.zkr-emoji-picker::after { display: none; }
 
 [data-theme="dark"] .zkr-emoji-picker {
   background: #1e293b;
@@ -52,16 +29,6 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="dark"] .zkr-emoji-picker::after {
-  background: #1e293b;
-  border-right-color: #334155;
-  border-bottom-color: #334155;
-}
-
-[data-theme="dark"] .zkr-emoji-picker-below::after {
-  border-left-color: #334155;
-  border-top-color: #334155;
-}
 
 [data-theme="zkriva"] .zkr-emoji-picker {
   background: var(--bs-body-bg);
@@ -69,16 +36,6 @@
   box-shadow: 0 8px 24px rgba(210, 180, 145, 0.1);
 }
 
-[data-theme="zkriva"] .zkr-emoji-picker::after {
-  background: var(--bs-body-bg);
-  border-right-color: #e7e5e4;
-  border-bottom-color: #e7e5e4;
-}
-
-[data-theme="zkriva"] .zkr-emoji-picker-below::after {
-  border-left-color: #e7e5e4;
-  border-top-color: #e7e5e4;
-}
 
 /* ============================================================================
    HEADER (Onglets + Recherche)

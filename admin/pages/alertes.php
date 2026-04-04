@@ -12,6 +12,7 @@ $alerts = Db::fetchAll(
 $modules   = Db::fetchAll("SELECT id, code, nom FROM modules ORDER BY code");
 $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 ?>
+<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <style>
 .al-col-prio    { width: 5%; }
 .al-col-titre   { width: 30%; }
@@ -81,6 +82,33 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     transition: max-height .35s ease, opacity .3s ease, margin-top .35s ease, padding .35s ease, border-width .35s ease;
 }
 .al-msg-box.is-open { opacity: 1; margin-top: .75rem; padding: .75rem 1rem; border-width: 1px; }
+/* ── Priority slider tabs ── */
+.al-prio-tabs {
+    display: flex; position: relative; border-radius: 10px; padding: 3px; gap: 0;
+    background: var(--cl-bg, #F7F5F2); min-width: 200px;
+}
+.al-prio-slider {
+    position: absolute; top: 3px; left: 3px;
+    width: calc(50% - 3px); height: calc(100% - 6px);
+    border-radius: 8px; z-index: 0; pointer-events: none;
+    background: #bcd2cb; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: transform .3s cubic-bezier(.4,0,.2,1), background .3s;
+}
+.al-prio-tabs[data-value="haute"] .al-prio-slider {
+    transform: translateX(100%); background: #E2B8AE;
+}
+.al-prio-tab {
+    flex: 1; background: none; border: none; padding: 6px 12px;
+    font-size: .78rem; font-weight: 500; border-radius: 8px; cursor: pointer;
+    color: var(--cl-text-secondary, #888); position: relative; z-index: 1;
+    text-align: center; white-space: nowrap;
+    transition: color .25s, font-weight .25s;
+}
+.al-prio-tab:hover { color: var(--cl-text, #333); }
+.al-prio-tab.active { font-weight: 700; }
+.al-prio-tabs[data-value="normale"] .al-prio-tab.active { color: #2d4a43; }
+.al-prio-tabs[data-value="haute"] .al-prio-tab.active { color: #7B3B2C; }
+
 .al-hidden { display: none; }
 
 /* ── Rich text editor ── */
@@ -104,34 +132,12 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     font-size: .88rem; font-family: inherit; line-height: 1.7; color: var(--cl-text, #333);
     background: var(--cl-surface, #fff); outline: none;
 }
-.al-rte-editor:focus { border-color: var(--cl-primary, #2E7D32); box-shadow: 0 0 0 3px rgba(46,125,50,.08); }
+.al-rte-editor:focus { border-color: var(--cl-border, #E8E5E0); box-shadow: none; }
 .al-rte-editor p { margin: 0 0 6px; }
 .al-rte-editor ul, .al-rte-editor ol { margin: 4px 0; padding-left: 20px; }
 .al-rte-editor blockquote { border-left: 3px solid var(--cl-border, #D4C4A8); margin: 6px 0; padding: 6px 14px; background: rgba(212,196,168,.08); border-radius: 0 6px 6px 0; font-style: italic; }
 
-/* ── Emoji picker ── */
-.al-emoji-picker {
-    position: absolute; z-index: 100; background: var(--cl-surface, #fff);
-    border: 1px solid var(--cl-border, #E8E5E0); border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.12); width: 320px; padding: 8px;
-    margin-top: 4px; right: 0;
-}
-.al-emoji-search {
-    width: 100%; padding: 6px 10px; border: 1px solid var(--cl-border, #E8E5E0);
-    border-radius: 8px; font-size: .82rem; margin-bottom: 6px; outline: none;
-}
-.al-emoji-search:focus { border-color: var(--cl-primary, #2E7D32); }
-.al-emoji-grid {
-    display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
-    max-height: 200px; overflow-y: auto;
-}
-.al-emoji-item {
-    width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; cursor: pointer; border-radius: 8px; transition: all .12s;
-}
-.al-emoji-item:hover { background: var(--cl-bg, #F7F5F2); transform: scale(1.2); }
-.al-emoji-cat { grid-column: 1 / -1; font-size: .68rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .5px; color: var(--cl-text-muted, #888); padding: 6px 4px 2px; }
+/* emoji picker uses zkr-emoji-picker from emoji-picker.css */
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -249,14 +255,18 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
-        <div class="row g-2 mb-3">
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Priorité</label>
-            <div class="zs-select" id="alertPriority" data-placeholder="Priorité"></div>
-          </div>
-          <div class="col-md-8">
+        <div class="d-flex align-items-end gap-3 mb-3">
+          <div class="flex-grow-1">
             <label class="form-label fw-bold">Titre *</label>
             <input type="text" class="form-control form-control-sm" id="alertTitle" maxlength="255">
+          </div>
+          <div class="flex-shrink-0">
+            <label class="form-label fw-bold" style="font-size:.75rem">Priorité</label>
+            <div class="al-prio-tabs" id="alertPrioToggle" data-value="normale">
+              <div class="al-prio-slider"></div>
+              <button type="button" class="al-prio-tab active" data-prio="normale">Normale</button>
+              <button type="button" class="al-prio-tab" data-prio="haute">🔴 Haute</button>
+            </div>
           </div>
         </div>
         <div class="mb-3">
@@ -283,17 +293,14 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
             <button type="button" class="al-rte-btn" id="alEmojiBtn" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
           </div>
           <div class="al-rte-editor" contenteditable="true" id="alertMessage"></div>
-          <!-- Emoji picker dropdown -->
-          <div class="al-emoji-picker" id="alEmojiPicker" style="display:none">
-            <input type="text" class="al-emoji-search" id="alEmojiSearch" placeholder="Rechercher...">
-            <div class="al-emoji-grid" id="alEmojiGrid"></div>
-          </div>
+          <!-- Emoji picker (zkr-emoji style) -->
+          <div id="alEmojiAnchor"></div>
           </div><!-- /relative -->
         </div>
         <div class="row g-2 mb-3">
           <div class="col-md-3">
             <label class="form-label">Expire le</label>
-            <input type="date" class="form-control form-control-sm" id="alertExpires">
+            <input type="date" class="form-control form-control-sm" id="alertExpires" style="height:38px">
           </div>
           <div class="col-md-3">
             <label class="form-label">Cible</label>
@@ -355,12 +362,17 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     // ── Create modal ─────────────────────────────────────────────────────────
     const modal = new bootstrap.Modal(document.getElementById('alertModal'));
 
-    zerdaSelect.init('#alertPriority', [
-        { value: 'normale', label: 'Normale' },
-        { value: 'haute',   label: 'Haute importance' }
-    ], { value: 'normale', onSelect: (val) => {
+    // Priority slider tabs
+    const prioToggle = document.getElementById('alertPrioToggle');
+    prioToggle?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.al-prio-tab');
+        if (!tab) return;
+        const val = tab.dataset.prio;
+        prioToggle.dataset.value = val;
+        prioToggle.querySelectorAll('.al-prio-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
         document.getElementById('alertHauteInfo').classList.toggle('al-hidden', val !== 'haute');
-    }});
+    });
 
     zerdaSelect.init('#alertTarget', [
         { value: 'all',      label: 'Tous les collaborateurs' },
@@ -390,7 +402,9 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     document.getElementById('btnNewAlert').addEventListener('click', () => {
         document.getElementById('alertTitle').value   = '';
         document.getElementById('alertMessage').innerHTML = '';
-        zerdaSelect.setValue('#alertPriority', 'normale');
+        document.getElementById('alertPrioToggle').dataset.value = 'normale';
+        document.querySelectorAll('.al-prio-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.al-prio-tab[data-prio="normale"]').classList.add('active');
         document.getElementById('alertExpires').value = '';
         zerdaSelect.setValue('#alertTarget', 'all');
         document.getElementById('alertTargetValueGroup').classList.add('al-hidden');
@@ -401,7 +415,7 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
     document.getElementById('alertSaveBtn').addEventListener('click', async () => {
         const title    = document.getElementById('alertTitle').value.trim();
         const message  = document.getElementById('alertMessage').innerHTML.trim();
-        const priority = zerdaSelect.getValue('#alertPriority');
+        const priority = document.getElementById('alertPrioToggle').dataset.value;
         const target   = zerdaSelect.getValue('#alertTarget');
         const targetValue = zerdaSelect.getValue('#alertTargetValue');
         const expiresAt   = document.getElementById('alertExpires').value;
@@ -546,61 +560,115 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
         document.getElementById('alertMessage')?.focus();
     });
 
-    // ═══ Emoji Picker ═══
-    const EMOJIS = {
-        'Smileys': ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🥰','😍','🤩','😘','😗','😚','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐'],
-        'Gestes': ['👍','👎','👏','🙌','🤝','🙏','💪','✌️','🤞','🤟','🤘','👌','🤌','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','✍️'],
-        'Coeurs': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟'],
-        'Objets': ['⚠️','🚨','🔴','🟡','🟢','🔵','📌','📋','📝','✅','❌','⭐','🌟','💡','🔔','📢','📣','💊','🩺','🏥','🧹','🧤','😷','💉','🩹','🔒','🔑','📅','⏰','📞','📧','💻'],
-        'Nature': ['🌸','🌺','🌻','🌹','🌷','🌿','🍀','🌳','🌈','☀️','🌙','⭐','❄️','🔥','💧','🌊'],
-        'Nourriture': ['🍎','🍊','🍋','🍇','🍓','🍰','🎂','☕','🍵','🥐','🧀','🥗','🍕','🍔'],
-        'Fêtes': ['🎉','🎊','🎈','🎁','🎄','🎃','🎆','🎇','🏆','🥇','🥈','🥉','🎓','🎗️'],
+    // ═══ Emoji Picker (zkr-emoji style) ═══
+    const EMOJI_CATS = {
+        smileys:    { icon: '😀', label: 'Smileys', emojis: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','👍','👎','👊','✊','🤛','🤜','🤞','✌️','🤟','🤘','👌','🤌','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤙','💪','🙏'] },
+        animals:    { icon: '🐻', label: 'Animaux & Nature', emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🐺','🐴','🦄','🐝','🦋','🐌','🐞','🐢','🐍','🐙','🐠','🐟','🐬','🐳','🐋','🦈','🐘','🦒','🌲','🌳','🌴','🌱','🌿','🍀','💐','🌷','🌹','🌺','🌸','🌼','🌻','☀️','🌤️','⛅','🌈','❄️','🔥','💧','🌊'] },
+        food:       { icon: '🍔', label: 'Nourriture', emojis: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍒','🍑','🥭','🍍','🥝','🍅','🥑','🥦','🥒','🌶️','🌽','🥕','🥔','🥐','🍞','🥖','🧀','🥚','🍳','🥞','🥓','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🌮','🥗','🍝','🍜','🍣','🍱','🍦','🍰','🎂','🍩','🍪','☕','🍵','🥤','🍺','🍷','🥂'] },
+        travel:     { icon: '✈️', label: 'Voyages', emojis: ['🚗','🚕','🚌','🏎️','🚑','🚒','🚲','🏍️','✈️','🚀','🛶','⛵','🚢','🏠','🏢','🏥','🏫','⛪','🏰','🗼','🗽','⛲','🏖️','🏔️','🌅','🌇','🌃','🌉','🎡','🎢'] },
+        activities: { icon: '⚽', label: 'Activités', emojis: ['⚽','🏀','🎾','🏐','🎱','🏓','🏸','⛳','🏹','🎣','🥊','🥋','🏋️','🧘','🏊','🏄','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🎗️','🎪','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎸','🎻','🎲','🎯','🎮','🧩'] },
+        objects:    { icon: '💡', label: 'Objets', emojis: ['📱','💻','⌨️','🖥️','🖨️','📷','📹','📞','📺','📻','⏰','💡','🔦','💸','💰','💳','💎','🔧','🔨','⚙️','🔪','🛡️','🩹','🩺','💊','💉','🧬','🌡️','🧹','🧼','🔑','🚪','🛋️','🛏️','🎁','🎈','🎀','🎊','🎉','✉️','📦','📋','📁','📰','📓','📕','📗','📘','📚','🔖','📎','✂️','📌','📝','✏️','🔍','🔒'] },
+        symbols:    { icon: '❤️', label: 'Symboles', emojis: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','⚠️','🚨','🔴','🟡','🟢','🔵','📌','✅','❌','⭐','🌟','💯','❗','❓','‼️','⁉️','🔔','📢','📣','♻️','🚫','⛔','🛑'] },
+        flags:      { icon: '🏁', label: 'Drapeaux', emojis: ['🏁','🚩','🇨🇭','🇫🇷','🇩🇪','🇮🇹','🇪🇸','🇬🇧','🇺🇸','🇧🇪','🇵🇹','🇧🇷','🇯🇵','🇨🇳','🇰🇷','🇮🇳','🇹🇷','🇷🇺','🇸🇦','🇦🇪','🇲🇦','🇹🇳','🇩🇿','🇸🇳','🇨🇮','🇨🇩','🇨🇲','🇪🇺','🏳️‍🌈'] }
     };
 
-    const emojiPicker = document.getElementById('alEmojiPicker');
-    const emojiGrid = document.getElementById('alEmojiGrid');
-    const emojiSearch = document.getElementById('alEmojiSearch');
+    let emojiPicker = null;
+    let emojiCurrentCat = 'smileys';
 
-    function renderEmojis(filter) {
-        const q = (filter || '').toLowerCase();
-        let html = '';
-        for (const [cat, emojis] of Object.entries(EMOJIS)) {
-            const filtered = q ? emojis.filter(e => e.includes(q)) : emojis;
-            if (!filtered.length) continue;
-            html += `<div class="al-emoji-cat">${escapeHtml(cat)}</div>`;
-            filtered.forEach(e => { html += `<div class="al-emoji-item" data-emoji="${e}">${e}</div>`; });
-        }
-        emojiGrid.innerHTML = html || '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#999">Aucun emoji</div>';
+    function createEmojiPicker() {
+        const div = document.createElement('div');
+        div.className = 'zkr-emoji-picker';
+        div.style.position = 'absolute';
+        div.style.zIndex = '10000';
+
+        let tabsHtml = Object.entries(EMOJI_CATS).map(([key, cat]) =>
+            `<button class="zkr-emoji-tab ${key === emojiCurrentCat ? 'active' : ''}" data-cat="${key}" title="${escapeHtml(cat.label)}">${cat.icon}</button>`
+        ).join('');
+
+        div.innerHTML = `
+            <div class="zkr-emoji-header">
+                <div class="zkr-emoji-tabs">${tabsHtml}</div>
+                <div class="zkr-emoji-search">
+                    <input type="text" class="zkr-emoji-search-input form-control" placeholder="Rechercher...">
+                    <i class="bi bi-search zkr-emoji-search-icon"></i>
+                </div>
+            </div>
+            <div class="zkr-emoji-body">
+                <div class="zkr-emoji-category-label">${EMOJI_CATS[emojiCurrentCat].label}</div>
+                <div class="zkr-emoji-grid"></div>
+            </div>`;
+
+        // Tab clicks
+        div.querySelectorAll('.zkr-emoji-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                emojiCurrentCat = tab.dataset.cat;
+                div.querySelectorAll('.zkr-emoji-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                div.querySelector('.zkr-emoji-search-input').value = '';
+                loadEmojiCategory(div, emojiCurrentCat);
+            });
+        });
+
+        // Search
+        div.querySelector('.zkr-emoji-search-input').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            if (!q) { loadEmojiCategory(div, emojiCurrentCat); return; }
+            let all = [];
+            Object.values(EMOJI_CATS).forEach(cat => all.push(...cat.emojis));
+            const grid = div.querySelector('.zkr-emoji-grid');
+            div.querySelector('.zkr-emoji-category-label').textContent = 'Résultats';
+            grid.innerHTML = all.filter(e => e.includes(q)).map(e =>
+                `<button class="zkr-emoji-btn" data-emoji="${e}">${e}</button>`
+            ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#999;font-size:.85rem">Aucun résultat</div>';
+        });
+
+        // Emoji click
+        div.addEventListener('click', (e) => {
+            const btn = e.target.closest('.zkr-emoji-btn');
+            if (!btn) return;
+            const editor = document.getElementById('alertMessage');
+            editor.focus();
+            document.execCommand('insertText', false, btn.dataset.emoji);
+            closeEmojiPicker();
+        });
+
+        loadEmojiCategory(div, emojiCurrentCat);
+        return div;
+    }
+
+    function loadEmojiCategory(picker, catKey) {
+        const cat = EMOJI_CATS[catKey];
+        picker.querySelector('.zkr-emoji-category-label').textContent = cat.label;
+        picker.querySelector('.zkr-emoji-grid').innerHTML = cat.emojis.map(e =>
+            `<button class="zkr-emoji-btn" data-emoji="${e}">${e}</button>`
+        ).join('');
+    }
+
+    function openEmojiPicker() {
+        if (emojiPicker) { closeEmojiPicker(); return; }
+        emojiPicker = createEmojiPicker();
+        const anchor = document.getElementById('alEmojiAnchor');
+        anchor.appendChild(emojiPicker);
+        // Position below the toolbar
+        emojiPicker.style.right = '0';
+        emojiPicker.style.top = '4px';
+        setTimeout(() => emojiPicker.querySelector('.zkr-emoji-search-input')?.focus(), 50);
+    }
+
+    function closeEmojiPicker() {
+        if (emojiPicker) { emojiPicker.remove(); emojiPicker = null; }
     }
 
     document.getElementById('alEmojiBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const isOpen = emojiPicker.style.display !== 'none';
-        emojiPicker.style.display = isOpen ? 'none' : '';
-        if (!isOpen) {
-            emojiSearch.value = '';
-            renderEmojis('');
-            emojiSearch.focus();
-        }
+        openEmojiPicker();
     });
 
-    emojiSearch?.addEventListener('input', (e) => renderEmojis(e.target.value));
-
-    emojiGrid?.addEventListener('click', (e) => {
-        const item = e.target.closest('.al-emoji-item');
-        if (!item) return;
-        const emoji = item.dataset.emoji;
-        const editor = document.getElementById('alertMessage');
-        editor.focus();
-        document.execCommand('insertText', false, emoji);
-        emojiPicker.style.display = 'none';
-    });
-
-    // Close emoji picker on outside click
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('#alEmojiPicker') && !e.target.closest('#alEmojiBtn')) {
-            emojiPicker.style.display = 'none';
+        if (emojiPicker && !e.target.closest('.zkr-emoji-picker') && !e.target.closest('#alEmojiBtn')) {
+            closeEmojiPicker();
         }
     });
 

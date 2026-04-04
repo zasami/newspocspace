@@ -1184,12 +1184,18 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             cell.addEventListener('click', () => openCellModal(cell));
         });
 
-        // Click on user name → open user-detail
-        content.querySelectorAll('.col-user-link').forEach(link => {
-            link.addEventListener('click', (e) => {
+        // Click on user cell → open user-detail + row hover
+        content.querySelectorAll('td.col-user').forEach(td => {
+            const link = td.querySelector('.col-user-link');
+            if (!link) return;
+            td.classList.add('col-user-clickable');
+            const tr = td.closest('tr');
+            td.addEventListener('mouseenter', () => tr.classList.add('row-hover'));
+            td.addEventListener('mouseleave', () => tr.classList.remove('row-hover'));
+            td.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const uid = link.dataset.userId;
-                if (uid) window.location.href = '/spocspace/admin/?page=user-detail&id=' + encodeURIComponent(uid);
+                if (uid) window.location.href = '/spocspace/admin/user-detail/' + encodeURIComponent(uid);
             });
         });
 
@@ -1198,7 +1204,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         if (gridWrap) {
             let gDown = false, gStartX, gScrollL;
             gridWrap.addEventListener('mousedown', e => {
-                if (e.target.closest('a,button,input,select,.col-user-link')) return;
+                if (e.target.closest('a,button,input,select,.col-user,.dc')) return;
                 gDown = true; gStartX = e.pageX - gridWrap.offsetLeft; gScrollL = gridWrap.scrollLeft;
                 gridWrap.classList.add('grabbing');
             });

@@ -1448,8 +1448,12 @@ body.ss-immersive .ss-immersive-pill {
 .tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover .col-taux,
 .tr-grid tbody tr:not(.mod-sep):not(.fn-sep):not(.coverage-row):hover .col-total { background: rgba(188,210,203,.18); }
 .tr-grid .dc:hover { background: var(--cl-accent-bg) !important; }
-.tr-grid .col-user-link { cursor: pointer; }
-.tr-grid .col-user-link:hover { color: var(--cl-accent, #2d4a43); text-decoration: underline; }
+.tr-grid .col-user-link { cursor: pointer; text-decoration: none; color: inherit; }
+.tr-grid td.col-user-clickable { cursor: pointer; transition: background .15s; }
+.tr-grid tr.row-hover td { background: rgba(188,210,203,.15) !important; }
+.tr-grid tr.row-hover td.col-user-clickable { background: rgba(188,210,203,.28) !important; }
+.tr-grid tr.row-hover td.col-taux { background: rgba(188,210,203,.20) !important; }
+.tr-grid tr.row-hover td.col-total { background: var(--cl-bg) !important; }
 .tr-grid-wrap.grabbing { cursor: grabbing; user-select: none; }
 .tr-grid-wrap.grabbing * { pointer-events: none; }
 .tr-grid-wrap { cursor: grab; }

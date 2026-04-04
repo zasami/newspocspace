@@ -202,7 +202,7 @@ if ($userId) {
     const joursSemaine = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
     const joursComplets = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
-    function initUserdetailPage() {
+    function initUserDetailPage() {
         if (!userId || !ssrUser) {
             showToast('Utilisateur non trouvé', 'error');
             return;
@@ -735,6 +735,7 @@ if ($userId) {
         el.addEventListener('mouseleave', stop);
     })();
 
-    window.initUserdetailPage = initUserdetailPage;
+    window.initUserDetailPage = initUserDetailPage;
+    initUserDetailPage();
 })();
 </script>

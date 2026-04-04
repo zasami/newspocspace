@@ -206,7 +206,7 @@ export class EmojiPicker {
     const pickerWidth = this.picker.offsetWidth;
 
     // Détecter la hauteur de la zone fixe en haut (topbar, navbar, pp-header)
-    const topbar = document.querySelector('.topbar, .navbar, .pp-header, [class*="navbar"]');
+    const topbar = document.querySelector('.fe-topbar, .topbar, .navbar, .pp-header, [class*="navbar"]');
     let topbarHeight = 0;
     if (topbar) {
       const topbarRect = topbar.getBoundingClientRect();
@@ -218,30 +218,21 @@ export class EmojiPicker {
     }
     const minTop = Math.max(topbarHeight, 10); // Au moins 10px du haut
 
-    // Position par défaut: au-dessus du bouton
-    let top = btnRect.top - pickerHeight - 8;
+    // Position: toujours en dessous du bouton
     let left = btnRect.left;
-    let showBelow = false;
+    let showBelow = true;
+    let top = btnRect.bottom + 8;
 
-    // Si pas assez de place en haut OU dépasse la zone du haut, afficher en dessous
-    if (top < minTop) {
-      top = btnRect.bottom + 8;
-      showBelow = true;
-    }
-
-    // Si en dessous et dépasse le bas de l'écran, remonter pour rester visible
+    // Si en dessous et dépasse le bas de l'écran
     if (showBelow && top + pickerHeight > window.innerHeight - 10) {
       top = window.innerHeight - pickerHeight - 10;
-      // Si ça remonte trop haut, caler au minimum
       if (top < minTop) top = minTop;
     }
 
-    // Vérifier qu'on ne dépasse pas à droite
+    // Garder dans le viewport horizontalement
     if (left + pickerWidth > window.innerWidth - 10) {
       left = window.innerWidth - pickerWidth - 10;
     }
-
-    // Vérifier qu'on ne dépasse pas à gauche
     if (left < 10) {
       left = 10;
     }
@@ -258,20 +249,8 @@ export class EmojiPicker {
       emojiBody.style.overflowY = '';
     }
 
-    // Calculer la position du triangle (caret) pour qu'il pointe vers le bouton
-    const btnCenter = btnRect.left + (btnRect.width / 2);
-    const caretOffset = btnCenter - left;
-
     this.picker.style.top = top + 'px';
     this.picker.style.left = left + 'px';
-    this.picker.style.setProperty('--caret-offset', caretOffset + 'px');
-
-    // Inverser le triangle si on affiche en dessous
-    if (showBelow) {
-      this.picker.classList.add('zkr-emoji-picker-below');
-    } else {
-      this.picker.classList.remove('zkr-emoji-picker-below');
-    }
   }
 
   /**

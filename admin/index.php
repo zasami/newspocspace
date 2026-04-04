@@ -42,8 +42,8 @@ $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'e
 $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 
 
-// Redirect old-style URLs (index.php?page=…) → clean URLs
-if (str_contains($_SERVER['REQUEST_URI'], 'index.php?page=') && isset($_GET['page'])) {
+// Redirect old-style URLs (?page=… or index.php?page=…) → clean URLs
+if (isset($_GET['page']) && preg_match('/\?(.*&)?page=/', $_SERVER['REQUEST_URI'])) {
     $cleanUrl = admin_url($_GET['page'], $_GET['id'] ?? '');
     $qs = $_GET;
     unset($qs['page'], $qs['id']);
