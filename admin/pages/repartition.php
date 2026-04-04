@@ -370,6 +370,27 @@ for ($i = 0; $i < 7; $i++) {
   outline-offset: -2px;
 }
 
+/* Drag & drop */
+.rep-edit-mode .rep-table td.cell-day[draggable="true"] {
+  cursor: grab;
+}
+.rep-edit-mode .rep-table td.cell-day[draggable="true"]:active {
+  cursor: grabbing;
+}
+.rep-table td.cell-day.rep-drag-over {
+  background: #bbdefb !important;
+  outline: 2px dashed #1976D2;
+  outline-offset: -2px;
+}
+.rep-module-header.rep-drag-over-mod {
+  outline: 3px dashed #fff;
+  outline-offset: -3px;
+  opacity: 0.85;
+}
+.rep-table td.cell-day.rep-dragging {
+  opacity: 0.4;
+}
+
 /* Modified cell indicator */
 .rep-table td.cell-day.rep-modified {
   position: relative;
@@ -469,9 +490,9 @@ for ($i = 0; $i < 7; $i++) {
   color: #fff;
 }
 
-/* Edit popover */
+/* Edit popover — absolute to body, repositioned on scroll */
 .rep-edit-popover {
-  position: fixed;
+  position: absolute;
   z-index: 1050;
   background: #fff;
   border: 1px solid #dee2e6;
@@ -760,8 +781,8 @@ for ($i = 0; $i < 7; $i++) {
     var empCount = 0;
     fnCodes.forEach(function(fc) { empCount += Object.keys(modData[fc]).length; });
 
-    var html = '<div class="rep-module-section">';
-    html += '<div class="rep-module-header ' + colorCls + '">' +
+    var html = '<div class="rep-module-section" data-section-module-id="' + (mod.id || '') + '">';
+    html += '<div class="rep-module-header ' + colorCls + '" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">' +
       '<i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code) +
       ' <span class="badge">' + empCount + ' employé(s)</span></div>';
     html += '<table class="rep-table"><thead><tr>' +
@@ -817,7 +838,8 @@ for ($i = 0; $i < 7; $i++) {
           dataAttrs += ' data-user-name="' + escapeHtml(fullName) + '"';
           dataAttrs += ' data-home-module-id="' + (u.home_module_id || '') + '"';
 
-          html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + '>' +
+          var dragAttr = firstEntry && firstEntry.assignation_id ? ' draggable="true"' : '';
+          html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + dragAttr + '>' +
             renderDayCell(entries, u.home_module_code, u.user_id, d.date, absIdx) + '</td>';
         });
 
@@ -974,7 +996,32 @@ for ($i = 0; $i < 7; $i++) {
     });
   }
 
-  // ─── Show / Hide edit popover ───
+  // ─── Show / Hide edit popover (follows cell on scroll) ───
+  let _popScrollHandler = null;
+
+  function positionPopover(cellEl) {
+    const pop = document.getElementById('repEditPopover');
+    const rect = cellEl.getBoundingClientRect();
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+
+    let top = rect.bottom + scrollY + 4;
+    let left = rect.left + scrollX;
+
+    // Keep in viewport vertically
+    if (rect.bottom + 310 > window.innerHeight) {
+      top = rect.top + scrollY - 310;
+    }
+    // Keep in viewport horizontally
+    if (rect.left + 260 > window.innerWidth) {
+      left = window.innerWidth + scrollX - 270;
+    }
+    if (left < scrollX + 10) left = scrollX + 10;
+
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+  }
+
   function showEditPopover(cellEl) {
     const pop = document.getElementById('repEditPopover');
 
@@ -998,28 +1045,25 @@ for ($i = 0; $i < 7; $i++) {
     document.getElementById('repEditDelete').style.display = editingCell.assignation_id ? '' : 'none';
     document.getElementById('repEditAbsent').style.display = editingCell.assignation_id ? '' : 'none';
 
-    // Position popover near cell
-    const rect = cellEl.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    let left = rect.left;
-
-    // Keep in viewport
-    if (top + 300 > window.innerHeight) {
-      top = rect.top - 310;
-    }
-    if (left + 260 > window.innerWidth) {
-      left = window.innerWidth - 270;
-    }
-    if (left < 10) left = 10;
-
-    pop.style.top = top + 'px';
-    pop.style.left = left + 'px';
+    // Position and show
     pop.style.display = 'block';
+    positionPopover(cellEl);
+
+    // Track scroll to reposition
+    if (_popScrollHandler) {
+      window.removeEventListener('scroll', _popScrollHandler, true);
+    }
+    _popScrollHandler = function() { positionPopover(cellEl); };
+    window.addEventListener('scroll', _popScrollHandler, true);
   }
 
   function hideEditPopover() {
     document.getElementById('repEditPopover').style.display = 'none';
     editingCell = null;
+    if (_popScrollHandler) {
+      window.removeEventListener('scroll', _popScrollHandler, true);
+      _popScrollHandler = null;
+    }
   }
 
   // Module change → update groupe select
@@ -1154,6 +1198,171 @@ for ($i = 0; $i < 7; $i++) {
     toast('Absence enregistrée', 'success');
     if (absenceModal) absenceModal.hide();
     hideEditPopover();
+    loadWeek(currentWeekISO);
+  });
+
+  // ─── Drag & Drop ───
+  let dragData = null;
+
+  document.getElementById('repGrid').addEventListener('dragstart', function(e) {
+    if (!editMode) { e.preventDefault(); return; }
+    const cell = e.target.closest('td.cell-day');
+    if (!cell || !cell.dataset.assignationId) { e.preventDefault(); return; }
+
+    cell.classList.add('rep-dragging');
+    dragData = {
+      assignation_id:  cell.dataset.assignationId,
+      planning_id:     cell.dataset.planningId,
+      user_id:         cell.dataset.userId,
+      date:            cell.dataset.date,
+      horaire_type_id: cell.dataset.horaireTypeId,
+      module_id:       cell.dataset.moduleId,
+      groupe_id:       cell.dataset.groupeId,
+      etage_id:        cell.dataset.etageId,
+      statut:          cell.dataset.statut,
+      notes:           cell.dataset.notes,
+      updated_at:      cell.dataset.updatedAt,
+      user_name:       cell.dataset.userName,
+    };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragData.assignation_id);
+  });
+
+  document.getElementById('repGrid').addEventListener('dragend', function(e) {
+    const cell = e.target.closest('td.cell-day');
+    if (cell) cell.classList.remove('rep-dragging');
+    // Remove all drag-over highlights
+    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
+      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
+    });
+    dragData = null;
+  });
+
+  document.getElementById('repGrid').addEventListener('dragover', function(e) {
+    if (!editMode || !dragData) return;
+    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
+    const cell = e.target.closest('td.cell-day');
+    if (modHeader || cell) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  });
+
+  document.getElementById('repGrid').addEventListener('dragenter', function(e) {
+    if (!editMode || !dragData) return;
+    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
+    const cell = e.target.closest('td.cell-day');
+    // Clear previous highlights
+    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
+      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
+    });
+    if (modHeader) modHeader.classList.add('rep-drag-over-mod');
+    if (cell) cell.classList.add('rep-drag-over');
+  });
+
+  document.getElementById('repGrid').addEventListener('dragleave', function(e) {
+    const modHeader = e.target.closest('.rep-module-header');
+    if (modHeader) modHeader.classList.remove('rep-drag-over-mod');
+    const cell = e.target.closest('td.cell-day');
+    if (cell) cell.classList.remove('rep-drag-over');
+  });
+
+  document.getElementById('repGrid').addEventListener('drop', async function(e) {
+    e.preventDefault();
+    if (!editMode || !dragData) return;
+
+    // Remove highlights
+    document.querySelectorAll('.rep-drag-over, .rep-drag-over-mod').forEach(el => {
+      el.classList.remove('rep-drag-over', 'rep-drag-over-mod');
+    });
+
+    // Determine target module
+    let targetModuleId = null;
+    let targetModuleCode = '';
+    const modHeader = e.target.closest('.rep-module-header[data-drop-module-id]');
+    const cell = e.target.closest('td.cell-day');
+
+    if (modHeader) {
+      targetModuleId = modHeader.dataset.dropModuleId;
+      targetModuleCode = modHeader.dataset.dropModuleCode;
+    } else if (cell) {
+      // Find the module section this cell belongs to
+      const section = cell.closest('.rep-module-section');
+      if (section) targetModuleId = section.dataset.sectionModuleId;
+    }
+
+    if (!targetModuleId || targetModuleId === dragData.module_id) {
+      dragData = null;
+      return; // same module, nothing to do
+    }
+
+    // Find target module and its étages/groupes
+    const targetMod = (data.modules || []).find(m => m.id === targetModuleId);
+    if (!targetMod) { dragData = null; return; }
+
+    // Build list of étage-groupe options
+    let groupeOptions = [];
+    (targetMod.etages || []).forEach(function(et) {
+      if (et.groupes && et.groupes.length > 0) {
+        et.groupes.forEach(function(gr) {
+          groupeOptions.push({ etageId: et.id, groupeId: gr.id, label: et.code + '-' + gr.code });
+        });
+      } else {
+        groupeOptions.push({ etageId: et.id, groupeId: null, label: et.code + ' (étage)' });
+      }
+    });
+
+    let chosenEtageId = null;
+    let chosenGroupeId = null;
+
+    if (groupeOptions.length === 0) {
+      // Module has no étages/groupes — just move to module
+    } else if (groupeOptions.length === 1) {
+      // Only one option — auto-select
+      chosenEtageId = groupeOptions[0].etageId;
+      chosenGroupeId = groupeOptions[0].groupeId;
+    } else {
+      // Multiple options — quick prompt
+      const labels = groupeOptions.map((g, i) => (i + 1) + '. ' + g.label).join('\n');
+      const choice = prompt(
+        'Déplacer ' + dragData.user_name + ' vers ' + targetMod.code + '\n\nChoisir étage/groupe :\n' + labels + '\n\n(Entrez le numéro)'
+      );
+      if (!choice) { dragData = null; return; }
+      const idx = parseInt(choice) - 1;
+      if (idx < 0 || idx >= groupeOptions.length) { dragData = null; return; }
+      chosenEtageId = groupeOptions[idx].etageId;
+      chosenGroupeId = groupeOptions[idx].groupeId;
+    }
+
+    // Save the move
+    const params = {
+      assignation_id:  dragData.assignation_id,
+      planning_id:     dragData.planning_id,
+      user_id:         dragData.user_id,
+      date_jour:       dragData.date,
+      horaire_type_id: dragData.horaire_type_id || null,
+      module_id:       targetModuleId,
+      groupe_id:       chosenGroupeId,
+      etage_id:        chosenEtageId,
+      statut:          dragData.statut || 'present',
+      notes:           dragData.notes || '',
+      expected_updated_at: dragData.updated_at || null,
+    };
+
+    const res = await adminApiPost('admin_save_repartition_cell', params);
+    dragData = null;
+
+    if (res.conflict) {
+      toast('Conflit détecté. Rechargement...', 'error');
+      loadWeek(currentWeekISO);
+      return;
+    }
+    if (!res.success) {
+      toast(res.message || 'Erreur', 'error');
+      return;
+    }
+
+    toast('Déplacé vers ' + targetMod.code, 'success');
     loadWeek(currentWeekISO);
   });
 
