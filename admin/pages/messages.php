@@ -76,7 +76,7 @@ $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachme
         <div class="email-tabs-slider" id="emailTabsSlider"></div>
         <button class="email-tab active" data-tab="inbox">Réception <span class="email-unread-badge" id="badgeInbox"><?= $emailStatsUnread > 0 ? $emailStatsUnread : '' ?></span></button>
         <button class="email-tab" data-tab="sent">Envoyés</button>
-        <button class="email-tab" data-tab="trash"><i class="bi bi-trash3"></i> Corbeille <span class="email-unread-badge" id="badgeTrash"></span></button>
+        <button class="email-tab" data-tab="trash"><i class="bi bi-trash3"></i> Corbeille <span class="email-trash-badge" id="badgeTrash"></span></button>
       </div>
     </div>
 

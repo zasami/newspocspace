@@ -1621,6 +1621,21 @@ body.ss-immersive .ss-immersive-pill {
   margin-left: 4px;
 }
 .email-unread-badge:empty { display: none; }
+.email-trash-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: #F0EDE8;
+  color: #8a7e6b;
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0 4px;
+  margin-left: 3px;
+}
+.email-trash-badge:empty { display: none; }
 
 /* ── Attachment preview cards ── */
 .att-preview-list {
