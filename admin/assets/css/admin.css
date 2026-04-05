@@ -2463,11 +2463,11 @@ thead .chg-user-col:hover {
   position: relative; padding: 8px 8px 4px;
   border-bottom: 1px solid #F0EDE8;
 }
-.zs-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: .75rem; color: #999; }
+.zs-search-icon { position: absolute; left: 18px; top: 19px; font-size: .72rem; color: #aaa; pointer-events: none; z-index: 1; }
 .zs-search {
   width: 100%; border: 1.5px solid #E8E3D8; border-radius: 8px;
-  padding: 6px 10px 6px 28px; font-size: .82rem; outline: none;
-  transition: border-color .2s;
+  padding: 7px 10px 7px 34px; font-size: .82rem; outline: none;
+  transition: border-color .2s; position: relative;
 }
 .zs-search:focus { border-color: #2d4a43; }
 

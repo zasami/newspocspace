@@ -143,14 +143,19 @@ function moveNav(dir) {
 
     currentDate = new Date(currentDate);
     if (isCurrentWeek) {
-        // Day-by-day on current week
         currentDate.setDate(currentDate.getDate() + dir);
     } else {
-        // Week-by-week on other weeks
         currentDate.setDate(currentDate.getDate() + dir * 7);
     }
+    const prevMonday = currentMonday.getTime();
     currentMonday = getMonday(currentDate);
     loadWeek();
+
+    // Sync menu widget when week changes
+    if (currentMonday.getTime() !== prevMonday) {
+        menuMonday = new Date(currentMonday);
+        loadMenus();
+    }
 }
 
 function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
@@ -221,6 +226,13 @@ function moveMenuWeek(dir) {
     menuMonday = new Date(menuMonday);
     menuMonday.setDate(menuMonday.getDate() + dir * 7);
     loadMenus();
+
+    // Sync planning widget to same week
+    if (currentMonday.getTime() !== menuMonday.getTime()) {
+        currentMonday = new Date(menuMonday);
+        currentDate = new Date(menuMonday);
+        loadWeek();
+    }
 }
 
 function renderMenus() {

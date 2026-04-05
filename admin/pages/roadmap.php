@@ -102,10 +102,10 @@ $catCssMap = [
 .rm-modal-overlay { position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);opacity:0;transition:opacity .2s ease; }
 .rm-modal-overlay.rm-modal-open { display:flex; }
 .rm-modal-overlay.show { opacity:1; }
-.rm-modal { background:#fff;border-radius:16px;max-width:540px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px) scale(.97);transition:transform .25s ease;overflow:hidden; }
+.rm-modal { background:#fff;border-radius:16px;max-width:540px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px) scale(.97);transition:transform .25s ease; }
 .rm-modal-overlay.show .rm-modal { transform:translateY(0) scale(1); }
 .rm-modal-header { padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:.75rem; }
-.rm-modal-body { padding:1.5rem; }
+.rm-modal-body { padding:1.5rem; max-height:65vh; overflow-y:auto; }
 .rm-modal-footer { padding:.75rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center; }
 
 /* Modal header elements */
@@ -119,8 +119,9 @@ $catCssMap = [
 .rm-field label { display:block;font-size:.82rem;font-weight:600;color:#374151;margin-bottom:.35rem; }
 .rm-field input, .rm-field textarea, .rm-field select { width:100%;padding:.5rem .75rem;border:1px solid #d1d5db;border-radius:10px;font-size:.88rem;outline:none;transition:border-color .15s; }
 .rm-field input:focus, .rm-field textarea:focus, .rm-field select:focus { border-color:#2d4a43;box-shadow:0 0 0 3px rgba(45,74,67,.1); }
-.rm-field textarea { resize:vertical;min-height:70px; }
+.rm-field textarea { resize:vertical;min-height:120px; }
 .rm-field-error { border-color:#E2B8AE !important; }
+.rm-modal .zs-list { max-width:280px !important; }
 
 /* Difficulty pills */
 .rm-diff-pills { display:flex;gap:.5rem; }

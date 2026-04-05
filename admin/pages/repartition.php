@@ -132,6 +132,7 @@ for ($i = 0; $i < 7; $i++) {
   </div>
   <div class="d-flex align-items-center gap-2">
     <button class="btn btn-outline-secondary btn-sm" id="repToggleEdit" title="Mode édition"><i class="bi bi-pencil-square"></i> Éditer</button>
+    <button class="btn btn-outline-secondary btn-sm" id="repLegendBtn" title="Légende horaires"><i class="bi bi-info-circle"></i></button>
     <input type="date" class="form-control form-control-sm" style="width:160px" id="repDatePicker" value="<?= h($weekStart) ?>">
     <button class="btn btn-outline-secondary btn-sm" id="repPrint" title="Imprimer"><i class="bi bi-printer"></i></button>
   </div>
@@ -147,14 +148,31 @@ for ($i = 0; $i < 7; $i++) {
   <?php endif; ?>
 </div>
 
-<div class="mb-3 d-flex flex-wrap gap-2 align-items-center" style="font-size:.75rem" id="repLegend">
-  <span class="text-muted fw-medium">Légende :</span>
-  <?php foreach ($repHoraires as $h): ?>
-    <span class="rep-legend-item">
-      <span class="rep-badge" style="background:<?= htmlspecialchars($h['couleur'] ?? '#6c757d') ?>"><?= htmlspecialchars($h['code']) ?></span>
-      <span class="text-muted"><?= htmlspecialchars(substr($h['heure_debut'] ?? '', 0, 5)) ?>-<?= htmlspecialchars(substr($h['heure_fin'] ?? '', 0, 5)) ?></span>
-    </span>
-  <?php endforeach; ?>
+<!-- Légende modal -->
+<div class="modal fade" id="repLegendModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title"><i class="bi bi-clock me-1"></i>Légende des horaires</h6>
+        <button type="button" class="btn-close" style="font-size:.6rem" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <?php foreach ($repHoraires as $h): ?>
+          <div class="col-6 col-md-4">
+            <div class="rep-legend-card">
+              <span class="rep-badge" style="background:<?= htmlspecialchars($h['couleur'] ?? '#6c757d') ?>;font-size:.75rem;padding:2px 8px"><?= htmlspecialchars($h['code']) ?></span>
+              <span class="rep-legend-card-time"><?= htmlspecialchars(substr($h['heure_debut'] ?? '', 0, 5)) ?> - <?= htmlspecialchars(substr($h['heure_fin'] ?? '', 0, 5)) ?></span>
+              <?php if (!empty($h['duree_effective'])): ?>
+              <span class="rep-legend-card-dur"><?= htmlspecialchars($h['duree_effective']) ?>h eff.</span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="repGrid" class="rep-grid-container">
@@ -188,6 +206,25 @@ for ($i = 0; $i < 7; $i++) {
   </div>
 </div>
 
+<!-- Move to module modal -->
+<div class="modal fade" id="repMoveModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title"><i class="bi bi-arrows-move me-1"></i><span id="repMoveTitle">Déplacer</span></h6>
+        <button type="button" class="btn-close" style="font-size:.6rem" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-2">
+        <p class="mb-2" style="font-size:.8rem;color:#555" id="repMoveSubtitle"></p>
+        <div id="repMoveOptions" class="d-flex flex-column gap-1"></div>
+      </div>
+      <div class="modal-footer py-1">
+        <button class="btn btn-sm btn-light" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Absence modal -->
 <div class="modal fade" id="repAbsenceModal" tabindex="-1">
   <div class="modal-dialog modal-sm">
@@ -211,58 +248,90 @@ for ($i = 0; $i < 7; $i++) {
 </div>
 
 <style>
-.rep-grid-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+.rep-grid-container { padding-bottom: 10px; }
 .rep-legend-item { display: inline-flex; align-items: center; gap: 3px; }
-.rep-badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 0.62rem; font-weight: 600; color: #fff; white-space: nowrap; line-height: 1.3; }
+.rep-badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: .62rem; font-weight: 600; color: #fff; white-space: nowrap; line-height: 1.3; }
 
-/* Module sections */
+/* Module sections — each scrollable independently */
 .rep-module-section { margin-bottom: 1.2rem; }
+.rep-module-inner { min-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; cursor: grab; }
+.rep-module-inner:focus { outline: none; box-shadow: 0 0 0 2px rgba(45,74,67,.3); border-radius: 0 0 4px 4px; }
 .rep-module-header { padding: .4rem .75rem; font-weight: 600; font-size: .85rem; color: #fff; border-radius: 4px 4px 0 0; display: flex; align-items: center; gap: .5rem; }
 .rep-module-header .badge { font-size: .68rem; background: rgba(255,255,255,.25); }
 
-/* Table */
-.rep-table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: .76rem; table-layout: fixed; }
-.rep-table th, .rep-table td { border: 1px solid #dee2e6; padding: .2rem .35rem; vertical-align: middle; }
-.rep-table thead th { background: #f1f3f5; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 2; font-size: .72rem; }
-.rep-table th.col-fn { width: 75px; text-align: center; }
-.rep-table th.col-slot { width: 50px; text-align: center; }
-.rep-table th.col-day { text-align: center; }
+/* Table — 3 sub-columns per day: Nom | Horaire | Étage */
+.rep-table { width: 100%; min-width: 1600px; border-collapse: separate; border-spacing: 0; font-size: .74rem; }
+.rep-table th, .rep-table td { border: 1px solid #dee2e6; padding: .2rem .3rem; vertical-align: middle; }
+.rep-table thead th { background: #f1f3f5; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 2; font-size: .7rem; }
+.rep-table th.col-fn { width: 70px; position: sticky; left: 0; z-index: 4; background: #f1f3f5; }
+.rep-table th.col-slot { width: 55px; position: sticky; left: 70px; z-index: 4; background: #f1f3f5; }
+.rep-table th.col-day-head { text-align: center; font-size: .72rem; border-bottom: 0; }
+.rep-table th.col-day-head.weekend { background: #fef9e7; }
+.rep-table th.col-sub-nom { width: 120px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; }
+.rep-table th.col-sub-hor { width: 38px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; text-align: center; }
+.rep-table th.col-sub-et { width: 35px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; text-align: center; }
 
-/* Function cell */
-.rep-table td.cell-fn { font-weight: 700; font-size: .7rem; color: #333; background: #f8f9fa; text-align: center; border-right: 2px solid #ccc; }
-.rep-table td.cell-slot { font-size: .68rem; font-weight: 600; color: #555; background: #fdfdfd; text-align: center; white-space: nowrap; }
+/* Day group border — thicker left border on first col of each day */
+.rep-table td.day-first, .rep-table th.day-first { border-left: 2px solid #adb5bd; }
+
+/* Function cell — sticky left */
+.rep-table td.cell-fn { font-weight: 700; font-size: .68rem; color: #333; background: #f8f9fa; text-align: center; border-right: 2px solid #ccc; position: sticky; left: 0; z-index: 1; }
+.rep-table td.cell-slot { font-size: .66rem; font-weight: 600; color: #555; background: #fdfdfd; text-align: center; white-space: nowrap; position: sticky; left: 70px; z-index: 1; }
 .rep-table tr.fn-group-first td { border-top: 2px solid #adb5bd; }
 
-/* Day cells — slot view */
-.rep-table td.cell-day { text-align: center; min-height: 30px; position: relative; line-height: 1.2; }
-.rep-table td.cell-day.weekend { background: #fefcf3; }
-.rep-table td.cell-day.empty-cell { color: #d0d0d0; }
-.rep-cell-name { font-size: .72rem; font-weight: 600; color: #222; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rep-cell-horaire { display: block; margin-top: 1px; }
-.rep-cell-notes { font-size: .56rem; color: #999; display: block; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto; }
-.rep-absent .rep-cell-name { text-decoration: line-through; opacity: .5; }
+/* Nom cell */
+.rep-table td.cell-nom { font-size: .72rem; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; position: relative; }
+.rep-table td.cell-nom.weekend { background: #fefcf3; }
+.rep-table td.cell-nom.empty-cell { color: #d0d0d0; font-weight: 400; }
+.rep-table td.cell-nom.rep-absent-cell { text-decoration: line-through; opacity: .55; }
+
+/* Horaire cell */
+.rep-table td.cell-hor { text-align: center; padding: .15rem .1rem; }
+.rep-table td.cell-hor.weekend { background: #fefcf3; }
+
+/* Étage cell */
+.rep-table td.cell-et { text-align: center; font-size: .66rem; font-weight: 600; color: #555; }
+.rep-table td.cell-et.weekend { background: #fefcf3; }
+
+/* Modified indicator on nom cell */
+.rep-table td.cell-nom.rep-modified::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; background: #FF9800; border-radius: 50%; }
+
+/* Absence icon */
 .rep-abs-icon { width: 14px; height: 14px; vertical-align: middle; opacity: .7; }
-.rep-mod-tag { font-size: .58rem; color: #c0392b; font-style: italic; font-weight: 600; }
 
-/* Modified indicator */
-.rep-table td.cell-day.rep-modified::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; background: #FF9800; border-radius: 50%; }
+/* Notes tooltip indicator */
+.rep-note-dot { color: #999; font-size: .6rem; vertical-align: super; cursor: help; }
 
-/* Edit mode */
-.rep-edit-mode .rep-table td.cell-day { cursor: pointer; transition: background .15s; }
-.rep-edit-mode .rep-table td.cell-day:hover { background: #e8f5e9 !important; outline: 2px solid #4CAF50; outline-offset: -2px; }
+/* Edit mode — all 3 cells of a day group are clickable */
+.rep-edit-mode .rep-table td.cell-nom,
+.rep-edit-mode .rep-table td.cell-hor,
+.rep-edit-mode .rep-table td.cell-et { cursor: pointer; transition: background .15s; }
+.rep-edit-mode .rep-table td.cell-nom:hover,
+.rep-edit-mode .rep-table td.cell-hor:hover,
+.rep-edit-mode .rep-table td.cell-et:hover { background: #e8f5e9 !important; }
 #repToggleEdit.active { background: #4CAF50; border-color: #4CAF50; color: #fff; }
 
-/* Drag & drop */
-.rep-edit-mode .rep-table td.cell-day[draggable="true"] { cursor: grab; }
-.rep-table td.cell-day.rep-drag-over { background: #bbdefb !important; outline: 2px dashed #1976D2; outline-offset: -2px; }
+/* Drag & drop — on nom cell */
+.rep-edit-mode .rep-table td.cell-nom[draggable="true"] { cursor: grab; }
+.rep-table td.cell-nom.rep-drag-over { background: #bbdefb !important; outline: 2px dashed #1976D2; outline-offset: -2px; }
 .rep-module-header.rep-drag-over-mod { outline: 3px dashed #fff; outline-offset: -3px; opacity: .85; }
-.rep-table td.cell-day.rep-dragging { opacity: .4; }
+.rep-table td.cell-nom.rep-dragging { opacity: .4; }
 
 /* Edit popover */
 .rep-edit-popover { position: absolute; z-index: 1050; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.15); width: 260px; font-size: .8rem; }
 .rep-edit-popover-header { display: flex; align-items: center; justify-content: space-between; padding: .4rem .6rem; background: #f8f9fa; border-bottom: 1px solid #dee2e6; border-radius: 8px 8px 0 0; font-weight: 600; font-size: .76rem; }
 .rep-edit-popover-body { padding: .5rem .6rem; }
 .rep-edit-label { font-size: .68rem; font-weight: 600; color: #555; margin-bottom: 2px; display: block; }
+
+/* Legend cards */
+.rep-legend-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: .5rem .4rem; border: 1px solid #e9ecef; border-radius: 8px; background: #fdfdfd; text-align: center; }
+.rep-legend-card-time { font-size: .78rem; font-weight: 600; color: #333; }
+.rep-legend-card-dur { font-size: .65rem; color: #888; }
+
+/* Move modal option buttons */
+.rep-move-opt { display: flex; align-items: center; gap: .5rem; padding: .45rem .75rem; border: 1px solid #dee2e6; border-radius: 8px; background: #fdfdfd; cursor: pointer; font-size: .82rem; font-weight: 500; transition: all .15s; }
+.rep-move-opt:hover { background: #bcd2cb; border-color: #2d4a43; color: #2d4a43; }
+.rep-move-opt .rep-move-code { font-weight: 700; min-width: 40px; }
 
 /* Module colors */
 .rep-mod-M1 { background: #2196F3; } .rep-mod-M2 { background: #4CAF50; }
@@ -273,9 +342,9 @@ for ($i = 0; $i < 7; $i++) {
 @media print {
   .admin-sidebar, .admin-topbar, .sidebar-overlay, #repPrevWeek, #repNextWeek, #repToday, #repDatePicker, #repPrint, #repToggleEdit, #repPlanningStatus, #repEditPopover, #repAbsenceModal, .topbar-search, .topbar-right { display: none !important; }
   .admin-main { margin-left: 0 !important; } .admin-content { padding: .5rem !important; }
-  .rep-grid-container { overflow: visible; } .rep-table { min-width: 0; font-size: .66rem; }
+  .rep-grid-container { overflow: visible; } .rep-module-inner { overflow: visible; min-width: 0; } .rep-table { min-width: 0; font-size: .64rem; }
   .rep-module-section { page-break-inside: avoid; }
-  .rep-badge, .rep-module-header, .rep-table td.cell-fn, .rep-table td.cell-day.weekend { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rep-badge, .rep-module-header, .rep-table td.cell-fn, .rep-table td.cell-nom.weekend, .rep-table td.cell-hor.weekend, .rep-table td.cell-et.weekend, .rep-table th.col-day-head.weekend { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 </style>
 
@@ -480,34 +549,39 @@ for ($i = 0; $i < 7; $i++) {
     return { sections: result, modifiedSet, absIdx };
   }
 
-  // ─── Render cell content ───
-  function renderCell(a, absIdx) {
-    if (!a) return '<span style="color:#d0d0d0">—</span>';
-
-    const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
-    const isAbsent = a.statut === 'absent';
-    let html = '<div class="' + (isAbsent ? 'rep-absent' : '') + '">';
-
-    if (isAbsent && absType) {
-      if (absType === 'vacances') {
-        html += '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V"> ';
-      } else {
-        const icons = { maladie:'bi-bandaid', accident:'bi-exclamation-triangle', formation:'bi-mortarboard', conge_special:'bi-calendar-heart' };
-        html += '<i class="bi ' + (icons[absType] || 'bi-dash-circle') + ' rep-abs-icon"></i> ';
-      }
+  // ─── Build data attributes string for a cell ───
+  function cellDataAttrs(a, date) {
+    let s = ' data-date="' + date + '"';
+    if (a) {
+      s += ' data-assignation-id="' + (a.assignation_id || '') + '"';
+      s += ' data-planning-id="' + (a.planning_id || '') + '"';
+      s += ' data-user-id="' + (a.user_id || '') + '"';
+      s += ' data-horaire-type-id="' + (a.horaire_type_id || '') + '"';
+      s += ' data-module-id="' + (a.module_id || '') + '"';
+      s += ' data-groupe-id="' + (a.groupe_id || '') + '"';
+      s += ' data-etage-id="' + (a.etage_id || '') + '"';
+      s += ' data-statut="' + (a.statut || 'present') + '"';
+      s += ' data-notes="' + escapeHtml(a.notes || '') + '"';
+      s += ' data-updated-at="' + (a.updated_at || '') + '"';
+      s += ' data-user-name="' + escapeHtml((a.user_prenom || '') + ' ' + (a.user_nom || '')) + '"';
     }
-
-    html += '<span class="rep-cell-name">' + escapeHtml(a.user_prenom || '') + '</span>';
-
-    const bg = a.horaire_couleur || '#6c757d';
-    html += '<span class="rep-cell-horaire"><span class="rep-badge" style="background:' + bg + '">' + escapeHtml(a.horaire_code || '?') + '</span></span>';
-
-    if (a.notes) html += '<span class="rep-cell-notes" title="' + escapeHtml(a.notes) + '">' + escapeHtml(a.notes) + '</span>';
-    html += '</div>';
-    return html;
+    return s;
   }
 
-  // ─── Render grid ───
+  // French day+date labels for header
+  const frFullDays = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+  const frMonthsFull = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+  function dayHeaderLabel(d) {
+    const dt = new Date(d.date);
+    const dow = (dt.getDay() + 6) % 7; // 0=Mon
+    const day = dt.getDate();
+    const mon = frMonthsFull[dt.getMonth() + 1];
+    const yr = dt.getFullYear();
+    return frFullDays[dow] + ', ' + day + ' ' + mon + ' ' + yr;
+  }
+
+  // ─── Render grid — 3 sub-columns per day ───
   function renderGrid() {
     const { sections, modifiedSet, absIdx } = buildSections();
     const days = data.days || [];
@@ -529,14 +603,27 @@ for ($i = 0; $i < 7; $i++) {
       html += '<div class="rep-module-header ' + colorCls + '" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code) + '">';
       html += '<i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code);
       html += ' <span class="badge">' + totalSlots + ' poste(s)</span></div>';
+      html += '<div class="rep-module-inner">';
 
-      html += '<table class="rep-table"><thead><tr>';
-      html += '<th class="col-fn">Fonction</th><th class="col-slot">Poste</th>';
+      html += '<table class="rep-table">';
+
+      // ── 2-row header: day names (colspan=3) then sub-headers ──
+      html += '<thead><tr>';
+      html += '<th class="col-fn" rowspan="2">Fonction</th>';
+      html += '<th class="col-slot" rowspan="2">Poste</th>';
       days.forEach(function(d) {
-        html += '<th class="col-day' + (d.is_weekend ? ' weekend' : '') + '">' + escapeHtml(d.label) + '</th>';
+        const weCls = d.is_weekend ? ' weekend' : '';
+        html += '<th class="col-day-head day-first' + weCls + '" colspan="3">' + dayHeaderLabel(d) + '</th>';
+      });
+      html += '</tr><tr>';
+      days.forEach(function(d) {
+        html += '<th class="col-sub-nom day-first"></th>';
+        html += '<th class="col-sub-hor">Hor.</th>';
+        html += '<th class="col-sub-et">Ét.</th>';
       });
       html += '</tr></thead><tbody>';
 
+      // ── Data rows ──
       sec.functions.forEach(function(fn) {
         fn.slots.forEach(function(slot, si) {
           const trCls = si === 0 ? ' class="fn-group-first"' : '';
@@ -550,34 +637,50 @@ for ($i = 0; $i < 7; $i++) {
 
           days.forEach(function(d) {
             const a = slot.days[d.date] || null;
-            const weCls = d.is_weekend ? ' weekend' : '';
-            const emptCls = !a ? ' empty-cell' : '';
+            const we = d.is_weekend ? ' weekend' : '';
+            const attrs = cellDataAttrs(a, d.date);
             const modCls = a && a.assignation_id && modifiedSet.has(a.assignation_id) ? ' rep-modified' : '';
+            const absCls = a && a.statut === 'absent' ? ' rep-absent-cell' : '';
 
-            let dataAttrs = ' data-date="' + d.date + '"';
+            // ── Nom cell ──
+            let nomContent = '';
             if (a) {
-              dataAttrs += ' data-assignation-id="' + (a.assignation_id || '') + '"';
-              dataAttrs += ' data-planning-id="' + (a.planning_id || '') + '"';
-              dataAttrs += ' data-user-id="' + (a.user_id || '') + '"';
-              dataAttrs += ' data-horaire-type-id="' + (a.horaire_type_id || '') + '"';
-              dataAttrs += ' data-module-id="' + (a.module_id || '') + '"';
-              dataAttrs += ' data-groupe-id="' + (a.groupe_id || '') + '"';
-              dataAttrs += ' data-etage-id="' + (a.etage_id || '') + '"';
-              dataAttrs += ' data-statut="' + (a.statut || 'present') + '"';
-              dataAttrs += ' data-notes="' + escapeHtml(a.notes || '') + '"';
-              dataAttrs += ' data-updated-at="' + (a.updated_at || '') + '"';
-              dataAttrs += ' data-user-name="' + escapeHtml((a.user_prenom || '') + ' ' + (a.user_nom || '')) + '"';
+              const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
+              if (a.statut === 'absent' && absType) {
+                if (absType === 'vacances') nomContent += '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon"> ';
+                else { const icons = {maladie:'bi-bandaid',accident:'bi-exclamation-triangle',formation:'bi-mortarboard',conge_special:'bi-calendar-heart'}; nomContent += '<i class="bi ' + (icons[absType]||'bi-dash-circle') + ' rep-abs-icon"></i> '; }
+              }
+              nomContent += escapeHtml(a.user_prenom || '');
+              if (a.notes) nomContent += '<span class="rep-note-dot" title="' + escapeHtml(a.notes) + '">*</span>';
+            } else {
+              nomContent = '';
             }
             const dragAttr = a && a.assignation_id ? ' draggable="true"' : '';
+            html += '<td class="cell-nom day-first' + we + modCls + absCls + (a ? '' : ' empty-cell') + '"' + attrs + dragAttr + '>' + nomContent + '</td>';
 
-            html += '<td class="cell-day' + weCls + emptCls + modCls + '"' + dataAttrs + dragAttr + '>' + renderCell(a, absIdx) + '</td>';
+            // ── Horaire cell ──
+            let horContent = '';
+            if (a && a.horaire_code) {
+              const bg = a.horaire_couleur || '#6c757d';
+              horContent = '<span class="rep-badge" style="background:' + bg + '">' + escapeHtml(a.horaire_code) + '</span>';
+            }
+            html += '<td class="cell-hor' + we + '"' + attrs + '>' + horContent + '</td>';
+
+            // ── Étage cell ──
+            let etContent = '';
+            if (a) {
+              if (a.etage_code && a.groupe_code) etContent = escapeHtml(a.etage_code.replace('E','') + '-' + a.groupe_code.replace(/^\d+-/,''));
+              else if (a.groupe_code) etContent = escapeHtml(a.groupe_code);
+              else if (a.etage_code) etContent = escapeHtml(a.etage_code.replace('E',''));
+            }
+            html += '<td class="cell-et' + we + '"' + attrs + '>' + etContent + '</td>';
           });
 
           html += '</tr>';
         });
       });
 
-      html += '</tbody></table></div>';
+      html += '</tbody></table></div></div>';
     });
 
     document.getElementById('repGrid').innerHTML = html;
@@ -698,15 +801,15 @@ for ($i = 0; $i < 7; $i++) {
   document.addEventListener('mousedown', function(e) {
     const pop = document.getElementById('repEditPopover');
     if (pop.style.display === 'none') return;
-    if (pop.contains(e.target) || e.target.closest('td.cell-day')) return;
+    if (pop.contains(e.target) || e.target.closest('td.cell-nom, td.cell-hor, td.cell-et')) return;
     hideEditPopover();
   });
 
-  // Cell click
+  // Cell click — works on cell-nom, cell-hor, or cell-et
   document.getElementById('repGrid').addEventListener('click', function(e) {
     if (!editMode) return;
-    const cell = e.target.closest('td.cell-day');
-    if (!cell) return;
+    const cell = e.target.closest('td.cell-nom, td.cell-hor, td.cell-et');
+    if (!cell || !cell.dataset.date) return;
     editingCell = {
       assignation_id: cell.dataset.assignationId || '',
       planning_id: cell.dataset.planningId || '',
@@ -789,11 +892,54 @@ for ($i = 0; $i < 7; $i++) {
     if (absenceModal) absenceModal.hide(); hideEditPopover(); loadWeek(currentWeekISO);
   });
 
+  // ─── Move helpers ───
+  let moveModal = null;
+  let _moveDragData = null;
+
+  async function doMove(targetModId, etageId, groupeId, modCode) {
+    const dd = _moveDragData || dragData;
+    if (!dd) return;
+    const res = await adminApiPost('admin_save_repartition_cell', {
+      assignation_id: dd.assignation_id, planning_id: dd.planning_id, user_id: dd.user_id,
+      date_jour: dd.date, horaire_type_id: dd.horaire_type_id || null,
+      module_id: targetModId, groupe_id: groupeId, etage_id: etageId,
+      statut: dd.statut || 'present', notes: dd.notes || '',
+      expected_updated_at: dd.updated_at || null,
+    });
+    _moveDragData = null;
+    if (res.conflict) { toast('Conflit. Rechargement...', 'error'); loadWeek(currentWeekISO); return; }
+    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
+    toast('Déplacé vers ' + modCode, 'success'); loadWeek(currentWeekISO);
+  }
+
+  function showMoveModal(tMod, opts, targetModId) {
+    _moveDragData = dragData ? { ...dragData } : null;
+    document.getElementById('repMoveTitle').textContent = 'Déplacer vers ' + tMod.code;
+    document.getElementById('repMoveSubtitle').textContent = (dragData?.user_name || 'Employé') + ' — Choisir étage / groupe :';
+
+    const container = document.getElementById('repMoveOptions');
+    container.innerHTML = '';
+    opts.forEach(function(opt) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rep-move-opt';
+      btn.innerHTML = '<span class="rep-move-code">' + escapeHtml(opt.label) + '</span>';
+      btn.addEventListener('click', async function() {
+        if (moveModal) moveModal.hide();
+        await doMove(targetModId, opt.etageId, opt.groupeId, tMod.code);
+      });
+      container.appendChild(btn);
+    });
+
+    if (!moveModal) moveModal = new bootstrap.Modal(document.getElementById('repMoveModal'));
+    moveModal.show();
+  }
+
   // ─── Drag & Drop ───
   const grid = document.getElementById('repGrid');
   grid.addEventListener('dragstart', function(e) {
     if (!editMode) { e.preventDefault(); return; }
-    const cell = e.target.closest('td.cell-day');
+    const cell = e.target.closest('td.cell-nom');
     if (!cell || !cell.dataset.assignationId) { e.preventDefault(); return; }
     cell.classList.add('rep-dragging');
     dragData = { assignation_id: cell.dataset.assignationId, planning_id: cell.dataset.planningId, user_id: cell.dataset.userId, date: cell.dataset.date, horaire_type_id: cell.dataset.horaireTypeId, module_id: cell.dataset.moduleId, groupe_id: cell.dataset.groupeId, etage_id: cell.dataset.etageId, statut: cell.dataset.statut, notes: cell.dataset.notes, updated_at: cell.dataset.updatedAt, user_name: cell.dataset.userName };
@@ -801,21 +947,21 @@ for ($i = 0; $i < 7; $i++) {
     e.dataTransfer.setData('text/plain', dragData.assignation_id);
   });
   grid.addEventListener('dragend', function(e) {
-    const cell = e.target.closest('td.cell-day');
+    const cell = e.target.closest('td.cell-nom');
     if (cell) cell.classList.remove('rep-dragging');
     document.querySelectorAll('.rep-drag-over,.rep-drag-over-mod').forEach(el => el.classList.remove('rep-drag-over', 'rep-drag-over-mod'));
     dragData = null;
   });
   grid.addEventListener('dragover', function(e) {
     if (!editMode || !dragData) return;
-    if (e.target.closest('.rep-module-header[data-drop-module-id]') || e.target.closest('td.cell-day')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    if (e.target.closest('.rep-module-header[data-drop-module-id]') || e.target.closest('td.cell-nom')) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
   });
   grid.addEventListener('dragenter', function(e) {
     if (!editMode || !dragData) return;
     document.querySelectorAll('.rep-drag-over,.rep-drag-over-mod').forEach(el => el.classList.remove('rep-drag-over', 'rep-drag-over-mod'));
     const mh = e.target.closest('.rep-module-header[data-drop-module-id]');
     if (mh) mh.classList.add('rep-drag-over-mod');
-    const cell = e.target.closest('td.cell-day');
+    const cell = e.target.closest('td.cell-nom');
     if (cell) cell.classList.add('rep-drag-over');
   });
   grid.addEventListener('drop', async function(e) {
@@ -825,7 +971,7 @@ for ($i = 0; $i < 7; $i++) {
 
     let targetModId = null;
     const mh = e.target.closest('.rep-module-header[data-drop-module-id]');
-    const cell = e.target.closest('td.cell-day');
+    const cell = e.target.closest('td.cell-nom, td.cell-hor, td.cell-et');
     if (mh) targetModId = mh.dataset.dropModuleId;
     else if (cell) { const sec = cell.closest('.rep-module-section'); if (sec) targetModId = sec.dataset.sectionModuleId; }
     if (!targetModId || targetModId === dragData.module_id) { dragData = null; return; }
@@ -840,26 +986,67 @@ for ($i = 0; $i < 7; $i++) {
     });
 
     let eId = null, gId = null;
-    if (opts.length === 1) { eId = opts[0].etageId; gId = opts[0].groupeId; }
-    else if (opts.length > 1) {
-      const choice = prompt('Déplacer vers ' + tMod.code + '\n\n' + opts.map((o, i) => (i + 1) + '. ' + o.label).join('\n') + '\n\nNuméro :');
-      if (!choice) { dragData = null; return; }
-      const idx = parseInt(choice) - 1;
-      if (idx < 0 || idx >= opts.length) { dragData = null; return; }
-      eId = opts[idx].etageId; gId = opts[idx].groupeId;
+    if (opts.length === 1) {
+      eId = opts[0].etageId; gId = opts[0].groupeId;
+      await doMove(targetModId, eId, gId, tMod.code);
+    } else if (opts.length > 1) {
+      showMoveModal(tMod, opts, targetModId);
+    } else {
+      await doMove(targetModId, null, null, tMod.code);
     }
-
-    const res = await adminApiPost('admin_save_repartition_cell', {
-      assignation_id: dragData.assignation_id, planning_id: dragData.planning_id, user_id: dragData.user_id,
-      date_jour: dragData.date, horaire_type_id: dragData.horaire_type_id || null,
-      module_id: targetModId, groupe_id: gId, etage_id: eId,
-      statut: dragData.statut || 'present', notes: dragData.notes || '',
-      expected_updated_at: dragData.updated_at || null,
-    });
     dragData = null;
-    if (res.conflict) { toast('Conflit. Rechargement...', 'error'); loadWeek(currentWeekISO); return; }
-    if (!res.success) { toast(res.message || 'Erreur', 'error'); return; }
-    toast('Déplacé vers ' + tMod.code, 'success'); loadWeek(currentWeekISO);
+  });
+
+  // ─── Mouse drag-to-scroll + keyboard arrows on module sections ───
+  (function() {
+    const grid = document.getElementById('repGrid');
+    let dragEl = null, startX = 0, startScroll = 0;
+
+    // Mouse drag to scroll
+    grid.addEventListener('mousedown', function(e) {
+      const sec = e.target.closest('.rep-module-inner');
+      if (!sec || e.target.closest('.rep-edit-popover') || e.target.closest('select') || e.target.closest('input') || e.target.closest('button')) return;
+      // Don't interfere with cell drag in edit mode
+      if (editMode && e.target.closest('td.cell-nom[draggable]')) return;
+      dragEl = sec;
+      startX = e.pageX;
+      startScroll = sec.scrollLeft;
+      sec.style.cursor = 'grabbing';
+      sec.style.userSelect = 'none';
+      sec.style.scrollBehavior = 'auto';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!dragEl) return;
+      dragEl.scrollLeft = startScroll - (e.pageX - startX);
+    });
+    document.addEventListener('mouseup', function() {
+      if (!dragEl) return;
+      dragEl.style.cursor = '';
+      dragEl.style.userSelect = '';
+      dragEl.style.scrollBehavior = '';
+      dragEl = null;
+    });
+
+    // Keyboard arrows: focus a module inner, then left/right scrolls it
+    grid.addEventListener('click', function(e) {
+      const sec = e.target.closest('.rep-module-inner');
+      if (sec) sec.setAttribute('tabindex', '-1'), sec.focus({ preventScroll: true });
+    });
+    grid.addEventListener('keydown', function(e) {
+      const sec = e.target.closest('.rep-module-inner');
+      if (!sec) return;
+      const step = 200;
+      if (e.key === 'ArrowRight') { sec.scrollLeft += step; e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { sec.scrollLeft -= step; e.preventDefault(); }
+    });
+  })();
+
+  // ─── Legend modal ───
+  let legendModal = null;
+  document.getElementById('repLegendBtn').addEventListener('click', function() {
+    if (!legendModal) legendModal = new bootstrap.Modal(document.getElementById('repLegendModal'));
+    legendModal.show();
   });
 
   // ─── Navigation ───
