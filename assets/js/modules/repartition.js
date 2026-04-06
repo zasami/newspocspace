@@ -1,39 +1,52 @@
 /**
  * SpocSpace — Repartition module (employee view)
- * Weekly staffing grid per module with tabs
+ * Slot-based weekly grid matching admin layout — read-only
  */
 import { apiPost, escapeHtml } from '../helpers.js';
 
-let weekStart = null;
 let data = null;
-let activeModuleId = null;
+let weekStart = null;
+let viewMode = 'week'; // 'week' or 'day'
+let selectedDay = null; // for day view
 let horairesModal = null;
 
+const FR_FULL_DAYS = ['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+const FR_MONTHS = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const SOIR_CODES = new Set(['S3','S4','D4','C2']);
+const MOD_COLORS = { M1:'rep-c-M1', M2:'rep-c-M2', M3:'rep-c-M3', M4:'rep-c-M4', NUIT:'rep-c-NUIT', POOL:'rep-c-POOL', RS:'rep-c-RS' };
+
 export async function init() {
-    document.getElementById('repPrevWeek')?.addEventListener('click', () => moveWeek(-7));
-    document.getElementById('repNextWeek')?.addEventListener('click', () => moveWeek(7));
-    document.getElementById('repToday')?.addEventListener('click', () => { weekStart = null; load(); });
+    document.getElementById('repPrevWeek')?.addEventListener('click', () => navigate(-1));
+    document.getElementById('repNextWeek')?.addEventListener('click', () => navigate(1));
+    document.getElementById('repToday')?.addEventListener('click', () => { weekStart = null; selectedDay = null; load(); });
 
     const modalEl = document.getElementById('repHorairesModal');
     if (modalEl) horairesModal = new bootstrap.Modal(modalEl);
     document.getElementById('repInfoBtn')?.addEventListener('click', showHorairesModal);
 
-    // Default to user's principal module
-    const user = window.__SS__?.user;
-    if (user?.modules?.length) {
-        const principal = user.modules.find(m => m.is_principal) || user.modules[0];
-        if (principal) activeModuleId = principal.module_id || principal.id;
-    }
+    // View toggle
+    document.querySelectorAll('#repViewToggle button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewMode = btn.dataset.view;
+            document.querySelectorAll('#repViewToggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (viewMode === 'day' && !selectedDay) selectedDay = fmtISO(new Date());
+            render();
+        });
+    });
+
+    // Drag-to-scroll + keyboard
+    setupScrollNav();
 
     const ssrData = window.__SS_PAGE_DATA__;
     if (ssrData?.success) {
         data = ssrData;
         weekStart = ssrData.week_start;
-        document.getElementById('repWeekLabel').textContent = `Semaine ${ssrData.week_num} — ${fmtShort(ssrData.week_start)} au ${fmtShort(ssrData.week_end)}`;
-        if (!activeModuleId && data.modules.length) activeModuleId = data.modules[0].id;
-        renderTabs();
-        renderGrid();
+        selectedDay = fmtISO(new Date());
+        updateLabel();
+        render();
     } else {
+        selectedDay = fmtISO(new Date());
         await load();
     }
 }
@@ -44,202 +57,291 @@ async function load() {
     if (!res.success) return;
     data = res;
     weekStart = res.week_start;
-
-    document.getElementById('repWeekLabel').textContent = `Semaine ${res.week_num} — ${fmtShort(res.week_start)} au ${fmtShort(res.week_end)}`;
-
-    // If no active module yet, pick the first one
-    if (!activeModuleId && data.modules.length) activeModuleId = data.modules[0].id;
-
-    renderTabs();
-    renderGrid();
+    updateLabel();
+    render();
 }
 
-function moveWeek(days) {
-    const d = new Date(weekStart + 'T00:00:00');
-    d.setDate(d.getDate() + days);
-    weekStart = fmtISO(d);
-    load();
-}
-
-function fmtISO(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function fmtShort(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
-}
-
-/* ── Tabs (sliding pill) ── */
-function renderTabs() {
-    const container = document.getElementById('repModuleTabs');
-
-    // Build HTML only once (first render or module list changed)
-    if (!container.querySelector('.rep-tabs')) {
-        let html = '<div class="rep-tabs"><div class="rep-tabs-slider" id="repTabsSlider"></div>';
-        for (const mod of data.modules) {
-            html += `<button class="rep-tab" data-mod="${escapeHtml(mod.id)}">${escapeHtml(mod.code || mod.nom)}</button>`;
+function navigate(dir) {
+    if (viewMode === 'day') {
+        // Move day by day
+        const d = new Date(selectedDay + 'T00:00:00');
+        d.setDate(d.getDate() + dir);
+        selectedDay = fmtISO(d);
+        // Check if we crossed week boundary
+        const monday = getMonday(d);
+        const currentMonday = new Date(weekStart + 'T00:00:00');
+        if (monday.getTime() !== currentMonday.getTime()) {
+            weekStart = fmtISO(monday);
+            load();
+            return;
         }
-        html += '</div>';
-        container.innerHTML = html;
-
-        container.querySelectorAll('.rep-tab').forEach(btn => {
-            btn.addEventListener('click', () => {
-                activeModuleId = btn.dataset.mod;
-                updateSlider();
-                renderGrid();
-            });
-        });
+        updateLabel();
+        render();
+    } else {
+        // Move week by week
+        const d = new Date(weekStart + 'T00:00:00');
+        d.setDate(d.getDate() + dir * 7);
+        weekStart = fmtISO(d);
+        load();
     }
-
-    updateSlider();
 }
 
-function updateSlider() {
-    const container = document.getElementById('repModuleTabs');
-    const tabs = container.querySelectorAll('.rep-tab');
-    const slider = document.getElementById('repTabsSlider');
-    if (!slider || !tabs.length) return;
+function updateLabel() {
+    const el = document.getElementById('repWeekLabel');
+    if (!el || !data) return;
+    if (viewMode === 'day' && selectedDay) {
+        const d = new Date(selectedDay + 'T00:00:00');
+        const dow = (d.getDay() + 6) % 7;
+        el.textContent = FR_FULL_DAYS[dow] + ' ' + d.getDate() + ' ' + FR_MONTHS[d.getMonth() + 1] + ' ' + d.getFullYear();
+    } else {
+        el.textContent = `Semaine ${data.week_num} — ${fmtShort(data.week_start)} au ${fmtShort(data.week_end)}`;
+    }
+}
 
-    tabs.forEach(t => t.classList.remove('rep-tab-active'));
+// ─── Helpers ───
+function fmtISO(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtShort(s) { const d = new Date(s+'T00:00:00'); return d.toLocaleDateString('fr-CH',{day:'numeric',month:'short'}); }
+function getMonday(d) { const r = new Date(d); const dow = r.getDay() || 7; r.setDate(r.getDate() - dow + 1); r.setHours(0,0,0,0); return r; }
+function dayHeaderLabel(d) {
+    const dt = new Date(d.date + 'T00:00:00');
+    const dow = (dt.getDay() + 6) % 7;
+    return FR_FULL_DAYS[dow] + ', ' + dt.getDate() + ' ' + FR_MONTHS[dt.getMonth()+1] + ' ' + dt.getFullYear();
+}
 
-    let activeBtn = null;
-    tabs.forEach(t => {
-        if (t.dataset.mod === activeModuleId) { t.classList.add('rep-tab-active'); activeBtn = t; }
+// ─── Build slot-based sections ───
+function buildSections(days) {
+    const fnMap = {};
+    (data.fonctions || []).forEach(f => fnMap[f.code] = f);
+
+    const horaireOrder = {};
+    (data.horaires || []).forEach(h => horaireOrder[h.id] = h.heure_debut || '99:99');
+
+    const byMod = {};
+    (data.assignments || []).forEach(a => {
+        const mid = a.module_id || '_NONE';
+        if (!byMod[mid]) byMod[mid] = [];
+        byMod[mid].push(a);
     });
 
-    if (activeBtn) {
-        const parent = activeBtn.parentElement;
-        const parentRect = parent.getBoundingClientRect();
-        const btnRect = activeBtn.getBoundingClientRect();
-        const offsetLeft = btnRect.left - parentRect.left - 3; // 3px = padding
-        slider.style.width = btnRect.width + 'px';
-        slider.style.transform = `translateX(${offsetLeft}px)`;
+    const dateList = days.map(d => d.date);
+
+    function buildModSlots(mod, assigns) {
+        const byFn = {};
+        assigns.forEach(a => { const fc = a.fonction_code || '_'; if (!byFn[fc]) byFn[fc] = []; byFn[fc].push(a); });
+        const fnCodes = Object.keys(byFn).sort((a,b) => ((fnMap[a]||{}).ordre||99) - ((fnMap[b]||{}).ordre||99));
+        const sections = [];
+
+        fnCodes.forEach(fc => {
+            const fnAssigns = byFn[fc];
+            const fnInfo = fnMap[fc] || { nom: fc };
+            let slots = [];
+
+            if (fc === 'AS' && mod?.etages?.length) {
+                const usedIds = new Set();
+                (mod.etages || []).forEach(et => {
+                    (et.groupes || []).forEach(gr => {
+                        const slotDays = {};
+                        dateList.forEach(dt => {
+                            const m = fnAssigns.find(a => a.date_jour === dt && a.groupe_id === gr.id && !SOIR_CODES.has(a.horaire_code));
+                            if (m) { slotDays[dt] = m; usedIds.add(m.user_id + '|' + m.date_jour); }
+                        });
+                        slots.push({ label: et.code.replace('E','') + '-' + gr.code.replace(/^\d+-/,''), days: slotDays });
+                    });
+                });
+                const soirA = fnAssigns.filter(a => !usedIds.has(a.user_id + '|' + a.date_jour));
+                if (soirA.length) {
+                    const soirByDay = {};
+                    soirA.forEach(a => { if (!soirByDay[a.date_jour]) soirByDay[a.date_jour] = []; soirByDay[a.date_jour].push(a); });
+                    const maxS = Math.max(...Object.values(soirByDay).map(arr => arr.length), 0);
+                    for (let s = 0; s < maxS; s++) {
+                        const sd = {};
+                        dateList.forEach(dt => { if (soirByDay[dt]?.[s]) sd[dt] = soirByDay[dt][s]; });
+                        slots.push({ label: 'Soir' + (maxS > 1 ? ' '+(s+1) : ''), days: sd });
+                    }
+                }
+            } else {
+                const byDay = {};
+                dateList.forEach(dt => {
+                    byDay[dt] = fnAssigns.filter(a => a.date_jour === dt).sort((a,b) => (horaireOrder[a.horaire_type_id]||'99').localeCompare(horaireOrder[b.horaire_type_id]||'99'));
+                });
+                const maxSlots = Math.max(...dateList.map(dt => (byDay[dt]||[]).length), 0);
+                for (let s = 0; s < maxSlots; s++) {
+                    const sd = {};
+                    dateList.forEach(dt => { if (byDay[dt]?.[s]) sd[dt] = byDay[dt][s]; });
+                    slots.push({ label: maxSlots > 1 ? String(s+1) : '', days: sd });
+                }
+            }
+            if (slots.length) sections.push({ code: fc, nom: fnInfo.nom || fc, slots });
+        });
+        return sections;
     }
+
+    const result = [];
+    const modules = data.modules || [];
+
+    // RS/RUV
+    const rsA = (data.assignments || []).filter(a => a.fonction_code === 'RS' || a.fonction_code === 'RUV');
+    if (rsA.length) result.push({ module: { id: '', code: 'RS', nom: 'RS / RUVs', etages: [] }, functions: buildModSlots(null, rsA) });
+
+    modules.forEach(mod => {
+        const assigns = (byMod[mod.id] || []).filter(a => a.fonction_code !== 'RS' && a.fonction_code !== 'RUV');
+        if (!assigns.length) return;
+        const fns = buildModSlots(mod, assigns);
+        if (fns.length) result.push({ module: mod, functions: fns });
+    });
+
+    if (byMod['_NONE']) {
+        const noneA = byMod['_NONE'].filter(a => a.fonction_code !== 'RS' && a.fonction_code !== 'RUV');
+        if (noneA.length) result.push({ module: { id: '', code: 'POOL', nom: 'Pool', etages: [] }, functions: buildModSlots(null, noneA) });
+    }
+
+    return result;
 }
 
-/* ── Grid ── */
-function renderGrid() {
-    if (!data || !activeModuleId) return;
+// ─── Render ───
+function render() {
+    if (!data) return;
 
-    const days = data.days;
-    const mod = data.modules.find(m => m.id === activeModuleId);
-    if (!mod) return;
-
-    // Users assigned to this module (home module)
-    const moduleUsers = data.users.filter(u => u.home_module_id === activeModuleId);
-
-    // Also include users from other modules who have assignments in this module this week
-    const assignedUserIds = new Set();
-    for (const a of data.assignments) {
-        if (a.module_id === activeModuleId) assignedUserIds.add(a.user_id);
-    }
-    const extraUsers = data.users.filter(u => u.home_module_id !== activeModuleId && assignedUserIds.has(u.id));
-
-    // Group by fonction
-    const fonctionMap = {};
-    for (const u of [...moduleUsers, ...extraUsers]) {
-        const fk = u.fonction_code || 'Autre';
-        if (!fonctionMap[fk]) fonctionMap[fk] = { label: u.fonction_nom || fk, ordre: u.fonction_ordre ?? 99, users: [] };
-        // Avoid duplicates
-        if (!fonctionMap[fk].users.find(x => x.id === u.id)) {
-            fonctionMap[fk].users.push(u);
+    // Filter days based on view mode
+    let days = data.days || [];
+    if (viewMode === 'day' && selectedDay) {
+        days = days.filter(d => d.date === selectedDay);
+        if (!days.length) {
+            // selectedDay is outside loaded week — show message
+            document.getElementById('repGrid').innerHTML = '<div class="text-center py-4 text-muted">Chargement...</div>';
+            return;
         }
     }
-    const groups = Object.values(fonctionMap).sort((a, b) => a.ordre - b.ordre);
 
-    // Build assignment index: userId_date -> assignment
-    const assignIdx = {};
-    for (const a of data.assignments) {
-        const key = a.user_id + '_' + a.date_jour;
-        assignIdx[key] = a;
-    }
-
-    const today = fmtISO(new Date());
-
-    // Header
-    const head = document.getElementById('repHead');
-    let headHtml = '<tr><th style="min-width:150px;position:sticky;left:0;background:var(--ss-bg-card, #fff);z-index:1">Collaborateur</th>';
-    for (const day of days) {
-        const isToday = day.date === today;
-        const isWe = day.is_weekend;
-        headHtml += `<th style="text-align:center;min-width:80px;${isToday ? 'background:var(--ss-accent-bg);font-weight:700' : ''}${isWe ? ';color:var(--ss-text-muted)' : ''}">${escapeHtml(day.label)}</th>`;
-    }
-    headHtml += '</tr>';
-    head.innerHTML = headHtml;
-
-    // Body
-    const body = document.getElementById('repBody');
-    if (!groups.length) {
-        body.innerHTML = `<tr><td colspan="${days.length + 1}" class="text-center py-4 text-muted">Aucun collaborateur dans ce module</td></tr>`;
+    const sections = buildSections(days);
+    if (!sections.length) {
+        document.getElementById('repGrid').innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-calendar-x" style="font-size:1.5rem;opacity:.3;display:block;margin-bottom:8px"></i>Aucune donnée</div>';
         return;
     }
 
+    const isDayView = viewMode === 'day';
+    const today = fmtISO(new Date());
+
     let html = '';
-    for (const group of groups) {
-        // Fonction header row
-        html += `<tr><td colspan="${days.length + 1}" style="background:var(--ss-accent-bg);font-weight:600;font-size:0.82rem;padding:0.4rem 0.75rem;color:var(--ss-text);border-bottom:1px solid var(--ss-border)">${escapeHtml(group.label)}</td></tr>`;
+    sections.forEach(sec => {
+        const mod = sec.module;
+        const colorCls = MOD_COLORS[mod.code] || 'rep-c-DEFAULT';
+        let total = 0;
+        sec.functions.forEach(fn => total += fn.slots.length);
 
-        for (const user of group.users) {
-            const isExternal = user.home_module_id !== activeModuleId;
-            html += '<tr>';
-            html += `<td style="position:sticky;left:0;background:var(--ss-bg-card, #fff);z-index:1;white-space:nowrap;padding:0.4rem 0.75rem">
-                <span${isExternal ? ' style="font-style:italic;color:var(--ss-text-secondary)"' : ''}>${escapeHtml(user.prenom)} ${escapeHtml(user.nom)}</span>
-                ${isExternal ? `<small style="margin-left:0.3rem;padding:0.1rem 0.35rem;border-radius:4px;background:var(--ss-accent-bg);font-size:0.68rem;color:var(--ss-text-muted)" title="Module principal: ${escapeHtml(user.home_module_code || '?')}">${escapeHtml(user.home_module_code || '?')}</small>` : ''}
-            </td>`;
+        html += '<div class="rep-section">';
+        html += '<div class="rep-section-header ' + colorCls + '"><i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code) + ' <span class="badge">' + total + '</span></div>';
+        html += '<div class="rep-section-scroll" tabindex="-1">';
+        html += '<table class="rep-tbl' + (isDayView ? ' rep-day-view' : '') + '">';
 
-            for (const day of days) {
-                const isToday = day.date === today;
-                const a = assignIdx[user.id + '_' + day.date];
-                let cellStyle = 'text-align:center;padding:0.3rem;';
-                if (isToday) cellStyle += 'background:var(--ss-accent-bg);';
+        // Header
+        html += '<thead><tr><th class="col-fn" rowspan="2">Fonction</th><th class="col-slot" rowspan="2">Poste</th>';
+        days.forEach(d => {
+            const we = d.is_weekend ? ' weekend' : '';
+            const isToday = d.date === today;
+            const style = isToday ? ' style="background:var(--ss-accent-bg)"' : '';
+            html += '<th class="col-day-head day-first' + we + '" colspan="3"' + style + '>' + dayHeaderLabel(d) + '</th>';
+        });
+        html += '</tr><tr>';
+        days.forEach(() => {
+            html += '<th class="col-sub col-sub-nom day-first"></th><th class="col-sub col-sub-hor">Hor.</th><th class="col-sub col-sub-et">Ét.</th>';
+        });
+        html += '</tr></thead><tbody>';
 
-                if (a) {
-                    const color = a.horaire_couleur || '#1a1a1a';
-                    const inThisModule = a.module_id === activeModuleId;
-                    html += `<td style="${cellStyle}">
-                        <span style="display:inline-block;padding:0.15rem 0.45rem;border-radius:5px;font-weight:600;font-size:0.78rem;background:${escapeHtml(color)};color:#fff;${!inThisModule ? 'opacity:0.5;' : ''}" title="${escapeHtml(a.horaire_code)} ${a.heure_debut?.slice(0,5) || ''}–${a.heure_fin?.slice(0,5) || ''}${!inThisModule ? ' (' + escapeHtml(a.module_code || '') + ')' : ''}">${escapeHtml(a.horaire_code)}</span>
-                        ${!inThisModule ? `<div style="font-size:0.6rem;color:var(--ss-text-muted);margin-top:1px">${escapeHtml(a.module_code || '')}</div>` : ''}
-                    </td>`;
-                } else {
-                    html += `<td style="${cellStyle}"><span style="color:var(--ss-text-muted);font-size:0.75rem">—</span></td>`;
-                }
-            }
+        // Rows
+        sec.functions.forEach(fn => {
+            fn.slots.forEach((slot, si) => {
+                html += '<tr' + (si === 0 ? ' class="fn-first"' : '') + '>';
+                if (si === 0) html += '<td class="cell-fn" rowspan="' + fn.slots.length + '">' + escapeHtml(fn.nom) + '</td>';
+                html += '<td class="cell-slot">' + escapeHtml(slot.label) + '</td>';
 
-            html += '</tr>';
-        }
-    }
+                days.forEach(d => {
+                    const a = slot.days[d.date] || null;
+                    const we = d.is_weekend ? ' weekend' : '';
+                    const isToday = d.date === today;
+                    const todayStyle = isToday ? ';background:var(--ss-accent-bg)' : '';
 
-    body.innerHTML = html;
+                    // Nom
+                    let nom = '';
+                    if (a) {
+                        nom = escapeHtml(a.user_prenom || '');
+                        if (a.notes) nom += '<span class="rep-note-dot" title="' + escapeHtml(a.notes) + '">*</span>';
+                    }
+                    html += '<td class="cell-nom day-first' + we + '"' + (todayStyle ? ' style="' + todayStyle.slice(1) + '"' : '') + '>' + nom + '</td>';
+
+                    // Hor
+                    let hor = '';
+                    if (a?.horaire_code) hor = '<span class="rep-badge" style="background:' + (a.horaire_couleur || '#6c757d') + '">' + escapeHtml(a.horaire_code) + '</span>';
+                    html += '<td class="cell-hor' + we + '"' + (todayStyle ? ' style="' + todayStyle.slice(1) + '"' : '') + '>' + hor + '</td>';
+
+                    // Ét
+                    let et = '';
+                    if (a) {
+                        if (a.etage_code && a.groupe_code) et = escapeHtml(a.etage_code.replace('E','') + '-' + a.groupe_code.replace(/^\d+-/,''));
+                        else if (a.groupe_code) et = escapeHtml(a.groupe_code);
+                        else if (a.etage_code) et = escapeHtml(a.etage_code.replace('E',''));
+                    }
+                    html += '<td class="cell-et' + we + '"' + (todayStyle ? ' style="' + todayStyle.slice(1) + '"' : '') + '>' + et + '</td>';
+                });
+                html += '</tr>';
+            });
+        });
+
+        html += '</tbody></table></div></div>';
+    });
+
+    document.getElementById('repGrid').innerHTML = html;
+    updateLabel();
 }
 
-/* ── Horaires detail modal ── */
+// ─── Drag-to-scroll + keyboard arrows ───
+function setupScrollNav() {
+    const grid = document.getElementById('repGrid');
+    let dragEl = null, startX = 0, startScroll = 0;
+
+    grid.addEventListener('mousedown', e => {
+        const sec = e.target.closest('.rep-section-scroll');
+        if (!sec || e.target.closest('button')) return;
+        dragEl = sec; startX = e.pageX; startScroll = sec.scrollLeft;
+        sec.style.cursor = 'grabbing'; sec.style.userSelect = 'none'; sec.style.scrollBehavior = 'auto';
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => { if (dragEl) dragEl.scrollLeft = startScroll - (e.pageX - startX); });
+    document.addEventListener('mouseup', () => {
+        if (!dragEl) return;
+        dragEl.style.cursor = ''; dragEl.style.userSelect = ''; dragEl.style.scrollBehavior = '';
+        dragEl = null;
+    });
+
+    grid.addEventListener('click', e => {
+        const sec = e.target.closest('.rep-section-scroll');
+        if (sec) { sec.setAttribute('tabindex', '-1'); sec.focus({ preventScroll: true }); }
+    });
+    grid.addEventListener('keydown', e => {
+        const sec = e.target.closest('.rep-section-scroll');
+        if (!sec) return;
+        if (e.key === 'ArrowRight') { sec.scrollLeft += 200; e.preventDefault(); }
+        else if (e.key === 'ArrowLeft') { sec.scrollLeft -= 200; e.preventDefault(); }
+    });
+}
+
+// ─── Horaires modal ───
 function showHorairesModal() {
     if (!data?.horaires?.length) return;
-
     let html = '<div style="display:flex;flex-direction:column">';
-    for (let i = 0; i < data.horaires.length; i++) {
-        const h = data.horaires[i];
-        const color = h.couleur || '#1a1a1a';
-        const debut = h.heure_debut?.slice(0, 5) || '';
-        const fin = h.heure_fin?.slice(0, 5) || '';
+    data.horaires.forEach((h, i) => {
         const bg = i % 2 === 0 ? 'var(--ss-bg, #F7F5F2)' : 'var(--ss-bg-card, #fff)';
-
-        html += `
-        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1.25rem;background:${bg};border-bottom:1px solid var(--ss-border-light)">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:${escapeHtml(color)};color:#fff;font-weight:700;font-size:0.95rem;flex-shrink:0">${escapeHtml(h.code)}</span>
-            <div style="flex:1;min-width:0">
-                <div style="font-weight:600;font-size:0.92rem;color:var(--ss-text)">${escapeHtml(h.code)}</div>
-                <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.15rem">
-                    <span style="font-size:0.82rem;color:var(--ss-text-secondary)"><i class="bi bi-clock" style="font-size:0.72rem;margin-right:0.2rem"></i>${debut} — ${fin}</span>
-                    ${h.duree_effective ? `<span style="font-size:0.78rem;color:var(--ss-text-muted)"><i class="bi bi-hourglass-split" style="font-size:0.68rem;margin-right:0.15rem"></i>${escapeHtml(h.duree_effective)}h eff.</span>` : ''}
-                </div>
-            </div>
-            <div style="width:12px;height:12px;border-radius:50%;background:${escapeHtml(color)};flex-shrink:0"></div>
+        html += `<div style="display:flex;align-items:center;gap:1rem;padding:.75rem 1.25rem;background:${bg};border-bottom:1px solid var(--ss-border-light)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:${escapeHtml(h.couleur||'#6c757d')};color:#fff;font-weight:700;font-size:.95rem;flex-shrink:0">${escapeHtml(h.code)}</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:.92rem">${escapeHtml(h.code)}</div>
+            <div style="display:flex;gap:.75rem;margin-top:.15rem">
+                <span style="font-size:.82rem;color:var(--ss-text-secondary)"><i class="bi bi-clock" style="font-size:.72rem;margin-right:.2rem"></i>${(h.heure_debut||'').slice(0,5)} — ${(h.heure_fin||'').slice(0,5)}</span>
+                ${h.duree_effective ? `<span style="font-size:.78rem;color:var(--ss-text-muted)"><i class="bi bi-hourglass-split" style="font-size:.68rem;margin-right:.15rem"></i>${escapeHtml(h.duree_effective)}h</span>` : ''}
+            </div></div>
+            <div style="width:12px;height:12px;border-radius:50%;background:${escapeHtml(h.couleur||'#6c757d')}"></div>
         </div>`;
-    }
+    });
     html += '</div>';
-
     document.getElementById('repHorairesBody').innerHTML = html;
     if (horairesModal) horairesModal.show();
 }

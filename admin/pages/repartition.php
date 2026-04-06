@@ -131,6 +131,10 @@ for ($i = 0; $i < 7; $i++) {
     <button class="btn btn-outline-primary btn-sm" id="repToday">Aujourd'hui</button>
   </div>
   <div class="d-flex align-items-center gap-2">
+    <div class="btn-group btn-group-sm" id="repViewToggle">
+      <button class="btn btn-outline-secondary active" data-view="week" title="Vue semaine"><i class="bi bi-calendar-week"></i></button>
+      <button class="btn btn-outline-secondary" data-view="day" title="Vue jour"><i class="bi bi-calendar-day"></i></button>
+    </div>
     <button class="btn btn-outline-secondary btn-sm" id="repToggleEdit" title="Mode édition"><i class="bi bi-pencil-square"></i> Éditer</button>
     <button class="btn btn-outline-secondary btn-sm" id="repLegendBtn" title="Légende horaires"><i class="bi bi-info-circle"></i></button>
     <input type="date" class="form-control form-control-sm" style="width:160px" id="repDatePicker" value="<?= h($weekStart) ?>">
@@ -261,37 +265,49 @@ for ($i = 0; $i < 7; $i++) {
 
 /* Table — 3 sub-columns per day: Nom | Horaire | Étage */
 .rep-table { width: 100%; min-width: 1600px; border-collapse: separate; border-spacing: 0; font-size: .74rem; }
-.rep-table th, .rep-table td { border: 1px solid #dee2e6; padding: .2rem .3rem; vertical-align: middle; }
-.rep-table thead th { background: #f1f3f5; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 2; font-size: .7rem; }
-.rep-table th.col-fn { width: 70px; position: sticky; left: 0; z-index: 4; background: #f1f3f5; }
-.rep-table th.col-slot { width: 55px; position: sticky; left: 70px; z-index: 4; background: #f1f3f5; }
+.rep-table th, .rep-table td { border: 1px solid #dee2e6; padding: .2rem .3rem; vertical-align: middle; background: #fff; }
+.rep-table thead th { background: #fff; font-weight: 600; text-align: center; position: sticky; top: 0; z-index: 2; font-size: .7rem; }
+.rep-table th.col-fn { width: 70px; position: sticky; left: 0; z-index: 4; background: #fff; }
+.rep-table th.col-slot { width: 55px; position: sticky; left: 70px; z-index: 4; background: #fff; }
 .rep-table th.col-day-head { text-align: center; font-size: .72rem; border-bottom: 0; }
-.rep-table th.col-day-head.weekend { background: #fef9e7; }
-.rep-table th.col-sub-nom { width: 120px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; }
-.rep-table th.col-sub-hor { width: 38px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; text-align: center; }
-.rep-table th.col-sub-et { width: 35px; font-size: .64rem; color: #888; font-weight: 500; border-top: 0; text-align: center; }
+.rep-table th.col-day-head.weekend { background: #fff; }
+.rep-table th.col-sub-nom { width: 140px; font-size: .64rem; color: #888; font-weight: 500; }
+/* Day view — all modules aligned left in a column */
+.rep-grid-container.rep-grid-day { display: flex; flex-direction: column; align-items: flex-start; }
+.rep-day-section { width: auto; max-width: 100%; }
+.rep-day-section .rep-module-inner { min-width: 0; overflow-x: visible; cursor: default; }
+.rep-table.rep-day-view { min-width: 0; width: auto; }
+.rep-table.rep-day-view th.col-fn { width: 80px; }
+.rep-table.rep-day-view th.col-slot { width: 55px; }
+.rep-table.rep-day-view th.col-sub-nom { width: 200px; }
+.rep-table.rep-day-view td.cell-nom { max-width: 200px; }
+.rep-table.rep-day-view th.col-sub-hor { width: 50px; }
+.rep-table.rep-day-view th.col-sub-et { width: 50px; }
+.rep-table.rep-day-view th.col-day-head { font-size: .82rem; padding: .4rem .5rem; }
+.rep-table th.col-sub-hor { width: 38px; font-size: .64rem; color: #888; font-weight: 500; text-align: center; }
+.rep-table th.col-sub-et { width: 35px; font-size: .64rem; color: #888; font-weight: 500; text-align: center; }
 
 /* Day group border — thicker left border on first col of each day */
 .rep-table td.day-first, .rep-table th.day-first { border-left: 2px solid #adb5bd; }
 
 /* Function cell — sticky left */
-.rep-table td.cell-fn { font-weight: 700; font-size: .68rem; color: #333; background: #f8f9fa; text-align: center; border-right: 2px solid #ccc; position: sticky; left: 0; z-index: 1; }
-.rep-table td.cell-slot { font-size: .66rem; font-weight: 600; color: #555; background: #fdfdfd; text-align: center; white-space: nowrap; position: sticky; left: 70px; z-index: 1; }
+.rep-table td.cell-fn { font-weight: 700; font-size: .68rem; color: #333; background: #fff; text-align: center; border-right: 2px solid #ccc; position: sticky; left: 0; z-index: 1; }
+.rep-table td.cell-slot { font-size: .66rem; font-weight: 600; color: #555; background: #fff; text-align: center; white-space: nowrap; position: sticky; left: 70px; z-index: 1; }
 .rep-table tr.fn-group-first td { border-top: 2px solid #adb5bd; }
 
 /* Nom cell */
-.rep-table td.cell-nom { font-size: .72rem; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; position: relative; }
-.rep-table td.cell-nom.weekend { background: #fefcf3; }
+.rep-table td.cell-nom { font-size: .72rem; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; position: relative; }
+.rep-table td.cell-nom.weekend { background: #fff; }
 .rep-table td.cell-nom.empty-cell { color: #d0d0d0; font-weight: 400; }
 .rep-table td.cell-nom.rep-absent-cell { text-decoration: line-through; opacity: .55; }
 
 /* Horaire cell */
 .rep-table td.cell-hor { text-align: center; padding: .15rem .1rem; }
-.rep-table td.cell-hor.weekend { background: #fefcf3; }
+.rep-table td.cell-hor.weekend { background: #fff; }
 
 /* Étage cell */
 .rep-table td.cell-et { text-align: center; font-size: .66rem; font-weight: 600; color: #555; }
-.rep-table td.cell-et.weekend { background: #fefcf3; }
+.rep-table td.cell-et.weekend { background: #fff; }
 
 /* Modified indicator on nom cell */
 .rep-table td.cell-nom.rep-modified::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; background: #FF9800; border-radius: 50%; }
@@ -308,13 +324,13 @@ for ($i = 0; $i < 7; $i++) {
 .rep-edit-mode .rep-table td.cell-et { cursor: pointer; transition: background .15s; }
 .rep-edit-mode .rep-table td.cell-nom:hover,
 .rep-edit-mode .rep-table td.cell-hor:hover,
-.rep-edit-mode .rep-table td.cell-et:hover { background: #e8f5e9 !important; }
-#repToggleEdit.active { background: #4CAF50; border-color: #4CAF50; color: #fff; }
+.rep-edit-mode .rep-table td.cell-et:hover { background: rgba(188,210,203,.15) !important; }
+#repToggleEdit.active { background: #2d4a43; border-color: #2d4a43; color: #fff; }
 
 /* Drag & drop — on nom cell */
 .rep-edit-mode .rep-table td.cell-nom[draggable="true"] { cursor: grab; }
-.rep-table td.cell-nom.rep-drag-over { background: #bbdefb !important; outline: 2px dashed #1976D2; outline-offset: -2px; }
-.rep-module-header.rep-drag-over-mod { outline: 3px dashed #fff; outline-offset: -3px; opacity: .85; }
+.rep-table td.cell-nom.rep-drag-over { background: rgba(188,210,203,.2) !important; outline: 2px dashed #2d4a43; outline-offset: -2px; }
+.rep-module-header.rep-drag-over-mod { outline: 3px dashed rgba(255,255,255,.6); outline-offset: -3px; opacity: .85; }
 .rep-table td.cell-nom.rep-dragging { opacity: .4; }
 
 /* Edit popover */
@@ -354,6 +370,8 @@ for ($i = 0; $i < 7; $i++) {
   let currentWeekISO = <?= json_encode($weekIso) ?>;
   let editMode = false;
   let editingCell = null;
+  let viewMode = 'week'; // 'week' or 'day'
+  let selectedDay = dateToStr(new Date());
   let dragData = null;
 
   let data = {
@@ -584,7 +602,12 @@ for ($i = 0; $i < 7; $i++) {
   // ─── Render grid — 3 sub-columns per day ───
   function renderGrid() {
     const { sections, modifiedSet, absIdx } = buildSections();
-    const days = data.days || [];
+    let days = data.days || [];
+    const isDayView = viewMode === 'day';
+    if (isDayView && selectedDay) {
+      days = days.filter(d => d.date === selectedDay);
+      if (!days.length && (data.days || []).length) days = [data.days[0]];
+    }
     if (sections.length === 0) {
       document.getElementById('repGrid').innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-calendar-x" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px"></i>Aucune donnée pour cette semaine.</div>';
       return;
@@ -599,13 +622,13 @@ for ($i = 0; $i < 7; $i++) {
       let totalSlots = 0;
       sec.functions.forEach(fn => totalSlots += fn.slots.length);
 
-      html += '<div class="rep-module-section" data-section-module-id="' + (mod.id || '') + '">';
+      html += '<div class="rep-module-section' + (isDayView ? ' rep-day-section' : '') + '" data-section-module-id="' + (mod.id || '') + '">';
       html += '<div class="rep-module-header ' + colorCls + '" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code) + '">';
       html += '<i class="bi bi-building"></i> ' + escapeHtml(mod.nom || mod.code);
       html += ' <span class="badge">' + totalSlots + ' poste(s)</span></div>';
       html += '<div class="rep-module-inner">';
 
-      html += '<table class="rep-table">';
+      html += '<table class="rep-table' + (isDayView ? ' rep-day-view' : '') + '">';
 
       // ── 2-row header: day names (colspan=3) then sub-headers ──
       html += '<thead><tr>';
@@ -618,8 +641,8 @@ for ($i = 0; $i < 7; $i++) {
       html += '</tr><tr>';
       days.forEach(function(d) {
         html += '<th class="col-sub-nom day-first"></th>';
-        html += '<th class="col-sub-hor">Hor.</th>';
-        html += '<th class="col-sub-et">Ét.</th>';
+        html += '<th class="col-sub-hor">Horaire</th>';
+        html += '<th class="col-sub-et">Étage</th>';
       });
       html += '</tr></thead><tbody>';
 
@@ -650,7 +673,7 @@ for ($i = 0; $i < 7; $i++) {
                 if (absType === 'vacances') nomContent += '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon"> ';
                 else { const icons = {maladie:'bi-bandaid',accident:'bi-exclamation-triangle',formation:'bi-mortarboard',conge_special:'bi-calendar-heart'}; nomContent += '<i class="bi ' + (icons[absType]||'bi-dash-circle') + ' rep-abs-icon"></i> '; }
               }
-              nomContent += escapeHtml(a.user_prenom || '');
+              nomContent += escapeHtml((a.user_prenom || '') + ' ' + (a.user_nom || ''));
               if (a.notes) nomContent += '<span class="rep-note-dot" title="' + escapeHtml(a.notes) + '">*</span>';
             } else {
               nomContent = '';
@@ -683,7 +706,9 @@ for ($i = 0; $i < 7; $i++) {
       html += '</tbody></table></div></div>';
     });
 
-    document.getElementById('repGrid').innerHTML = html;
+    const gridEl = document.getElementById('repGrid');
+    gridEl.innerHTML = html;
+    gridEl.classList.toggle('rep-grid-day', isDayView);
   }
 
   // ─── Load week via API ───
@@ -716,6 +741,7 @@ for ($i = 0; $i < 7; $i++) {
     }
 
     hideEditPopover();
+    if (typeof updateLabel === 'function') updateLabel();
     renderGrid();
   }
 
@@ -1049,15 +1075,54 @@ for ($i = 0; $i < 7; $i++) {
     legendModal.show();
   });
 
+  // ─── View toggle (week / day) ───
+  function updateLabel() {
+    if (viewMode === 'day' && selectedDay) {
+      const dt = new Date(selectedDay + 'T00:00:00');
+      const dow = (dt.getDay() + 6) % 7;
+      document.getElementById('repWeekLabel').textContent =
+        frFullDays[dow] + ' ' + dt.getDate() + ' ' + frMonthsFull[dt.getMonth() + 1] + ' ' + dt.getFullYear();
+    } else {
+      document.getElementById('repWeekLabel').textContent = data.week_label || '';
+    }
+  }
+
+  document.querySelectorAll('#repViewToggle button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      viewMode = btn.dataset.view;
+      document.querySelectorAll('#repViewToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (viewMode === 'day' && !selectedDay) selectedDay = dateToStr(new Date());
+      updateLabel();
+      renderGrid();
+    });
+  });
+
   // ─── Navigation ───
-  document.getElementById('repPrevWeek').addEventListener('click', function() {
-    const mon = getMondayOfISOWeek(currentWeekISO); if (mon) { mon.setDate(mon.getDate() - 7); loadWeek(dateToStr(mon)); }
-  });
-  document.getElementById('repNextWeek').addEventListener('click', function() {
-    const mon = getMondayOfISOWeek(currentWeekISO); if (mon) { mon.setDate(mon.getDate() + 7); loadWeek(dateToStr(mon)); }
-  });
-  document.getElementById('repToday').addEventListener('click', () => loadWeek(null));
-  document.getElementById('repDatePicker').addEventListener('change', e => { if (e.target.value) loadWeek(e.target.value); });
+  function navigateStep(dir) {
+    if (viewMode === 'day') {
+      // Day by day
+      const d = new Date(selectedDay + 'T00:00:00');
+      d.setDate(d.getDate() + dir);
+      selectedDay = dateToStr(d);
+      // Check if crossed week boundary
+      const allDates = (data.days || []).map(x => x.date);
+      if (allDates.indexOf(selectedDay) === -1) {
+        loadWeek(selectedDay);
+      } else {
+        updateLabel();
+        renderGrid();
+      }
+    } else {
+      const mon = getMondayOfISOWeek(currentWeekISO);
+      if (mon) { mon.setDate(mon.getDate() + dir * 7); loadWeek(dateToStr(mon)); }
+    }
+  }
+
+  document.getElementById('repPrevWeek').addEventListener('click', () => navigateStep(-1));
+  document.getElementById('repNextWeek').addEventListener('click', () => navigateStep(1));
+  document.getElementById('repToday').addEventListener('click', () => { selectedDay = dateToStr(new Date()); loadWeek(null); });
+  document.getElementById('repDatePicker').addEventListener('change', e => { if (e.target.value) { selectedDay = e.target.value; loadWeek(e.target.value); } });
   document.getElementById('repPrint').addEventListener('click', () => window.print());
 
   // ─── Init ───

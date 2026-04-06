@@ -33,8 +33,17 @@ function get_repartition()
     $weekNum = (int)$dtoStart->format('W');
     $year = (int)$dtoStart->format('o');
 
-    // Modules
+    // Modules with étages and groupes
     $modules = Db::fetchAll("SELECT id, nom, code, ordre FROM modules ORDER BY ordre");
+    foreach ($modules as &$mod) {
+        $etages = Db::fetchAll("SELECT id, nom, code, ordre FROM etages WHERE module_id = ? ORDER BY ordre", [$mod['id']]);
+        foreach ($etages as &$etage) {
+            $etage['groupes'] = Db::fetchAll("SELECT id, nom, code, ordre FROM groupes WHERE etage_id = ? ORDER BY ordre", [$etage['id']]);
+        }
+        unset($etage);
+        $mod['etages'] = $etages;
+    }
+    unset($mod);
 
     // Horaires
     $horaires = Db::fetchAll("SELECT id, code, heure_debut, heure_fin, duree_effective, couleur FROM horaires_types WHERE is_active = 1 ORDER BY code");
@@ -68,16 +77,26 @@ function get_repartition()
     if ($planningIds) {
         $phPlan = implode(',', array_fill(0, count($planningIds), '?'));
         $assignments = Db::fetchAll(
-            "SELECT pa.date_jour, pa.user_id, pa.statut,
+            "SELECT pa.date_jour, pa.user_id, pa.module_id, pa.groupe_id, pa.etage_id,
+                    pa.statut, pa.notes,
+                    u.prenom AS user_prenom, u.nom AS user_nom,
+                    f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
                     ht.code AS horaire_code, ht.couleur AS horaire_couleur,
                     ht.heure_debut, ht.heure_fin,
-                    m.code AS module_code, m.id AS module_id
+                    m.code AS module_code,
+                    g.code AS groupe_code,
+                    COALESCE(e2.code, e.code) AS etage_code
              FROM planning_assignations pa
+             JOIN users u ON u.id = pa.user_id
+             LEFT JOIN fonctions f ON f.id = u.fonction_id
              LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
              LEFT JOIN modules m ON m.id = pa.module_id
+             LEFT JOIN groupes g ON g.id = pa.groupe_id
+             LEFT JOIN etages e ON e.id = g.etage_id
+             LEFT JOIN etages e2 ON e2.id = pa.etage_id
              WHERE pa.planning_id IN ($phPlan)
                AND pa.date_jour BETWEEN ? AND ?
-             ORDER BY pa.date_jour, m.ordre",
+             ORDER BY pa.date_jour, m.ordre, f.ordre, u.nom",
             array_merge($planningIds, [$weekStart, $weekEnd])
         );
     }

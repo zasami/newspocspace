@@ -81,13 +81,22 @@
         "order": 9
     },
     {
+        "id": "suivie-d-sinfection-lit",
+        "title": "suivie désinfection lit",
+        "desc": "Désinfection lit par refermant alerte",
+        "difficulty": "facile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 10
+    },
+    {
         "id": "stats-interim",
         "title": "Statistiques interim, absences, grossesses",
         "desc": "Tableaux + graphiques comparatifs sur plusieurs annees, par periode. Export PDF\/Word\/Excel.",
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 10
+        "order": 11
     },
     {
         "id": "import-contacts",
@@ -96,7 +105,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 11
+        "order": 12
     },
     {
         "id": "agenda-rdv",
@@ -105,7 +114,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 12
+        "order": 13
     },
     {
         "id": "backup-restore",
@@ -114,7 +123,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 13
+        "order": 14
     },
     {
         "id": "mise-a-jour",
@@ -123,7 +132,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 14
+        "order": 15
     },
     {
         "id": "mur-actu",
@@ -132,7 +141,7 @@
         "difficulty": "moyen",
         "category": "Communication",
         "done": false,
-        "order": 15
+        "order": 16
     },
     {
         "id": "module-cuisine",
@@ -141,7 +150,7 @@
         "difficulty": "moyen",
         "category": "Restauration",
         "done": false,
-        "order": 16
+        "order": 17
     },
     {
         "id": "table-vip",
@@ -150,7 +159,7 @@
         "difficulty": "moyen",
         "category": "Restauration",
         "done": false,
-        "order": 17
+        "order": 18
     },
     {
         "id": "ajouter-mot-de-passe-oublier",
@@ -159,7 +168,7 @@
         "difficulty": "moyen",
         "category": "Securite",
         "done": false,
-        "order": 18
+        "order": 19
     },
     {
         "id": "garder-le-spech-original-de-pv",
@@ -168,7 +177,7 @@
         "difficulty": "moyen",
         "category": "Securite",
         "done": false,
-        "order": 19
+        "order": 20
     },
     {
         "id": "pour-le-changement-param-tre-admin",
@@ -177,7 +186,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 20
+        "order": 21
     },
     {
         "id": "pour-les-r-sidents",
@@ -186,7 +195,7 @@
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 21
+        "order": 22
     },
     {
         "id": "configuration-module",
@@ -195,7 +204,7 @@
         "difficulty": "moyen",
         "category": "General",
         "done": false,
-        "order": 22
+        "order": 23
     },
     {
         "id": "justificatif-pour-une-absance",
@@ -204,7 +213,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 23
+        "order": 24
     },
     {
         "id": "pour-les-contactes-ajouter-le-groupe",
@@ -213,7 +222,7 @@
         "difficulty": "moyen",
         "category": "General",
         "done": false,
-        "order": 24
+        "order": 25
     },
     {
         "id": "ajouter-liste-user-dans-login",
@@ -222,7 +231,7 @@
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 25
+        "order": 26
     },
     {
         "id": "commande-produit-hygi-ne",
@@ -231,7 +240,7 @@
         "difficulty": "moyen",
         "category": "Communication",
         "done": false,
-        "order": 26
+        "order": 27
     },
     {
         "id": "module-animation",
@@ -240,7 +249,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 27
+        "order": 28
     },
     {
         "id": "ia-animations",
@@ -249,7 +258,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 28
+        "order": 29
     },
     {
         "id": "formation",
@@ -258,7 +267,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 29
+        "order": 30
     },
     {
         "id": "postulation",
@@ -267,7 +276,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 30
+        "order": 31
     },
     {
         "id": "suivi-dossier",
@@ -276,7 +285,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 31
+        "order": 32
     },
     {
         "id": "transcription-pv",
@@ -285,7 +294,7 @@
         "difficulty": "difficile",
         "category": "PV \/ IA",
         "done": false,
-        "order": 32
+        "order": 33
     },
     {
         "id": "chiffrement",
@@ -294,7 +303,7 @@
         "difficulty": "difficile",
         "category": "Securite",
         "done": false,
-        "order": 33
+        "order": 34
     },
     {
         "id": "ajoute-sur-le-site-une-page-envoy-ma-condidature",
@@ -303,7 +312,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 34
+        "order": 35
     },
     {
         "id": "ajoute-page-gal-rie-pour-la-famille",
@@ -312,7 +321,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 35
+        "order": 36
     },
     {
         "id": "module-pour-les-interims",
@@ -321,7 +330,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 36
+        "order": 37
     },
     {
         "id": "espace-famille-r-sident",
@@ -330,7 +339,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 37
+        "order": 38
     },
     {
         "id": "organigrame-de-l-ems",
@@ -339,16 +348,16 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 38
+        "order": 39
     },
     {
         "id": "popup-email",
         "title": "Popup Email",
-        "desc": "Quand un administrateur reçoit un e-mail ou qu’un collaborateur reçoit un e-mail, un popup discretn s’affiche en bas de l’écran (toast large) avec :\nle titre de l’e-mail et le nom de l’expéditeur, ainsi que les boutons :\n\n* Ouvrir\n* Rappeler dans 5 minutes\n* Rappeler dans 10 minutes\n* Rappeler dans 1 heure\n\nSi l’utilisateur clique sur Ouvrir, la boîte e-mail s’affiche directement.\nSinon, un timer de rappel est lancé automatiquement selon le temps choisi par l’utilisateur.",
+        "desc": "Quand un administrateur reçoit un e-mail ou qu’un collaborateur reçoit un e-mail, un popup discret s’affiche en bas de l’écran (toast large) avec :\nle titre de l’e-mail et le nom de l’expéditeur, ainsi que les boutons :\n\n- Ouvrir\n- Rappeler dans 5 minutes\n- Rappeler dans 10 minutes\n- Rappeler dans 1 heure\n\nSi l’utilisateur clique sur Ouvrir, la boîte e-mail s’affiche directement.\nSinon, un timer de rappel est lancé automatiquement selon le temps choisi par l’utilisateur.",
         "difficulty": "difficile",
-        "category": "Statistiques",
+        "category": "General",
         "done": false,
-        "order": 39
+        "order": 40
     },
     {
         "id": "param-tres-fonctions-et-horraires",
@@ -357,7 +366,7 @@
         "difficulty": "difficile",
         "category": "Planning",
         "done": false,
-        "order": 40
+        "order": 41
     },
     {
         "id": "espace-famille",
@@ -366,7 +375,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": true,
-        "order": 41
+        "order": 42
     },
     {
         "id": "r-diger-le-help",
@@ -375,7 +384,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 42
+        "order": 43
     },
     {
         "id": "ajouter-rubrique-am-lioration",
@@ -384,16 +393,16 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 43
+        "order": 44
     },
     {
         "id": "mur-social",
         "title": "Mur social",
-        "desc": "Voici la correction :\n\nIl faut ajouter sur les sidebare gauche et droite des cartes utiles, comme les prochains événements, les sondages ou des informations utiles. Il faut aussi donner la possibilité à l’admin d’épingler un post sur le mur.\n_ aussi ajoute l'option quand le texte est trop long du poste, il se tronsforme en textare",
+        "desc": "Il faut ajouter sur les sidebare gauche et droite des cartes utiles, comme les prochains événements, les sondages ou des informations utiles. Il faut aussi donner la possibilité à l’admin d’épingler un post sur le mur.\n_ aussi ajoute l'option quand le texte est trop long du poste, il se tronsforme en textare",
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 44
+        "order": 45
     },
     {
         "id": "r-ponse-aux-candidatures",
@@ -402,6 +411,6 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 45
+        "order": 46
     }
 ]
