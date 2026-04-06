@@ -881,6 +881,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         <?php if ($pinnedImg): ?>
         <div class="col-lg-5 text-center">
           <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img" loading="lazy">
+          <p class="ws-pinned-copyright">© Tous droits réservés — Reproduction interdite</p>
         </div>
         <div class="col-lg-7">
         <?php else: ?>

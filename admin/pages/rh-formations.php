@@ -43,6 +43,26 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 .rhf-empty { text-align: center; padding: 50px 20px; color: var(--cl-text-muted); }
 .rhf-empty i { font-size: 2.5rem; opacity: .15; display: block; margin-bottom: 8px; }
 
+/* ── Formation cards ── */
+.rhf-cards { display: flex; flex-direction: column; gap: 12px; }
+.rhf-card { display: flex; border: 1px solid var(--cl-border, #ddd); border-radius: 12px; overflow: hidden; background: #fff; transition: box-shadow .15s; }
+.rhf-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.rhf-card-img-wrap { flex-shrink: 0; width: 160px; }
+.rhf-card-img { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--cl-bg, #F7F5F2); border-radius: 12px 0 0 12px; }
+.rhf-card-img-placeholder { width: 100%; height: 100%; min-height: 120px; background: linear-gradient(135deg, var(--cl-bg, #F7F5F2), #e8e4de); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--cl-text-muted); opacity: .3; border-radius: 12px 0 0 12px; }
+.rhf-card-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rhf-card-body { padding: .75rem 1rem; flex: 1; }
+.rhf-card-title { font-weight: 700; font-size: .95rem; color: var(--cl-text); margin-bottom: .4rem; line-height: 1.3; }
+.rhf-card-title a { color: inherit; text-decoration: none; }
+.rhf-card-title a:hover { text-decoration: underline; }
+.rhf-card-meta { display: flex; flex-wrap: wrap; gap: .35rem .75rem; font-size: .78rem; color: var(--cl-text-muted); }
+.rhf-card-meta i { margin-right: 2px; font-size: .72rem; }
+.rhf-card-sep { border: 0; border-top: 1px solid var(--cl-border-light, #F0EDE8); margin: 0; }
+.rhf-card-footer { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; }
+.rhf-card-footer-left { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.rhf-card-footer-right { display: flex; gap: .25rem; }
+@media (max-width: 576px) { .rhf-card { flex-direction: column; } .rhf-card-img-wrap { width: 100%; height: 120px; } .rhf-card-img, .rhf-card-img-placeholder { border-radius: 12px 12px 0 0; } }
+
 /* ── Import modal ── */
 .rhf-import-sources { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; padding: 10px 0; }
 .rhf-import-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 18px; border-radius: 14px; border: 1.5px solid var(--cl-border-light, #F0EDE8); cursor: pointer; transition: all .2s ease; min-width: 110px; flex: 1; max-width: 150px; text-align: center; background: var(--cl-surface, #fff); }
@@ -126,11 +146,9 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
   </select>
 </div>
 
-<!-- Table body -->
-<div class="card">
-  <div class="table-responsive" id="rhfBody">
-    <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
-  </div>
+<!-- Formations list -->
+<div id="rhfBody">
+  <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
 </div>
 
 <!-- ═══ Modal: Formation create/edit ═══ -->
@@ -332,35 +350,52 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             el.innerHTML = '<div class="rhf-empty"><i class="bi bi-mortarboard"></i>Aucune formation</div>';
             return;
         }
-        let html = '<table class="table table-hover mb-0"><thead><tr><th>Titre</th><th>Type</th><th>Formateur</th><th>Dates</th><th>Durée</th><th>Participants</th><th>Oblig.</th><th>Statut</th><th style="width:100px">Actions</th></tr></thead><tbody>';
+        let html = '<div class="rhf-cards">';
         formationsData.forEach(f => {
             const typeCls = f.type_formation || 'interne';
             const statutCls = f.statut || 'planifiee';
-            const dates = f.date_debut ? formatDate(f.date_debut) + (f.date_fin && f.date_fin !== f.date_debut ? ' - ' + formatDate(f.date_fin) : '') : '-';
+            const dates = f.date_debut ? formatDate(f.date_debut) + (f.date_fin && f.date_fin !== f.date_debut ? ' — ' + formatDate(f.date_fin) : '') : '';
             const partCount = parseInt(f.nb_participants || 0);
             const maxPart = f.max_participants ? parseInt(f.max_participants) : null;
-            const partHtml = maxPart ? `<span class="rhf-count">${partCount}/${maxPart}</span>` : `<span class="rhf-count">${partCount}</span>`;
+
+            // Image
             const imgHtml = f.image_url
-                ? `<img src="${escapeHtml(f.image_url)}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;margin-right:8px;vertical-align:middle" onerror="this.style.display='none'">`
-                : '';
-            const srcIcon = f.source_url ? ` <a href="${escapeHtml(f.source_url)}" target="_blank" title="Voir sur le site source" style="color:var(--cl-text-muted);font-size:.72rem"><i class="bi bi-box-arrow-up-right"></i></a>` : '';
-            html += `<tr>
-                <td>${imgHtml}<strong>${escapeHtml(f.titre)}</strong>${srcIcon}</td>
-                <td><span class="rhf-badge rhf-badge-${typeCls}">${escapeHtml(TYPE_LABELS[f.type_formation] || f.type_formation)}</span></td>
-                <td>${escapeHtml(f.formateur || '-')}</td>
-                <td>${dates}</td>
-                <td>${f.duree_heures ? f.duree_heures + 'h' : '-'}</td>
-                <td>${partHtml}</td>
-                <td>${parseInt(f.is_obligatoire) ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-dash text-muted"></i>'}</td>
-                <td><span class="rhf-badge rhf-badge-${statutCls}">${escapeHtml(STATUT_LABELS[f.statut] || f.statut)}</span></td>
-                <td><div class="d-flex gap-1">
-                    <button class="rhf-row-btn" data-detail="${f.id}" title="Détail"><i class="bi bi-eye"></i></button>
-                    <button class="rhf-row-btn" data-edit="${f.id}" title="Modifier"><i class="bi bi-pencil"></i></button>
-                    <button class="rhf-row-btn danger" data-del="${f.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
-                </div></td>
-            </tr>`;
+                ? `<img class="rhf-card-img" src="${escapeHtml(f.image_url)}" onerror="this.outerHTML='<div class=\\'rhf-card-img-placeholder\\'><i class=\\'bi bi-mortarboard\\'></i></div>'">`
+                : '<div class="rhf-card-img-placeholder"><i class="bi bi-mortarboard"></i></div>';
+
+            // Meta items
+            let meta = '';
+            if (f.formateur) meta += `<span><i class="bi bi-person"></i> ${escapeHtml(f.formateur)}</span>`;
+            if (dates) meta += `<span><i class="bi bi-calendar3"></i> ${dates}</span>`;
+            if (f.duree_heures) meta += `<span><i class="bi bi-clock"></i> ${f.duree_heures}h</span>`;
+            if (f.lieu) meta += `<span><i class="bi bi-geo-alt"></i> ${escapeHtml(f.lieu)}</span>`;
+            const partLabel = maxPart ? `${partCount}/${maxPart}` : `${partCount}`;
+            meta += `<span><i class="bi bi-people"></i> ${partLabel} participant${partCount > 1 ? 's' : ''}</span>`;
+
+            html += `<div class="rhf-card">
+                <div class="rhf-card-img-wrap">${imgHtml}</div>
+                <div class="rhf-card-content">
+                    <div class="rhf-card-body">
+                        <div class="rhf-card-title">${escapeHtml(f.titre)}${f.source_url ? ` <a href="${escapeHtml(f.source_url)}" target="_blank" title="Source"><i class="bi bi-box-arrow-up-right" style="font-size:.72rem;color:var(--cl-text-muted)"></i></a>` : ''}</div>
+                        <div class="rhf-card-meta">${meta}</div>
+                    </div>
+                    <hr class="rhf-card-sep">
+                    <div class="rhf-card-footer">
+                        <div class="rhf-card-footer-left">
+                            <span class="rhf-badge rhf-badge-${typeCls}">${escapeHtml(TYPE_LABELS[f.type_formation] || f.type_formation)}</span>
+                            <span class="rhf-badge rhf-badge-${statutCls}">${escapeHtml(STATUT_LABELS[f.statut] || f.statut)}</span>
+                            ${parseInt(f.is_obligatoire) ? '<span class="rhf-badge" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-check-circle-fill"></i> Obligatoire</span>' : ''}
+                        </div>
+                        <div class="rhf-card-footer-right">
+                            <button class="rhf-row-btn" data-detail="${f.id}" title="Détail"><i class="bi bi-eye"></i></button>
+                            <button class="rhf-row-btn" data-edit="${f.id}" title="Modifier"><i class="bi bi-pencil"></i></button>
+                            <button class="rhf-row-btn danger" data-del="${f.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         });
-        html += '</tbody></table>';
+        html += '</div>';
         el.innerHTML = html;
     }
 
