@@ -922,50 +922,90 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       </div>
     </div>
 
-    <!-- Bénévoles -->
-    <div class="ws-team-cta ws-cta-benevoles">
-      <div class="row align-items-start g-4">
-        <div class="col-lg-6">
-          <h4><i class="bi bi-heart"></i> Bénévoles recherchés</h4>
-          <p class="ws-cta-lead">Rejoignez-nous pour faire la différence !</p>
-          <p>Vous avez un peu de temps libre et souhaitez apporter de la joie et du soutien à nos aînés ? Notre établissement est à la recherche de bénévoles dévoués et bienveillants pour enrichir la vie de nos résidants.</p>
-          <h6 class="ws-cta-subtitle"><i class="bi bi-check-circle"></i> Vos missions</h6>
-          <ul class="ws-cta-list">
-            <li>Offrir une écoute attentive et un soutien moral</li>
-            <li>Aider lors des sorties et événements spéciaux</li>
-            <li>Participer à des activités récréatives et culturelles</li>
-            <li>Contribuer à créer une atmosphère chaleureuse et conviviale</li>
-          </ul>
-        </div>
-        <div class="col-lg-6">
-          <h6 class="ws-cta-subtitle"><i class="bi bi-gift"></i> Nous offrons</h6>
-          <ul class="ws-cta-list">
-            <li>Une expérience humaine enrichissante</li>
-            <li>La possibilité de développer de nouvelles compétences</li>
-            <li>Un environnement accueillant et respectueux</li>
-          </ul>
-          <div class="ws-cta-contact">
-            <h6 class="ws-cta-subtitle"><i class="bi bi-telephone"></i> Comment nous rejoindre ?</h6>
-            <p>Contactez-nous dès aujourd'hui :</p>
-            <div class="ws-cta-contact-links">
-              <a href="tel:0227186200"><i class="bi bi-telephone-fill"></i> 022 718 62 00</a>
-              <a href="mailto:info@ems-laterrassiere.ch"><i class="bi bi-envelope-fill"></i> info@ems-laterrassiere.ch</a>
+    <!-- Bénévoles (CMS) -->
+    <?php if (ws_visible($cms, 'benevoles')):
+        $ben = ws_content($cms, 'benevoles');
+        $benImg = $ben['image'] ?? '';
+        $benLead = $ben['lead'] ?? '';
+        $benText = $ben['text'] ?? '';
+        $benMissions = $ben['missions'] ?? [];
+        $benOffres = $ben['offres'] ?? [];
+        $benPhone = $ben['phone'] ?? '';
+        $benEmail = $ben['email'] ?? '';
+        $benClosing = $ben['closing'] ?? '';
+    ?>
+    <div class="ws-ben-banner">
+      <div class="row g-0 align-items-center">
+        <div class="col-lg-7">
+          <div class="ws-ben-content">
+            <span class="ws-ben-cap">Rejoignez-nous</span>
+            <h3><i class="bi bi-heart-fill ws-ben-heart"></i> <?= h($cms['benevoles']['title'] ?? 'Bénévoles recherchés') ?></h3>
+            <?php if ($benLead): ?><p class="ws-ben-lead"><?= h($benLead) ?></p><?php endif; ?>
+            <?php if ($benText): ?><p class="ws-ben-text"><?= h($benText) ?></p><?php endif; ?>
+
+            <?php if ($benMissions): ?>
+            <div class="ws-ben-section-title"><i class="bi bi-check-circle-fill"></i> Vos missions</div>
+            <div class="ws-ben-items">
+              <?php foreach ($benMissions as $m): ?>
+              <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-check-lg"></i></div><div><?= h($m) ?></div></div>
+              <?php endforeach; ?>
             </div>
+            <?php endif; ?>
+
+            <?php if ($benOffres): ?>
+            <div class="ws-ben-section-title"><i class="bi bi-gift-fill"></i> Nous offrons</div>
+            <div class="ws-ben-items">
+              <?php foreach ($benOffres as $o): ?>
+              <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-star-fill"></i></div><div><?= h($o) ?></div></div>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($benPhone || $benEmail): ?>
+            <div class="ws-ben-tip">
+              <i class="bi bi-telephone-fill"></i>
+              <div>
+                <strong>Comment nous rejoindre ?</strong>
+                <div class="ws-ben-contact-links">
+                  <?php if ($benPhone): ?><a href="tel:<?= h(preg_replace('/\s/', '', $benPhone)) ?>"><i class="bi bi-telephone-fill"></i> <?= h($benPhone) ?></a><?php endif; ?>
+                  <?php if ($benEmail): ?><a href="mailto:<?= h($benEmail) ?>"><i class="bi bi-envelope-fill"></i> <?= h($benEmail) ?></a><?php endif; ?>
+                </div>
+              </div>
+            </div>
+            <?php endif; ?>
+
           </div>
         </div>
-      </div>
-      <div class="text-center mt-4">
-        <p class="ws-cta-closing">Ensemble, faisons de chaque jour un moment spécial pour nos résidants !</p>
+        <div class="col-lg-5 ws-ben-img-col">
+          <?php if ($benImg): ?>
+            <img src="<?= h($benImg) ?>" alt="Bénévoles" class="ws-ben-img" loading="lazy">
+          <?php else: ?>
+            <div class="ws-ben-img-placeholder"><i class="bi bi-camera"></i><span>Image bénévoles</span></div>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
+    <?php endif; ?>
+  </div>
+</section>
 
-    <!-- Postuler -->
-    <div style="margin-top:32px;display:flex;align-items:center;gap:24px;padding:20px 28px;border-top:1px solid rgba(46,125,50,0.1)">
-      <div style="flex:1">
-        <h5 style="font-size:1rem;font-weight:700;margin:0 0 2px;display:flex;align-items:center;gap:8px"><i class="bi bi-feather" style="color:var(--ws-green)"></i> Rejoignez notre équipe</h5>
-        <p style="font-size:.85rem;margin:0;color:var(--ws-text-muted)">Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
+<!-- ═══ CLOSING HERO (full width, bg image) ═══ -->
+<?php
+  $closingBg = $ben['closing_bg'] ?? '';
+  $closingText = $ben['closing'] ?? '';
+?>
+<section class="ws-closing-hero" <?php if ($closingBg): ?>style="background-image:url('<?= h($closingBg) ?>')"<?php endif; ?>>
+  <div class="ws-closing-overlay"></div>
+  <div class="container ws-closing-content">
+    <?php if ($closingText): ?>
+    <p class="ws-closing-quote"><i class="bi bi-hearts"></i> <?= h($closingText) ?></p>
+    <?php endif; ?>
+    <div class="ws-closing-cta">
+      <div>
+        <h5><i class="bi bi-feather"></i> Rejoignez notre équipe</h5>
+        <p>Nous sommes toujours à la recherche de professionnels motivés et bienveillants.</p>
       </div>
-      <a href="/spocspace/website/recrutement.php" class="ws-btn-outline-sm" style="flex-shrink:0">
+      <a href="/spocspace/website/recrutement.php" class="ws-closing-btn">
         <i class="bi bi-send"></i> Voir les offres
       </a>
     </div>
