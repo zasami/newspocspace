@@ -768,7 +768,7 @@ a:hover { color: var(--ws-green-hover); }
 .ws-pinned-sig-role { display: block; font-style: italic; font-size: .92rem; color: #8D6E63; }
 
 /* ── Formation Banner (guide-photo style) ── */
-.ws-form-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 24px; }
+.ws-form-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 56px; }
 .ws-form-banner > .row { position: relative; z-index: 1; }
 .ws-form-banner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to right, rgba(46,125,50,.06) 0%, rgba(46,125,50,.06) 70%, rgba(255,255,255,0) 70%); border-radius: .75rem; pointer-events: none; z-index: 0; }
 .ws-form-content { padding: 2rem 2.5rem; }
@@ -790,7 +790,7 @@ a:hover { color: var(--ws-green-hover); }
 }
 
 /* ── Bénévoles Banner (guide-photo style with overlay) ── */
-.ws-ben-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 24px; }
+.ws-ben-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 56px; }
 .ws-ben-banner > .row { position: relative; z-index: 1; }
 /* Gradient overlay: tinted left side (content), transparent right side (image) */
 .ws-ben-banner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to left, rgba(197,48,48,.06) 0%, rgba(197,48,48,.06) 70%, rgba(255,255,255,0) 70%); border-radius: .75rem; pointer-events: none; z-index: 0; }
@@ -821,7 +821,7 @@ a:hover { color: var(--ws-green-hover); }
 .ws-ben-contact-links a:hover { opacity: .7; }
 .ws-ben-contact-links a i { font-size: .9rem; }
 /* ── Closing Hero (full width, bg image) ── */
-.ws-closing-hero { position: relative; padding: 60px 0; margin-top: 48px; background: #2d4a43; background-size: cover; background-position: center; background-attachment: fixed; }
+.ws-closing-hero { position: relative; padding: 70px 0; margin-top: 64px; background: #2d4a43; background-size: cover; background-position: center; background-attachment: fixed; }
 .ws-closing-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
 .ws-closing-content { position: relative; z-index: 1; text-align: center; }
 .ws-closing-quote { font-size: 1.25rem; font-weight: 700; color: #fff; font-style: italic; margin: 0 0 32px; line-height: 1.6; }
