@@ -96,7 +96,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'about')):
     $aboutCards = ws_content($cms, 'about', 'cards') ?: [];
 ?>
-<section class="ws-section" id="about">
+<section class="ws-section" id="about" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'about', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'about', 'badge_text')) ?></div>
@@ -129,7 +129,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'services')):
     $svcCards = ws_content($cms, 'services', 'cards') ?: [];
 ?>
-<section class="ws-section ws-section-alt" id="services">
+<section class="ws-section ws-section-alt" id="services" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'services', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'services', 'badge_text')) ?></div>
@@ -156,7 +156,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'life')):
     $lifeItems = ws_content($cms, 'life', 'items') ?: [];
 ?>
-<section class="ws-section" id="life">
+<section class="ws-section" id="life" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'life', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'life', 'badge_text')) ?></div>
@@ -195,7 +195,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php endif; ?>
 
 <!-- ═══ MENU DE LA SEMAINE — Carousel ═══ -->
-<section class="ws-section" id="menu-semaine">
+<section class="ws-section" id="menu-semaine" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-egg-fried"></i> Restauration</div>
@@ -662,7 +662,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </script>
 
 <!-- ═══ PROGRAMME ANIMATION ═══ -->
-<section class="ws-section ws-section-alt" id="programme-animation">
+<section class="ws-section ws-section-alt" id="programme-animation" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-calendar-event"></i> Animation</div>
@@ -766,7 +766,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ MODULES / ORGANISATION ═══ -->
-<section class="ws-section ws-section-alt" id="modules">
+<section class="ws-section ws-section-alt" id="modules" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-building"></i> Organisation</div>
@@ -828,7 +828,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ TEAM ═══ -->
-<section class="ws-section" id="team">
+<section class="ws-section" id="team" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-people-fill"></i> Notre équipe</div>
@@ -876,7 +876,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         $pinnedSig   = $pinned['signature'] ?? '';
         $pinnedImg   = $pinned['image'] ?? '';
     ?>
-    <div class="ws-team-cta ws-cta-pinned">
+    <div class="ws-team-cta ws-cta-pinned" data-reveal="fade-up">
       <div class="row align-items-center g-4">
         <?php if ($pinnedImg): ?>
         <div class="col-lg-5 text-center">
@@ -912,9 +912,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         $formText = $form['text'] ?? '';
         $formItems = $form['items'] ?? [];
     ?>
-    <div class="ws-form-banner">
+    <div class="ws-form-banner" data-reveal="fade">
       <div class="row g-0 align-items-center">
-        <div class="col-lg-7">
+        <div class="col-lg-7" data-reveal="slide-left" data-reveal-delay="100">
           <div class="ws-form-content">
             <span class="ws-form-cap">Formation</span>
             <h3><i class="bi bi-mortarboard" style="color:var(--ws-green)"></i> <?= h($cms['formation']['title'] ?? 'Formation continue') ?></h3>
@@ -929,7 +929,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
             <?php endif; ?>
           </div>
         </div>
-        <div class="col-lg-5 ws-form-img-col">
+        <div class="col-lg-5 ws-form-img-col" data-reveal="slide-right" data-reveal-delay="200">
           <?php if ($formImg): ?>
             <img src="<?= h($formImg) ?>" alt="Formation" class="ws-form-img" loading="lazy">
           <?php else: ?>
@@ -952,9 +952,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         $benEmail = $ben['email'] ?? '';
         $benClosing = $ben['closing'] ?? '';
     ?>
-    <div class="ws-ben-banner">
+    <div class="ws-ben-banner" data-reveal="fade">
       <div class="row g-0 align-items-center flex-lg-row-reverse">
-        <div class="col-lg-7">
+        <div class="col-lg-7" data-reveal="slide-right" data-reveal-delay="100">
           <div class="ws-ben-content">
             <span class="ws-ben-cap">Rejoignez-nous</span>
             <h3><i class="bi bi-heart-fill ws-ben-heart"></i> <?= h($cms['benevoles']['title'] ?? 'Bénévoles recherchés') ?></h3>
@@ -994,7 +994,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 
           </div>
         </div>
-        <div class="col-lg-5 ws-ben-img-col">
+        <div class="col-lg-5 ws-ben-img-col" data-reveal="slide-left" data-reveal-delay="200">
           <?php if ($benImg): ?>
             <img src="<?= h($benImg) ?>" alt="Bénévoles" class="ws-ben-img" loading="lazy">
           <?php else: ?>
@@ -1012,7 +1012,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   $closingBg = $ben['closing_bg'] ?? '';
   $closingText = $ben['closing'] ?? '';
 ?>
-<section class="ws-closing-hero" <?php if ($closingBg): ?>style="background-image:url('<?= h($closingBg) ?>')"<?php endif; ?>>
+<section class="ws-closing-hero" data-reveal="fade-up" <?php if ($closingBg): ?>style="background-image:url('<?= h($closingBg) ?>')"<?php endif; ?>>
   <div class="ws-closing-overlay"></div>
   <div class="container ws-closing-content">
     <?php if ($closingText): ?>
@@ -1031,7 +1031,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ VIDEO SHOWCASE ═══ -->
-<section class="ws-video-gallery" id="gallery">
+<section class="ws-video-gallery" id="gallery" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-camera-reels"></i> Notre cadre</div>
@@ -1081,7 +1081,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'values')):
     $valCards = ws_content($cms, 'values', 'cards') ?: [];
 ?>
-<section class="ws-section ws-section-alt" id="values">
+<section class="ws-section ws-section-alt" id="values" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'values', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'values', 'badge_text')) ?></div>
@@ -1106,7 +1106,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'contact')):
     $contact = ws_content($cms, 'contact');
 ?>
-<section class="ws-section" id="contact">
+<section class="ws-section" id="contact" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'contact', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'contact', 'badge_text')) ?></div>
@@ -1253,6 +1253,21 @@ if ('IntersectionObserver' in window) {
         });
     }, { rootMargin: '200px' });
     document.querySelectorAll('.ws-lazy-video').forEach(v => vObs.observe(v));
+}
+
+// Scroll reveal animations
+if ('IntersectionObserver' in window) {
+    const rObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('revealed');
+                rObs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('[data-reveal]').forEach(el => rObs.observe(el));
+} else {
+    document.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('revealed'));
 }
 </script>
 </body>

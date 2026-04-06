@@ -802,7 +802,21 @@ a:hover { color: var(--ws-green-hover); }
 .ws-ben-img-placeholder i { font-size: 2.5rem; }
 
 /* Content — left side */
-.ws-ben-content { padding: 2rem 2.5rem; }
+.ws-ben-content {
+  padding: 2rem 2.5rem;
+  position: relative;
+}
+.ws-ben-content::before {
+  content: '';
+  position: absolute;
+  right: 10px; bottom: 10px;
+  width: 280px; height: 320px;
+  background: url('../img/webp/benevols_bg.webp') no-repeat center / contain;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
 .ws-ben-cap { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #C53030; margin-bottom: .5rem; }
 .ws-ben-banner h3 { font-weight: 700; font-size: 1.3rem; margin-bottom: .75rem; color: var(--ws-text); }
 .ws-ben-heart { color: #C53030; font-size: 1.1rem; }
@@ -1574,3 +1588,42 @@ img.ws-sw-icon { width: 24px !important; height: 24px !important; margin: 12px; 
 
 /* ── Selection ── */
 ::selection { background: var(--ws-green-bg-mid); color: var(--ws-text); }
+
+/* ═══════════════════════════════════════
+   SCROLL REVEAL ANIMATIONS
+   ═══════════════════════════════════════ */
+
+[data-reveal] {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(.25,.46,.45,.94),
+              transform 0.8s cubic-bezier(.25,.46,.45,.94);
+  will-change: opacity, transform;
+}
+
+[data-reveal="fade-up"]   { transform: translateY(40px); }
+[data-reveal="fade-down"] { transform: translateY(-40px); }
+[data-reveal="slide-left"]  { transform: translateX(-60px); }
+[data-reveal="slide-right"] { transform: translateX(60px); }
+[data-reveal="zoom-in"]   { transform: scale(0.92); }
+[data-reveal="fade"]       { transform: none; }
+
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translate(0) scale(1);
+}
+
+/* Stagger children — add data-reveal-delay="100" etc. */
+[data-reveal-delay="100"] { transition-delay: 100ms; }
+[data-reveal-delay="200"] { transition-delay: 200ms; }
+[data-reveal-delay="300"] { transition-delay: 300ms; }
+[data-reveal-delay="400"] { transition-delay: 400ms; }
+[data-reveal-delay="500"] { transition-delay: 500ms; }
+
+/* Disable for reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
