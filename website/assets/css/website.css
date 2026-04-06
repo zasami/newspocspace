@@ -767,23 +767,33 @@ a:hover { color: var(--ws-green-hover); }
 .ws-pinned-sig-name { display: block; font-weight: 700; font-size: 1.05rem; color: #5D4037; }
 .ws-pinned-sig-role { display: block; font-style: italic; font-size: .92rem; color: #8D6E63; }
 
-/* ── Formation CTA ── */
-.ws-cta-formation { text-align: left; }
-.ws-cta-formation h4 { justify-content: flex-start; }
-.ws-cta-lead { font-weight: 600; font-size: 1.05rem; color: var(--ws-text); }
-.ws-cta-icon-block { display: flex; gap: 20px; justify-content: center; }
-.ws-cta-icon-block i {
-  font-size: 2.8rem; color: var(--ws-green); opacity: .2;
-  width: 80px; height: 80px; border-radius: 50%;
-  background: rgba(46,125,50,.06); display: flex;
-  align-items: center; justify-content: center;
+/* ── Formation Banner (guide-photo style) ── */
+.ws-form-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 24px; }
+.ws-form-banner > .row { position: relative; z-index: 1; }
+.ws-form-banner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to right, rgba(46,125,50,.06) 0%, rgba(46,125,50,.06) 70%, rgba(255,255,255,0) 70%); border-radius: .75rem; pointer-events: none; z-index: 0; }
+.ws-form-content { padding: 2rem 2.5rem; }
+.ws-form-cap { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--ws-green); margin-bottom: .5rem; }
+.ws-form-banner h3 { font-weight: 700; font-size: 1.3rem; margin-bottom: .75rem; color: var(--ws-text); }
+.ws-form-lead { font-weight: 600; font-size: 1rem; color: var(--ws-text); margin-bottom: .5rem; }
+.ws-form-text { font-size: .9rem; color: var(--ws-text-muted); margin-bottom: .75rem; line-height: 1.6; }
+.ws-form-items { display: flex; flex-direction: column; gap: .6rem; }
+.ws-form-item { display: flex; gap: .6rem; font-size: .9rem; color: var(--ws-text-muted); }
+.ws-form-item-icon { flex-shrink: 0; width: 1.4rem; height: 1.4rem; display: flex; align-items: center; justify-content: center; color: var(--ws-green); margin-top: .15rem; }
+.ws-form-img-col { position: relative; display: flex; align-items: center; justify-content: center; padding: 1.5rem 2rem; z-index: 2; }
+.ws-form-img { width: 100%; max-height: 400px; border-radius: .6rem; object-fit: cover; box-shadow: 0 8px 30px rgba(0,0,0,.1); }
+.ws-form-img-placeholder { width: 100%; min-height: 280px; border-radius: .6rem; background: rgba(0,0,0,.04); border: 2px dashed rgba(0,0,0,.12); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; color: rgba(0,0,0,.25); font-size: .85rem; }
+.ws-form-img-placeholder i { font-size: 2.5rem; }
+@media (max-width: 991.98px) {
+  .ws-form-banner::after { background: rgba(46,125,50,.04); }
+  .ws-form-img-col { padding: 1.25rem; }
+  .ws-form-content { padding: 1.5rem 1.25rem; }
 }
 
 /* ── Bénévoles Banner (guide-photo style with overlay) ── */
 .ws-ben-banner { position: relative; border-radius: .75rem; overflow: hidden; margin-top: 24px; }
 .ws-ben-banner > .row { position: relative; z-index: 1; }
 /* Gradient overlay: tinted left side (content), transparent right side (image) */
-.ws-ben-banner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to right, rgba(197,48,48,.06) 0%, rgba(197,48,48,.06) 70%, rgba(255,255,255,0) 70%); border-radius: .75rem; pointer-events: none; z-index: 0; }
+.ws-ben-banner::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to left, rgba(197,48,48,.06) 0%, rgba(197,48,48,.06) 70%, rgba(255,255,255,0) 70%); border-radius: .75rem; pointer-events: none; z-index: 0; }
 
 /* Image — right side, overlapping into the tinted zone */
 .ws-ben-img-col { position: relative; display: flex; align-items: center; justify-content: center; padding: 1.5rem 2rem; z-index: 2; }

@@ -904,23 +904,41 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     </div>
     <?php endif; ?>
 
-    <!-- Formation continue -->
-    <div class="ws-team-cta ws-cta-formation">
-      <div class="row align-items-center g-4">
+    <!-- Formation continue (CMS) -->
+    <?php if (ws_visible($cms, 'formation')):
+        $form = ws_content($cms, 'formation');
+        $formImg = $form['image'] ?? '';
+        $formLead = $form['lead'] ?? '';
+        $formText = $form['text'] ?? '';
+        $formItems = $form['items'] ?? [];
+    ?>
+    <div class="ws-form-banner">
+      <div class="row g-0 align-items-center">
         <div class="col-lg-7">
-          <h4><i class="bi bi-mortarboard"></i> Formation continue</h4>
-          <p class="ws-cta-lead">L'EMS La Terrassière SA encourage et soutient la formation continue comme le perfectionnement de ses collaborateurs.</p>
-          <p>La diversité des professions et des générations qui se côtoient dans notre établissement pousse au programme de formation continue. Faire progresser les compétences professionnelles et le développement personnel de chacun des collaborateurs est un objectif permanent de la direction.</p>
-        </div>
-        <div class="col-lg-5 text-center">
-          <div class="ws-cta-icon-block">
-            <i class="bi bi-book"></i>
-            <i class="bi bi-people"></i>
-            <i class="bi bi-graph-up-arrow"></i>
+          <div class="ws-form-content">
+            <span class="ws-form-cap">Formation</span>
+            <h3><i class="bi bi-mortarboard" style="color:var(--ws-green)"></i> <?= h($cms['formation']['title'] ?? 'Formation continue') ?></h3>
+            <?php if ($formLead): ?><p class="ws-form-lead"><?= h($formLead) ?></p><?php endif; ?>
+            <?php if ($formText): ?><p class="ws-form-text"><?= h($formText) ?></p><?php endif; ?>
+            <?php if ($formItems): ?>
+            <div class="ws-form-items">
+              <?php foreach ($formItems as $item): ?>
+              <div class="ws-form-item"><div class="ws-form-item-icon"><i class="bi bi-check-circle-fill"></i></div><div><?= h($item) ?></div></div>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
           </div>
+        </div>
+        <div class="col-lg-5 ws-form-img-col">
+          <?php if ($formImg): ?>
+            <img src="<?= h($formImg) ?>" alt="Formation" class="ws-form-img" loading="lazy">
+          <?php else: ?>
+            <div class="ws-form-img-placeholder"><i class="bi bi-camera"></i><span>Image formation</span></div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
+    <?php endif; ?>
 
     <!-- Bénévoles (CMS) -->
     <?php if (ws_visible($cms, 'benevoles')):
@@ -935,7 +953,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         $benClosing = $ben['closing'] ?? '';
     ?>
     <div class="ws-ben-banner">
-      <div class="row g-0 align-items-center">
+      <div class="row g-0 align-items-center flex-lg-row-reverse">
         <div class="col-lg-7">
           <div class="ws-ben-content">
             <span class="ws-ben-cap">Rejoignez-nous</span>

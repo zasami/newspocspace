@@ -148,6 +148,8 @@ function renderTypeEditor(s) {
     const content = s.content || {};
     // Custom editors by section_key
     if (s.section_key === 'pinned') return renderPinnedEditor(content);
+    if (s.section_key === 'benevoles') return renderBenevolesEditor(content);
+    if (s.section_key === 'formation') return renderFormationEditor(content);
     switch (s.section_type) {
         case 'hero': return renderHeroEditor(content);
         case 'cards':
@@ -336,6 +338,190 @@ document.addEventListener('drop', function(e) {
         uploadPinnedImage(file);
     }
 });
+
+// ── Generic dropzone helper (reusable for any image field) ──
+function setupDropzone(dzId, fileId, urlId, placeholderId, imgId, actionsId, changeId, clearId) {
+    async function upload(file) {
+        const fd = new FormData();
+        fd.append('image', file);
+        fd.append('action', 'admin_upload_pinned_image'); // reuse same endpoint
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const res = await fetch('/spocspace/admin/api.php', {
+            method: 'POST', body: fd,
+            headers: { 'X-CSRF-Token': csrf }
+        }).then(r => r.json());
+        if (res.success && res.image_url) {
+            setImage(res.image_url);
+            markUnsaved();
+            toast('Image téléchargée');
+        } else {
+            toast(res.error || 'Erreur upload', 'error');
+        }
+    }
+    function setImage(url) {
+        const dz = document.getElementById(dzId);
+        if (!dz) return;
+        document.getElementById(urlId).value = url;
+        if (url) {
+            dz.classList.add('has-image');
+            document.getElementById(placeholderId)?.remove();
+            let img = document.getElementById(imgId);
+            if (!img) { img = document.createElement('img'); img.id = imgId; img.className = 'wa-dropzone-img'; dz.insertBefore(img, dz.firstChild); }
+            img.src = url;
+            if (!document.getElementById(actionsId)) {
+                dz.insertAdjacentHTML('beforeend',
+                    `<div class="wa-dropzone-actions" id="${actionsId}">
+                        <button type="button" class="wa-dropzone-btn" id="${changeId}" title="Modifier"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="wa-dropzone-btn wa-dropzone-btn-danger" id="${clearId}" title="Supprimer"><i class="bi bi-trash"></i></button>
+                    </div>`);
+            }
+        } else {
+            dz.classList.remove('has-image');
+            document.getElementById(imgId)?.remove();
+            document.getElementById(actionsId)?.remove();
+            if (!document.getElementById(placeholderId)) {
+                dz.insertAdjacentHTML('beforeend',
+                    `<div class="wa-dropzone-placeholder" id="${placeholderId}"><i class="bi bi-plus-lg"></i><span>Cliquer ou glisser une image</span></div>`);
+            }
+        }
+    }
+    document.addEventListener('click', function(e) {
+        const dz = document.getElementById(dzId);
+        if (!dz) return;
+        if (e.target.closest('#' + placeholderId) || e.target.closest('#' + changeId)) { document.getElementById(fileId)?.click(); return; }
+        if (e.target === dz && !dz.classList.contains('has-image')) { document.getElementById(fileId)?.click(); return; }
+        if (e.target.closest('#' + clearId)) { setImage(''); markUnsaved(); }
+    });
+    document.addEventListener('change', function(e) {
+        if (e.target.id !== fileId || !e.target.files[0]) return;
+        upload(e.target.files[0]); e.target.value = '';
+    });
+    document.addEventListener('dragover', function(e) { const dz = document.getElementById(dzId); if (dz?.contains(e.target)) { e.preventDefault(); dz.classList.add('dragging'); } });
+    document.addEventListener('dragleave', function(e) { const dz = document.getElementById(dzId); if (dz && !dz.contains(e.relatedTarget)) dz.classList.remove('dragging'); });
+    document.addEventListener('drop', function(e) {
+        const dz = document.getElementById(dzId);
+        if (!dz?.contains(e.target)) return;
+        e.preventDefault(); dz.classList.remove('dragging');
+        const file = e.dataTransfer?.files?.[0];
+        if (file?.type.startsWith('image/')) upload(file);
+    });
+}
+
+// Setup dropzones for benevoles and formation
+setupDropzone('waBenDz', 'waBenFile', 'waBenUrl', 'waBenPh', 'waBenImg', 'waBenAct', 'waBenChg', 'waBenClr');
+setupDropzone('waBenBgDz', 'waBenBgFile', 'waBenBgUrl', 'waBenBgPh', 'waBenBgImg', 'waBenBgAct', 'waBenBgChg', 'waBenBgClr');
+setupDropzone('waFormDz', 'waFormFile', 'waFormUrl', 'waFormPh', 'waFormImg', 'waFormAct', 'waFormChg', 'waFormClr');
+
+// ── Bénévoles editor ──
+function renderBenevolesEditor(content) {
+    const c = content;
+    const missions = c.missions || [];
+    const offres = c.offres || [];
+
+    function dzHtml(dzId, fileId, urlId, phId, imgId, actId, chgId, clrId, url, label) {
+        return `<div class="wa-dropzone ${url ? 'has-image' : ''}" id="${dzId}">
+            <input type="file" id="${fileId}" accept="image/*" style="display:none">
+            <input type="hidden" id="${urlId}" data-content="${label}" value="${esc(url || '')}">
+            ${url
+                ? `<img src="${esc(url)}" class="wa-dropzone-img" id="${imgId}">
+                   <div class="wa-dropzone-actions" id="${actId}">
+                       <button type="button" class="wa-dropzone-btn" id="${chgId}" title="Modifier"><i class="bi bi-pencil"></i></button>
+                       <button type="button" class="wa-dropzone-btn wa-dropzone-btn-danger" id="${clrId}" title="Supprimer"><i class="bi bi-trash"></i></button>
+                   </div>`
+                : `<div class="wa-dropzone-placeholder" id="${phId}"><i class="bi bi-plus-lg"></i><span>Cliquer ou glisser une image</span></div>`
+            }
+        </div>`;
+    }
+
+    let html = `<div class="wa-section-box">
+        <div class="wa-section-box-title"><i class="bi bi-heart"></i> Bénévoles</div>
+        <div class="wa-form-group"><label>Accroche</label><input type="text" class="wa-input" value="${esc(c.lead || '')}" data-content="lead"></div>
+        <div class="wa-form-group"><label>Texte descriptif</label><textarea class="wa-textarea" data-content="text" rows="4">${esc(c.text || '')}</textarea></div>
+        <div class="wa-form-group"><label>Image principale</label>
+            ${dzHtml('waBenDz','waBenFile','waBenUrl','waBenPh','waBenImg','waBenAct','waBenChg','waBenClr', c.image, 'image')}
+        </div>
+    </div>
+    <div class="wa-section-box" style="margin-top:16px">
+        <div class="wa-section-box-title"><i class="bi bi-check-circle"></i> Missions (${missions.length})</div>`;
+    missions.forEach((m, i) => {
+        html += `<div class="d-flex gap-2 mb-2 align-items-center">
+            <input type="text" class="wa-input wa-input-sm flex-fill" value="${esc(typeof m === 'string' ? m : m)}" data-content="missions.${i}">
+            <button class="wa-btn-icon" onclick="WA.removeMission(${i})" title="Supprimer"><i class="bi bi-trash"></i></button>
+        </div>`;
+    });
+    html += `<button class="wa-add-card-btn" onclick="WA.addMission()"><i class="bi bi-plus-lg"></i> Ajouter</button></div>
+    <div class="wa-section-box" style="margin-top:16px">
+        <div class="wa-section-box-title"><i class="bi bi-gift"></i> Nous offrons (${offres.length})</div>`;
+    offres.forEach((o, i) => {
+        html += `<div class="d-flex gap-2 mb-2 align-items-center">
+            <input type="text" class="wa-input wa-input-sm flex-fill" value="${esc(typeof o === 'string' ? o : o)}" data-content="offres.${i}">
+            <button class="wa-btn-icon" onclick="WA.removeOffre(${i})" title="Supprimer"><i class="bi bi-trash"></i></button>
+        </div>`;
+    });
+    html += `<button class="wa-add-card-btn" onclick="WA.addOffre()"><i class="bi bi-plus-lg"></i> Ajouter</button></div>
+    <div class="wa-section-box" style="margin-top:16px">
+        <div class="wa-section-box-title"><i class="bi bi-telephone"></i> Contact</div>
+        <div class="wa-form-group"><label>Téléphone</label><input type="text" class="wa-input" value="${esc(c.phone || '')}" data-content="phone"></div>
+        <div class="wa-form-group"><label>Email</label><input type="text" class="wa-input" value="${esc(c.email || '')}" data-content="email"></div>
+    </div>
+    <div class="wa-section-box" style="margin-top:16px">
+        <div class="wa-section-box-title"><i class="bi bi-image"></i> Bannière de fermeture</div>
+        <div class="wa-form-group"><label>Texte</label><input type="text" class="wa-input" value="${esc(c.closing || '')}" data-content="closing"></div>
+        <div class="wa-form-group"><label>Image de fond</label>
+            ${dzHtml('waBenBgDz','waBenBgFile','waBenBgUrl','waBenBgPh','waBenBgImg','waBenBgAct','waBenBgChg','waBenBgClr', c.closing_bg, 'closing_bg')}
+        </div>
+    </div>`;
+    return html;
+}
+
+function addMission() { const s = getSection(activeId); if (!s) return; if (!s.content.missions) s.content.missions = []; s.content.missions.push('Nouvelle mission'); renderEditor(activeId); markUnsaved(); }
+function removeMission(idx) { const s = getSection(activeId); if (!s?.content?.missions) return; s.content.missions.splice(idx, 1); renderEditor(activeId); markUnsaved(); }
+function addOffre() { const s = getSection(activeId); if (!s) return; if (!s.content.offres) s.content.offres = []; s.content.offres.push('Nouvelle offre'); renderEditor(activeId); markUnsaved(); }
+function removeOffre(idx) { const s = getSection(activeId); if (!s?.content?.offres) return; s.content.offres.splice(idx, 1); renderEditor(activeId); markUnsaved(); }
+
+// ── Formation editor ──
+function renderFormationEditor(content) {
+    const c = content;
+    const items = c.items || [];
+
+    function dzHtml(dzId, fileId, urlId, phId, imgId, actId, chgId, clrId, url) {
+        return `<div class="wa-dropzone ${url ? 'has-image' : ''}" id="${dzId}">
+            <input type="file" id="${fileId}" accept="image/*" style="display:none">
+            <input type="hidden" id="${urlId}" data-content="image" value="${esc(url || '')}">
+            ${url
+                ? `<img src="${esc(url)}" class="wa-dropzone-img" id="${imgId}">
+                   <div class="wa-dropzone-actions" id="${actId}">
+                       <button type="button" class="wa-dropzone-btn" id="${chgId}" title="Modifier"><i class="bi bi-pencil"></i></button>
+                       <button type="button" class="wa-dropzone-btn wa-dropzone-btn-danger" id="${clrId}" title="Supprimer"><i class="bi bi-trash"></i></button>
+                   </div>`
+                : `<div class="wa-dropzone-placeholder" id="${phId}"><i class="bi bi-plus-lg"></i><span>Cliquer ou glisser une image</span></div>`
+            }
+        </div>`;
+    }
+
+    let html = `<div class="wa-section-box">
+        <div class="wa-section-box-title"><i class="bi bi-mortarboard"></i> Formation continue</div>
+        <p style="font-size:.85rem;color:#888;margin:0 0 12px">Style guide-photo avec image à droite.</p>
+        <div class="wa-form-group"><label>Accroche</label><input type="text" class="wa-input" value="${esc(c.lead || '')}" data-content="lead"></div>
+        <div class="wa-form-group"><label>Texte descriptif</label><textarea class="wa-textarea" data-content="text" rows="4">${esc(c.text || '')}</textarea></div>
+        <div class="wa-form-group"><label>Image</label>
+            ${dzHtml('waFormDz','waFormFile','waFormUrl','waFormPh','waFormImg','waFormAct','waFormChg','waFormClr', c.image)}
+        </div>
+    </div>
+    <div class="wa-section-box" style="margin-top:16px">
+        <div class="wa-section-box-title"><i class="bi bi-check-circle"></i> Points clés (${items.length})</div>`;
+    items.forEach((item, i) => {
+        html += `<div class="d-flex gap-2 mb-2 align-items-center">
+            <input type="text" class="wa-input wa-input-sm flex-fill" value="${esc(typeof item === 'string' ? item : item)}" data-content="items.${i}">
+            <button class="wa-btn-icon" onclick="WA.removeFormItem(${i})" title="Supprimer"><i class="bi bi-trash"></i></button>
+        </div>`;
+    });
+    html += `<button class="wa-add-card-btn" onclick="WA.addFormItem()"><i class="bi bi-plus-lg"></i> Ajouter</button></div>`;
+    return html;
+}
+
+function addFormItem() { const s = getSection(activeId); if (!s) return; if (!s.content.items) s.content.items = []; s.content.items.push('Nouveau point'); renderEditor(activeId); markUnsaved(); }
+function removeFormItem(idx) { const s = getSection(activeId); if (!s?.content?.items) return; s.content.items.splice(idx, 1); renderEditor(activeId); markUnsaved(); }
 
 function renderHeroEditor(content) {
     const stats = content.stats || [];
@@ -894,6 +1080,6 @@ document.getElementById('waIconGrid')?.addEventListener('click', (e) => {
 });
 
 // ── Expose to global for onclick handlers ──
-window.WA = { save, deleteSection, addCard, removeCard, addTimelineItem, removeTimelineItem, addStat, removeStat, openIconPicker };
+window.WA = { save, deleteSection, addCard, removeCard, addTimelineItem, removeTimelineItem, addStat, removeStat, openIconPicker, addMission, removeMission, addOffre, removeOffre, addFormItem, removeFormItem };
 
 })();
