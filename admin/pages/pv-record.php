@@ -29,68 +29,97 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <style>
-/* ── Server status: compact indicator dot ── */
+/* ── Server status: mic icon indicator ── */
 .srv-indicator {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
   cursor: pointer;
   user-select: none;
 }
-.srv-indicator-dot {
-  width: 12px; height: 12px;
+.srv-mic-indicator {
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  background: #bbb8b2;
   transition: background .4s, box-shadow .4s;
-  position: relative;
 }
-/* Halo animation */
-.srv-indicator-dot::after {
+.srv-mic-icon {
+  font-size: 1.1rem;
+  transition: color .4s;
+  position: relative;
+  z-index: 1;
+}
+/* Halo ring */
+.srv-mic-indicator::before {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity .4s;
+  transition: opacity .3s;
 }
 /* Green = all connected */
-.srv-indicator[data-global="ok"] .srv-indicator-dot {
-  background: #4caf50;
-  box-shadow: 0 0 6px rgba(76,175,80,.4);
+.srv-indicator[data-global="ok"] {
+  background: rgba(76,175,80,.1);
+  box-shadow: 0 0 0 0 rgba(76,175,80,.3);
+  animation: srv-mic-halo-green 2.5s ease-in-out infinite;
 }
-.srv-indicator[data-global="ok"] .srv-indicator-dot::after {
-  background: rgba(76,175,80,.15);
-  animation: srv-halo 2.5s ease-in-out infinite;
+.srv-indicator[data-global="ok"] .srv-mic-icon { color: #4caf50; }
+.srv-indicator[data-global="ok"]::before {
+  border: 2px solid rgba(76,175,80,.2);
+  opacity: 1;
+  animation: srv-ring-pulse 2.5s ease-in-out infinite;
+}
+@keyframes srv-mic-halo-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(76,175,80,.25); }
+  50% { box-shadow: 0 0 0 6px rgba(76,175,80,.08); }
 }
 /* Orange = partial */
-.srv-indicator[data-global="partial"] .srv-indicator-dot {
-  background: #ff9800;
-  box-shadow: 0 0 6px rgba(255,152,0,.4);
+.srv-indicator[data-global="partial"] {
+  background: rgba(255,152,0,.1);
+  animation: srv-mic-halo-orange 2s ease-in-out infinite;
 }
-.srv-indicator[data-global="partial"] .srv-indicator-dot::after {
-  background: rgba(255,152,0,.15);
-  animation: srv-halo 2s ease-in-out infinite;
+.srv-indicator[data-global="partial"] .srv-mic-icon { color: #ff9800; }
+.srv-indicator[data-global="partial"]::before {
+  border: 2px solid rgba(255,152,0,.25);
+  opacity: 1;
+  animation: srv-ring-pulse 2s ease-in-out infinite;
+}
+@keyframes srv-mic-halo-orange {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,152,0,.25); }
+  50% { box-shadow: 0 0 0 6px rgba(255,152,0,.08); }
 }
 /* Red = nothing connected */
-.srv-indicator[data-global="error"] .srv-indicator-dot {
-  background: #ef5350;
-  box-shadow: 0 0 6px rgba(239,83,80,.4);
+.srv-indicator[data-global="error"] {
+  background: rgba(239,83,80,.1);
+  animation: srv-mic-halo-red 1.5s ease-in-out infinite;
 }
-.srv-indicator[data-global="error"] .srv-indicator-dot::after {
-  background: rgba(239,83,80,.15);
-  animation: srv-halo 1.5s ease-in-out infinite;
+.srv-indicator[data-global="error"] .srv-mic-icon { color: #ef5350; }
+.srv-indicator[data-global="error"]::before {
+  border: 2px solid rgba(239,83,80,.25);
+  opacity: 1;
+  animation: srv-ring-pulse 1.5s ease-in-out infinite;
+}
+@keyframes srv-mic-halo-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,83,80,.3); }
+  50% { box-shadow: 0 0 0 6px rgba(239,83,80,.1); }
 }
 /* Checking */
-.srv-indicator[data-global="checking"] .srv-indicator-dot {
-  background: #bbb8b2;
+.srv-indicator[data-global="checking"] {
+  background: rgba(0,0,0,.04);
+}
+.srv-indicator[data-global="checking"] .srv-mic-icon {
+  color: #bbb8b2;
   animation: srv-pulse-check 1.2s ease-in-out infinite;
 }
-@keyframes srv-halo {
-  0%, 100% { opacity: 0; transform: scale(.8); }
-  50% { opacity: 1; transform: scale(1.1); }
+/* Ring pulse animation */
+@keyframes srv-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: .6; }
+  50% { transform: scale(1.08); opacity: 1; }
 }
 @keyframes srv-pulse-check {
-  0%, 100% { opacity: .4; transform: scale(.85); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%, 100% { opacity: .4; }
+  50% { opacity: 1; }
 }
 
 /* ── Dropdown detail panel ── */
@@ -98,15 +127,16 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
   display: none;
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 50%; transform: translateX(-50%);
   background: var(--cl-bg-card, #fff);
   border: 1px solid var(--cl-border, #e5e7eb);
   border-radius: 10px;
   padding: 10px 14px;
   min-width: 180px;
   box-shadow: 0 4px 16px rgba(0,0,0,.1);
-  z-index: 100;
+  z-index: 1000;
   font-size: .78rem;
+  white-space: nowrap;
 }
 .srv-dropdown.open { display: block; animation: srv-drop-in .2s ease-out; }
 @keyframes srv-drop-in {
@@ -399,8 +429,28 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
 </style>
 <div class="container-fluid py-4">
   <div class="d-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0">
-      <i class="bi bi-mic-fill"></i> <span id="pvRecordTitle">Chargement...</span>
+    <h1 class="h3 mb-0 d-flex align-items-center gap-2">
+      <div class="srv-indicator srv-mic-indicator" id="srvIndicator" data-global="checking" title="Cliquez pour voir le statut des serveurs">
+        <i class="bi bi-mic-fill srv-mic-icon"></i>
+        <div class="srv-dropdown" id="srvDropdown">
+          <div class="srv-dropdown-row" id="rowVosk">
+            <span class="srv-dd-dot wait"></span>
+            <span class="srv-dd-name">Vosk</span>
+            <span class="srv-dd-status">...</span>
+          </div>
+          <div class="srv-dropdown-row pv-d-none" id="rowWhisper">
+            <span class="srv-dd-dot wait"></span>
+            <span class="srv-dd-name">Whisper</span>
+            <span class="srv-dd-status">...</span>
+          </div>
+          <div class="srv-dropdown-row" id="rowOllama">
+            <span class="srv-dd-dot wait"></span>
+            <span class="srv-dd-name">Ollama</span>
+            <span class="srv-dd-status">...</span>
+          </div>
+        </div>
+      </div>
+      <span id="pvRecordTitle">Chargement...</span>
     </h1>
     <div class="d-flex gap-2 align-items-center">
       <button class="btn shadow-sm pv-btn-record" id="btnStartRecord">
@@ -437,26 +487,9 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
         <div class="card-body">
           <h5 class="card-title d-flex justify-content-between align-items-center">
             <span>Enregistrement & Transcription en Direct</span>
-            <div class="srv-indicator" id="srvIndicator" data-global="checking" title="Statut des serveurs">
-              <div class="srv-indicator-dot"></div>
-              <div class="srv-dropdown" id="srvDropdown">
-                <div class="srv-dropdown-row" id="rowVosk">
-                  <span class="srv-dd-dot wait"></span>
-                  <span class="srv-dd-name">Vosk</span>
-                  <span class="srv-dd-status">…</span>
-                </div>
-                <div class="srv-dropdown-row pv-d-none" id="rowWhisper">
-                  <span class="srv-dd-dot wait"></span>
-                  <span class="srv-dd-name">Whisper</span>
-                  <span class="srv-dd-status">…</span>
-                </div>
-                <div class="srv-dropdown-row" id="rowOllama">
-                  <span class="srv-dd-dot wait"></span>
-                  <span class="srv-dd-name">Ollama</span>
-                  <span class="srv-dd-status">…</span>
-                </div>
-              </div>
-            </div>
+            <button class="pv-btn-toggle-original pv-d-none" id="btnShowOriginal" title="Voir la transcription originale avant structuration IA">
+              <i class="bi bi-file-earmark-text me-1"></i>Original
+            </button>
           </h5>
           
           <!-- Recording Status -->
@@ -499,11 +532,8 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
 
           <!-- Transcript Area -->
           <div class="form-group mb-3">
-            <div class="d-flex align-items-center justify-content-between mb-1">
+            <div class="mb-1">
               <label class="form-label mb-0"><strong>Contenu du PV</strong></label>
-              <button class="pv-btn-toggle-original pv-d-none" id="btnShowOriginal" title="Voir la transcription originale avant structuration IA">
-                <i class="bi bi-file-earmark-text me-1"></i>Original
-              </button>
             </div>
             <div id="pvEditorContainer" class="zs-editor-wrap form-control p-0 pv-editor-container">
                 <!-- Tiptap Editor will be mounted here -->

@@ -148,10 +148,11 @@ if ($pvDetailId) {
 @keyframes srv-halo { 0%,100%{opacity:0;transform:scale(.8)} 50%{opacity:1;transform:scale(1.1)} }
 @keyframes srv-pulse-check { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
 .srv-dropdown {
-  display: none; position: absolute; top: calc(100% + 8px); right: 0;
+  display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
   background: var(--cl-bg-card, #fff); border: 1px solid var(--cl-border, #e5e7eb);
   border-radius: 10px; padding: 10px 14px; min-width: 180px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.1); z-index: 100; font-size: .78rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,.1); z-index: 1000; font-size: .78rem;
+  white-space: nowrap;
 }
 .srv-dropdown.open { display: block; animation: srv-drop-in .2s ease-out; }
 @keyframes srv-drop-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
