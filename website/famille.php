@@ -246,14 +246,15 @@ async function doLogin() {
     password = pwd;
     localStorage.setItem('fam_token', token);
 
-    // Unwrap encryption key
+    // Unwrap encryption key (use key_password from server — matches the password used to wrap the key)
     if (res.encryption_key) {
+        const keyPwd = res.key_password || pwd;
         try {
             aesKey = await FamilleCrypto.unwrapKey(
                 res.encryption_key.encrypted_key,
                 res.encryption_key.salt,
                 res.encryption_key.iv,
-                pwd
+                keyPwd
             );
         } catch(e) {
             console.warn('Impossible de déchiffrer la clé E2EE', e);
@@ -270,7 +271,19 @@ async function checkSession() {
     const res = await api('famille_check_session');
     if (res.success) {
         resident = res.resident;
-        // Can't restore AES key without password — user must re-login for encrypted content
+        // Restore AES key using key_password from server
+        if (res.encryption_key && res.key_password) {
+            try {
+                aesKey = await FamilleCrypto.unwrapKey(
+                    res.encryption_key.encrypted_key,
+                    res.encryption_key.salt,
+                    res.encryption_key.iv,
+                    res.key_password
+                );
+            } catch(e) {
+                console.warn('Session restore: impossible de déchiffrer la clé E2EE', e);
+            }
+        }
         showDashboard();
     } else {
         localStorage.removeItem('fam_token');

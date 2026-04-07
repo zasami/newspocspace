@@ -137,6 +137,9 @@ case 'famille_login':
         [$resident['id']]
     );
 
+    // Determine the password used to wrap the E2EE key (code_acces takes priority, same as admin)
+    $keyPassword = $resident['code_acces'] ?: $expectedPwd;
+
     respond([
         'success' => true,
         'token' => $token,
@@ -151,6 +154,7 @@ case 'famille_login':
             'photo_url' => $resident['photo_url'] ?? null,
         ],
         'encryption_key' => $encKey ?: null,
+        'key_password' => $encKey ? $keyPassword : null,
     ]);
     break;
 
@@ -168,6 +172,9 @@ case 'famille_check_session':
         "SELECT encrypted_key, salt, iv FROM famille_encryption_keys WHERE resident_id = ?",
         [$session['resident_id']]
     );
+    // Get key_password for E2EE unwrap on session restore
+    $csResident = Db::fetch("SELECT code_acces, date_naissance FROM residents WHERE id = ?", [$session['resident_id']]);
+    $csKeyPwd = $csResident['code_acces'] ?: ((new DateTime($csResident['date_naissance']))->format('dmY'));
     respond([
         'success' => true,
         'resident' => [
@@ -179,6 +186,7 @@ case 'famille_check_session':
             'photo_url' => $session['resident_photo'] ?? null,
         ],
         'encryption_key' => $encKey ?: null,
+        'key_password' => $encKey ? $csKeyPwd : null,
     ]);
     break;
 
