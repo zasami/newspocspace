@@ -681,8 +681,8 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
 /* Confirm modal overlay */
 #confirmModal .modal-backdrop, .modal-backdrop { background: rgba(0,0,0,0.35) !important; }
 
-/* Close button positioning — styles in admin.css */
-.modal-header { position: relative; }
+/* Ensure confirm modal header pushes close btn to far right */
+#confirmModal .modal-header { display: flex; justify-content: space-between; align-items: center; }
 
 /* Confirm & Prompt modals always on top */
 #confirmModal, #promptModal { z-index: 1070 !important; }
@@ -709,13 +709,29 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
   font-weight: 600; border-radius: 8px; border: none; color: #fff;
   transition: filter .15s, transform .1s;
 }
-.ss-confirm-btn:hover { filter: brightness(1.08); color: #fff; }
+.ss-confirm-btn:hover,
+.ss-confirm-btn:focus,
+.ss-confirm-btn:active {
+  color: #fff !important;
+  background-color: inherit;
+  filter: brightness(1.08);
+}
 .ss-confirm-btn:active { transform: scale(.97); }
-.ss-confirm-danger  { background: var(--ss-red, #DC2626); }
-.ss-confirm-warning { background: var(--ss-orange, #EA8B2D); }
-.ss-confirm-success { background: var(--ss-green, #16A34A); }
-.ss-confirm-info    { background: var(--cl-accent, #191918); }
-.ss-confirm-primary { background: var(--cl-accent, #191918); }
+.ss-confirm-danger,
+.ss-confirm-danger:hover,
+.ss-confirm-danger:focus  { background-color: var(--ss-red, #DC2626) !important; color: #fff !important; }
+.ss-confirm-warning,
+.ss-confirm-warning:hover,
+.ss-confirm-warning:focus { background-color: var(--ss-orange, #EA8B2D) !important; color: #fff !important; }
+.ss-confirm-success,
+.ss-confirm-success:hover,
+.ss-confirm-success:focus { background-color: var(--ss-green, #16A34A) !important; color: #fff !important; }
+.ss-confirm-info,
+.ss-confirm-info:hover,
+.ss-confirm-info:focus    { background-color: var(--cl-accent, #191918) !important; color: #fff !important; }
+.ss-confirm-primary,
+.ss-confirm-primary:hover,
+.ss-confirm-primary:focus { background-color: var(--cl-accent, #191918) !important; color: #fff !important; }
 </style>
 
 <script nonce="<?= $cspNonce ?>">
