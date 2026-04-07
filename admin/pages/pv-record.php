@@ -993,7 +993,7 @@ let transcribingQueue = Promise.resolve();
 // Variables globales pour l'IA (Python Whisper local server)
 const WHISPER_URL = 'http://localhost:5876';
 let isAiReady = false;
-let ollamaModel = 'mistral'; // loaded from config
+let ollamaModel = 'gemma3:4b'; // loaded from config
 let transcriptionEngine = 'vosk'; // vosk (léger) ou whisper (précis) — loaded from config
 let whisperAvailable = false; // true si faster-whisper installé sur le poste
 let externalMode = false; // true = use cloud APIs (Deepgram + Claude/Gemini)
@@ -1618,7 +1618,7 @@ function setupRecordingControls() {
 // Variable pour stocker le blob audio après l'enregistrement
 let lastRecordedBlob = null;
 
-const OLLAMA_URL = 'http://localhost:59876';
+const OLLAMA_URL = 'http://localhost:11434';
 
 // ── Progress bar helpers ──
 let _progressInterval = null;

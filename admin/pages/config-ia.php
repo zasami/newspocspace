@@ -377,7 +377,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
               <code class="ia-code">localhost:5876</code>
               <span class="badge ia-badge-sm-green">Vosk</span>
-              <code class="ia-code">localhost:59876</code>
+              <code class="ia-code">localhost:11434</code>
               <span class="badge ia-badge-sm-violet">Ollama</span>
             </div>
             <p class="small text-muted mb-0">Les serveurs doivent être lancés avant de commencer une dictée. Le raccourci « SpocSpace IA » lance les deux ensemble.</p>
@@ -1813,8 +1813,9 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
         zerdaSelect.init('#ollamaModel', [
             { value: 'tinyllama', label: 'TinyLlama — 1.1 Go (très rapide, qualité basique)' },
             { value: 'phi3:mini', label: 'Phi-3 Mini — 2.3 Go (rapide, bonne qualité)' },
+            { value: 'gemma3:4b', label: 'Gemma 3 4B — 3 Go (rapide, bonne qualité, Google)' },
             { value: 'mistral', label: 'Mistral 7B — 4.4 Go (lent sur CPU, meilleure qualité)' }
-        ], { value: 'mistral' });
+        ], { value: 'gemma3:4b' });
 
         // External mode toggle
         const extToggle = document.getElementById('pvExternalMode');
@@ -2090,7 +2091,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
     }
 
     // ── Ollama local model ──
-    const OLLAMA_URL = 'http://localhost:59876';
+    const OLLAMA_URL = 'http://localhost:11434';
 
     function updateOllamaBadge(status) {
         const badge = document.getElementById('badgeOllamaConfig');
@@ -2228,6 +2229,7 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             const ollamaOpts = [
                 { value: 'tinyllama', label: 'TinyLlama' },
                 { value: 'phi3:mini', label: 'Phi-3 Mini' },
+                { value: 'gemma3:4b', label: 'Gemma 3 4B' },
                 { value: 'mistral', label: 'Mistral 7B' }
             ];
             for (const opt of ollamaOpts) {

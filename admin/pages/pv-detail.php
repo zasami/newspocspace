@@ -995,7 +995,7 @@ async function doDeletePv() {
 }
 
 // ── Ollama monitoring + IA restructure ──
-const OLLAMA_URL = 'http://localhost:59876';
+const OLLAMA_URL = 'http://localhost:11434';
 let ollamaOnline = false;
 let ollamaModel = 'mistral'; // loaded from config
 
