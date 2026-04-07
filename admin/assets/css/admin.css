@@ -91,11 +91,7 @@
   --ss-sidebar-mini: 68px;
 }
 
-/* ── Claude modals + table scrollbars ── */
-.modal-content { border-radius: 1.5rem; border: 1px solid #d1cfc5; overflow: hidden; }
-.modal-header { border-bottom: 1px solid #d1cfc5; background: #f3efe7; border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem; }
-.modal-footer { border-top: 1px solid #d1cfc5; }
-.modal-header .modal-title { font-weight: 700; }
+/* ── Table scrollbars ── */
 .table-wrap { overflow-x: auto; padding-bottom: 0.35rem; }
 .table-wrap table { min-width: 700px; }
 .table { background: #fff; }
@@ -1032,50 +1028,93 @@ input[type="checkbox"]:not(.form-check-input):hover {
 /* ══════════════════════════════════════
    MODALS — Unified style
    ══════════════════════════════════════ */
+/* ── Modal backdrop blur (like roadmap) ── */
+.modal-backdrop {
+  background-color: transparent !important;
+}
+.modal.show {
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
 .modal-content {
   border: none;
-  border-radius: 2rem;
-  box-shadow: var(--cl-shadow-md);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.12);
   overflow: hidden;
 }
 .modal-header {
-  border-bottom: none;
-  padding: 1rem 1.25rem;
+  background: #F5F0E8;
+  border-bottom: 1px solid #D4C9B5;
+  padding: 0.9rem 1.25rem;
   border-radius: 0;
+}
+.modal-header .modal-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--cl-text, #1a1a1a);
 }
 .modal-body {
   max-height: 70vh;
   overflow-y: auto;
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
 }
 .modal-footer {
-  border-top: 1px solid var(--cl-border);
-  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--cl-border, #e5e7eb);
+  padding: 0.75rem 1.1rem;
   flex-shrink: 0;
   gap: 0.5rem;
   display: flex;
   align-items: center;
 }
 
-/* Modal type: info (warm beige — default) */
-.modal-info .modal-header {
-  background: #F5F0E8;
-  border-bottom: 2px solid #D4C9B5;
+/* ── Standard close button for all modals ── */
+.confirm-close-btn,
+.pv-modal-close,
+.modal-header .btn-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #6b7280;
+  transition: all .2s;
+  flex-shrink: 0;
+  font-size: .85rem;
+  line-height: 1;
+  cursor: pointer;
 }
+.confirm-close-btn:hover,
+.pv-modal-close:hover,
+.modal-header .btn-close:hover {
+  background: #f3f2ee;
+  color: #1a1a1a;
+  border-color: #d1cfc5;
+}
+.confirm-close-btn i,
+.pv-modal-close i {
+  font-size: .85rem;
+}
+
 /* Modal type: success (green) */
 .modal-success .modal-header {
   background: #E8F5E9;
-  border-bottom: 2px solid #4CAF50;
+  border-bottom: 1px solid #a5d6a7;
 }
 /* Modal type: warning (warm amber/orange) */
 .modal-warning .modal-header {
   background: #FFF8E1;
-  border-bottom: 2px solid #FFC107;
+  border-bottom: 1px solid #ffe082;
 }
 /* Modal type: danger (red) */
 .modal-danger .modal-header {
   background: #FFEBEE;
-  border-bottom: 2px solid #F44336;
+  border-bottom: 1px solid #ef9a9a;
 }
 
 /* Nav tabs */

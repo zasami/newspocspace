@@ -681,18 +681,8 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
 /* Confirm modal overlay */
 #confirmModal .modal-backdrop, .modal-backdrop { background: rgba(0,0,0,0.35) !important; }
 
-/* Close button — always top-right corner in all modals */
+/* Close button positioning — styles in admin.css */
 .modal-header { position: relative; }
-.modal-header .btn-close,
-.modal-header .confirm-close-btn {
-  position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2;
-  background: none; border: none; padding: 0.25rem;
-  font-size: 1.15rem; color: var(--cl-text-secondary, #6B6B69);
-  cursor: pointer; line-height: 1; border-radius: 6px;
-  transition: background 0.15s, color 0.15s;
-}
-.modal-header .btn-close:hover,
-.modal-header .confirm-close-btn:hover { background: rgba(0,0,0,0.06); color: var(--cl-text, #1A1A18); }
 
 /* Confirm & Prompt modals always on top */
 #confirmModal, #promptModal { z-index: 1070 !important; }
@@ -713,6 +703,19 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
   border-top: 1px solid var(--cl-border, #E8E5E0);
   padding: 0.75rem 1.25rem;
 }
+
+/* ── Confirm button: theme-aware ── */
+.ss-confirm-btn {
+  font-weight: 600; border-radius: 8px; border: none; color: #fff;
+  transition: filter .15s, transform .1s;
+}
+.ss-confirm-btn:hover { filter: brightness(1.08); color: #fff; }
+.ss-confirm-btn:active { transform: scale(.97); }
+.ss-confirm-danger  { background: var(--ss-red, #DC2626); }
+.ss-confirm-warning { background: var(--ss-orange, #EA8B2D); }
+.ss-confirm-success { background: var(--ss-green, #16A34A); }
+.ss-confirm-info    { background: var(--cl-accent, #191918); }
+.ss-confirm-primary { background: var(--cl-accent, #191918); }
 </style>
 
 <script nonce="<?= $cspNonce ?>">
@@ -750,12 +753,8 @@ function adminConfirm(opts = {}) {
     // Body
     textEl.innerHTML = opts.text || 'Êtes-vous sûr ?';
 
-    // OK button
-    const btnClass = {
-      danger: 'btn-danger', warning: 'btn-warning',
-      success: 'btn-success', info: 'btn-primary', primary: 'btn-primary'
-    }[type] || 'btn-primary';
-    okBtn.className = 'btn btn-sm ' + btnClass;
+    // OK button — theme-aware colors
+    okBtn.className = 'btn btn-sm ss-confirm-btn ss-confirm-' + type;
     okBtn.textContent = opts.okText || 'Confirmer';
 
     // Cancel button
