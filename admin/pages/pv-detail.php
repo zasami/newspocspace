@@ -127,51 +127,41 @@ if ($pvDetailId) {
 }
 
 /* Server status badge */
-.srv-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px 5px 10px;
-  border-radius: 20px;
-  font-size: .75rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  transition: all .4s cubic-bezier(.4,0,.2,1);
-  cursor: default;
-  user-select: none;
-  position: relative;
-  overflow: hidden;
+/* ── Server status: compact indicator dot ── */
+.srv-indicator {
+  position: relative; display: inline-block; cursor: pointer; user-select: none;
 }
-.srv-badge::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity .4s;
+.srv-indicator-dot {
+  width: 12px; height: 12px; border-radius: 50%; background: #bbb8b2;
+  transition: background .4s, box-shadow .4s;
 }
-.srv-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: all .4s cubic-bezier(.4,0,.2,1);
+.srv-indicator-dot::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%; opacity: 0; transition: opacity .4s;
 }
-.srv-label { opacity: .7; }
-.srv-status { transition: opacity .3s; }
-.srv-badge[data-status="checking"] { background: #f0eeea; color: #8a8680; }
-.srv-badge[data-status="checking"] .srv-dot { background: #bbb8b2; animation: srv-pulse-check 1.2s ease-in-out infinite; }
+.srv-indicator[data-global="ok"] .srv-indicator-dot { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,.4); }
+.srv-indicator[data-global="ok"] .srv-indicator-dot::after { background: rgba(76,175,80,.15); animation: srv-halo 2.5s ease-in-out infinite; }
+.srv-indicator[data-global="partial"] .srv-indicator-dot { background: #ff9800; box-shadow: 0 0 6px rgba(255,152,0,.4); }
+.srv-indicator[data-global="partial"] .srv-indicator-dot::after { background: rgba(255,152,0,.15); animation: srv-halo 2s ease-in-out infinite; }
+.srv-indicator[data-global="error"] .srv-indicator-dot { background: #ef5350; box-shadow: 0 0 6px rgba(239,83,80,.4); }
+.srv-indicator[data-global="error"] .srv-indicator-dot::after { background: rgba(239,83,80,.15); animation: srv-halo 1.5s ease-in-out infinite; }
+.srv-indicator[data-global="checking"] .srv-indicator-dot { background: #bbb8b2; animation: srv-pulse-check 1.2s ease-in-out infinite; }
+@keyframes srv-halo { 0%,100%{opacity:0;transform:scale(.8)} 50%{opacity:1;transform:scale(1.1)} }
 @keyframes srv-pulse-check { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
-.srv-badge[data-status="online"] { background: #e8f5e9; color: #2e7d32; }
-.srv-badge[data-status="online"] .srv-dot { background: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,.12); animation: srv-glow-on .6s ease-out forwards; }
-@keyframes srv-glow-on { 0%{box-shadow:0 0 0 0 rgba(76,175,80,.5);transform:scale(.6)} 50%{box-shadow:0 0 0 6px rgba(76,175,80,.15);transform:scale(1.2)} 100%{box-shadow:0 0 0 3px rgba(76,175,80,.12);transform:scale(1)} }
-.srv-badge[data-status="online"]::before { background:linear-gradient(90deg,transparent,rgba(76,175,80,.08),transparent); animation:srv-shine .8s ease-out; }
-@keyframes srv-shine { 0%{opacity:1;transform:translateX(-100%)} 100%{opacity:0;transform:translateX(100%)} }
-.srv-badge[data-status="offline"] { background: #ffeaea; color: #c62828; }
-.srv-badge[data-status="offline"] .srv-dot { background: #ef5350; animation: srv-pulse-off 2s ease-in-out infinite; }
-@keyframes srv-pulse-off { 0%,100%{opacity:.6} 50%{opacity:1} }
-.srv-badge.srv-flash { animation: srv-status-change .5s ease-out; }
-@keyframes srv-status-change { 0%{transform:scale(.95)} 40%{transform:scale(1.05)} 100%{transform:scale(1)} }
+.srv-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--cl-bg-card, #fff); border: 1px solid var(--cl-border, #e5e7eb);
+  border-radius: 10px; padding: 10px 14px; min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.1); z-index: 100; font-size: .78rem;
+}
+.srv-dropdown.open { display: block; animation: srv-drop-in .2s ease-out; }
+@keyframes srv-drop-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.srv-dropdown-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.srv-dropdown-row + .srv-dropdown-row { border-top: 1px solid var(--cl-border, #f0f0f0); padding-top: 6px; margin-top: 2px; }
+.srv-dd-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.srv-dd-dot.on { background: #4caf50; } .srv-dd-dot.off { background: #ef5350; } .srv-dd-dot.wait { background: #bbb; }
+.srv-dd-name { font-weight: 500; flex: 1; }
+.srv-dd-status { font-size: .7rem; opacity: .6; }
+.srv-badge { display: none !important; }
 
 /* AI button */
 .pv-btn-ia {
@@ -322,11 +312,16 @@ if ($pvDetailId) {
         <div class="card-header d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
             <h6 class="mb-0">Contenu du PV</h6>
-            <span class="srv-badge" id="badgeOllama" data-status="checking">
-              <span class="srv-dot"></span>
-              <span class="srv-label">Ollama</span>
-              <span class="srv-status">…</span>
-            </span>
+            <div class="srv-indicator" id="srvIndicator" data-global="checking" title="Statut Ollama">
+              <div class="srv-indicator-dot"></div>
+              <div class="srv-dropdown" id="srvDropdown">
+                <div class="srv-dropdown-row" id="rowOllama">
+                  <span class="srv-dd-dot wait"></span>
+                  <span class="srv-dd-name">Ollama</span>
+                  <span class="srv-dd-status">…</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="d-flex gap-2">
             <button class="pv-btn-toggle-original pv-hidden" id="btnShowOriginal" title="Voir la transcription originale">
@@ -999,27 +994,25 @@ const OLLAMA_URL = 'http://localhost:11434';
 let ollamaOnline = false;
 let ollamaModel = 'gemma3:4b'; // loaded from config
 
+// Compact indicator
+document.getElementById('srvIndicator')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('srvDropdown')?.classList.toggle('open');
+});
+document.addEventListener('click', () => {
+    document.getElementById('srvDropdown')?.classList.remove('open');
+});
+
 function updateBadge(id, status) {
-    const badge = document.getElementById(id);
-    if (!badge) return;
-    const prev = badge.dataset.status;
-    if (prev === status) return;
-    badge.dataset.status = status;
-    const statusEl = badge.querySelector('.srv-status');
-    if (statusEl) {
-        statusEl.classList.add('pv-opacity-0');
-        statusEl.classList.remove('pv-opacity-1');
-        setTimeout(() => {
-            statusEl.textContent = status === 'online' ? 'Connecté' : status === 'offline' ? 'Hors ligne' : '…';
-            statusEl.classList.remove('pv-opacity-0');
-            statusEl.classList.add('pv-opacity-1');
-        }, 150);
+    const row = document.getElementById('rowOllama');
+    if (row) {
+        const dot = row.querySelector('.srv-dd-dot');
+        const st = row.querySelector('.srv-dd-status');
+        if (dot) dot.className = 'srv-dd-dot ' + (status === 'online' ? 'on' : status === 'offline' ? 'off' : 'wait');
+        if (st) st.textContent = status === 'online' ? 'Connecté' : status === 'offline' ? 'Hors ligne' : '…';
     }
-    if (prev && prev !== 'checking') {
-        badge.classList.remove('srv-flash');
-        void badge.offsetWidth;
-        badge.classList.add('srv-flash');
-    }
+    const indicator = document.getElementById('srvIndicator');
+    if (indicator) indicator.dataset.global = status === 'online' ? 'ok' : status === 'offline' ? 'error' : 'checking';
 }
 
 async function checkOllama() {

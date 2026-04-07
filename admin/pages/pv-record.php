@@ -29,102 +29,109 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
 <style>
-/* Server status badges */
-.srv-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px 5px 10px;
-  border-radius: 20px;
-  font-size: .75rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  transition: all .4s cubic-bezier(.4,0,.2,1);
-  cursor: default;
-  user-select: none;
+/* ── Server status: compact indicator dot ── */
+.srv-indicator {
   position: relative;
-  overflow: hidden;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
 }
-.srv-badge::before {
+.srv-indicator-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #bbb8b2;
+  transition: background .4s, box-shadow .4s;
+  position: relative;
+}
+/* Halo animation */
+.srv-indicator-dot::after {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  inset: -4px;
+  border-radius: 50%;
   opacity: 0;
   transition: opacity .4s;
 }
-.srv-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: all .4s cubic-bezier(.4,0,.2,1);
-  position: relative;
+/* Green = all connected */
+.srv-indicator[data-global="ok"] .srv-indicator-dot {
+  background: #4caf50;
+  box-shadow: 0 0 6px rgba(76,175,80,.4);
 }
-.srv-label { opacity: .7; }
-.srv-status { transition: opacity .3s; }
-
-/* Checking state */
-.srv-badge[data-status="checking"] {
-  background: #f0eeea;
-  color: #8a8680;
+.srv-indicator[data-global="ok"] .srv-indicator-dot::after {
+  background: rgba(76,175,80,.15);
+  animation: srv-halo 2.5s ease-in-out infinite;
 }
-.srv-badge[data-status="checking"] .srv-dot {
+/* Orange = partial */
+.srv-indicator[data-global="partial"] .srv-indicator-dot {
+  background: #ff9800;
+  box-shadow: 0 0 6px rgba(255,152,0,.4);
+}
+.srv-indicator[data-global="partial"] .srv-indicator-dot::after {
+  background: rgba(255,152,0,.15);
+  animation: srv-halo 2s ease-in-out infinite;
+}
+/* Red = nothing connected */
+.srv-indicator[data-global="error"] .srv-indicator-dot {
+  background: #ef5350;
+  box-shadow: 0 0 6px rgba(239,83,80,.4);
+}
+.srv-indicator[data-global="error"] .srv-indicator-dot::after {
+  background: rgba(239,83,80,.15);
+  animation: srv-halo 1.5s ease-in-out infinite;
+}
+/* Checking */
+.srv-indicator[data-global="checking"] .srv-indicator-dot {
   background: #bbb8b2;
   animation: srv-pulse-check 1.2s ease-in-out infinite;
+}
+@keyframes srv-halo {
+  0%, 100% { opacity: 0; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 @keyframes srv-pulse-check {
   0%, 100% { opacity: .4; transform: scale(.85); }
   50% { opacity: 1; transform: scale(1.1); }
 }
 
-/* Online state */
-.srv-badge[data-status="online"] {
-  background: #e8f5e9;
-  color: #2e7d32;
+/* ── Dropdown detail panel ── */
+.srv-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--cl-bg-card, #fff);
+  border: 1px solid var(--cl-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  z-index: 100;
+  font-size: .78rem;
 }
-.srv-badge[data-status="online"] .srv-dot {
-  background: #4caf50;
-  box-shadow: 0 0 0 0 rgba(76,175,80,.5);
-  animation: srv-glow-on .6s ease-out forwards;
+.srv-dropdown.open { display: block; animation: srv-drop-in .2s ease-out; }
+@keyframes srv-drop-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-@keyframes srv-glow-on {
-  0% { box-shadow: 0 0 0 0 rgba(76,175,80,.5); transform: scale(.6); }
-  50% { box-shadow: 0 0 0 6px rgba(76,175,80,.15); transform: scale(1.2); }
-  100% { box-shadow: 0 0 0 3px rgba(76,175,80,.12); transform: scale(1); }
+.srv-dropdown-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+  color: var(--cl-text, #1a1a1a);
 }
-.srv-badge[data-status="online"]::before {
-  background: linear-gradient(90deg, transparent, rgba(76,175,80,.08), transparent);
-  animation: srv-shine .8s ease-out;
+.srv-dropdown-row + .srv-dropdown-row { border-top: 1px solid var(--cl-border, #f0f0f0); padding-top: 6px; margin-top: 2px; }
+.srv-dd-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-@keyframes srv-shine {
-  0% { opacity: 1; transform: translateX(-100%); }
-  100% { opacity: 0; transform: translateX(100%); }
-}
+.srv-dd-dot.on { background: #4caf50; }
+.srv-dd-dot.off { background: #ef5350; }
+.srv-dd-dot.wait { background: #bbb; }
+.srv-dd-name { font-weight: 500; flex: 1; }
+.srv-dd-status { font-size: .7rem; opacity: .6; }
 
-/* Offline state */
-.srv-badge[data-status="offline"] {
-  background: #ffeaea;
-  color: #c62828;
-}
-.srv-badge[data-status="offline"] .srv-dot {
-  background: #ef5350;
-  animation: srv-pulse-off 2s ease-in-out infinite;
-}
-@keyframes srv-pulse-off {
-  0%, 100% { opacity: .6; }
-  50% { opacity: 1; }
-}
-
-/* Transition flash when status changes */
-.srv-badge.srv-flash {
-  animation: srv-status-change .5s ease-out;
-}
-@keyframes srv-status-change {
-  0% { transform: scale(.95); }
-  40% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
+/* Legacy compat — hide old badges */
+.srv-badge { display: none !important; }
 
 /* ─── Blur on editor during AI structuration ─── */
 .pv-editor-blur .zs-ed-content {
@@ -430,22 +437,25 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
         <div class="card-body">
           <h5 class="card-title d-flex justify-content-between align-items-center">
             <span>Enregistrement & Transcription en Direct</span>
-            <div class="d-flex flex-column gap-1 align-items-end" id="serverStatusBar">
-              <span class="srv-badge" id="badgeVosk" data-status="checking">
-                <span class="srv-dot"></span>
-                <span class="srv-label">Vosk</span>
-                <span class="srv-status">…</span>
-              </span>
-              <span class="srv-badge pv-d-none" id="badgeWhisper" data-status="checking">
-                <span class="srv-dot"></span>
-                <span class="srv-label">Whisper</span>
-                <span class="srv-status">…</span>
-              </span>
-              <span class="srv-badge" id="badgeOllama" data-status="checking">
-                <span class="srv-dot"></span>
-                <span class="srv-label">Ollama</span>
-                <span class="srv-status">…</span>
-              </span>
+            <div class="srv-indicator" id="srvIndicator" data-global="checking" title="Statut des serveurs">
+              <div class="srv-indicator-dot"></div>
+              <div class="srv-dropdown" id="srvDropdown">
+                <div class="srv-dropdown-row" id="rowVosk">
+                  <span class="srv-dd-dot wait"></span>
+                  <span class="srv-dd-name">Vosk</span>
+                  <span class="srv-dd-status">…</span>
+                </div>
+                <div class="srv-dropdown-row pv-d-none" id="rowWhisper">
+                  <span class="srv-dd-dot wait"></span>
+                  <span class="srv-dd-name">Whisper</span>
+                  <span class="srv-dd-status">…</span>
+                </div>
+                <div class="srv-dropdown-row" id="rowOllama">
+                  <span class="srv-dd-dot wait"></span>
+                  <span class="srv-dd-name">Ollama</span>
+                  <span class="srv-dd-status">…</span>
+                </div>
+              </div>
             </div>
           </h5>
           
@@ -1174,25 +1184,9 @@ async function initPvrecordPage() {
     try { pvSettings = { ...pvSettingsDefaults, ...JSON.parse(ssrCfg.pv_structure_options) }; } catch {}
   }
   loadPvSettingsToUI();
-  // Mode UI badges
+  // Mode UI — cloud services mark as ready
   if (transcriptionCloud) {
-    // Hide local transcription badges, show cloud badge
-    document.querySelectorAll('#badgeVosk, #badgeWhisper').forEach(b => b.classList.add('pv-d-none'));
-    const extBadge = document.createElement('span');
-    extBadge.className = 'pv-ext-badge';
-    extBadge.setAttribute('data-status', 'online');
-    extBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">Deepgram</span><span class="srv-status">cloud</span>';
-    document.getElementById('badgeVosk')?.parentNode?.appendChild(extBadge);
     isAiReady = true;
-  }
-  if (structurationCloud) {
-    // Hide Ollama badge, show cloud structuration badge
-    document.getElementById('badgeOllama')?.classList.add('pv-d-none');
-    const structBadge = document.createElement('span');
-    structBadge.className = 'pv-ext-badge';
-    structBadge.setAttribute('data-status', 'online');
-    structBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">IA Cloud</span><span class="srv-status">actif</span>';
-    document.getElementById('badgeOllama')?.parentNode?.appendChild(structBadge);
   }
 
   // Check serveurs locaux (fire-and-forget)
@@ -2802,33 +2796,61 @@ function resetSaveBtn(btn) {
     btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer et finaliser le PV';
 }
 
-// ── Server status monitoring ──
-const _srvState = { vosk: null, ollama: null };
+// ── Server status monitoring (compact indicator) ──
+const _srvState = { vosk: 'checking', whisper: 'checking', ollama: 'checking' };
+
+// Toggle dropdown on click
+document.getElementById('srvIndicator')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('srvDropdown')?.classList.toggle('open');
+});
+document.addEventListener('click', () => {
+    document.getElementById('srvDropdown')?.classList.remove('open');
+});
 
 function updateBadge(id, status) {
-    const badge = document.getElementById(id);
-    if (!badge) return;
-    const prev = badge.dataset.status;
+    // Map old badge IDs to new row IDs
+    const map = { badgeVosk: 'vosk', badgeWhisper: 'whisper', badgeOllama: 'ollama' };
+    const key = map[id];
+    if (!key) return;
+
+    const prev = _srvState[key];
     if (prev === status) return;
+    _srvState[key] = status;
 
-    badge.dataset.status = status;
-    const statusEl = badge.querySelector('.srv-status');
-    if (statusEl) {
-        statusEl.classList.add('pv-status-fade');
-        statusEl.classList.remove('pv-status-show');
-        setTimeout(() => {
-            statusEl.textContent = status === 'online' ? 'Connecté' : status === 'offline' ? 'Hors ligne' : '…';
-            statusEl.classList.remove('pv-status-fade');
-            statusEl.classList.add('pv-status-show');
-        }, 150);
+    // Update dropdown row
+    const rowId = 'row' + key.charAt(0).toUpperCase() + key.slice(1);
+    const row = document.getElementById(rowId);
+    if (row) {
+        const dot = row.querySelector('.srv-dd-dot');
+        const statusEl = row.querySelector('.srv-dd-status');
+        if (dot) { dot.className = 'srv-dd-dot ' + (status === 'online' ? 'on' : status === 'offline' ? 'off' : 'wait'); }
+        if (statusEl) { statusEl.textContent = status === 'online' ? 'Connecté' : status === 'offline' ? 'Hors ligne' : '…'; }
     }
 
-    // Flash animation on change
-    if (prev && prev !== 'checking') {
-        badge.classList.remove('srv-flash');
-        void badge.offsetWidth;
-        badge.classList.add('srv-flash');
-    }
+    // Update global indicator color
+    updateGlobalIndicator();
+}
+
+function updateGlobalIndicator() {
+    const indicator = document.getElementById('srvIndicator');
+    if (!indicator) return;
+
+    // Collect relevant states (skip cloud services)
+    const states = [];
+    if (!transcriptionCloud) states.push(_srvState.vosk);
+    if (!structurationCloud) states.push(_srvState.ollama);
+
+    // If everything is cloud, show green
+    if (states.length === 0) { indicator.dataset.global = 'ok'; return; }
+
+    const online = states.filter(s => s === 'online').length;
+    const checking = states.filter(s => s === 'checking').length;
+
+    if (checking > 0 && online === 0) indicator.dataset.global = 'checking';
+    else if (online === states.length) indicator.dataset.global = 'ok';
+    else if (online > 0) indicator.dataset.global = 'partial';
+    else indicator.dataset.global = 'error';
 }
 
 async function checkServers() {
@@ -2840,11 +2862,8 @@ async function checkServers() {
                 const data = await r.json();
                 const engines = data.engines || ['vosk'];
                 whisperAvailable = engines.includes('whisper');
-                const wb = document.getElementById('badgeWhisper');
-                if (wb) {
-                    wb.classList.toggle('pv-d-none', !whisperAvailable);
-                    wb.classList.toggle('pv-d-inline-flex', whisperAvailable);
-                }
+                const rowW = document.getElementById('rowWhisper');
+                if (rowW) rowW.classList.toggle('pv-d-none', !whisperAvailable);
             }
             updateBadge('badgeVosk', r.ok ? 'online' : 'offline');
             if (whisperAvailable) updateBadge('badgeWhisper', r.ok ? 'online' : 'offline');
@@ -2852,6 +2871,22 @@ async function checkServers() {
             updateBadge('badgeVosk', 'offline');
             updateBadge('badgeWhisper', 'offline');
             whisperAvailable = false;
+        }
+    } else {
+        // Cloud transcription — mark as online, hide local rows
+        document.getElementById('rowVosk')?.classList.add('pv-d-none');
+        document.getElementById('rowWhisper')?.classList.add('pv-d-none');
+        // Show cloud row
+        let rowCloud = document.getElementById('rowDeepgram');
+        if (!rowCloud) {
+            const dd = document.getElementById('srvDropdown');
+            if (dd) {
+                const r = document.createElement('div');
+                r.className = 'srv-dropdown-row';
+                r.id = 'rowDeepgram';
+                r.innerHTML = '<span class="srv-dd-dot on"></span><span class="srv-dd-name">Deepgram</span><span class="srv-dd-status">cloud</span>';
+                dd.prepend(r);
+            }
         }
     }
 
@@ -2863,11 +2898,22 @@ async function checkServers() {
         } catch {
             updateBadge('badgeOllama', 'offline');
         }
+    } else {
+        document.getElementById('rowOllama')?.classList.add('pv-d-none');
+        let rowIA = document.getElementById('rowIACloud');
+        if (!rowIA) {
+            const dd = document.getElementById('srvDropdown');
+            if (dd) {
+                const r = document.createElement('div');
+                r.className = 'srv-dropdown-row';
+                r.id = 'rowIACloud';
+                r.innerHTML = '<span class="srv-dd-dot on"></span><span class="srv-dd-name">IA Cloud</span><span class="srv-dd-status">actif</span>';
+                dd.append(r);
+            }
+        }
+        updateGlobalIndicator();
     }
 }
-
-// Note: checkServers() is called from initPvrecordPage() after config is loaded
-// so that externalMode is known before attempting localhost requests.
 
 })();
 </script>
