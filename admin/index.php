@@ -681,8 +681,7 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
 /* Confirm modal overlay */
 #confirmModal .modal-backdrop, .modal-backdrop { background: rgba(0,0,0,0.35) !important; }
 
-/* Ensure confirm modal header pushes close btn to far right */
-#confirmModal .modal-header { display: flex; justify-content: space-between; align-items: center; }
+/* modal-header flex layout is now in admin.css globally */
 
 /* Confirm & Prompt modals always on top */
 #confirmModal, #promptModal { z-index: 1070 !important; }

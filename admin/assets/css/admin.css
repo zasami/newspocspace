@@ -1045,6 +1045,9 @@ input[type="checkbox"]:not(.form-check-input):hover {
   overflow: hidden;
 }
 .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: #F5F0E8;
   border-bottom: 1px solid #D4C9B5;
   padding: 0.9rem 1.25rem;

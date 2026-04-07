@@ -1004,8 +1004,9 @@ function admin_generate_planning()
                         if ($currentWeekHours >= $weeklyTarget + 5) continue;
                     }
 
-                    // Pick shift: desired shift (approved) takes priority over IA rules
+                    // Pick shift: approved desir = hard constraint (always respected)
                     $desiredShift = $getDesiredShift($u, $date);
+                    $isDesir = (bool) $desiredShift;
                     if ($desiredShift) {
                         $shift = $desiredShift;
                     } else {
@@ -1019,15 +1020,16 @@ function admin_generate_planning()
                     }
 
                     // AS weekly hours: check if this shift would exceed weekly target
-                    if ($u['fonction_code'] === 'AS') {
+                    // Skip this check if it's an approved desir
+                    if (!$isDesir && $u['fonction_code'] === 'AS') {
                         $wk = $getWeekNum($date);
                         $weeklyTarget = $getWeeklyTarget($u);
                         $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
-                        if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 5) continue; // +5h tolerance for coverage
+                        if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 5) continue;
                     }
 
-                    // Part-time: prefer shorter shifts (but not for AS — AS pairing is critical)
-                    if ($u['taux'] < 80 && $assignedForSlot > 0 && $u['fonction_code'] !== 'AS') {
+                    // Part-time: prefer shorter shifts — but NEVER override an approved desir
+                    if (!$isDesir && $u['taux'] < 80 && $assignedForSlot > 0 && $u['fonction_code'] !== 'AS') {
                         if (!empty($morningShifts)) $shift = $morningShifts[array_rand($morningShifts)];
                     }
 
@@ -1120,8 +1122,9 @@ function admin_generate_planning()
 
                 // Determine slot index for shift pairing (continue from what's already assigned)
                 $slotIdx = $c['assigne'] + $filled;
-                // Desired shift (approved) takes priority over IA rules
+                // Approved desir = hard constraint
                 $desiredShift = $getDesiredShift($u, $date);
+                $isDesir1_5 = (bool) $desiredShift;
                 if ($desiredShift) {
                     $shift = $desiredShift;
                 } else {
@@ -1133,11 +1136,13 @@ function admin_generate_planning()
                     }
                 }
 
-                // Final weekly check with shift duration
+                // Final weekly check with shift duration — skip if approved desir
                 $wk = $getWeekNum($date);
-                $weeklyTarget = $getWeeklyTarget($u);
-                $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
-                if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 8) continue;
+                if (!$isDesir1_5) {
+                    $weeklyTarget = $getWeeklyTarget($u);
+                    $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
+                    if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 8) continue;
+                }
 
                 $asSlotIdx1_5 = $moduleASSlotIdx[$modId][$date] ?? ($c['assigne'] + $filled);
                 $groupeId = $getGroupeId('AS', $modId, $asSlotIdx1_5);
@@ -1192,6 +1197,17 @@ function admin_generate_planning()
                 $isAS = ($u['fonction_code'] === 'AS');
                 $principalMod = $u['principal_module_id'];
 
+                // Check if this user has an approved desir for this date
+                $hasDesir = isset($desirMap[$u['id']][$date]) && $desirMap[$u['id']][$date]['type'] === 'horaire_special';
+                $desiredShift = $hasDesir ? $getDesiredShift($u, $date) : null;
+
+                // Approved desir = hard constraint → bypass soft checks
+                if ($desiredShift) {
+                    if (!$principalMod) continue;
+                    $shift = $desiredShift;
+                    goto pass2_assign;
+                }
+
                 // Early structured rules check (module/weekend/max_days)
                 if ($principalMod && !$checkRules($u, null, $principalMod, $date)) continue;
 
@@ -1202,7 +1218,6 @@ function admin_generate_planning()
                 // ── Even distribution: limit days per week based on taux ──
                 $weeklyDaysTarget = $getUserWeeklyDaysTarget($u);
                 $currentWeekDays = $userWeekDays[$u['id']][$wk] ?? 0;
-                // Allow +1 day tolerance for flexibility
                 if ($currentWeekDays >= $weeklyDaysTarget + 1) continue;
 
                 // Consecutive check: AS max 3, Night max 5 (LTr), others max iaConsecutifMax
@@ -1224,13 +1239,6 @@ function admin_generate_planning()
 
                 // Direction/weekend off check
                 if (in_array($u['role'], ['direction', 'responsable']) && $iaDirWeekendOff && $dow >= 6) continue;
-
-                // Desired shift (approved) takes priority over IA rules
-                $desiredShift = $getDesiredShift($u, $date);
-                if ($desiredShift) {
-                    $shift = $desiredShift;
-                    goto pass2_assign;
-                }
 
                 // Night module → night shift
                 $isNight = ($principalMod === $nightModuleId);
@@ -1462,6 +1470,7 @@ function admin_generate_planning()
             $prompt .= "⚠️  RESPECTE ABSOLUMENT toutes les règles personnalisées ci-dessus, particulièrement les règles IMPORTANTES.\n";
         }
         $prompt .= "IMPORTANT: utilise UNIQUEMENT les user_id UUID listés ci-dessus. Ne les invente pas.\n";
+        $prompt .= "INTERDIT: Ne modifie JAMAIS une assignation marquée 'desir' dans les notes. Les désirs validés par le responsable sont des contraintes absolues.\n";
         $prompt .= "Vérifie que l'employé n'est pas déjà assigné ce jour-là et qu'il a la bonne fonction pour le poste.\n";
         $prompt .= "Format: {\"optimizations\": [{\"action\": \"move|add|remove\", \"user_id\": \"UUID exact\", \"date\": \"YYYY-MM-DD\", \"to_shift\": \"D1|D3|D4|S3|S4\", \"module_code\": \"M1|M2|M3|M4\", \"reason\": \"...\"}], \"summary\": \"résumé en français\"}\n";
         $prompt .= "Si aucune optimisation possible, retourne {\"optimizations\": [], \"summary\": \"Planning optimal\"}\n";
@@ -1604,6 +1613,15 @@ function admin_generate_planning()
                 if (!str_starts_with($date, $mois)) continue;
 
                 try {
+                    // Protect approved desirs — IA cannot move or remove them
+                    if ($action === 'move' || $action === 'remove') {
+                        $existingNote = Db::getOne(
+                            "SELECT notes FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                            [$planningId, $userId, $date]
+                        );
+                        if ($existingNote === 'desir') continue; // Skip — desir is untouchable
+                    }
+
                     if ($action === 'move' && $toShift && isset($horaireByCode[$toShift])) {
                         Db::exec(
                             "UPDATE planning_assignations SET horaire_type_id = ?, module_id = COALESCE(?, module_id)
