@@ -378,13 +378,17 @@ function admin_generate_planning()
 
     $planning = Db::fetch("SELECT * FROM plannings WHERE mois_annee = ?", [$mois]);
     if (!$planning) bad_request('Créez d\'abord le planning pour ce mois');
-    // DEV MODE: autoriser générer sur un planning finalisé — TODO: réactiver après dev
-    // if ($planning['statut'] === 'final') bad_request('Ce planning est déjà finalisé');
+    if ($planning['statut'] === 'final') bad_request('Ce planning est déjà finalisé. Repassez-le en brouillon pour régénérer.');
 
     $planningId = $planning['id'];
     $moduleFilter = $params['module_id'] ?? null;
     $mode = $params['mode'] ?? 'local'; // local | hybrid | ai
     if (!in_array($mode, ['local', 'hybrid', 'ai'])) $mode = 'local';
+
+    // Seed random for reproducible results (same month + same data = same planning)
+    $seed = crc32($mois . $planningId);
+    mt_srand($seed);
+    srand($seed);
 
     // Load all config (IA + API keys)
     $cfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config");
@@ -1403,6 +1407,11 @@ function admin_generate_planning()
         $prompt .= "- ASSC: 1 par module, 7j/7\n";
         $prompt .= "- Couverture: chaque étage doit être couvert 7h-20h30 (paire matin+soir ou D3)\n";
         $prompt .= "- Heures hebdo: respect du taux contractuel\n";
+        $prompt .= "- Jours consécutifs max: AS={$iaConsecutifMaxAS}, nuit={$iaConsecutifMaxNuit}, autres={$iaConsecutifMax}\n";
+        if ($iaDirWeekendOff) {
+            $prompt .= "- IMPORTANT: Les employés direction/responsable ne travaillent PAS le week-end (samedi/dimanche)\n";
+        }
+        $prompt .= "- Probabilité skip week-end non-AS: {$iaWeekendSkipProb}%\n";
 
         // Add custom IA rules from database
         if (!empty($iaRules)) {
@@ -1667,6 +1676,103 @@ function admin_generate_planning()
         }
     }
 
+    // ── Rapport qualité ──
+    $qualityReport = [];
+
+    // 1. Couverture : % des besoins remplis
+    $totalSlots = 0;
+    $filledSlots = 0;
+    $daysInMonth = (int) date('t', strtotime("$mois-01"));
+    foreach ($modules as $mod) {
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $dateStr = sprintf('%s-%02d', $mois, $d);
+            $dow = (int) date('N', strtotime($dateStr));
+            $modBesoins = $besoinsIdx[$mod['id']][$dow] ?? [];
+            foreach ($modBesoins as $fId => $nb) {
+                $totalSlots += $nb;
+            }
+        }
+    }
+    $filledSlots = $assigned;
+    $qualityReport['coverage_pct'] = $totalSlots > 0 ? round($filledSlots / $totalSlots * 100, 1) : 100;
+
+    // 2. Équité heures : écart-type entre employés actifs
+    $allActualHours = [];
+    foreach ($users as $u) {
+        $h = $userHours[$u['id']] ?? 0;
+        if ($h > 0) $allActualHours[] = $h;
+    }
+    if (count($allActualHours) > 1) {
+        $mean = array_sum($allActualHours) / count($allActualHours);
+        $variance = array_sum(array_map(fn($h) => ($h - $mean) ** 2, $allActualHours)) / count($allActualHours);
+        $qualityReport['hours_stddev'] = round(sqrt($variance), 1);
+        $qualityReport['hours_mean'] = round($mean, 1);
+    } else {
+        $qualityReport['hours_stddev'] = 0;
+        $qualityReport['hours_mean'] = 0;
+    }
+
+    // 3. Désirs respectés
+    $totalDesirs = 0;
+    $desirsSatisfied = 0;
+    foreach ($desirMap as $userId => $dates) {
+        foreach ($dates as $date => $desir) {
+            if ($desir['type'] === 'jour_off') {
+                $totalDesirs++;
+                if (!isset($userDays[$userId][$date])) $desirsSatisfied++;
+            } elseif ($desir['type'] === 'horaire_special' && $desir['horaire_type_id']) {
+                $totalDesirs++;
+                // Check if assigned with desired shift
+                $row = Db::fetch(
+                    "SELECT horaire_type_id FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                    [$planningId, $userId, $date]
+                );
+                if ($row && $row['horaire_type_id'] === $desir['horaire_type_id']) $desirsSatisfied++;
+            }
+        }
+    }
+    $qualityReport['desirs_total'] = $totalDesirs;
+    $qualityReport['desirs_satisfied'] = $desirsSatisfied;
+    $qualityReport['desirs_pct'] = $totalDesirs > 0 ? round($desirsSatisfied / $totalDesirs * 100, 1) : 100;
+
+    // 4. Équité week-ends
+    $weekendCounts = [];
+    foreach ($users as $u) {
+        $wkCount = 0;
+        foreach ($userDays[$u['id']] ?? [] as $date => $v) {
+            $dow = (int) date('N', strtotime($date));
+            if ($dow >= 6) $wkCount++;
+        }
+        if (($userHours[$u['id']] ?? 0) > 0) $weekendCounts[] = $wkCount;
+    }
+    if (!empty($weekendCounts)) {
+        $qualityReport['weekend_min'] = min($weekendCounts);
+        $qualityReport['weekend_max'] = max($weekendCounts);
+        $qualityReport['weekend_mean'] = round(array_sum($weekendCounts) / count($weekendCounts), 1);
+    }
+
+    // 5. Score global (0-100)
+    $scoreCoverage = min($qualityReport['coverage_pct'], 100);
+    $scoreEquity = max(0, 100 - ($qualityReport['hours_stddev'] * 3)); // -3pts par heure d'écart
+    $scoreDesirs = $qualityReport['desirs_pct'];
+    $scoreWeekend = 100;
+    if (!empty($weekendCounts) && max($weekendCounts) > 0) {
+        $wkRange = max($weekendCounts) - min($weekendCounts);
+        $scoreWeekend = max(0, 100 - ($wkRange * 10)); // -10pts par jour d'écart
+    }
+    $qualityReport['score'] = round(
+        $scoreCoverage * 0.40 +
+        $scoreEquity   * 0.25 +
+        $scoreDesirs   * 0.20 +
+        $scoreWeekend  * 0.15
+    );
+    $qualityReport['breakdown'] = [
+        'coverage'  => round($scoreCoverage, 1),
+        'equity'    => round($scoreEquity, 1),
+        'desirs'    => round($scoreDesirs, 1),
+        'weekends'  => round($scoreWeekend, 1),
+    ];
+
     respond([
         'success' => true,
         'message' => $message,
@@ -1680,6 +1786,7 @@ function admin_generate_planning()
         'ia_prompt' => $prompt ?? null,
         'duration_ms' => $durationMs,
         'user_warnings' => $userStats,
+        'quality' => $qualityReport,
     ]);
 }
 
@@ -1696,8 +1803,7 @@ function admin_clear_planning()
 
     $planning = Db::fetch("SELECT * FROM plannings WHERE id = ?", [$planningId]);
     if (!$planning) not_found('Planning non trouvé');
-    // DEV MODE: autoriser vider un planning finalisé — TODO: réactiver après dev
-    // if ($planning['statut'] === 'final') bad_request('Planning finalisé, impossible de vider');
+    if ($planning['statut'] === 'final') bad_request('Planning finalisé, impossible de vider. Repassez-le en brouillon.');
 
     $moduleId = $params['module_id'] ?? null;
 
