@@ -10,8 +10,8 @@ echo.
 
 set "WHISPER_DIR=%LOCALAPPDATA%\SpocSpaceWhisper"
 
-:: Forcer Ollama sur le port 59876 (eviter conflit VS Code)
-set "OLLAMA_HOST=127.0.0.1:59876"
+:: Forcer Ollama sur le port 11434 (eviter conflit VS Code)
+set "OLLAMA_HOST=127.0.0.1:11434"
 :: Autoriser les requetes du navigateur (CORS)
 set "OLLAMA_ORIGINS=*"
 
@@ -52,9 +52,9 @@ timeout /t 2 /nobreak >nul
 echo  [OK] Nettoyage termine
 
 :: ============================================
-:: ETAPE 2 : Demarrer Ollama sur le port 59876
+:: ETAPE 2 : Demarrer Ollama sur le port 11434
 :: ============================================
-echo  [2/5] Demarrage d Ollama (port 59876)...
+echo  [2/5] Demarrage d Ollama (port 11434)...
 start /MIN "" "%OLLAMA_CMD%" serve
 set /a WAIT_COUNT=0
 
@@ -62,7 +62,7 @@ set /a WAIT_COUNT=0
 timeout /t 2 /nobreak >nul
 set /a WAIT_COUNT+=2
 echo        Attente... %WAIT_COUNT%s
-powershell -Command "try{$t=New-Object Net.Sockets.TcpClient;$t.Connect('127.0.0.1',59876);$t.Close();exit 0}catch{exit 1}" >nul 2>nul
+powershell -Command "try{$t=New-Object Net.Sockets.TcpClient;$t.Connect('127.0.0.1',11434);$t.Close();exit 0}catch{exit 1}" >nul 2>nul
 if not errorlevel 1 goto OLLAMA_OK
 if %WAIT_COUNT% LSS 30 goto OLLAMA_WAIT
 echo  [!!] Ollama n a pas demarre en 30s.
@@ -70,14 +70,14 @@ echo  Verifiez votre installation d Ollama.
 goto FIN
 
 :OLLAMA_OK
-echo  [OK] Ollama demarre sur le port 59876
+echo  [OK] Ollama demarre sur le port 11434
 echo.
 
 :: ============================================
 :: ETAPE 3 : Verifier les modeles IA
 :: ============================================
 echo  [3/5] Verification des modeles IA...
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:59876/api/tags' -UseBasicParsing -TimeoutSec 5;$d=$r.Content|ConvertFrom-Json;if($d.models.Count -gt 0){exit 0}else{exit 1}}catch{exit 1}" >nul 2>nul
+powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:11434/api/tags' -UseBasicParsing -TimeoutSec 5;$d=$r.Content|ConvertFrom-Json;if($d.models.Count -gt 0){exit 0}else{exit 1}}catch{exit 1}" >nul 2>nul
 if not errorlevel 1 goto MODELS_OK
 
 :: Aucun modele detecte - redemarrer Ollama pour qu il relise les fichiers
@@ -88,14 +88,14 @@ start /MIN "" "%OLLAMA_CMD%" serve
 timeout /t 5 /nobreak >nul
 
 :: Re-verifier
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:59876/api/tags' -UseBasicParsing -TimeoutSec 10;$d=$r.Content|ConvertFrom-Json;if($d.models.Count -gt 0){exit 0}else{exit 1}}catch{exit 1}" >nul 2>nul
+powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:11434/api/tags' -UseBasicParsing -TimeoutSec 10;$d=$r.Content|ConvertFrom-Json;if($d.models.Count -gt 0){exit 0}else{exit 1}}catch{exit 1}" >nul 2>nul
 if not errorlevel 1 goto MODELS_OK
 echo  [!!] Aucun modele IA detecte. Relancez install.bat.
 goto MODELS_DONE
 
 :MODELS_OK
 :: Afficher les modeles disponibles
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:59876/api/tags' -UseBasicParsing -TimeoutSec 5;$d=$r.Content|ConvertFrom-Json;foreach($m in $d.models){$s=[math]::Round($m.size/1GB,1);Write-Host \"        $($m.name) (${s} Go)\"}}catch{}" 2>nul
+powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:11434/api/tags' -UseBasicParsing -TimeoutSec 5;$d=$r.Content|ConvertFrom-Json;foreach($m in $d.models){$s=[math]::Round($m.size/1GB,1);Write-Host \"        $($m.name) (${s} Go)\"}}catch{}" 2>nul
 echo  [OK] Modeles IA prets
 
 :MISTRAL_DONE
@@ -153,7 +153,7 @@ echo.
 echo  ============================================
 echo   Tout est pret ! Les serveurs tournent :
 echo     Vosk    : http://localhost:5876
-echo     Ollama  : http://localhost:59876
+echo     Ollama  : http://localhost:11434
 echo   Ne fermez pas cette fenetre !
 echo  ============================================
 echo.

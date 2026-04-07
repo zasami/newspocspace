@@ -324,7 +324,7 @@ if ($pvDetailId) {
             <h6 class="mb-0">Contenu du PV</h6>
             <span class="srv-badge" id="badgeOllama" data-status="checking">
               <span class="srv-dot"></span>
-              <span class="srv-label">Mistral</span>
+              <span class="srv-label">Ollama</span>
               <span class="srv-status">…</span>
             </span>
           </div>
@@ -997,7 +997,7 @@ async function doDeletePv() {
 // ── Ollama monitoring + IA restructure ──
 const OLLAMA_URL = 'http://localhost:11434';
 let ollamaOnline = false;
-let ollamaModel = 'mistral'; // loaded from config
+let ollamaModel = 'gemma3:4b'; // loaded from config
 
 function updateBadge(id, status) {
     const badge = document.getElementById(id);
@@ -1262,7 +1262,7 @@ async function structureWithIA() {
     }
 
     if (!ollamaOnline) {
-        toast('Mistral hors ligne — lancez le raccourci « SpocSpace IA » sur votre Bureau.', 'error');
+        toast('Ollama hors ligne — lancez Ollama sur votre poste.', 'error');
         return;
     }
 

@@ -73,7 +73,7 @@ function admin_save_config()
         // Transcription engine (vosk / whisper)
         'transcription_engine',
         // External mode (cloud transcription + cloud structuration)
-        'pv_external_mode', 'deepgram_api_key',
+        'pv_external_mode', 'pv_transcription_cloud', 'pv_structuration_cloud', 'deepgram_api_key',
         // PV structuration options (JSON)
         'pv_structure_options',
         // Planning display config

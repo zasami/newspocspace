@@ -21,7 +21,7 @@ if ($pvRecordId) {
         $pvRecordData['tags'] = !empty($pvRecordData['tags']) ? json_decode($pvRecordData['tags'], true) : [];
     }
 }
-$pvRecordCfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key IN ('ollama_model','transcription_engine','pv_external_mode','deepgram_api_key','pv_structure_options') ORDER BY config_key");
+$pvRecordCfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key IN ('ollama_model','transcription_engine','pv_external_mode','pv_transcription_cloud','pv_structuration_cloud','deepgram_api_key','pv_structure_options') ORDER BY config_key");
 $pvRecordCfg = [];
 foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_value']; }
 ?>
@@ -996,7 +996,9 @@ let isAiReady = false;
 let ollamaModel = 'gemma3:4b'; // loaded from config
 let transcriptionEngine = 'vosk'; // vosk (léger) ou whisper (précis) — loaded from config
 let whisperAvailable = false; // true si faster-whisper installé sur le poste
-let externalMode = false; // true = use cloud APIs (Deepgram + Claude/Gemini)
+let externalMode = false; // legacy compat
+let transcriptionCloud = false; // true = Deepgram cloud transcription
+let structurationCloud = false; // true = Claude/Gemini cloud structuration
 let deepgramApiKey = ''; // loaded from config
 let deepgramSocket = null; // WebSocket for live streaming
 
@@ -1163,21 +1165,34 @@ async function initPvrecordPage() {
   // Config injected by PHP
   if (ssrCfg.ollama_model) ollamaModel = ssrCfg.ollama_model;
   if (ssrCfg.transcription_engine) transcriptionEngine = ssrCfg.transcription_engine;
-  if (ssrCfg.pv_external_mode === '1') externalMode = true;
+  // New separate modes (fallback to legacy pv_external_mode)
+  if (ssrCfg.pv_transcription_cloud === '1' || (ssrCfg.pv_external_mode === '1' && ssrCfg.pv_transcription_cloud === undefined)) transcriptionCloud = true;
+  if (ssrCfg.pv_structuration_cloud === '1' || (ssrCfg.pv_external_mode === '1' && ssrCfg.pv_structuration_cloud === undefined)) structurationCloud = true;
+  externalMode = transcriptionCloud; // legacy compat for recording flow
   if (ssrCfg.deepgram_api_key) deepgramApiKey = ssrCfg.deepgram_api_key;
   if (ssrCfg.pv_structure_options) {
     try { pvSettings = { ...pvSettingsDefaults, ...JSON.parse(ssrCfg.pv_structure_options) }; } catch {}
   }
   loadPvSettingsToUI();
-  // External mode UI
-  if (externalMode) {
-    isAiReady = true;
-    document.querySelectorAll('#badgeVosk, #badgeWhisper, #badgeOllama').forEach(b => b.classList.add('pv-d-none'));
+  // Mode UI badges
+  if (transcriptionCloud) {
+    // Hide local transcription badges, show cloud badge
+    document.querySelectorAll('#badgeVosk, #badgeWhisper').forEach(b => b.classList.add('pv-d-none'));
     const extBadge = document.createElement('span');
     extBadge.className = 'pv-ext-badge';
     extBadge.setAttribute('data-status', 'online');
-    extBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">Cloud</span><span class="srv-status">actif</span>';
+    extBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">Deepgram</span><span class="srv-status">cloud</span>';
     document.getElementById('badgeVosk')?.parentNode?.appendChild(extBadge);
+    isAiReady = true;
+  }
+  if (structurationCloud) {
+    // Hide Ollama badge, show cloud structuration badge
+    document.getElementById('badgeOllama')?.classList.add('pv-d-none');
+    const structBadge = document.createElement('span');
+    structBadge.className = 'pv-ext-badge';
+    structBadge.setAttribute('data-status', 'online');
+    structBadge.innerHTML = '<span class="pv-ext-dot"></span><span class="srv-label">IA Cloud</span><span class="srv-status">actif</span>';
+    document.getElementById('badgeOllama')?.parentNode?.appendChild(structBadge);
   }
 
   // Check serveurs locaux (fire-and-forget)
@@ -2679,8 +2694,8 @@ async function structurePv() {
     // Blur + typewriter
     startEditorBlur();
 
-    // ── Mode externe : Claude/Gemini via backend API ──
-    if (externalMode) {
+    // ── Mode cloud structuration : Claude/Gemini via backend API ──
+    if (structurationCloud) {
         const estSec = Math.max(8, Math.ceil(rawText.length / 1000 * 5));
         startProgress('Structuration IA cloud…', estSec, '#D0C4D8');
 
@@ -2817,35 +2832,37 @@ function updateBadge(id, status) {
 }
 
 async function checkServers() {
-    if (externalMode) return; // pas de serveurs locaux à vérifier
-    // Check transcription server
-    try {
-        const r = await fetch(WHISPER_URL + '/health', { signal: AbortSignal.timeout(3000) });
-        if (r.ok) {
-            const data = await r.json();
-            const engines = data.engines || ['vosk'];
-            whisperAvailable = engines.includes('whisper');
-            // Show/hide Whisper badge
-            const wb = document.getElementById('badgeWhisper');
-            if (wb) {
-                wb.classList.toggle('pv-d-none', !whisperAvailable);
-                wb.classList.toggle('pv-d-inline-flex', whisperAvailable);
+    // Check local transcription server (skip if cloud transcription)
+    if (!transcriptionCloud) {
+        try {
+            const r = await fetch(WHISPER_URL + '/health', { signal: AbortSignal.timeout(3000) });
+            if (r.ok) {
+                const data = await r.json();
+                const engines = data.engines || ['vosk'];
+                whisperAvailable = engines.includes('whisper');
+                const wb = document.getElementById('badgeWhisper');
+                if (wb) {
+                    wb.classList.toggle('pv-d-none', !whisperAvailable);
+                    wb.classList.toggle('pv-d-inline-flex', whisperAvailable);
+                }
             }
+            updateBadge('badgeVosk', r.ok ? 'online' : 'offline');
+            if (whisperAvailable) updateBadge('badgeWhisper', r.ok ? 'online' : 'offline');
+        } catch {
+            updateBadge('badgeVosk', 'offline');
+            updateBadge('badgeWhisper', 'offline');
+            whisperAvailable = false;
         }
-        updateBadge('badgeVosk', r.ok ? 'online' : 'offline');
-        if (whisperAvailable) updateBadge('badgeWhisper', r.ok ? 'online' : 'offline');
-    } catch {
-        updateBadge('badgeVosk', 'offline');
-        updateBadge('badgeWhisper', 'offline');
-        whisperAvailable = false;
     }
 
-    // Check Ollama
-    try {
-        const r = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(3000) });
-        updateBadge('badgeOllama', r.ok ? 'online' : 'offline');
-    } catch {
-        updateBadge('badgeOllama', 'offline');
+    // Check Ollama (skip if cloud structuration)
+    if (!structurationCloud) {
+        try {
+            const r = await fetch(OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(3000) });
+            updateBadge('badgeOllama', r.ok ? 'online' : 'offline');
+        } catch {
+            updateBadge('badgeOllama', 'offline');
+        }
     }
 }
 

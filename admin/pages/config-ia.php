@@ -387,64 +387,81 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
     </div>
 
     <div class="col-lg-6">
-      <!-- Mode serveur externe -->
+      <!-- Mode transcription & structuration séparés -->
       <div class="card mb-3">
         <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center gap-2">
-              <div class="ia-icon-circle ia-icon-circle-sm ia-icon-circle-blue">
-                <i class="bi bi-cloud-fill ia-icon-blue"></i>
-              </div>
-              <h6 class="fw-semibold mb-0">Mode serveur externe</h6>
-            </div>
-            <div class="form-check form-switch mb-0">
-              <input class="form-check-input" type="checkbox" id="pvExternalMode">
-            </div>
-          </div>
+          <h6 class="fw-semibold mb-3"><i class="bi bi-sliders me-1"></i> Mode de fonctionnement</h6>
+          <p class="text-muted small mb-3">Configurez indépendamment la transcription (voix → texte) et la structuration (texte → PV formaté).</p>
 
-          <p class="text-muted small mb-3">Utilise des API cloud au lieu du serveur local. Pas besoin d'installer quoi que ce soit sur le poste.</p>
-
-          <div id="externalModeDetails" class="ia-hidden">
-            <div class="ia-box-blue-alt mb-3">
-              <div class="d-flex flex-column gap-2 ia-fs-md">
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge rounded-pill ia-badge-pill ia-bg-blue ia-text-blue">1</span>
-                  <span><strong>Transcription</strong> — Deepgram Nova-2 (cloud, $200 offerts)</span>
+          <!-- Transcription : local ou cloud -->
+          <div class="border rounded p-3 mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="ia-icon-circle ia-icon-circle-sm ia-icon-circle-blue">
+                  <i class="bi bi-soundwave ia-icon-blue"></i>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge rounded-pill ia-badge-pill ia-bg-violet ia-text-violet">2</span>
-                  <span><strong>Structuration</strong> — Claude ou Gemini (selon config Clés API)</span>
+                <div>
+                  <h6 class="fw-medium mb-0 fs-6">Transcription</h6>
+                  <small class="text-muted">Voix → texte brut</small>
                 </div>
               </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-medium" for="deepgramApiKey">
-                <i class="bi bi-key me-1"></i> Clé API Deepgram <small class="text-muted">(transcription audio)</small>
-              </label>
-              <div class="input-group input-group-sm">
-                <input type="text" class="form-control ia-key-masked" id="deepgramApiKey" placeholder="dg_...">
-                <button class="btn btn-outline-secondary btn-toggle-key" type="button" data-target="deepgramApiKey"><i class="bi bi-eye"></i></button>
-              </div>
-              <div class="form-text ia-fs-xs">
-                Obtenez votre clé sur <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">console.deepgram.com</a>.
-                <strong>$200 de crédit offerts</strong> à l'inscription (~770h de transcription).
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="pvTranscriptionCloud">
+                <label class="form-check-label small" for="pvTranscriptionCloud">Cloud</label>
               </div>
             </div>
-
-            <div class="p-2 rounded small mb-3 ia-box-warn">
-              <i class="bi bi-exclamation-triangle me-1 ia-text-beige-dark"></i>
-              <span class="text-muted">En mode externe, l'audio est envoyé à Deepgram et le texte à Claude/Gemini. Les données <strong>quittent la machine</strong>.</span>
+            <div id="transLocalInfo" class="small text-muted">
+              <i class="bi bi-pc-display me-1"></i> <strong>Local</strong> — Vosk ou Whisper sur votre machine. Aucune donnée ne quitte le poste.
             </div>
-
-            <button class="btn btn-primary btn-sm" id="externalModeSaveBtn">
-              <i class="bi bi-check-lg me-1"></i>Enregistrer le mode externe
-            </button>
+            <div id="transCloudInfo" class="ia-hidden">
+              <div class="small mb-2">
+                <i class="bi bi-cloud me-1 text-primary"></i> <strong>Cloud</strong> — Deepgram Nova-2. L'audio est envoyé aux serveurs Deepgram.
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-medium mb-1" for="deepgramApiKey">
+                  <i class="bi bi-key me-1"></i> Clé API Deepgram
+                </label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control ia-key-masked" id="deepgramApiKey" placeholder="dg_...">
+                  <button class="btn btn-outline-secondary btn-toggle-key" type="button" data-target="deepgramApiKey"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="form-text ia-fs-xs">
+                  <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">console.deepgram.com</a> — <strong>$200 offerts</strong> (~770h de transcription).
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div id="externalModeOff" class="small text-muted">
-            <i class="bi bi-info-circle me-1"></i> Activez le mode externe pour utiliser des API cloud (OpenAI + Claude/Gemini) sans serveur local.
+          <!-- Structuration : local ou cloud -->
+          <div class="border rounded p-3 mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="ia-icon-circle ia-icon-circle-sm ia-icon-circle-violet">
+                  <i class="bi bi-magic ia-icon-violet"></i>
+                </div>
+                <div>
+                  <h6 class="fw-medium mb-0 fs-6">Structuration IA</h6>
+                  <small class="text-muted">Texte brut → PV formaté</small>
+                </div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="pvStructurationCloud">
+                <label class="form-check-label small" for="pvStructurationCloud">Cloud</label>
+              </div>
+            </div>
+            <div id="structLocalInfo" class="small text-muted">
+              <i class="bi bi-pc-display me-1"></i> <strong>Local</strong> — Ollama (<span id="structOllamaModelLabel">gemma3:4b</span>) sur votre machine. Aucune donnée ne quitte le poste.
+            </div>
+            <div id="structCloudInfo" class="ia-hidden">
+              <div class="small">
+                <i class="bi bi-cloud me-1 text-primary"></i> <strong>Cloud</strong> — Claude ou Gemini (selon config Clés API ci-dessous). Le texte est envoyé aux serveurs.
+              </div>
+            </div>
           </div>
+
+          <button class="btn btn-primary btn-sm" id="externalModeSaveBtn">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
         </div>
       </div>
 
@@ -1817,14 +1834,24 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             { value: 'mistral', label: 'Mistral 7B — 4.4 Go (lent sur CPU, meilleure qualité)' }
         ], { value: 'gemma3:4b' });
 
-        // External mode toggle
-        const extToggle = document.getElementById('pvExternalMode');
-        if (extToggle) {
-            extToggle.addEventListener('change', () => {
-                const on = extToggle.checked;
-                document.getElementById('externalModeDetails').classList.toggle('ia-hidden', !on);
-                document.getElementById('externalModeOff').classList.toggle('ia-hidden', on);
-                document.getElementById('localEngineCard').classList.toggle('ia-disabled', on);
+        // Transcription cloud toggle
+        const transToggle = document.getElementById('pvTranscriptionCloud');
+        if (transToggle) {
+            transToggle.addEventListener('change', () => {
+                const on = transToggle.checked;
+                document.getElementById('transLocalInfo').classList.toggle('ia-hidden', on);
+                document.getElementById('transCloudInfo').classList.toggle('ia-hidden', !on);
+                // Disable local engine card when transcription is cloud
+                document.getElementById('localEngineCard')?.classList.toggle('ia-disabled', on);
+            });
+        }
+        // Structuration cloud toggle
+        const structToggle = document.getElementById('pvStructurationCloud');
+        if (structToggle) {
+            structToggle.addEventListener('change', () => {
+                const on = structToggle.checked;
+                document.getElementById('structLocalInfo').classList.toggle('ia-hidden', on);
+                document.getElementById('structCloudInfo').classList.toggle('ia-hidden', !on);
             });
         }
 
@@ -1892,15 +1919,27 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
                 document.getElementById('whisperWarning').classList.remove('ia-hidden');
             }
 
-            // External mode
-            const extOn = config.pv_external_mode === '1';
-            const extToggle = document.getElementById('pvExternalMode');
-            if (extToggle) {
-                extToggle.checked = extOn;
-                document.getElementById('externalModeDetails').classList.toggle('ia-hidden', !extOn);
-                document.getElementById('externalModeOff').classList.toggle('ia-hidden', extOn);
-                document.getElementById('localEngineCard').classList.toggle('ia-disabled', extOn);
+            // Transcription mode (cloud or local)
+            const transCloud = config.pv_transcription_cloud === '1';
+            const transToggle = document.getElementById('pvTranscriptionCloud');
+            if (transToggle) {
+                transToggle.checked = transCloud;
+                document.getElementById('transLocalInfo').classList.toggle('ia-hidden', transCloud);
+                document.getElementById('transCloudInfo').classList.toggle('ia-hidden', !transCloud);
+                document.getElementById('localEngineCard')?.classList.toggle('ia-disabled', transCloud);
             }
+            // Structuration mode (cloud or local)
+            const structCloud = config.pv_structuration_cloud === '1';
+            const structToggle = document.getElementById('pvStructurationCloud');
+            if (structToggle) {
+                structToggle.checked = structCloud;
+                document.getElementById('structLocalInfo').classList.toggle('ia-hidden', structCloud);
+                document.getElementById('structCloudInfo').classList.toggle('ia-hidden', !structCloud);
+            }
+            // Update Ollama model label
+            const ollamaLabel = document.getElementById('structOllamaModelLabel');
+            if (ollamaLabel) ollamaLabel.textContent = config.ollama_model || 'gemma3:4b';
+
             const deepgramKeyEl = document.getElementById('deepgramApiKey');
             if (deepgramKeyEl) deepgramKeyEl.value = config.deepgram_api_key || '';
 
@@ -2310,11 +2349,12 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
 
     async function saveExternalMode() {
         const btn = document.getElementById('externalModeSaveBtn');
-        const extOn = document.getElementById('pvExternalMode').checked;
+        const transCloud = document.getElementById('pvTranscriptionCloud')?.checked || false;
+        const structCloud = document.getElementById('pvStructurationCloud')?.checked || false;
         const deepgramKey = document.getElementById('deepgramApiKey').value.trim();
 
-        if (extOn && !deepgramKey) {
-            showToast('Veuillez saisir la clé API Deepgram', 'error');
+        if (transCloud && !deepgramKey) {
+            showToast('Veuillez saisir la clé API Deepgram pour la transcription cloud', 'error');
             return;
         }
 
@@ -2322,15 +2362,16 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
         const values = {
-            pv_external_mode: extOn ? '1' : '0',
+            pv_transcription_cloud: transCloud ? '1' : '0',
+            pv_structuration_cloud: structCloud ? '1' : '0',
             deepgram_api_key: deepgramKey
         };
         const res = await adminApiPost('admin_save_config', { values });
-        if (res.success) showToast('Mode externe ' + (extOn ? 'activé' : 'désactivé'), 'success');
+        if (res.success) showToast('Configuration enregistrée', 'success');
         else showToast(res.message || 'Erreur', 'error');
 
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enregistrer le mode externe';
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enregistrer';
     }
 
     window.initConfigiaPage = initConfigiaPage;
