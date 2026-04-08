@@ -3,6 +3,10 @@
 $iaConfigRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config ORDER BY config_key");
 $iaConfig = [];
 foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']; }
+
+// Horaires for shift preview (injected into JS)
+$horairesRows = Db::fetchAll("SELECT code, heure_debut, heure_fin, duree_effective FROM horaires_types WHERE is_active = 1 ORDER BY heure_debut");
+$iaConfig['_horaires'] = $horairesRows;
 ?>
 <style>
 /* ─── Pick cards (horaires & modules) ─── */
@@ -228,6 +232,11 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
   <li class="nav-item">
     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTranscription">
       <i class="bi bi-mic"></i> Transcription PV
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPlanningEms">
+      <i class="bi bi-building"></i> Planning EMS
     </button>
   </li>
   <li class="nav-item">
@@ -931,6 +940,102 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
     </div>
   </div>
 </div><!-- /tabRules -->
+
+<!-- Tab Planning EMS (universal config) -->
+<div class="tab-pane fade" id="tabPlanningEms">
+  <div class="row g-3">
+    <!-- Couverture -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-clock me-1"></i> Plage de couverture</h6>
+          <p class="small text-muted mb-3">Heures de couverture journalière de votre EMS. L'algorithme classifie automatiquement les horaires en matin/soir/nuit selon ces valeurs.</p>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-medium">Début couverture</label>
+              <input type="time" class="form-control" id="emsCoverageStart" value="07:00">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-medium">Fin couverture</label>
+              <input type="time" class="form-control" id="emsCoverageEnd" value="20:30">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-medium">Seuil horaire soir</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control" id="emsEveningThreshold" value="12" min="10" max="16">
+                <span class="input-group-text">h</span>
+              </div>
+              <div class="form-text ia-fs-xs">Shifts commencant apres cette heure = soir</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-medium">Seuil horaire nuit</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control" id="emsNightThreshold" value="20" min="18" max="23">
+                <span class="input-group-text">h</span>
+              </div>
+              <div class="form-text ia-fs-xs">Shifts commencant apres cette heure = nuit</div>
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-medium">Duree min journee complete</label>
+            <div class="input-group input-group-sm">
+              <input type="number" class="form-control" id="emsFulldayMinHours" value="10" min="8" max="14" step="0.5">
+              <span class="input-group-text">heures</span>
+            </div>
+            <div class="form-text ia-fs-xs">Un shift est classifie "journee complete" s'il dure au moins cette duree</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AS & Pairing -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-people me-1"></i> Aide-soignants & couverture</h6>
+          <p class="small text-muted mb-3">Configuration du nombre d'AS par etage et du systeme de paires matin/soir pour assurer la couverture continue.</p>
+          <div class="mb-3">
+            <label class="form-label small fw-medium">AS par etage</label>
+            <input type="number" class="form-control" id="emsAsPerEtage" value="2" min="1" max="6">
+            <div class="form-text ia-fs-xs">Nombre d'aides-soignants requis par etage pour la couverture</div>
+          </div>
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="emsShiftPairing" checked>
+            <label class="form-check-label small fw-medium" for="emsShiftPairing">Systeme de paires matin/soir</label>
+            <div class="form-text ia-fs-xs">Active la rotation automatique des paires pour couvrir toute la plage horaire</div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-medium">Shifts exclus de la generation</label>
+            <input type="text" class="form-control" id="emsExcludeShifts" value="PIQUET" placeholder="PIQUET, REPOS, ...">
+            <div class="form-text ia-fs-xs">Codes horaires separes par virgule a exclure de la generation automatique</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview: classification auto -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-eye me-1"></i> Apercu classification automatique</h6>
+          <p class="small text-muted mb-2">Voici comment l'algorithme classifie vos horaires avec la config actuelle. Modifiez les seuils ci-dessus pour ajuster.</p>
+          <div id="emsShiftPreview" class="d-flex flex-wrap gap-2 mb-0">
+            <span class="text-muted small">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save -->
+    <div class="col-12">
+      <button class="btn btn-primary btn-sm" id="emsPlanningConfigSave">
+        <i class="bi bi-check-lg me-1"></i>Enregistrer la config planning
+      </button>
+    </div>
+  </div>
+</div><!-- /tabPlanningEms -->
 
 <!-- Tab Dépenses -->
 <div class="tab-pane fade" id="tabDepenses">
@@ -1810,6 +1915,11 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
         document.getElementById('btnBenchmark')?.addEventListener('click', runBenchmark);
         document.getElementById('engineSaveBtn')?.addEventListener('click', saveTranscriptionEngine);
         document.getElementById('externalModeSaveBtn')?.addEventListener('click', saveExternalMode);
+        document.getElementById('emsPlanningConfigSave')?.addEventListener('click', savePlanningConfig);
+        // Planning EMS: live preview on input change
+        document.querySelectorAll('#emsCoverageStart,#emsCoverageEnd,#emsEveningThreshold,#emsNightThreshold,#emsFulldayMinHours,#emsExcludeShifts').forEach(el => {
+            el.addEventListener('change', updateShiftPreview);
+        });
         checkOllamaStatus();
         checkTranscriptionEngines();
 
@@ -1944,6 +2054,19 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
             if (deepgramKeyEl) deepgramKeyEl.value = config.deepgram_api_key || '';
 
             updateApiKeyBadges(config);
+
+            // Planning EMS config
+            const el = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
+            el('emsCoverageStart', config.planning_coverage_start || '07:00');
+            el('emsCoverageEnd', config.planning_coverage_end || '20:30');
+            el('emsEveningThreshold', config.planning_evening_threshold || '12');
+            el('emsNightThreshold', config.planning_night_threshold || '20');
+            el('emsFulldayMinHours', config.planning_fullday_min_hours || '10');
+            el('emsAsPerEtage', config.planning_as_per_etage || '2');
+            el('emsExcludeShifts', config.planning_exclude_shifts || 'PIQUET');
+            const pairingEl = document.getElementById('emsShiftPairing');
+            if (pairingEl) pairingEl.checked = (config.planning_shift_pairing ?? '1') === '1';
+            updateShiftPreview();
         }
     }
 
@@ -2372,6 +2495,81 @@ foreach ($iaConfigRows as $r) { $iaConfig[$r['config_key']] = $r['config_value']
 
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enregistrer';
+    }
+
+    // ── Planning EMS config ──
+    async function savePlanningConfig() {
+        const btn = document.getElementById('emsPlanningConfigSave');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const values = {
+            planning_coverage_start: document.getElementById('emsCoverageStart').value,
+            planning_coverage_end: document.getElementById('emsCoverageEnd').value,
+            planning_evening_threshold: document.getElementById('emsEveningThreshold').value,
+            planning_night_threshold: document.getElementById('emsNightThreshold').value,
+            planning_fullday_min_hours: document.getElementById('emsFulldayMinHours').value,
+            planning_as_per_etage: document.getElementById('emsAsPerEtage').value,
+            planning_shift_pairing: document.getElementById('emsShiftPairing').checked ? '1' : '0',
+            planning_exclude_shifts: document.getElementById('emsExcludeShifts').value.trim(),
+        };
+
+        const res = await adminApiPost('admin_save_config', { values });
+        if (res.success) showToast('Config planning enregistree', 'success');
+        else showToast(res.message || 'Erreur', 'error');
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enregistrer la config planning';
+    }
+
+    function updateShiftPreview() {
+        const container = document.getElementById('emsShiftPreview');
+        if (!container) return;
+
+        const covStart = document.getElementById('emsCoverageStart')?.value || '07:00';
+        const covEnd = document.getElementById('emsCoverageEnd')?.value || '20:30';
+        const eveningTh = parseInt(document.getElementById('emsEveningThreshold')?.value || '12');
+        const nightTh = parseInt(document.getElementById('emsNightThreshold')?.value || '20');
+        const fullDayMin = parseFloat(document.getElementById('emsFulldayMinHours')?.value || '10');
+        const excludeRaw = document.getElementById('emsExcludeShifts')?.value || '';
+        const excludes = excludeRaw.split(',').map(s => s.trim()).filter(Boolean);
+        const covStartH = parseInt(covStart.split(':')[0]);
+
+        // Use horaires from SSR config (loaded as global)
+        const horaires = ssrIaConfig._horaires || [];
+        if (!horaires.length) {
+            container.innerHTML = '<span class="text-muted small">Aucun horaire trouve. Verifiez la table horaires_types.</span>';
+            return;
+        }
+
+        const cats = { matin: [], soir: [], nuit: [], journee: [], admin: [], exclu: [] };
+        const adminCode = ssrIaConfig.ia_admin_shift_code || 'A6';
+
+        for (const h of horaires) {
+            if (excludes.includes(h.code)) { cats.exclu.push(h); continue; }
+            if (h.code === adminCode) { cats.admin.push(h); continue; }
+            const deb = parseInt(h.heure_debut.split(':')[0]);
+            const eff = parseFloat(h.duree_effective);
+            if (deb >= nightTh) { cats.nuit.push(h); continue; }
+            if (deb <= covStartH + 1 && eff >= fullDayMin) { cats.journee.push(h); continue; }
+            if (deb >= eveningTh) { cats.soir.push(h); continue; }
+            cats.matin.push(h);
+        }
+
+        const colors = { matin: '#e3f2fd', soir: '#fff3e0', nuit: '#ede7f6', journee: '#e8f5e9', admin: '#f3f2ee', exclu: '#fafafa' };
+        const icons = { matin: 'sunrise', soir: 'sunset', nuit: 'moon-stars', journee: 'sun', admin: 'briefcase', exclu: 'x-circle' };
+        const labels = { matin: 'Matin', soir: 'Soir', nuit: 'Nuit', journee: 'Journee', admin: 'Admin', exclu: 'Exclus' };
+
+        let html = '';
+        for (const [cat, shifts] of Object.entries(cats)) {
+            if (!shifts.length) continue;
+            html += `<div class="mb-2"><span class="badge" style="background:${colors[cat]};color:#333;font-size:.72rem;"><i class="bi bi-${icons[cat]} me-1"></i>${labels[cat]}</span> `;
+            for (const s of shifts) {
+                html += `<span class="badge bg-light text-dark border" style="font-size:.7rem;font-weight:500;">${s.code} <small class="text-muted">${s.heure_debut}-${s.heure_fin}</small></span> `;
+            }
+            html += '</div>';
+        }
+        container.innerHTML = html || '<span class="text-muted small">Aucun horaire</span>';
     }
 
     window.initConfigiaPage = initConfigiaPage;

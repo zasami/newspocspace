@@ -485,38 +485,76 @@ function admin_generate_planning()
         $horaireById[$h['id']] = $h;
     }
 
-    // ── Classify horaires into coverage categories ──
-    $fullDayShifts = [];   // 7h-20h30 type (D3, D4)
-    $morningShifts = [];   // 7h-15/16h (A1, A2, A3, D1)
-    $eveningShifts = [];   // 12/13/14h-20h30 (S3, S4)
-    $nightShifts = [];     // 20h15-7h15
+    // ── EMS planning config (universal) ──
+    $coverageStart   = $cfg['planning_coverage_start'] ?? '07:00';   // début couverture
+    $coverageEnd     = $cfg['planning_coverage_end']   ?? '20:30';   // fin couverture
+    $asPerEtage      = (int) ($cfg['planning_as_per_etage'] ?? 2);   // nb AS par étage
+    $shiftPairing    = ($cfg['planning_shift_pairing'] ?? '1') === '1'; // paires matin/soir
+    $nightThreshold  = (int) ($cfg['planning_night_threshold'] ?? 20);  // heure début nuit
+    $eveningThreshold = (int) ($cfg['planning_evening_threshold'] ?? 12); // heure début soir
+    $fullDayMinHours = (float) ($cfg['planning_fullday_min_hours'] ?? 10); // durée min journée complète
+    $excludeShiftCodes = array_filter(array_map('trim', explode(',', $cfg['planning_exclude_shifts'] ?? 'PIQUET'))); // codes à exclure
+
+    $covStartH = (int) substr($coverageStart, 0, 2);
+    $covStartM = (int) substr($coverageStart, 3, 2);
+    $covEndH   = (int) substr($coverageEnd, 0, 2);
+    $covEndM   = (int) substr($coverageEnd, 3, 2);
+    $covStartMin = $covStartH * 60 + $covStartM;
+    $covEndMin   = $covEndH * 60 + $covEndM;
+
+    // ── Auto-classify horaires based on actual times (no hardcoded shift codes) ──
+    $fullDayShifts = [];   // covers most of coverage range (≥ fullDayMinHours)
+    $morningShifts = [];   // starts early, ends before evening
+    $eveningShifts = [];   // starts afternoon/evening
+    $nightShifts = [];     // starts after nightThreshold
     $adminShift = null;
 
     foreach ($horaires as $h) {
-        if ($h['code'] === 'PIQUET') continue;
+        if (in_array($h['code'], $excludeShiftCodes)) continue;
         if ($h['code'] === $iaAdminShiftCode) { $adminShift = $h; continue; }
 
         $deb = (int) substr($h['heure_debut'], 0, 2);
         $eff = (float) $h['duree_effective'];
 
-        if ($deb >= 20) { $nightShifts[] = $h; continue; }
-        if ($deb <= 8 && $eff >= 10) { $fullDayShifts[] = $h; continue; }
-        if ($deb >= 12) { $eveningShifts[] = $h; continue; }
+        if ($deb >= $nightThreshold) { $nightShifts[] = $h; continue; }
+        if ($deb <= ($covStartH + 1) && $eff >= $fullDayMinHours) { $fullDayShifts[] = $h; continue; }
+        if ($deb >= $eveningThreshold) { $eveningShifts[] = $h; continue; }
         $morningShifts[] = $h;
     }
     if (!$adminShift && !empty($morningShifts)) $adminShift = $morningShifts[0];
 
-    // ── AS-specific shifts: only D1, D3, D4, S3, S4 (max 12h) ──
-    $asMorningShifts = []; // D1 (7h-15h30), D4 (7h-19h) — start morning, end before 20h30
-    $asFullDayShifts = []; // D3 (7h-20h30, 12h) — covers entire range alone
-    $asEveningShifts = []; // S3 (13h-20h30), S4 (14h-20h30) — afternoon/evening
+    // ── AS-specific shifts: auto-classified from coverage range (no hardcoded codes) ──
+    $asMorningShifts = []; // starts early, ends before coverage end
+    $asFullDayShifts = []; // covers entire coverage range alone
+    $asEveningShifts = []; // starts afternoon, ends at coverage end
     foreach ($horaires as $h) {
-        if (in_array($h['code'], ['D1', 'D4'])) $asMorningShifts[] = $h;
-        if ($h['code'] === 'D3') $asFullDayShifts[] = $h;
-        if (in_array($h['code'], ['S3', 'S4'])) $asEveningShifts[] = $h;
+        if (in_array($h['code'], $excludeShiftCodes)) continue;
+        if ($h['code'] === $iaAdminShiftCode) continue;
+        $deb = (int) substr($h['heure_debut'], 0, 2);
+        $debM = (int) substr($h['heure_debut'], 3, 2);
+        $fin = (int) substr($h['heure_fin'], 0, 2);
+        $finM = (int) substr($h['heure_fin'], 3, 2);
+        $debMin = $deb * 60 + $debM;
+        $finMin = $fin * 60 + $finM;
+        $eff = (float) $h['duree_effective'];
+
+        if ($deb >= $nightThreshold) continue; // night shifts excluded from AS day coverage
+
+        // Full-day: starts near coverage start, ends near coverage end, long duration
+        if ($debMin <= $covStartMin + 60 && $finMin >= $covEndMin - 30 && $eff >= $fullDayMinHours) {
+            $asFullDayShifts[] = $h;
+        }
+        // Morning: starts early, ends before mid-afternoon
+        elseif ($debMin <= $covStartMin + 60 && $finMin < $covEndMin - 60) {
+            $asMorningShifts[] = $h;
+        }
+        // Evening: starts afternoon, ends near coverage end
+        elseif ($debMin >= $covStartMin + 300 && $finMin >= $covEndMin - 60) {
+            $asEveningShifts[] = $h;
+        }
     }
 
-    // ── Load étages per module (for AS: 2 AS per étage) ──
+    // ── Load étages per module ──
     $etagesPerModule = [];
     $etagesRows = Db::fetchAll("SELECT module_id, COUNT(*) as nb FROM etages GROUP BY module_id");
     foreach ($etagesRows as $e) $etagesPerModule[$e['module_id']] = (int) $e['nb'];
@@ -581,7 +619,7 @@ function admin_generate_planning()
         for ($dow = 1; $dow <= 7; $dow++) {
             // Use DB besoins if they exist, otherwise apply defaults
             if (!$hasBesoins || empty($besoinsIdx[$mod['id']][$dow])) {
-                if ($fonctionAS)   $besoinsIdx[$mod['id']][$dow][$fonctionAS]   = max($besoinsIdx[$mod['id']][$dow][$fonctionAS] ?? 0, 2 * $nbEtages);
+                if ($fonctionAS)   $besoinsIdx[$mod['id']][$dow][$fonctionAS]   = max($besoinsIdx[$mod['id']][$dow][$fonctionAS] ?? 0, $asPerEtage * $nbEtages);
                 if ($fonctionINF)  $besoinsIdx[$mod['id']][$dow][$fonctionINF]  = max($besoinsIdx[$mod['id']][$dow][$fonctionINF] ?? 0, 1);
                 if ($fonctionASSC) $besoinsIdx[$mod['id']][$dow][$fonctionASSC] = max($besoinsIdx[$mod['id']][$dow][$fonctionASSC] ?? 0, 1);
             }
@@ -1408,12 +1446,22 @@ function admin_generate_planning()
             "SELECT titre, description, importance FROM ia_human_rules WHERE actif = 1 ORDER BY CASE WHEN importance = 'important' THEN 1 WHEN importance = 'moyen' THEN 2 ELSE 3 END, created_at DESC"
         );
 
+        // Build shift catalog for prompt
+        $shiftCatalog = [];
+        foreach ($horaires as $h) {
+            if (in_array($h['code'], $excludeShiftCodes)) continue;
+            $shiftCatalog[] = "{$h['code']}({$h['heure_debut']}-{$h['heure_fin']}, {$h['duree_effective']}h)";
+        }
+
         $prompt = "Tu es un expert en planification EMS (maison de retraite). Analyse ce planning et propose des optimisations.\n\n";
+        $prompt .= "## Configuration EMS\n";
+        $prompt .= "- Couverture journalière: {$coverageStart} à {$coverageEnd}\n";
+        $prompt .= "- AS par étage: {$asPerEtage}\n";
+        $prompt .= "- Paires matin/soir: " . ($shiftPairing ? 'oui' : 'non') . "\n";
+        $prompt .= "- Horaires disponibles: " . implode(', ', $shiftCatalog) . "\n\n";
+
         $prompt .= "## Règles métier\n";
-        $prompt .= "- AS: 2 par étage, 7j/7, max 3 jours consécutifs, horaires D1(7h-15h30)/D3(7h-20h30,12h)/D4(7h-19h)/S3(13h-20h30)/S4(14h-20h30)\n";
-        $prompt .= "- INF: 1 par module, 7j/7\n";
-        $prompt .= "- ASSC: 1 par module, 7j/7\n";
-        $prompt .= "- Couverture: chaque étage doit être couvert 7h-20h30 (paire matin+soir ou D3)\n";
+        $prompt .= "- AS: {$asPerEtage} par étage, 7j/7, couverture {$coverageStart}-{$coverageEnd}" . ($shiftPairing ? " (paire matin+soir ou journée complète)" : "") . "\n";
         $prompt .= "- Heures hebdo: respect du taux contractuel\n";
         $prompt .= "- Jours consécutifs max: AS={$iaConsecutifMaxAS}, nuit={$iaConsecutifMaxNuit}, autres={$iaConsecutifMax}\n";
         if ($iaDirWeekendOff) {

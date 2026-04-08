@@ -78,6 +78,11 @@ function admin_save_config()
         'pv_structure_options',
         // Planning display config
         'planning_tabs_config',
+        // Planning algorithm config (universal EMS)
+        'planning_coverage_start', 'planning_coverage_end',
+        'planning_as_per_etage', 'planning_shift_pairing',
+        'planning_night_threshold', 'planning_evening_threshold',
+        'planning_fullday_min_hours', 'planning_exclude_shifts',
         // Feature toggles
         'feature_desirs', 'feature_multi_modules', 'feature_civilistes',
         'feature_absences', 'feature_changements', 'feature_sondages',
