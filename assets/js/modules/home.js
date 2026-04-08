@@ -109,19 +109,12 @@ async function loadWeek() {
     const prevBtn = document.getElementById('homePrevWeek');
     const nextBtn = document.getElementById('homeNextWeek');
 
-    if (isCurrentWeek) {
-        const dayIdx = (currentDate.getDay() + 6) % 7;
-        if (label) label.textContent = `${DAYS_FR[dayIdx]} · ${formatDateShort(fmtISO(currentDate))}`;
-        if (prevBtn) prevBtn.title = 'Jour précédent';
-        if (nextBtn) nextBtn.title = 'Jour suivant';
-    } else {
-        if (label) label.textContent = `S${weekNum(currentMonday)} · ${formatDateShort(fmtISO(currentMonday))} — ${formatDateShort(fmtISO(sunday))}`;
-        if (prevBtn) prevBtn.title = 'Semaine précédente';
-        if (nextBtn) nextBtn.title = 'Semaine suivante';
-    }
+    if (label) label.textContent = `S${weekNum(currentMonday)} · ${formatDateShort(fmtISO(currentMonday))} — ${formatDateShort(fmtISO(sunday))}`;
+    if (prevBtn) prevBtn.title = 'Semaine précédente';
+    if (nextBtn) nextBtn.title = 'Semaine suivante';
 
     const results = await Promise.all(months.map(m => apiPost('get_mon_planning', { mois: m })));
-    renderWeekPlanning(results.flatMap(r => r.assignations || []), weekDates, isCurrentWeek);
+    renderWeekPlanning(results.flatMap(r => r.assignations || []), weekDates);
 }
 
 async function loadNextShift() {
@@ -138,46 +131,32 @@ async function loadNextShift() {
 }
 
 function moveNav(dir) {
-    const todayMonday = getMonday(new Date());
-    const isCurrentWeek = currentMonday.getTime() === todayMonday.getTime();
-
     currentDate = new Date(currentDate);
-    if (isCurrentWeek) {
-        currentDate.setDate(currentDate.getDate() + dir);
-    } else {
-        currentDate.setDate(currentDate.getDate() + dir * 7);
-    }
-    const prevMonday = currentMonday.getTime();
+    currentDate.setDate(currentDate.getDate() + dir * 7);
     currentMonday = getMonday(currentDate);
     loadWeek();
 
-    // Sync menu widget when week changes
-    if (currentMonday.getTime() !== prevMonday) {
-        menuMonday = new Date(currentMonday);
-        loadMenus();
-    }
+    // Always sync menu widget to same week
+    menuMonday = new Date(currentMonday);
+    loadMenus();
 }
 
-function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
+function renderWeekPlanning(assignations, weekDates) {
     const container = document.getElementById('homeWeekPlanning');
     const today = fmtISO(new Date());
-    const selectedDay = isCurrentWeek ? fmtISO(currentDate) : null;
     let html = '<div style="display:flex;flex-direction:column;gap:0">';
     for (const dateStr of weekDates) {
         const a = assignations.find(x => x.date_jour === dateStr);
         const isToday = dateStr === today;
-        const isSelected = selectedDay === dateStr;
-        const isDimmed = isCurrentWeek && !isSelected;
         const isWeekend = (() => { const d = new Date(dateStr + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6; })();
-        const todayStyle = isSelected
+        const todayStyle = isToday
             ? 'background:var(--ss-accent-bg, rgba(0,180,160,0.06));border-left:3px solid var(--ss-teal)'
-            : (isToday ? 'background:var(--ss-accent-bg, rgba(0,180,160,0.03));border-left:3px solid #ccc' : '');
-        const dimStyle = isDimmed ? 'opacity:0.38;' : '';
+            : '';
 
         if (a) {
             const color = a.couleur || '#1a1a1a';
             html += `
-              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}${dimStyle}">
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -192,7 +171,7 @@ function renderWeekPlanning(assignations, weekDates, isCurrentWeek = false) {
               </div>`;
         } else {
             html += `
-              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}${dimStyle}">
+              <div class="home-rest-day" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0.5rem;border-bottom:1px solid var(--ss-border-light);${todayStyle}">
                 <div style="min-width:65px">
                   <strong${isWeekend ? ' class="text-muted"' : ''}>${escapeHtml(formatDayName(dateStr))}</strong><br>
                   <small class="text-muted">${escapeHtml(formatDateShort(dateStr))}</small>
@@ -227,12 +206,10 @@ function moveMenuWeek(dir) {
     menuMonday.setDate(menuMonday.getDate() + dir * 7);
     loadMenus();
 
-    // Sync planning widget to same week
-    if (currentMonday.getTime() !== menuMonday.getTime()) {
-        currentMonday = new Date(menuMonday);
-        currentDate = new Date(menuMonday);
-        loadWeek();
-    }
+    // Always sync planning widget to same week
+    currentMonday = new Date(menuMonday);
+    currentDate = new Date(menuMonday);
+    loadWeek();
 }
 
 function renderMenus() {
