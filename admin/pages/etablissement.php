@@ -460,6 +460,34 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
           </div>
         </div>
       </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-toggle-card">
+          <div class="feature-toggle-info">
+            <i class="bi bi-chat-square-heart"></i>
+            <div>
+              <div class="feature-toggle-label">Mur social</div>
+              <small class="text-muted">Fil social interne entre collègues</small>
+            </div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input cfg-toggle-input" type="checkbox" data-key="feature_mur_social" id="ftMurSocial">
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-toggle-card">
+          <div class="feature-toggle-info">
+            <i class="bi bi-megaphone"></i>
+            <div>
+              <div class="feature-toggle-label">Annonces officielles</div>
+              <small class="text-muted">Communication direction → personnel</small>
+            </div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input cfg-toggle-input" type="checkbox" data-key="feature_annonces" id="ftAnnonces">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

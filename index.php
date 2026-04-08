@@ -88,6 +88,31 @@ if ($user && ($user['type_employe'] ?? '') === 'externe') {
     ];
 }
 
+// Filter sidebar items by feature toggles (ems_config)
+$featureToggleMap = [
+    'desirs' => 'feature_desirs', 'absences' => 'feature_absences',
+    'changements' => 'feature_changements', 'covoiturage' => 'feature_covoiturage',
+    'emails' => 'feature_emails', 'mur' => 'feature_mur_social',
+    'votes' => 'feature_votes', 'pv' => 'feature_pv',
+    'sondages' => 'feature_sondages', 'documents' => 'feature_documents',
+    'fiches-salaire' => 'feature_fiches_salaire',
+];
+$disabledFeatures = [];
+$featureRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key LIKE 'feature_%'");
+foreach ($featureRows as $fr) {
+    if ($fr['config_value'] === '0') $disabledFeatures[] = $fr['config_key'];
+}
+foreach ($sidebarNav as $catId => &$cat) {
+    foreach ($cat['items'] as $key => $item) {
+        $fk = $featureToggleMap[$key] ?? null;
+        if ($fk && in_array($fk, $disabledFeatures)) {
+            unset($cat['items'][$key]);
+        }
+    }
+    if (empty($cat['items'])) unset($sidebarNav[$catId]);
+}
+unset($cat);
+
 // Filter sidebar items by user permissions (Permission::PAGE_MAP)
 if ($user && !empty($deniedPerms)) {
     foreach ($sidebarNav as $catId => &$cat) {

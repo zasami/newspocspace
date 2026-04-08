@@ -88,6 +88,7 @@ function admin_save_config()
         'feature_absences', 'feature_changements', 'feature_sondages',
         'feature_pv', 'feature_emails', 'feature_documents',
         'feature_votes', 'feature_covoiturage', 'feature_fiches_salaire',
+        'feature_mur_social', 'feature_annonces',
         // CSS mode
         'css_mode',
         // Pinned section (website)

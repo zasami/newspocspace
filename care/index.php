@@ -29,6 +29,7 @@ $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = [
     'dashboard', 'residents', 'marquage', 'famille', 'menus',
     'reservations', 'protection', 'hygiene', 'wiki', 'wiki-edit',
+    'annonces', 'annonce-edit',
 ];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
@@ -45,6 +46,8 @@ $pageLabels = [
     'hygiene'      => 'Produits Hygiène',
     'wiki'         => 'Base de connaissances',
     'wiki-edit'    => 'Éditeur Wiki',
+    'annonces'     => 'Annonces officielles',
+    'annonce-edit' => 'Éditeur Annonce',
 ];
 
 $topbarPlaceholders = [
@@ -55,6 +58,7 @@ $topbarPlaceholders = [
     'reservations' => 'Rechercher une réservation...',
     'protection'   => 'Rechercher une protection...',
     'wiki'         => 'Rechercher une page wiki...',
+    'annonces'     => 'Rechercher une annonce...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher...';
 
@@ -98,7 +102,26 @@ $sidebarCategories = [
             'wiki' => ['label' => 'Base de connaissances', 'icon' => 'book'],
         ],
     ],
+    'communication' => [
+        'label' => 'Communication',
+        'items' => [
+            'annonces' => ['label' => 'Annonces officielles', 'icon' => 'megaphone', 'feature' => 'feature_annonces'],
+        ],
+    ],
 ];
+
+// Filter care sidebar by feature toggles
+$careFeatureRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key LIKE 'feature_%' AND config_value = '0'");
+$careDisabled = array_column($careFeatureRows, 'config_key');
+foreach ($sidebarCategories as $catId => &$cat) {
+    foreach ($cat['items'] as $key => $item) {
+        if (!empty($item['feature']) && in_array($item['feature'], $careDisabled)) {
+            unset($cat['items'][$key]);
+        }
+    }
+    if (empty($cat['items'])) unset($sidebarCategories[$catId]);
+}
+unset($cat);
 
 // ── SPA mode for AJAX page loads ──────────────────────
 if (!empty($_GET['_spa'])) {

@@ -184,6 +184,10 @@ return [
         'admin_email_ext_get_contacts', 'admin_email_ext_save_contact', 'admin_email_ext_delete_contact',
         'admin_email_ext_import_contacts', 'admin_email_ext_extract_contacts',
     ],
+    'annonces' => [
+        'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
+        'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',
+    ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',
         'admin_get_wiki_pages', 'admin_get_wiki_page', 'admin_create_wiki_page',
