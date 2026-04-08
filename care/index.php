@@ -18,7 +18,7 @@ $csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 $cspNonce = base64_encode(random_bytes(16));
 define('CSP_NONCE', $cspNonce);
 function nonce(): string { return ' nonce="' . CSP_NONCE . '"'; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' blob:; worker-src 'self' blob:; media-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' blob: https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; media-src 'self' blob:;");
 
 // EMS config
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -28,7 +28,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = [
     'dashboard', 'residents', 'marquage', 'famille', 'menus',
-    'reservations', 'protection', 'hygiene',
+    'reservations', 'protection', 'hygiene', 'wiki', 'wiki-edit',
 ];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
@@ -43,6 +43,8 @@ $pageLabels = [
     'reservations' => 'Réservations repas',
     'protection'   => 'Suivi Protection',
     'hygiene'      => 'Produits Hygiène',
+    'wiki'         => 'Base de connaissances',
+    'wiki-edit'    => 'Éditeur Wiki',
 ];
 
 $topbarPlaceholders = [
@@ -52,6 +54,7 @@ $topbarPlaceholders = [
     'menus'        => 'Rechercher un menu...',
     'reservations' => 'Rechercher une réservation...',
     'protection'   => 'Rechercher une protection...',
+    'wiki'         => 'Rechercher une page wiki...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher...';
 
@@ -87,6 +90,12 @@ $sidebarCategories = [
             'hygiene'      => ['label' => 'Produits Hygiène',   'icon' => 'droplet'],
             'menus'        => ['label' => 'Menus',              'icon' => 'egg-fried'],
             'reservations' => ['label' => 'Réservations repas', 'icon' => 'calendar-check'],
+        ],
+    ],
+    'documentation' => [
+        'label' => 'Documentation',
+        'items' => [
+            'wiki' => ['label' => 'Base de connaissances', 'icon' => 'book'],
         ],
     ],
 ];
