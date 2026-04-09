@@ -27,7 +27,7 @@ function admin_get_connexions() {
 
     $rows = Db::fetchAll(
         "SELECT c.id, c.user_id, c.ip_address, c.user_agent, c.created_at,
-                u.nom, u.prenom, u.email, u.role, f.nom AS fonction_nom
+                u.nom, u.prenom, u.email, u.role, u.photo, f.nom AS fonction_nom
          FROM connexions c
          JOIN users u ON u.id = c.user_id
          LEFT JOIN fonctions f ON f.id = u.fonction_id
@@ -51,10 +51,10 @@ function admin_get_connexions() {
 
     // Top users
     $topUsers = Db::fetchAll(
-        "SELECT c.user_id, u.nom, u.prenom, COUNT(*) AS nb
+        "SELECT c.user_id, u.nom, u.prenom, u.photo, COUNT(*) AS nb
          FROM connexions c JOIN users u ON u.id = c.user_id
          WHERE $statsWhere
-         GROUP BY c.user_id, u.nom, u.prenom ORDER BY nb DESC LIMIT 10",
+         GROUP BY c.user_id, u.nom, u.prenom, u.photo ORDER BY nb DESC LIMIT 10",
         $statsBinds
     );
 

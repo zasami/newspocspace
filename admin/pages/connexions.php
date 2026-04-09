@@ -43,6 +43,25 @@
 .cnx-top-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
 .cnx-top-item:last-child { border: none; }
 .cnx-top-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--cl-bg); display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; color: var(--cl-text-muted); }
+
+.cnx-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+  border: 1.5px solid var(--cl-border-light, #F0EDE8); flex-shrink: 0;
+}
+.cnx-avatar-initials {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65rem; font-weight: 700; color: #fff;
+  background: #bcd2cb;
+}
+.cnx-user-cell { display: flex; align-items: center; gap: 10px; }
+.cnx-avatar-sm { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
+.cnx-avatar-sm-initials {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .58rem; font-weight: 700; color: #fff;
+  background: #bcd2cb;
+}
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -114,6 +133,13 @@
 
     const roleLabels = { admin: 'Admin', direction: 'Direction', responsable: 'Responsable', collaborateur: 'Collaborateur' };
 
+    function avatar(photo, prenom, nom, cls) {
+        const sz = cls || '';
+        if (photo) return '<img src="' + escapeHtml(photo) + '" class="cnx-avatar' + sz + '" alt="">';
+        const ini = ((prenom?.[0] || '') + (nom?.[0] || '')).toUpperCase();
+        return '<div class="cnx-avatar-initials' + sz + '">' + ini + '</div>';
+    }
+
     function parseUA(ua) {
         if (!ua) return '—';
         if (ua.includes('iPhone') || ua.includes('iPad')) return '<i class="bi bi-phone"></i> iOS';
@@ -156,6 +182,7 @@
         document.getElementById('cnxTopUsers').innerHTML = top.length
             ? top.map((u, i) =>
                 '<div class="cnx-top-item"><div class="cnx-top-rank">' + (i + 1) + '</div>'
+                + avatar(u.photo, u.prenom, u.nom, '-sm')
                 + '<div style="flex:1"><strong class="small">' + escapeHtml(u.prenom + ' ' + u.nom) + '</strong></div>'
                 + '<span class="small text-muted">' + u.nb + ' connexion' + (u.nb > 1 ? 's' : '') + '</span></div>'
             ).join('')
@@ -172,7 +199,7 @@
             const dt = new Date(c.created_at);
             const time = dt.toLocaleDateString('fr-CH', {day:'numeric',month:'short'}) + ' ' + dt.toLocaleTimeString('fr-CH', {hour:'2-digit',minute:'2-digit'});
             return '<tr>'
-                + '<td><strong>' + escapeHtml(c.prenom + ' ' + c.nom) + '</strong><br><span class="text-muted" style="font-size:.72rem">' + escapeHtml(c.email) + '</span></td>'
+                + '<td><div class="cnx-user-cell">' + avatar(c.photo, c.prenom, c.nom, '') + '<div><strong>' + escapeHtml(c.prenom + ' ' + c.nom) + '</strong><br><span class="text-muted" style="font-size:.72rem">' + escapeHtml(c.email) + '</span></div></div></td>'
                 + '<td><span class="cnx-role-badge cnx-role-' + c.role + '">' + (roleLabels[c.role] || c.role) + '</span></td>'
                 + '<td class="small">' + escapeHtml(c.fonction_nom || '—') + '</td>'
                 + '<td><span class="cnx-ip">' + escapeHtml(c.ip_address) + '</span></td>'
