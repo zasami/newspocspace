@@ -216,7 +216,8 @@ $isNew = !$annonceData;
         initImageModal();
 
         // TipTap
-        const { createEditor, getHTML, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
+        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/spocspace/assets/js/rich-editor.js');
+        window.__editorConfirm = editorConfirm;
         getHTMLFn = getHTML;
         editor = await createEditor($('annEditorWrap'), { placeholder: 'Rédigez votre annonce...', content: initialContent, mode: 'full' });
         if (!editor) { $('annEditorWrap').innerHTML = '<div class="text-danger p-3">Erreur éditeur</div>'; return; }
@@ -421,8 +422,11 @@ $isNew = !$annonceData;
         } else showToast(res.message || 'Erreur', 'danger');
     }
 
-    function goBack() {
-        if (dirty && !confirm('Modifications non sauvegardées. Quitter quand même ?')) return;
+    async function goBack() {
+        if (dirty && window.__editorConfirm) {
+            const ok = await window.__editorConfirm({ title: 'Quitter sans sauvegarder ?', text: 'Vos modifications seront perdues.', okText: 'Quitter', type: 'warn' });
+            if (!ok) return;
+        }
         dirty = false;
         if (window.__annEditorCleanup) window.__annEditorCleanup();
         AdminURL.go('annonces');

@@ -296,8 +296,9 @@ $isNew = !$pageData;
         });
 
         // Dynamic import of rich-editor module
-        const { createEditor, getHTML, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
+        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/spocspace/assets/js/rich-editor.js');
         getHTMLFn = getHTML;
+        window.__editorConfirm = editorConfirm;
 
         const wrap = document.getElementById('wikiEditorWrap');
         editor = await createEditor(wrap, {
@@ -634,9 +635,12 @@ $isNew = !$pageData;
         }
     }
 
-    function goBack() {
+    async function goBack() {
         if (dirty) {
-            if (!confirm('Modifications non sauvegardées. Quitter quand même ?')) return;
+            if (window.__editorConfirm) {
+                const ok = await window.__editorConfirm({ title: 'Quitter sans sauvegarder ?', text: 'Vos modifications seront perdues.', okText: 'Quitter', type: 'warn' });
+                if (!ok) return;
+            }
         }
         dirty = false;
         if (window.__wikiEditorCleanup) window.__wikiEditorCleanup();

@@ -91,6 +91,7 @@ function buildToolbar(mode = 'full') {
         ${btn('alignLeft', 'text-left', 'Align left')}
         ${btn('alignCenter', 'text-center', 'Align center')}
         ${btn('alignRight', 'text-right', 'Align right')}
+        ${btn('alignJustify', 'justify', 'Justify')}
         ${sep}
         ${btn('link', 'link-45deg', 'Link')}
         ${btn('image', 'image', 'Image')}
@@ -125,17 +126,11 @@ function attachToolbar(toolbar, editor) {
                 case 'alignLeft': editor.chain().focus().setTextAlign('left').run(); break;
                 case 'alignCenter': editor.chain().focus().setTextAlign('center').run(); break;
                 case 'alignRight': editor.chain().focus().setTextAlign('right').run(); break;
+                case 'alignJustify': editor.chain().focus().setTextAlign('justify').run(); break;
                 case 'undo': editor.chain().focus().undo().run(); break;
                 case 'redo': editor.chain().focus().redo().run(); break;
                 case 'link': {
-                    const prev = editor.getAttributes('link').href || '';
-                    const url = prompt('URL:', prev);
-                    if (url === null) break;
-                    if (url === '') {
-                        editor.chain().focus().unsetLink().run();
-                    } else {
-                        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-                    }
+                    showLinkModal(editor);
                     break;
                 }
                 case 'image': {
@@ -200,10 +195,219 @@ function updateActive(toolbar, editor) {
             case 'alignLeft': active = editor.isActive({ textAlign: 'left' }); break;
             case 'alignCenter': active = editor.isActive({ textAlign: 'center' }); break;
             case 'alignRight': active = editor.isActive({ textAlign: 'right' }); break;
+            case 'alignJustify': active = editor.isActive({ textAlign: 'justify' }); break;
             case 'link': active = editor.isActive('link'); break;
         }
 
         btn.classList.toggle('active', active);
+    });
+}
+
+/**
+ * Link modal — replaces browser prompt()
+ */
+let linkModalEl = null;
+
+function ensureLinkModal() {
+    if (linkModalEl) return linkModalEl;
+
+    linkModalEl = document.createElement('div');
+    linkModalEl.id = 'zsEdLinkModal';
+    linkModalEl.innerHTML = `
+        <div class="zs-link-overlay"></div>
+        <div class="zs-link-dialog">
+            <div class="zs-link-header">
+                <span class="zs-link-title"><i class="bi bi-link-45deg"></i> Insérer un lien</span>
+                <button type="button" class="zs-link-close"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="zs-link-body">
+                <label class="zs-link-label">URL</label>
+                <input type="url" class="zs-link-input" id="zsLinkUrl" placeholder="https://..." autocomplete="off">
+                <label class="zs-link-label" style="margin-top:10px">Texte (optionnel)</label>
+                <input type="text" class="zs-link-input" id="zsLinkText" placeholder="Texte du lien" autocomplete="off">
+            </div>
+            <div class="zs-link-footer">
+                <button type="button" class="zs-link-btn zs-link-btn-remove" id="zsLinkRemove" style="display:none"><i class="bi bi-trash3"></i> Supprimer</button>
+                <span style="flex:1"></span>
+                <button type="button" class="zs-link-btn zs-link-btn-cancel" id="zsLinkCancel">Annuler</button>
+                <button type="button" class="zs-link-btn zs-link-btn-ok" id="zsLinkOk"><i class="bi bi-check-lg"></i> Appliquer</button>
+            </div>
+        </div>`;
+    document.body.appendChild(linkModalEl);
+
+    // Inject CSS once
+    if (!document.getElementById('zsEdLinkCSS')) {
+        const style = document.createElement('style');
+        style.id = 'zsEdLinkCSS';
+        style.textContent = `
+            #zsEdLinkModal { position:fixed; inset:0; z-index:10000; display:none; align-items:center; justify-content:center; }
+            #zsEdLinkModal.open { display:flex; }
+            .zs-link-overlay { position:absolute; inset:0; background:rgba(0,0,0,.3); }
+            .zs-link-dialog { position:relative; background:#fff; border-radius:12px; width:420px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.15); animation:zsLinkIn .2s ease; }
+            @keyframes zsLinkIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+            .zs-link-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #f0f0f0; }
+            .zs-link-title { font-weight:600; font-size:.92rem; display:flex; align-items:center; gap:6px; }
+            .zs-link-close { background:none; border:none; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#999; transition:all .15s; font-size:.85rem; }
+            .zs-link-close:hover { background:#f0f0f0; color:#333; }
+            .zs-link-body { padding:16px 18px; }
+            .zs-link-label { font-size:.78rem; font-weight:600; color:#555; display:block; margin-bottom:4px; }
+            .zs-link-input { width:100%; border:1.5px solid #dee2e6; border-radius:8px; padding:8px 12px; font-size:.88rem; outline:none; transition:border-color .15s; }
+            .zs-link-input:focus { border-color:#2d4a43; }
+            .zs-link-footer { display:flex; align-items:center; gap:8px; padding:12px 18px; border-top:1px solid #f0f0f0; }
+            .zs-link-btn { border:none; border-radius:8px; padding:7px 16px; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s; }
+            .zs-link-btn-ok { background:#2d4a43; color:#fff; }
+            .zs-link-btn-ok:hover { background:#1a3a33; }
+            .zs-link-btn-cancel { background:#f0f0f0; color:#555; }
+            .zs-link-btn-cancel:hover { background:#e5e5e5; }
+            .zs-link-btn-remove { background:none; color:#dc3545; padding:7px 12px; }
+            .zs-link-btn-remove:hover { background:#fef2f2; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    return linkModalEl;
+}
+
+function showLinkModal(editor) {
+    const modal = ensureLinkModal();
+    const urlInput = modal.querySelector('#zsLinkUrl');
+    const textInput = modal.querySelector('#zsLinkText');
+    const removeBtn = modal.querySelector('#zsLinkRemove');
+    const okBtn = modal.querySelector('#zsLinkOk');
+    const cancelBtn = modal.querySelector('#zsLinkCancel');
+    const closeBtn = modal.querySelector('.zs-link-close');
+    const overlay = modal.querySelector('.zs-link-overlay');
+
+    // Pre-fill with existing link
+    const prev = editor.getAttributes('link').href || '';
+    urlInput.value = prev;
+    textInput.value = '';
+    removeBtn.style.display = prev ? '' : 'none';
+
+    modal.classList.add('open');
+    setTimeout(() => urlInput.focus(), 50);
+
+    function close() {
+        modal.classList.remove('open');
+        cleanup();
+    }
+
+    function apply() {
+        const url = urlInput.value.trim();
+        if (!url) {
+            editor.chain().focus().unsetLink().run();
+        } else {
+            const text = textInput.value.trim();
+            if (text && !editor.state.selection.empty) {
+                editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            } else if (text) {
+                editor.chain().focus().insertContent(`<a href="${url}" target="_blank">${text}</a>`).run();
+            } else {
+                editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            }
+        }
+        close();
+    }
+
+    function remove() {
+        editor.chain().focus().unsetLink().run();
+        close();
+    }
+
+    function onKey(e) {
+        if (e.key === 'Escape') close();
+        if (e.key === 'Enter') { e.preventDefault(); apply(); }
+    }
+
+    function cleanup() {
+        okBtn.removeEventListener('click', apply);
+        cancelBtn.removeEventListener('click', close);
+        closeBtn.removeEventListener('click', close);
+        overlay.removeEventListener('click', close);
+        removeBtn.removeEventListener('click', remove);
+        document.removeEventListener('keydown', onKey);
+    }
+
+    okBtn.addEventListener('click', apply);
+    cancelBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+    removeBtn.addEventListener('click', remove);
+    document.addEventListener('keydown', onKey);
+}
+
+/**
+ * Confirm modal — replaces browser confirm()
+ */
+let confirmModalEl = null;
+
+function ensureConfirmModal() {
+    if (confirmModalEl) return confirmModalEl;
+
+    confirmModalEl = document.createElement('div');
+    confirmModalEl.id = 'zsEdConfirmModal';
+    confirmModalEl.innerHTML = `
+        <div class="zs-confirm-overlay"></div>
+        <div class="zs-confirm-dialog">
+            <div class="zs-confirm-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <h6 class="zs-confirm-title"></h6>
+            <p class="zs-confirm-text"></p>
+            <div class="zs-confirm-footer">
+                <button type="button" class="zs-link-btn zs-link-btn-cancel" id="zsConfirmCancel">Annuler</button>
+                <button type="button" class="zs-link-btn" id="zsConfirmOk">Confirmer</button>
+            </div>
+        </div>`;
+    document.body.appendChild(confirmModalEl);
+
+    if (!document.getElementById('zsEdConfirmCSS')) {
+        const style = document.createElement('style');
+        style.id = 'zsEdConfirmCSS';
+        style.textContent = `
+            #zsEdConfirmModal { position:fixed; inset:0; z-index:10001; display:none; align-items:center; justify-content:center; }
+            #zsEdConfirmModal.open { display:flex; }
+            .zs-confirm-overlay { position:absolute; inset:0; background:rgba(0,0,0,.3); }
+            .zs-confirm-dialog { position:relative; background:#fff; border-radius:14px; width:380px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.15); text-align:center; padding:28px 24px 20px; animation:zsLinkIn .2s ease; }
+            .zs-confirm-icon { width:52px; height:52px; border-radius:50%; background:#FFF3E0; color:#E65100; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 14px; }
+            .zs-confirm-title { font-weight:700; font-size:.95rem; margin-bottom:6px; }
+            .zs-confirm-text { font-size:.85rem; color:#6c757d; margin-bottom:18px; }
+            .zs-confirm-footer { display:flex; justify-content:center; gap:8px; }
+            .zs-confirm-danger { background:#dc3545; color:#fff; }
+            .zs-confirm-danger:hover { background:#c82333; }
+            .zs-confirm-warn { background:#E65100; color:#fff; }
+            .zs-confirm-warn:hover { background:#BF360C; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    return confirmModalEl;
+}
+
+export function editorConfirm({ title = 'Confirmer', text = '', okText = 'Confirmer', type = 'warn' } = {}) {
+    return new Promise(resolve => {
+        const modal = ensureConfirmModal();
+        modal.querySelector('.zs-confirm-title').textContent = title;
+        modal.querySelector('.zs-confirm-text').textContent = text;
+        const okBtn = modal.querySelector('#zsConfirmOk');
+        okBtn.textContent = okText;
+        okBtn.className = `zs-link-btn zs-confirm-${type}`;
+        modal.classList.add('open');
+
+        function close(val) {
+            modal.classList.remove('open');
+            okBtn.removeEventListener('click', onOk);
+            modal.querySelector('#zsConfirmCancel').removeEventListener('click', onCancel);
+            modal.querySelector('.zs-confirm-overlay').removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKey);
+            resolve(val);
+        }
+        function onOk() { close(true); }
+        function onCancel() { close(false); }
+        function onKey(e) { if (e.key === 'Escape') close(false); }
+
+        okBtn.addEventListener('click', onOk);
+        modal.querySelector('#zsConfirmCancel').addEventListener('click', onCancel);
+        modal.querySelector('.zs-confirm-overlay').addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKey);
     });
 }
 
