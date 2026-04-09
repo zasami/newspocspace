@@ -1,6 +1,6 @@
 <?php
 /**
- * SpocCare — Annonce Editor (TipTap)
+ * SpocCare — Annonce Editor (TipTap) + Image Picker (Local + Pixabay)
  */
 $user = $_SESSION['ss_user'];
 if (!in_array($user['role'], ['admin', 'direction', 'responsable'])) {
@@ -14,16 +14,6 @@ if ($annonceId) {
     $annonceData = Db::fetch("SELECT * FROM annonces WHERE id = ?", [$annonceId]);
 }
 $isNew = !$annonceData;
-
-$catLabels = [
-    'direction' => 'Direction',
-    'rh' => 'RH',
-    'vie_sociale' => 'Vie sociale',
-    'cuisine' => 'Cuisine',
-    'protocoles' => 'Protocoles',
-    'securite' => 'Sécurité',
-    'divers' => 'Divers',
-];
 ?>
 <style>
 .ann-editor-wrap { background:#fff; border:1px solid #e9ecef; border-radius:10px; padding:20px; }
@@ -60,6 +50,28 @@ $catLabels = [
 
 .ann-save-bar { position:sticky; bottom:0; background:#fff; border-top:1px solid #e9ecef; padding:12px 20px; margin:-20px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; border-radius:0 0 10px 10px; z-index:10; }
 .ann-autosave { font-size:.75rem; color:#adb5bd; }
+
+/* ── Image picker modal ────────────────────────────── */
+.cm-tab-btn { border-radius:10px 10px 0 0 !important; font-size:.85rem; font-weight:600; padding:8px 16px; }
+.cm-tab-btn.active { background:var(--cl-surface, #fff) !important; border-color:#e5e7eb #e5e7eb #fff !important; }
+.cm-upload-zone { border:2px dashed #e5e7eb; border-radius:14px; min-height:200px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+.cm-upload-zone:hover { border-color:#bcd2cb; background:rgba(188,210,203,.05); }
+.cm-upload-zone.dragover { border-color:#2d4a43; background:rgba(188,210,203,.12); }
+.cm-upload-placeholder { text-align:center; color:#999; pointer-events:none; }
+.cm-upload-placeholder i { font-size:2.5rem; color:#ccc; display:block; margin-bottom:8px; }
+.cm-upload-placeholder p { font-size:.9rem; font-weight:600; margin:0 0 4px; color:#666; }
+.cm-upload-placeholder span { font-size:.78rem; }
+.cm-upload-preview-wrap { position:absolute; inset:0; }
+.cm-upload-preview-wrap img { width:100%; height:100%; object-fit:cover; }
+.cm-pixabay-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; max-height:360px; overflow-y:auto; }
+.cm-pixabay-item { aspect-ratio:16/10; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; transition:transform .2s, box-shadow .2s; }
+.cm-pixabay-item:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
+.cm-pixabay-item img { width:100%; height:100%; object-fit:cover; }
+.cm-pixabay-item-overlay { position:absolute; bottom:0; left:0; right:0; padding:4px 8px; background:linear-gradient(transparent, rgba(0,0,0,.6)); font-size:.65rem; color:#fff; }
+.cm-pixabay-empty { grid-column:1 / -1; text-align:center; padding:40px; color:#999; }
+.cm-pixabay-empty i { font-size:2rem; display:block; margin-bottom:8px; opacity:.4; }
+.cm-pixabay-empty p { margin:0; font-size:.85rem; }
+@media(max-width:576px) { .cm-pixabay-grid { grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); } }
 </style>
 
 <div class="container-fluid py-3">
@@ -69,24 +81,18 @@ $catLabels = [
   </div>
 
   <div class="ann-editor-wrap">
-    <!-- Title -->
     <div class="ann-editor-title mb-2">
       <input type="text" id="annTitle" placeholder="Titre de l'annonce" value="<?= h($annonceData['titre'] ?? '') ?>" maxlength="255">
     </div>
-
-    <!-- Description -->
     <input type="text" class="ann-desc-input mb-2" id="annDescription" placeholder="Description courte (optionnel)" value="<?= h($annonceData['description'] ?? '') ?>" maxlength="500">
-
-    <!-- Category -->
     <div class="d-flex gap-3 align-items-center mb-2">
       <div class="zs-select" id="annCategory" data-placeholder="— Catégorie —" style="min-width:180px"></div>
     </div>
 
-    <!-- Cover image -->
+    <!-- Cover image zone (click opens modal) -->
     <div class="ann-cover-zone" id="annCoverZone">
       <i class="bi bi-image"></i>
-      <span>Image de couverture (optionnel) — cliquez ou glissez</span>
-      <input type="file" id="annCoverInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+      <span>Image de couverture (optionnel) — cliquez pour choisir</span>
     </div>
 
     <!-- TipTap Editor -->
@@ -96,7 +102,6 @@ $catLabels = [
       </div>
     </div>
 
-    <!-- Save bar -->
     <div class="ann-save-bar">
       <span class="ann-autosave" id="annAutoSave"></span>
       <div class="d-flex gap-2">
@@ -109,8 +114,72 @@ $catLabels = [
   </div>
 </div>
 
+<!-- IMAGE PICKER MODAL (Upload + Pixabay) -->
+<div class="modal fade" id="annImageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+      <div class="modal-header" style="flex-shrink:0">
+        <h5 class="modal-title"><i class="bi bi-image me-2"></i>Image de couverture</h5>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+      </div>
+      <div class="modal-body p-0" style="flex:1;overflow-y:auto">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs px-3 pt-3" style="border-bottom:none;gap:4px">
+          <li class="nav-item"><button class="nav-link active cm-tab-btn" data-cm-tab="upload"><i class="bi bi-cloud-arrow-up me-1"></i>Uploader</button></li>
+          <li class="nav-item"><button class="nav-link cm-tab-btn" data-cm-tab="pixabay"><i class="bi bi-search me-1"></i>Pixabay</button></li>
+        </ul>
+
+        <!-- Upload tab -->
+        <div class="cm-panel p-3" id="cmPanelUpload">
+          <div class="cm-upload-zone" id="cmUploadZone">
+            <div class="cm-upload-placeholder" id="cmUploadPlaceholder">
+              <i class="bi bi-cloud-arrow-up"></i>
+              <p>Glissez une image ou cliquez pour charger</p>
+              <span>JPG, PNG, WebP — max 5 Mo</span>
+            </div>
+            <div class="cm-upload-preview-wrap d-none" id="cmUploadPreviewWrap">
+              <img src="" alt="" id="cmUploadPreviewImg">
+              <button type="button" class="ann-cover-remove" id="cmUploadRemove" style="position:absolute;top:8px;right:8px"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <input type="file" id="cmUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+          </div>
+          <button class="btn btn-primary w-100 mt-2" id="cmUploadBtn" disabled><i class="bi bi-check-lg me-1"></i>Utiliser cette image</button>
+        </div>
+
+        <!-- Pixabay tab -->
+        <div class="cm-panel p-3 d-none" id="cmPanelPixabay">
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="cmPixabayInput" placeholder="Rechercher des photos...">
+            <select class="form-select" id="cmPixabayCat" style="max-width:140px">
+              <option value="">Toutes</option>
+              <option value="backgrounds">Fonds</option>
+              <option value="nature">Nature</option>
+              <option value="business">Business</option>
+              <option value="people">Personnes</option>
+              <option value="places">Lieux</option>
+              <option value="food">Cuisine</option>
+              <option value="buildings">Bâtiments</option>
+              <option value="travel">Voyage</option>
+            </select>
+            <button class="btn btn-primary" id="cmPixabaySearchBtn"><i class="bi bi-search"></i></button>
+          </div>
+          <div class="cm-pixabay-grid" id="cmPixabayGrid">
+            <div class="cm-pixabay-empty"><i class="bi bi-images"></i><p>Recherchez des photos libres de droits</p></div>
+          </div>
+          <div class="text-center mt-2 d-none" id="cmPixabayLoading"><span class="spinner-border spinner-border-sm"></span> Recherche...</div>
+          <button class="btn btn-outline-secondary w-100 mt-2 d-none" id="cmPixabayMore"><i class="bi bi-plus-circle me-1"></i>Voir plus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script<?= nonce() ?>>
 (function(){
+    const $ = id => document.getElementById(id);
+    const $$ = sel => document.querySelectorAll(sel);
+
     const annonceId = <?= json_encode($annonceId ?: null) ?>;
     const initialContent = <?= json_encode($annonceData['contenu'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     const initialCat = <?= json_encode($annonceData['categorie'] ?? 'direction') ?>;
@@ -126,81 +195,182 @@ $catLabels = [
         { value: 'divers', label: 'Divers', dot: '#6c757d', icon: 'bi-info-circle' },
     ];
 
-    let editor = null;
-    let getHTMLFn = null;
-    let dirty = false;
-    let coverUrl = initialImage;
+    let editor = null, getHTMLFn = null, dirty = false, coverUrl = initialImage;
+    let imageModal = null, pendingUploadFile = null, pxPage = 1, pxTotal = 0;
 
     async function initEditor() {
-        // Category select
-        const catEl = document.getElementById('annCategory');
+        // Category
+        const catEl = $('annCategory');
         zerdaSelect.init(catEl, catOptions, { search: false, dots: true, placeholder: '— Catégorie —' });
         zerdaSelect.setValue(catEl, initialCat);
 
-        // Cover image
-        initCover();
+        // Cover
+        if (coverUrl) showCover(coverUrl);
+        $('annCoverZone').addEventListener('click', (e) => {
+            if (e.target.closest('.ann-cover-remove')) return;
+            openImageModal();
+        });
+
+        // Image modal
+        imageModal = new bootstrap.Modal($('annImageModal'));
+        initImageModal();
 
         // TipTap
         const { createEditor, getHTML, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
         getHTMLFn = getHTML;
+        editor = await createEditor($('annEditorWrap'), { placeholder: 'Rédigez votre annonce...', content: initialContent, mode: 'full' });
+        if (!editor) { $('annEditorWrap').innerHTML = '<div class="text-danger p-3">Erreur éditeur</div>'; return; }
 
-        const wrap = document.getElementById('annEditorWrap');
-        editor = await createEditor(wrap, {
-            placeholder: 'Rédigez votre annonce...',
-            content: initialContent,
-            mode: 'full'
-        });
-
-        if (!editor) { wrap.innerHTML = '<div class="text-danger p-3">Erreur éditeur</div>'; return; }
-
-        editor.on('update', () => { dirty = true; document.getElementById('annAutoSave').textContent = 'Modifications non sauvegardées'; });
-
-        document.getElementById('btnSaveAnn').addEventListener('click', save);
-        document.getElementById('btnCancelAnn').addEventListener('click', goBack);
-        document.getElementById('btnBackAnn').addEventListener('click', goBack);
-
+        editor.on('update', () => { dirty = true; $('annAutoSave').textContent = 'Modifications non sauvegardées'; });
+        $('btnSaveAnn').addEventListener('click', save);
+        $('btnCancelAnn').addEventListener('click', goBack);
+        $('btnBackAnn').addEventListener('click', goBack);
         window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
         window.__annEditorCleanup = () => { if (editor) { destroyEditor(editor); editor = null; } };
     }
 
-    function initCover() {
-        const zone = document.getElementById('annCoverZone');
-        const input = document.getElementById('annCoverInput');
+    // ══════════════════════════════════════════════════════
+    //  IMAGE PICKER MODAL
+    // ══════════════════════════════════════════════════════
 
-        if (coverUrl) showCover(coverUrl);
+    function openImageModal() { imageModal.show(); }
 
-        zone.addEventListener('click', (e) => { if (!e.target.closest('.ann-cover-remove')) input.click(); });
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = '#2d4a43'; });
-        zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
-        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.style.borderColor = ''; if (e.dataTransfer.files[0]) uploadCover(e.dataTransfer.files[0]); });
-        input.addEventListener('change', () => { if (input.files[0]) uploadCover(input.files[0]); input.value = ''; });
-    }
-
-    async function uploadCover(file) {
-        if (file.size > 5 * 1024 * 1024) { showToast('Image trop volumineuse (max 5 Mo)', 'danger'); return; }
-
-        const zone = document.getElementById('annCoverZone');
-        zone.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Upload...';
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('action', 'admin_upload_annonce_image');
-
-        try {
-            const r = await fetch('/spocspace/admin/api.php', {
-                method: 'POST',
-                headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken },
-                body: formData
+    function initImageModal() {
+        // Tab switching
+        $$('.cm-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('.cm-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                $$('.cm-panel').forEach(p => p.classList.add('d-none'));
+                $('cmPanel' + btn.dataset.cmTab.charAt(0).toUpperCase() + btn.dataset.cmTab.slice(1))?.classList.remove('d-none');
             });
-            const res = await r.json();
-            if (res.csrf) window.__SS_CARE__.csrfToken = res.csrf;
-            if (res.success) { coverUrl = res.url; showCover(res.url); dirty = true; }
-            else { showToast(res.message || 'Erreur upload', 'danger'); resetCoverZone(); }
-        } catch { showToast('Erreur upload', 'danger'); resetCoverZone(); }
+        });
+
+        // ── Upload tab ────────────────────────────────
+        const uploadZone = $('cmUploadZone');
+        const uploadInput = $('cmUploadInput');
+
+        uploadZone.addEventListener('click', (e) => { if (!e.target.closest('#cmUploadRemove')) uploadInput.click(); });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) previewUpload(e.dataTransfer.files[0]); });
+        uploadInput.addEventListener('change', () => { if (uploadInput.files[0]) previewUpload(uploadInput.files[0]); uploadInput.value = ''; });
+
+        $('cmUploadRemove')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pendingUploadFile = null;
+            $('cmUploadPreviewWrap').classList.add('d-none');
+            $('cmUploadPlaceholder').style.display = '';
+            $('cmUploadBtn').disabled = true;
+        });
+
+        $('cmUploadBtn').addEventListener('click', async () => {
+            if (!pendingUploadFile) return;
+            $('cmUploadBtn').disabled = true;
+            $('cmUploadBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            const formData = new FormData();
+            formData.append('file', pendingUploadFile);
+            formData.append('action', 'admin_upload_annonce_image');
+
+            try {
+                const r = await fetch('/spocspace/admin/api.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken },
+                    body: formData
+                });
+                const res = await r.json();
+                if (res.csrf) window.__SS_CARE__.csrfToken = res.csrf;
+                if (res.success) { setCover(res.url); }
+                else showToast(res.message || 'Erreur', 'danger');
+            } catch { showToast('Erreur upload', 'danger'); }
+
+            $('cmUploadBtn').disabled = false;
+            $('cmUploadBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Utiliser cette image';
+        });
+
+        // ── Pixabay tab ───────────────────────────────
+        $('cmPixabaySearchBtn').addEventListener('click', () => searchPx(false));
+        $('cmPixabayInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); searchPx(false); } });
+        $('cmPixabayMore').addEventListener('click', () => searchPx(true));
     }
+
+    function previewUpload(file) {
+        if (file.size > 5 * 1024 * 1024) { showToast('Max 5 Mo', 'danger'); return; }
+        if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { showToast('Format non supporté', 'danger'); return; }
+        pendingUploadFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+            $('cmUploadPreviewImg').src = reader.result;
+            $('cmUploadPreviewWrap').classList.remove('d-none');
+            $('cmUploadPlaceholder').style.display = 'none';
+            $('cmUploadBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function searchPx(append) {
+        const query = $('cmPixabayInput').value.trim();
+        const cat = $('cmPixabayCat').value;
+        if (!query && !cat) { showToast('Entrez un terme', 'warning'); return; }
+
+        if (!append) { pxPage = 1; $('cmPixabayGrid').innerHTML = ''; }
+        else pxPage++;
+
+        $('cmPixabayLoading').classList.remove('d-none');
+        $('cmPixabayMore').classList.add('d-none');
+
+        const res = await adminApiPost('admin_search_pixabay', { query: query || cat, category: cat, page: pxPage });
+        $('cmPixabayLoading').classList.add('d-none');
+
+        if (!res.success) { showToast(res.message || 'Erreur', 'danger'); return; }
+        pxTotal = res.total || 0;
+
+        if (!res.hits?.length && !append) {
+            $('cmPixabayGrid').innerHTML = '<div class="cm-pixabay-empty"><i class="bi bi-emoji-frown"></i><p>Aucun résultat</p></div>';
+            return;
+        }
+
+        const grid = $('cmPixabayGrid');
+        res.hits.forEach(hit => {
+            const item = document.createElement('div');
+            item.className = 'cm-pixabay-item';
+            item.innerHTML = `<img src="${hit.webformatURL}" alt="${escapeHtml(hit.tags || '')}" loading="lazy"><div class="cm-pixabay-item-overlay">${escapeHtml(hit.user)}</div>`;
+            item.addEventListener('click', () => selectPxImage(hit.largeImageURL));
+            grid.appendChild(item);
+        });
+
+        if (grid.querySelectorAll('.cm-pixabay-item').length < pxTotal) {
+            $('cmPixabayMore').classList.remove('d-none');
+        }
+    }
+
+    async function selectPxImage(url) {
+        $('cmPixabayLoading').classList.remove('d-none');
+        const res = await adminApiPost('admin_save_pixabay_annonce', { image_url: url });
+        $('cmPixabayLoading').classList.add('d-none');
+        if (res.success) { setCover(res.url); }
+        else showToast(res.message || 'Erreur', 'danger');
+    }
+
+    function setCover(url) {
+        coverUrl = url;
+        showCover(url);
+        dirty = true;
+        imageModal.hide();
+        pendingUploadFile = null;
+        // Reset upload preview
+        $('cmUploadPreviewWrap').classList.add('d-none');
+        $('cmUploadPlaceholder').style.display = '';
+        $('cmUploadBtn').disabled = true;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  COVER DISPLAY
+    // ══════════════════════════════════════════════════════
 
     function showCover(url) {
-        const zone = document.getElementById('annCoverZone');
+        const zone = $('annCoverZone');
         zone.classList.add('has-image');
         zone.innerHTML = `<img src="${escapeHtml(url)}" alt=""><button type="button" class="ann-cover-remove" title="Supprimer"><i class="bi bi-x"></i></button>`;
         zone.querySelector('.ann-cover-remove').addEventListener('click', (e) => {
@@ -212,20 +382,24 @@ $catLabels = [
     }
 
     function resetCoverZone() {
-        const zone = document.getElementById('annCoverZone');
+        const zone = $('annCoverZone');
         zone.classList.remove('has-image');
-        zone.innerHTML = '<i class="bi bi-image"></i><span>Image de couverture (optionnel) — cliquez ou glissez</span>';
+        zone.innerHTML = '<i class="bi bi-image"></i><span>Image de couverture (optionnel) — cliquez pour choisir</span>';
     }
 
+    // ══════════════════════════════════════════════════════
+    //  SAVE
+    // ══════════════════════════════════════════════════════
+
     async function save() {
-        const titre = document.getElementById('annTitle').value.trim();
+        const titre = $('annTitle').value.trim();
         if (!titre) { showToast('Titre requis', 'danger'); return; }
 
         const contenu = getHTMLFn(editor);
-        const description = document.getElementById('annDescription').value.trim();
-        const categorie = zerdaSelect.getValue(document.getElementById('annCategory'));
+        const description = $('annDescription').value.trim();
+        const categorie = zerdaSelect.getValue($('annCategory'));
 
-        const btn = document.getElementById('btnSaveAnn');
+        const btn = $('btnSaveAnn');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
@@ -242,9 +416,9 @@ $catLabels = [
         if (res.success) {
             dirty = false;
             showToast(res.message || 'Sauvegardé');
-            document.getElementById('annAutoSave').textContent = 'Sauvegardé';
+            $('annAutoSave').textContent = 'Sauvegardé';
             if (!annonceId && res.id) { dirty = false; AdminURL.go('annonce-edit', res.id); }
-        } else { showToast(res.message || 'Erreur', 'danger'); }
+        } else showToast(res.message || 'Erreur', 'danger');
     }
 
     function goBack() {

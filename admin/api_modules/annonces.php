@@ -192,3 +192,49 @@ function admin_upload_annonce_image()
     $url = '/spocspace/storage/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
+
+function admin_save_pixabay_annonce()
+{
+    require_responsable();
+    global $params;
+
+    $imageUrl = $params['image_url'] ?? '';
+    if (!$imageUrl) bad_request('URL manquante');
+
+    $parsed = parse_url($imageUrl);
+    if (!$parsed || !preg_match('/pixabay\.(com|net)$/', $parsed['host'] ?? '')) {
+        bad_request('Source non autorisée');
+    }
+    if (($parsed['scheme'] ?? '') !== 'https') bad_request('HTTPS requis');
+
+    $ch = curl_init($imageUrl);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true]);
+    $imgData = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$imgData) bad_request('Téléchargement échoué');
+
+    $storageDir = __DIR__ . '/../../storage/annonces/';
+    if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'pxb_');
+    file_put_contents($tmpFile, $imgData);
+
+    $mime = mime_content_type($tmpFile);
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($tmpFile),
+        'image/png'  => imagecreatefrompng($tmpFile),
+        'image/webp' => imagecreatefromwebp($tmpFile),
+        default => null,
+    };
+    unlink($tmpFile);
+    if (!$img) bad_request('Format image non supporté');
+
+    $filename = 'ann_' . bin2hex(random_bytes(8)) . '.webp';
+    imagewebp($img, $storageDir . $filename, 82);
+    imagedestroy($img);
+
+    $url = '/spocspace/storage/annonces/' . $filename;
+    respond(['success' => true, 'url' => $url]);
+}

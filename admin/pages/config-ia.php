@@ -328,9 +328,9 @@ $iaConfig['_horaires'] = $horairesRows;
 
             <!-- Dépannage -->
             <div class="ia-box-warn-alt">
-              <p class="small fw-semibold mb-2 ia-text-beige-dark"><i class="bi bi-wrench me-1"></i> Dépannage — Le raccourci Bureau ne démarre pas ?</p>
-              <p class="small text-muted mb-2 ia-fs-md">Téléchargez ce fichier et copiez-le dans <code>%LOCALAPPDATA%\SpocSpaceWhisper\</code> pour remplacer l'ancien :</p>
-              <a href="/spocspace/whisper-local/download.php?file=start-spocspace-ia.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> start-spocspace-ia.bat</a>
+              <p class="small fw-semibold mb-2 ia-text-beige-dark"><i class="bi bi-wrench me-1"></i> Lanceur IA (Ollama + Vosk)</p>
+              <p class="small text-muted mb-2 ia-fs-md">Telechargez et double-cliquez pour demarrer les serveurs IA. A placer sur le Bureau de chaque poste.</p>
+              <a href="/spocspace/admin/downloads/SpocSpace-IA.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> SpocSpace-IA.bat</a>
             </div>
 
             <!-- Téléchargements admin -->

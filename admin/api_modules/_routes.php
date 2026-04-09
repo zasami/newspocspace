@@ -190,6 +190,7 @@ return [
     'annonces' => [
         'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
         'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',
+        'admin_save_pixabay_annonce',
     ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',

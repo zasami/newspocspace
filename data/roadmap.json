@@ -412,5 +412,14 @@
         "category": "Statistiques",
         "done": false,
         "order": 46
+    },
+    {
+        "id": "base-de-connaissances",
+        "title": "Base de connaissances",
+        "desc": "La possibilité d'ajouter les PV en un clique a la base de connaissance ou a accrocher dans les annonce officielles.",
+        "difficulty": "difficile",
+        "category": "General",
+        "done": false,
+        "order": 47
     }
 ]
