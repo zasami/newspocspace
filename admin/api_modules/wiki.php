@@ -235,12 +235,13 @@ function admin_create_wiki_page()
 
     $id = Uuid::v4();
     Db::exec(
-        "INSERT INTO wiki_pages (id, titre, slug, contenu, description, categorie_id, version, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
+        "INSERT INTO wiki_pages (id, titre, slug, contenu, description, image_url, categorie_id, version, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)",
         [
             $id, $titre, $slug,
             $params['contenu'] ?? '',
             Sanitize::text($params['description'] ?? '', 500),
+            Sanitize::text($params['image_url'] ?? '', 500),
             $params['categorie_id'] ?: null,
             $user['id'],
         ]
@@ -297,6 +298,7 @@ function admin_update_wiki_page()
     if ($catId !== null) { $sets[] = 'categorie_id = ?'; $binds[] = $catId ?: null; }
     if (isset($params['visible'])) { $sets[] = 'visible = ?'; $binds[] = (int)$params['visible']; }
     if (isset($params['epingle'])) { $sets[] = 'epingle = ?'; $binds[] = (int)$params['epingle']; }
+    if (isset($params['image_url'])) { $sets[] = 'image_url = ?'; $binds[] = Sanitize::text($params['image_url'], 500); }
 
     $binds[] = $id;
     Db::exec("UPDATE wiki_pages SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
@@ -763,4 +765,70 @@ function admin_get_wiki_ai_suggest()
     }
 
     respond(['success' => true, 'suggestions' => $suggestions, 'query' => $query]);
+}
+
+/* ── Image couverture wiki ─────────────────────────────── */
+
+function admin_upload_wiki_image()
+{
+    require_responsable();
+
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) bad_request('Image manquante');
+
+    $file = $_FILES['file'];
+    if ($file['size'] > 5 * 1024 * 1024) bad_request('Max 5 Mo');
+    if (!in_array($file['type'], ['image/jpeg','image/png','image/webp','image/gif'], true)) bad_request('Format non autorisé');
+
+    $storageDir = __DIR__ . '/../../assets/uploads/wiki/';
+    if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+    $ext = preg_replace('/[^a-zA-Z0-9]/', '', pathinfo($file['name'], PATHINFO_EXTENSION));
+    $filename = bin2hex(random_bytes(16)) . '.' . $ext;
+
+    if (!move_uploaded_file($file['tmp_name'], $storageDir . $filename)) bad_request('Erreur sauvegarde');
+
+    respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
+}
+
+function admin_save_pixabay_wiki()
+{
+    require_responsable();
+    global $params;
+
+    $imageUrl = $params['image_url'] ?? '';
+    if (!$imageUrl) bad_request('URL manquante');
+
+    $parsed = parse_url($imageUrl);
+    if (!$parsed || !preg_match('/pixabay\.(com|net)$/', $parsed['host'] ?? '')) bad_request('Source non autorisée');
+    if (($parsed['scheme'] ?? '') !== 'https') bad_request('HTTPS requis');
+
+    $ch = curl_init($imageUrl);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true]);
+    $imgData = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$imgData) bad_request('Téléchargement échoué');
+
+    $storageDir = __DIR__ . '/../../assets/uploads/wiki/';
+    if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'pxb_');
+    file_put_contents($tmpFile, $imgData);
+
+    $mime = mime_content_type($tmpFile);
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($tmpFile),
+        'image/png'  => imagecreatefrompng($tmpFile),
+        'image/webp' => imagecreatefromwebp($tmpFile),
+        default => null,
+    };
+    unlink($tmpFile);
+    if (!$img) bad_request('Format non supporté');
+
+    $filename = 'wiki_' . bin2hex(random_bytes(8)) . '.webp';
+    imagewebp($img, $storageDir . $filename, 82);
+    imagedestroy($img);
+
+    respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
 }

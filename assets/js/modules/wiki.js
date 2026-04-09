@@ -131,16 +131,21 @@ async function openPage(id) {
     const tagsHtml = (p.tags || []).map(t => `<span class="wiki-tag" style="background:${t.couleur}">${escapeHtml(t.nom)}</span>`).join('');
     const expertInfo = p.expert_prenom ? `<span class="wiki-expert-badge"><i class="bi bi-person-check"></i> Expert: ${escapeHtml(p.expert_prenom + ' ' + p.expert_nom)}</span>` : '';
 
+    const heroImg = p.image_url ? `<img class="wiki-read-hero" src="${escapeHtml(p.image_url)}" alt="">` : '';
+
     document.getElementById('wikiReadPanel').innerHTML = `
-        <h1>${escapeHtml(p.titre)}</h1>
-        <div class="wiki-read-meta">
-            ${catBadge} ${tagsHtml ? `<span class="ms-1">${tagsHtml}</span>` : ''}
-            <span class="ms-2"><i class="bi bi-calendar3"></i> ${date}</span>
-            ${auteur ? ` &middot; <i class="bi bi-person"></i> ${escapeHtml(auteur)}` : ''}
-            ${expertInfo ? ` &middot; ${expertInfo}` : ''}
-            &middot; v${p.version || 1}
+        ${heroImg}
+        <div class="wiki-read-content-wrap">
+            <h1>${escapeHtml(p.titre)}</h1>
+            <div class="wiki-read-meta">
+                ${catBadge} ${tagsHtml ? ` ${tagsHtml}` : ''}
+                <span class="ms-2"><i class="bi bi-calendar3"></i> ${date}</span>
+                ${auteur ? ` &middot; <i class="bi bi-person"></i> ${escapeHtml(auteur)}` : ''}
+                ${expertInfo ? ` &middot; ${expertInfo}` : ''}
+                &middot; v${p.version || 1}
+            </div>
+            <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
         </div>
-        <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
     `;
 
     document.getElementById('wikiCatFilters').style.display = 'none';

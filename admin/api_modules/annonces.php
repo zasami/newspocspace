@@ -178,7 +178,7 @@ function admin_upload_annonce_image()
     $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!in_array($file['type'], $allowed, true)) bad_request('Type de fichier non autorisé');
 
-    $storageDir = __DIR__ . '/../../storage/annonces/';
+    $storageDir = __DIR__ . '/../../assets/uploads/annonces/';
     if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
 
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -189,7 +189,7 @@ function admin_upload_annonce_image()
         bad_request('Erreur lors de la sauvegarde');
     }
 
-    $url = '/spocspace/storage/annonces/' . $filename;
+    $url = '/spocspace/assets/uploads/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
 
@@ -215,7 +215,7 @@ function admin_save_pixabay_annonce()
 
     if ($httpCode !== 200 || !$imgData) bad_request('Téléchargement échoué');
 
-    $storageDir = __DIR__ . '/../../storage/annonces/';
+    $storageDir = __DIR__ . '/../../assets/uploads/annonces/';
     if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
 
     $tmpFile = tempnam(sys_get_temp_dir(), 'pxb_');
@@ -235,6 +235,6 @@ function admin_save_pixabay_annonce()
     imagewebp($img, $storageDir . $filename, 82);
     imagedestroy($img);
 
-    $url = '/spocspace/storage/annonces/' . $filename;
+    $url = '/spocspace/assets/uploads/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }

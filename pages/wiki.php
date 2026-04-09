@@ -45,8 +45,10 @@ $ssrData = ['categories' => $ssrCategories];
 .wiki-card-cat { font-size:.68rem; padding:2px 8px; border-radius:10px; color:#fff; display:inline-flex; align-items:center; gap:3px; }
 .wiki-card-pin { position:absolute; top:8px; right:10px; color:#2d4a43; }
 
-.wiki-read-panel { background:#fff; border:1px solid #e9ecef; border-radius:10px; padding:24px; }
-.wiki-read-panel h1 { font-size:1.3rem; font-weight:700; margin-bottom:4px; }
+.wiki-read-panel { background:#fff; border:1px solid #e9ecef; border-radius:10px; overflow:hidden; }
+.wiki-read-hero { width:100%; max-height:300px; object-fit:cover; display:block; }
+.wiki-read-content-wrap { padding:24px; }
+.wiki-read-content-wrap h1 { font-size:1.3rem; font-weight:700; margin-bottom:4px; }
 .wiki-read-meta { font-size:.78rem; color:#6c757d; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f0f0f0; }
 .wiki-read-content { font-size:.9rem; line-height:1.7; }
 .wiki-read-content h2 { font-size:1.1rem; font-weight:700; margin-top:20px; margin-bottom:8px; color:#2d4a43; }

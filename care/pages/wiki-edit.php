@@ -42,8 +42,8 @@ $isNew = !$pageData;
 .wiki-desc-input { font-size:.85rem; border:none; border-bottom:1px solid #e9ecef; border-radius:0; padding:4px 2px; width:100%; color:#6c757d; }
 .wiki-desc-input:focus { outline:none; border-color:var(--care-primary, #2d4a43); box-shadow:none; }
 
-.wiki-tiptap-wrap { border:1px solid #e9ecef; border-radius:8px; overflow:hidden; margin-top:12px; min-height:400px; }
-.wiki-tiptap-wrap .zs-ed-toolbar { background:#f8f9fa; border-bottom:1px solid #e9ecef; padding:6px 8px; display:flex; flex-wrap:wrap; gap:2px; }
+.wiki-tiptap-wrap { border:1px solid #e9ecef; border-radius:8px; margin-top:12px; min-height:400px; }
+.wiki-tiptap-wrap .zs-ed-toolbar { background:#f8f9fa; border-bottom:1px solid #e9ecef; padding:6px 8px; display:flex; flex-wrap:wrap; gap:2px; position:sticky; top:56px; z-index:20; border-radius:8px 8px 0 0; }
 .wiki-tiptap-wrap .zs-ed-btn { background:none; border:1px solid transparent; border-radius:4px; padding:4px 7px; cursor:pointer; color:#495057; font-size:.85rem; }
 .wiki-tiptap-wrap .zs-ed-btn:hover { background:#e9ecef; }
 .wiki-tiptap-wrap .zs-ed-btn.active { background:var(--care-primary, #2d4a43); color:#fff; }
@@ -56,6 +56,38 @@ $isNew = !$pageData;
 .wiki-edit-tag input { display:none; }
 .wiki-edit-tag:has(input:checked) { background:var(--tag-color, #6c757d); color:#fff; border-color:var(--tag-color, #6c757d); }
 .wiki-edit-tag:hover { border-color:var(--tag-color, #6c757d); }
+
+.wiki-cover-zone {
+    border:2px dashed #dee2e6; border-radius:10px; padding:20px; text-align:center;
+    color:#adb5bd; cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
+    min-height:100px; display:flex; align-items:center; justify-content:center; flex-direction:column; margin:12px 0;
+}
+.wiki-cover-zone:hover { border-color:var(--care-primary, #2d4a43); color:#6c757d; background:#f8faf9; }
+.wiki-cover-zone.has-image { border:none; padding:0; }
+.wiki-cover-zone img { width:100%; max-height:220px; object-fit:cover; border-radius:10px; }
+.wiki-cover-zone .bi { font-size:1.3rem; display:block; margin-bottom:4px; }
+.wiki-cover-remove { position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; cursor:pointer; font-size:.8rem; display:flex; align-items:center; justify-content:center; }
+
+/* Image picker modal */
+.cm-tab-btn { border-radius:10px 10px 0 0 !important; font-size:.85rem; font-weight:600; padding:8px 16px; }
+.cm-tab-btn.active { background:var(--cl-surface, #fff) !important; border-color:#e5e7eb #e5e7eb #fff !important; }
+.cm-upload-zone { border:2px dashed #e5e7eb; border-radius:14px; min-height:180px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+.cm-upload-zone:hover { border-color:#bcd2cb; background:rgba(188,210,203,.05); }
+.cm-upload-zone.dragover { border-color:#2d4a43; background:rgba(188,210,203,.12); }
+.cm-upload-placeholder { text-align:center; color:#999; pointer-events:none; }
+.cm-upload-placeholder i { font-size:2.5rem; color:#ccc; display:block; margin-bottom:8px; }
+.cm-upload-placeholder p { font-size:.9rem; font-weight:600; margin:0 0 4px; color:#666; }
+.cm-upload-placeholder span { font-size:.78rem; }
+.cm-upload-preview-wrap { position:absolute; inset:0; }
+.cm-upload-preview-wrap img { width:100%; height:100%; object-fit:cover; }
+.cm-pixabay-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; max-height:360px; overflow-y:auto; }
+.cm-pixabay-item { aspect-ratio:16/10; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; transition:transform .2s, box-shadow .2s; }
+.cm-pixabay-item:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.15); }
+.cm-pixabay-item img { width:100%; height:100%; object-fit:cover; }
+.cm-pixabay-item-overlay { position:absolute; bottom:0; left:0; right:0; padding:4px 8px; background:linear-gradient(transparent, rgba(0,0,0,.6)); font-size:.65rem; color:#fff; }
+.cm-pixabay-empty { grid-column:1 / -1; text-align:center; padding:40px; color:#999; }
+.cm-pixabay-empty i { font-size:2rem; display:block; margin-bottom:8px; opacity:.4; }
+.cm-pixabay-empty p { margin:0; font-size:.85rem; }
 
 .wiki-save-bar { position:sticky; bottom:0; background:#fff; border-top:1px solid #e9ecef; padding:12px 20px; margin:-20px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; border-radius:0 0 10px 10px; z-index:10; }
 .wiki-autosave { font-size:.75rem; color:#adb5bd; }
@@ -125,14 +157,17 @@ $isNew = !$pageData;
       <small class="text-muted" style="font-size:.72rem">Si aucun rôle coché, la page est visible par tout le monde</small>
     </div>
 
-    <!-- Import zone -->
-    <div class="wiki-import-zone" id="wikiImportZone">
-      <i class="bi bi-file-earmark-arrow-up"></i>
-      <span>Glissez un fichier <strong>Word (.docx)</strong> ou <strong>PDF</strong> ici, ou <a href="#" id="wikiImportBtn">cliquez pour importer</a></span>
-      <input type="file" id="wikiImportFile" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none">
+    <!-- Cover image -->
+    <div class="wiki-cover-zone" id="wikiCoverZone">
+      <i class="bi bi-image"></i>
+      <span>Image de couverture (optionnel) — cliquez pour choisir</span>
     </div>
 
     <!-- TipTap Editor -->
+    <input type="file" id="wikiImportFile" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none">
+    <div class="d-flex justify-content-end mb-1">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="wikiImportBtn" title="Importer depuis Word ou PDF"><i class="bi bi-file-earmark-arrow-up me-1"></i>Importer Word / PDF</button>
+    </div>
     <div class="wiki-tiptap-wrap" id="wikiEditorWrap">
       <div class="text-center py-5 text-muted">
         <div class="spinner-border spinner-border-sm"></div> Chargement de l'éditeur...
@@ -152,10 +187,69 @@ $isNew = !$pageData;
   </div>
 </div>
 
+<!-- IMAGE PICKER MODAL (Upload + Pixabay) -->
+<div class="modal fade" id="wikiImageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+      <div class="modal-header" style="flex-shrink:0">
+        <h5 class="modal-title"><i class="bi bi-image me-2"></i>Image de couverture</h5>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+      </div>
+      <div class="modal-body p-0" style="flex:1;overflow-y:auto">
+        <ul class="nav nav-tabs px-3 pt-3" style="border-bottom:none;gap:4px">
+          <li class="nav-item"><button class="nav-link active cm-tab-btn" data-cm-tab="upload"><i class="bi bi-cloud-arrow-up me-1"></i>Uploader</button></li>
+          <li class="nav-item"><button class="nav-link cm-tab-btn" data-cm-tab="pixabay"><i class="bi bi-search me-1"></i>Pixabay</button></li>
+        </ul>
+        <div class="cm-panel p-3" id="cmPanelUpload">
+          <div class="cm-upload-zone" id="cmUploadZone">
+            <div class="cm-upload-placeholder" id="cmUploadPlaceholder">
+              <i class="bi bi-cloud-arrow-up"></i>
+              <p>Glissez une image ou cliquez pour charger</p>
+              <span>JPG, PNG, WebP — max 5 Mo</span>
+            </div>
+            <div class="cm-upload-preview-wrap d-none" id="cmUploadPreviewWrap">
+              <img src="" alt="" id="cmUploadPreviewImg">
+              <button type="button" class="wiki-cover-remove" id="cmUploadRemove"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <input type="file" id="cmUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+          </div>
+          <button class="btn btn-primary w-100 mt-2" id="cmUploadBtn" disabled><i class="bi bi-check-lg me-1"></i>Utiliser cette image</button>
+        </div>
+        <div class="cm-panel p-3 d-none" id="cmPanelPixabay">
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="cmPixabayInput" placeholder="Rechercher des photos...">
+            <select class="form-select" id="cmPixabayCat" style="max-width:140px">
+              <option value="">Toutes</option>
+              <option value="backgrounds">Fonds</option>
+              <option value="nature">Nature</option>
+              <option value="business">Business</option>
+              <option value="people">Personnes</option>
+              <option value="food">Cuisine</option>
+              <option value="buildings">Bâtiments</option>
+              <option value="science">Science</option>
+            </select>
+            <button class="btn btn-primary" id="cmPixabaySearchBtn"><i class="bi bi-search"></i></button>
+          </div>
+          <div class="cm-pixabay-grid" id="cmPixabayGrid">
+            <div class="cm-pixabay-empty"><i class="bi bi-images"></i><p>Recherchez des photos libres de droits</p></div>
+          </div>
+          <div class="text-center mt-2 d-none" id="cmPixabayLoading"><span class="spinner-border spinner-border-sm"></span> Recherche...</div>
+          <button class="btn btn-outline-secondary w-100 mt-2 d-none" id="cmPixabayMore"><i class="bi bi-plus-circle me-1"></i>Voir plus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script<?= nonce() ?>>
 (function(){
+    const $ = id => document.getElementById(id);
+    const $$ = sel => document.querySelectorAll(sel);
+
     const pageId = <?= json_encode($pageId ?: null) ?>;
     const initialContent = <?= json_encode($pageData['contenu'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const initialImage = <?= json_encode($pageData['image_url'] ?? '') ?>;
     const catOptions = <?= json_encode(array_map(function($c) use ($pageData) {
         return ['value' => $c['id'], 'label' => $c['nom'], 'icon' => 'bi-' . ($c['icone'] ?: 'book'), 'dot' => $c['couleur'] ?: '#6c757d', 'selected' => ($pageData['categorie_id'] ?? '') === $c['id']];
     }, $categories), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -166,8 +260,21 @@ $isNew = !$pageData;
     let editor = null;
     let getHTMLFn = null;
     let dirty = false;
+    let coverUrl = initialImage;
+    let imageModal = null;
+    let pendingUploadFile = null;
+    let pxPage = 1, pxTotal = 0;
 
     async function initEditor() {
+        // Cover image
+        if (coverUrl) showCover(coverUrl);
+        $('wikiCoverZone').addEventListener('click', (e) => {
+            if (e.target.closest('.wiki-cover-remove')) return;
+            imageModal.show();
+        });
+        imageModal = new bootstrap.Modal($('wikiImageModal'));
+        initImageModal();
+
         // Init zerdaSelect for category
         const catEl = document.getElementById('wikiCategory');
         const opts = catOptions.map(c => ({ value: c.value, label: c.label, icon: c.icon, dot: c.dot }));
@@ -204,11 +311,6 @@ $isNew = !$pageData;
             return;
         }
 
-        // Hide import zone once editor has content
-        if (initialContent) {
-            document.getElementById('wikiImportZone').style.display = 'none';
-        }
-
         // Track changes
         editor.on('update', () => {
             dirty = true;
@@ -235,23 +337,10 @@ $isNew = !$pageData;
 
     // ── Import Word / PDF ─────────────────────────────────
     function initImport() {
-        const zone = document.getElementById('wikiImportZone');
         const fileInput = document.getElementById('wikiImportFile');
         const importBtn = document.getElementById('wikiImportBtn');
 
         importBtn.addEventListener('click', (e) => { e.preventDefault(); fileInput.click(); });
-        zone.addEventListener('click', (e) => { if (e.target === zone || e.target.closest('.wiki-import-zone')) fileInput.click(); });
-
-        // Drag & drop
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragging'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.classList.remove('dragging');
-            const file = e.dataTransfer.files[0];
-            if (file) processImportFile(file);
-        });
-
         fileInput.addEventListener('change', () => {
             if (fileInput.files[0]) processImportFile(fileInput.files[0]);
             fileInput.value = '';
@@ -259,7 +348,6 @@ $isNew = !$pageData;
     }
 
     async function processImportFile(file) {
-        const zone = document.getElementById('wikiImportZone');
         const ext = file.name.split('.').pop().toLowerCase();
 
         if (!['docx', 'pdf'].includes(ext)) {
@@ -267,7 +355,9 @@ $isNew = !$pageData;
             return;
         }
 
-        zone.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Import en cours...';
+        const btn = $('wikiImportBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Import...';
 
         try {
             if (ext === 'docx') {
@@ -275,22 +365,21 @@ $isNew = !$pageData;
             } else {
                 await importPdf(file);
             }
-            zone.style.display = 'none';
 
-            // Set title from filename if empty
-            const titleInput = document.getElementById('wikiTitle');
+            const titleInput = $('wikiTitle');
             if (!titleInput.value.trim()) {
                 titleInput.value = file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
             }
             dirty = true;
-            document.getElementById('wikiAutoSave').textContent = 'Contenu importé — non sauvegardé';
+            $('wikiAutoSave').textContent = 'Contenu importé — non sauvegardé';
             showToast('Contenu importé avec succès');
         } catch (err) {
             console.error('Import error:', err);
-            zone.innerHTML = '<i class="bi bi-file-earmark-arrow-up" style="font-size:1.5rem;display:block;margin-bottom:6px"></i><span>Erreur d\'import. <a href="#" id="wikiImportBtn">Réessayer</a></span>';
-            document.getElementById('wikiImportBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('wikiImportFile').click(); });
-            showToast('Erreur lors de l\'import: ' + (err.message || 'Fichier invalide'), 'danger');
+            showToast('Erreur import: ' + (err.message || 'Fichier invalide'), 'danger');
         }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-file-earmark-arrow-up me-1"></i>Importer Word / PDF';
     }
 
     async function importDocx(file) {
@@ -364,6 +453,132 @@ $isNew = !$pageData;
     }
 
     // ── Save ──────────────────────────────────────────────
+    // ── Image modal ─────────────────────────────────────
+    function initImageModal() {
+        $$('.cm-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('.cm-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                $$('.cm-panel').forEach(p => p.classList.add('d-none'));
+                const tabId = 'cmPanel' + btn.dataset.cmTab.charAt(0).toUpperCase() + btn.dataset.cmTab.slice(1);
+                document.getElementById(tabId)?.classList.remove('d-none');
+            });
+        });
+
+        const uploadZone = $('cmUploadZone');
+        const uploadInput = $('cmUploadInput');
+        uploadZone.addEventListener('click', (e) => { if (!e.target.closest('#cmUploadRemove')) uploadInput.click(); });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) previewUpload(e.dataTransfer.files[0]); });
+        uploadInput.addEventListener('change', () => { if (uploadInput.files[0]) previewUpload(uploadInput.files[0]); uploadInput.value = ''; });
+
+        $('cmUploadRemove')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pendingUploadFile = null;
+            $('cmUploadPreviewWrap').classList.add('d-none');
+            $('cmUploadPlaceholder').style.display = '';
+            $('cmUploadBtn').disabled = true;
+        });
+
+        $('cmUploadBtn').addEventListener('click', async () => {
+            if (!pendingUploadFile) return;
+            $('cmUploadBtn').disabled = true;
+            $('cmUploadBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            const formData = new FormData();
+            formData.append('file', pendingUploadFile);
+            formData.append('action', 'admin_upload_wiki_image');
+            try {
+                const r = await fetch('/spocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken }, body: formData });
+                const res = await r.json();
+                if (res.csrf) window.__SS_CARE__.csrfToken = res.csrf;
+                if (res.success) setCover(res.url);
+                else showToast(res.message || 'Erreur', 'danger');
+            } catch { showToast('Erreur upload', 'danger'); }
+            $('cmUploadBtn').disabled = false;
+            $('cmUploadBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>Utiliser cette image';
+        });
+
+        $('cmPixabaySearchBtn').addEventListener('click', () => searchPx(false));
+        $('cmPixabayInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); searchPx(false); } });
+        $('cmPixabayMore').addEventListener('click', () => searchPx(true));
+    }
+
+    function previewUpload(file) {
+        if (file.size > 5 * 1024 * 1024) { showToast('Max 5 Mo', 'danger'); return; }
+        if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { showToast('Format non supporté', 'danger'); return; }
+        pendingUploadFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+            $('cmUploadPreviewImg').src = reader.result;
+            $('cmUploadPreviewWrap').classList.remove('d-none');
+            $('cmUploadPlaceholder').style.display = 'none';
+            $('cmUploadBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function searchPx(append) {
+        const query = $('cmPixabayInput').value.trim();
+        const cat = $('cmPixabayCat').value;
+        if (!query && !cat) { showToast('Entrez un terme', 'warning'); return; }
+        if (!append) { pxPage = 1; $('cmPixabayGrid').innerHTML = ''; } else pxPage++;
+        $('cmPixabayLoading').classList.remove('d-none');
+        $('cmPixabayMore').classList.add('d-none');
+        const res = await adminApiPost('admin_search_pixabay', { query: query || cat, category: cat, page: pxPage });
+        $('cmPixabayLoading').classList.add('d-none');
+        if (!res.success) { showToast(res.message || 'Erreur', 'danger'); return; }
+        pxTotal = res.total || 0;
+        if (!res.hits?.length && !append) { $('cmPixabayGrid').innerHTML = '<div class="cm-pixabay-empty"><i class="bi bi-emoji-frown"></i><p>Aucun résultat</p></div>'; return; }
+        const grid = $('cmPixabayGrid');
+        res.hits.forEach(hit => {
+            const item = document.createElement('div');
+            item.className = 'cm-pixabay-item';
+            item.innerHTML = `<img src="${hit.webformatURL}" alt="${escapeHtml(hit.tags || '')}" loading="lazy"><div class="cm-pixabay-item-overlay">${escapeHtml(hit.user)}</div>`;
+            item.addEventListener('click', () => selectPxImage(hit.largeImageURL));
+            grid.appendChild(item);
+        });
+        if (grid.querySelectorAll('.cm-pixabay-item').length < pxTotal) $('cmPixabayMore').classList.remove('d-none');
+    }
+
+    async function selectPxImage(url) {
+        $('cmPixabayLoading').classList.remove('d-none');
+        const res = await adminApiPost('admin_save_pixabay_wiki', { image_url: url });
+        $('cmPixabayLoading').classList.add('d-none');
+        if (res.success) setCover(res.url);
+        else showToast(res.message || 'Erreur', 'danger');
+    }
+
+    function setCover(url) {
+        coverUrl = url;
+        showCover(url);
+        dirty = true;
+        imageModal.hide();
+        pendingUploadFile = null;
+        $('cmUploadPreviewWrap').classList.add('d-none');
+        $('cmUploadPlaceholder').style.display = '';
+        $('cmUploadBtn').disabled = true;
+    }
+
+    function showCover(url) {
+        const zone = $('wikiCoverZone');
+        zone.classList.add('has-image');
+        zone.innerHTML = `<img src="${escapeHtml(url)}" alt=""><button type="button" class="wiki-cover-remove" title="Supprimer"><i class="bi bi-x"></i></button>`;
+        zone.querySelector('.wiki-cover-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            coverUrl = '';
+            resetCoverZone();
+            dirty = true;
+        });
+    }
+
+    function resetCoverZone() {
+        const zone = $('wikiCoverZone');
+        zone.classList.remove('has-image');
+        zone.innerHTML = '<i class="bi bi-image"></i><span>Image de couverture (optionnel) — cliquez pour choisir</span>';
+    }
+
+    // ── Save helpers ──────────────────────────────────
     function getSelectedTagIds() {
         return [...document.querySelectorAll('#wikiTagsWrap input:checked')].map(el => el.value);
     }
@@ -385,9 +600,9 @@ $isNew = !$pageData;
 
         let res;
         if (pageId) {
-            res = await adminApiPost('admin_update_wiki_page', { id: pageId, titre, contenu, description, categorie_id });
+            res = await adminApiPost('admin_update_wiki_page', { id: pageId, titre, contenu, description, categorie_id, image_url: coverUrl });
         } else {
-            res = await adminApiPost('admin_create_wiki_page', { titre, contenu, description, categorie_id });
+            res = await adminApiPost('admin_create_wiki_page', { titre, contenu, description, categorie_id, image_url: coverUrl });
         }
 
         btn.disabled = false;

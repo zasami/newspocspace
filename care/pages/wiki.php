@@ -58,9 +58,11 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 .wiki-card-cat { font-size:.7rem; padding:2px 8px; border-radius:10px; color:#fff; display:inline-flex; align-items:center; gap:3px; }
 .wiki-card-pin { position:absolute; top:8px; right:10px; color:var(--care-primary, #2d4a43); font-size:.85rem; }
 
-/* Read view */
-.wiki-read-panel { background:#fff; border:1px solid #e9ecef; border-radius:10px; padding:24px; }
-.wiki-read-panel h1 { font-size:1.4rem; font-weight:700; margin-bottom:4px; }
+/* Read view (same style as annonces) */
+.wiki-read-panel { background:#fff; border:1px solid #e9ecef; border-radius:10px; overflow:hidden; }
+.wiki-read-hero { width:100%; max-height:300px; object-fit:cover; display:block; }
+.wiki-read-content-wrap { padding:24px; }
+.wiki-read-content-wrap h1 { font-size:1.4rem; font-weight:700; margin-bottom:4px; }
 .wiki-read-meta { font-size:.78rem; color:#6c757d; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f0f0f0; }
 .wiki-read-content { font-size:.92rem; line-height:1.7; }
 .wiki-read-content h2 { font-size:1.15rem; font-weight:700; margin-top:20px; margin-bottom:8px; color:var(--care-primary, #2d4a43); }
@@ -73,10 +75,24 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 .wiki-empty { text-align:center; padding:60px 20px; color:#adb5bd; }
 .wiki-empty .bi { font-size:3rem; display:block; margin-bottom:12px; }
 
-/* Versions panel */
-.wiki-version-item { padding:8px 12px; border-bottom:1px solid #f0f0f0; font-size:.8rem; cursor:pointer; }
-.wiki-version-item:hover { background:#f8f9fa; }
-.wiki-version-item .ver-num { font-weight:600; color:var(--care-primary, #2d4a43); }
+/* ── Versions list ──────────────────────────────────── */
+.wver-list { display:flex; flex-direction:column; gap:8px; }
+.wver-item {
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    border:1px solid #e9ecef; border-radius:10px; background:#fff; transition:all .15s;
+}
+.wver-item:hover { border-color:#bcd2cb; box-shadow:0 2px 6px rgba(0,0,0,.04); }
+.wver-item.wver-current { background:#f8faf9; border-color:#bcd2cb; }
+.wver-badge {
+    width:42px; height:42px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0;
+}
+.wver-badge-current { background:#bcd2cb; color:#2d4a43; }
+.wver-badge-old { background:#f0eeea; color:#6c757d; }
+.wver-info { flex:1; min-width:0; }
+.wver-title { font-weight:600; font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.wver-meta { font-size:.72rem; color:#999; display:flex; gap:8px; flex-wrap:wrap; margin-top:2px; }
+.wver-note { font-size:.72rem; color:#adb5bd; font-style:italic; margin-top:1px; }
 
 /* ── Category list items ─────────────────────────────── */
 .wcat-item {
@@ -504,16 +520,24 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
             ? `<span class="wiki-card-cat" style="background:${p.categorie_couleur || '#6c757d'}"><i class="bi bi-${escapeHtml(p.categorie_icone || 'book')}"></i> ${escapeHtml(p.categorie_nom)}</span>`
             : '';
 
+        const heroImg = p.image_url ? `<img class="wiki-read-hero" src="${escapeHtml(p.image_url)}" alt="">` : '';
+        const tagsHtml = (p.tags || []).map(t => `<span class="wiki-tag" style="background:${t.couleur}">${escapeHtml(t.nom)}</span>`).join('');
+
         document.getElementById('wikiReadPanel').innerHTML = `
-            <h1>${escapeHtml(p.titre)}</h1>
-            <div class="wiki-read-meta">
-                ${catBadge}
-                <span class="ms-2"><i class="bi bi-calendar3"></i> ${date}</span>
-                ${auteur ? ` &middot; <i class="bi bi-person"></i> ${escapeHtml(auteur)}` : ''}
-                ${modif ? ` &middot; Modifié par ${escapeHtml(modif)}` : ''}
-                &middot; Version ${p.version || 1}
+            ${heroImg}
+            <div class="wiki-read-content-wrap">
+                <h1>${escapeHtml(p.titre)}</h1>
+                <div class="wiki-read-meta">
+                    ${catBadge}
+                    ${tagsHtml ? ` ${tagsHtml}` : ''}
+                    <span class="ms-2"><i class="bi bi-calendar3"></i> ${date}</span>
+                    ${auteur ? ` &middot; <i class="bi bi-person"></i> ${escapeHtml(auteur)}` : ''}
+                    ${modif ? ` &middot; Modifié par ${escapeHtml(modif)}` : ''}
+                    &middot; Version ${p.version || 1}
+                    ${p.expert_prenom ? ` &middot; <span class="wiki-expert-badge"><i class="bi bi-person-check"></i> ${escapeHtml(p.expert_prenom + ' ' + p.expert_nom)}</span>` : ''}
+                </div>
+                <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
             </div>
-            <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
         `;
 
         let actions = `<button class="btn btn-outline-secondary btn-sm" id="btnVersions"><i class="bi bi-clock-history"></i> Versions</button>`;
@@ -551,22 +575,58 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 
     // ── Versions ──────────────────────────────────────────
     async function showVersions(pageId) {
-        const res = await adminApiPost('admin_get_wiki_versions', { page_id: pageId });
-        if (!res.success) return;
+        const [pageRes, verRes] = await Promise.all([
+            adminApiPost('admin_get_wiki_page', { id: pageId }),
+            adminApiPost('admin_get_wiki_versions', { page_id: pageId }),
+        ]);
+        if (!verRes.success) return;
+
         const body = document.getElementById('versionsBody');
-        if (!res.versions.length) {
+        const current = pageRes.success ? pageRes.page : null;
+        const versions = verRes.versions || [];
+
+        // Build all rows: current version first, then history
+        const allRows = [];
+        if (current) {
+            allRows.push({
+                id: null,
+                version: current.version,
+                titre: current.titre,
+                created_at: current.updated_at || current.created_at,
+                prenom: current.modif_prenom || current.auteur_prenom,
+                nom: current.modif_nom || current.auteur_nom,
+                note: '',
+                isCurrent: true,
+            });
+        }
+        versions.forEach(v => allRows.push({ ...v, isCurrent: false }));
+
+        if (!allRows.length) {
             body.innerHTML = '<p class="text-muted text-center py-4">Aucun historique</p>';
         } else {
-            body.innerHTML = res.versions.map(v => {
-                const date = new Date(v.created_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                const who = v.prenom ? `${v.prenom} ${v.nom}` : '';
-                return `<div class="wiki-version-item" data-vid="${v.id}">
-                    <span class="ver-num">v${v.version}</span> &middot; ${date}
-                    ${who ? ` &middot; ${escapeHtml(who)}` : ''}
-                    ${v.note ? ` &middot; <em>${escapeHtml(v.note)}</em>` : ''}
-                    ${isResp ? `<button class="btn btn-sm btn-primary float-end btn-restore-ver" data-vid="${v.id}">Restaurer</button>` : ''}
+            const fmtDate = d => d ? new Date(d).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+            body.innerHTML = `<div class="wver-list">${allRows.map(v => {
+                const who = v.prenom ? `${v.prenom} ${v.nom}` : '—';
+                const badgeCls = v.isCurrent ? 'wver-badge-current' : 'wver-badge-old';
+                const badgeText = v.isCurrent ? '<i class="bi bi-check-lg"></i>' : 'v' + v.version;
+                const itemCls = v.isCurrent ? 'wver-item wver-current' : 'wver-item';
+                const restoreBtn = !v.isCurrent && isResp
+                    ? `<button class="btn btn-sm btn-outline-secondary btn-restore-ver" data-vid="${v.id}" style="font-size:.75rem;padding:3px 12px;border-radius:6px">Restaurer</button>`
+                    : '';
+                return `<div class="${itemCls}">
+                    <div class="wver-badge ${badgeCls}">${badgeText}</div>
+                    <div class="wver-info">
+                        <div class="wver-title">${escapeHtml(v.titre || '')}${v.isCurrent ? ' <span style="font-size:.68rem;color:#2d4a43;font-weight:600;background:#bcd2cb;padding:1px 6px;border-radius:4px;margin-left:4px">Actuelle</span>' : ''}</div>
+                        <div class="wver-meta">
+                            <span><i class="bi bi-person"></i> ${escapeHtml(who)}</span>
+                            <span><i class="bi bi-calendar3"></i> ${fmtDate(v.created_at)}</span>
+                        </div>
+                        ${v.note ? `<div class="wver-note">${escapeHtml(v.note)}</div>` : ''}
+                    </div>
+                    ${restoreBtn}
                 </div>`;
-            }).join('');
+            }).join('')}</div>`;
 
             body.querySelectorAll('.btn-restore-ver').forEach(btn => {
                 btn.addEventListener('click', async () => {

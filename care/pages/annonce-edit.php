@@ -38,8 +38,8 @@ $isNew = !$annonceData;
     display:flex; align-items:center; justify-content:center;
 }
 
-.ann-tiptap-wrap { border:1px solid #e9ecef; border-radius:8px; overflow:hidden; margin-top:12px; min-height:300px; }
-.ann-tiptap-wrap .zs-ed-toolbar { background:#f8f9fa; border-bottom:1px solid #e9ecef; padding:6px 8px; display:flex; flex-wrap:wrap; gap:2px; }
+.ann-tiptap-wrap { border:1px solid #e9ecef; border-radius:8px; margin-top:12px; min-height:300px; }
+.ann-tiptap-wrap .zs-ed-toolbar { background:#f8f9fa; border-bottom:1px solid #e9ecef; padding:6px 8px; display:flex; flex-wrap:wrap; gap:2px; position:sticky; top:56px; z-index:20; border-radius:8px 8px 0 0; }
 .ann-tiptap-wrap .zs-ed-btn { background:none; border:1px solid transparent; border-radius:4px; padding:4px 7px; cursor:pointer; color:#495057; font-size:.85rem; }
 .ann-tiptap-wrap .zs-ed-btn:hover { background:#e9ecef; }
 .ann-tiptap-wrap .zs-ed-btn.active { background:var(--care-primary, #2d4a43); color:#fff; }

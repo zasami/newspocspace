@@ -202,5 +202,6 @@ return [
         'admin_toggle_wiki_favori',
         'admin_get_wiki_page_permissions', 'admin_set_wiki_page_permissions',
         'admin_get_wiki_suggestions', 'admin_dismiss_wiki_suggestion', 'admin_get_wiki_ai_suggest',
+        'admin_upload_wiki_image', 'admin_save_pixabay_wiki',
     ],
 ];
