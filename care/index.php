@@ -224,10 +224,12 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <i class="bi bi-list"></i>
     </button>
     <h5 class="mb-0 topbar-title"><?= h($pageTitle) ?></h5>
-    <div class="topbar-search ms-auto me-3" id="topbarSearch">
+    <div class="topbar-search ms-auto me-3" id="topbarSearch" style="position:relative">
       <i class="bi bi-search search-icon"></i>
-      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="<?= h($topbarPlaceholder) ?>" autocomplete="off">
+      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="Rechercher partout..." autocomplete="off">
       <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
+      <!-- Global search panel -->
+      <div id="careSearchPanel" class="care-search-panel"></div>
     </div>
     <div class="topbar-right">
       <div class="topbar-user d-none d-sm-flex">
@@ -338,5 +340,218 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 </div>
 
 <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+
+<!-- Global Search -->
+<style>
+.care-search-panel {
+    position:absolute; left:0; right:0; top:calc(100% + 6px);
+    background:#fff; border:1px solid #ececec; border-radius:.65rem;
+    box-shadow:0 10px 24px rgba(0,0,0,.08); padding:.35rem; z-index:1000;
+    max-height:0; opacity:0; transform:translateY(-4px); pointer-events:none; overflow:hidden;
+    transition:max-height .28s cubic-bezier(.22,.61,.36,1), opacity .2s ease, transform .2s ease;
+}
+.care-search-panel.open {
+    max-height:420px; opacity:1; transform:translateY(0); pointer-events:auto; overflow-y:auto;
+}
+.csp-section { font-size:.7rem; color:#8b8b8b; padding:.25rem .55rem .15rem; text-transform:uppercase; letter-spacing:.3px; font-weight:600; }
+.csp-item {
+    display:flex; align-items:center; gap:.6rem; padding:.5rem .55rem; border-radius:.5rem; cursor:pointer; transition:background .12s;
+}
+.csp-item:hover { background:rgba(45,74,67,.08); }
+.csp-item .csp-icon {
+    width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:.85rem; flex-shrink:0;
+}
+.csp-item .csp-icon.t-resident { background:#bcd2cb; color:#2d4a43; }
+.csp-item .csp-icon.t-wiki { background:#B8C9D4; color:#3B4F6B; }
+.csp-item .csp-icon.t-annonce { background:#D0C4D8; color:#5B4B6B; }
+.csp-item .csp-icon.t-history { background:#f0eeea; color:#6c757d; }
+.csp-item .csp-text { flex:1; min-width:0; }
+.csp-item .csp-title { font-size:.85rem; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.csp-item .csp-sub { font-size:.7rem; color:#999; }
+.csp-del {
+    background:none; border:none; color:#ccc; cursor:pointer; padding:2px; font-size:.75rem; transition:color .12s;
+}
+.csp-del:hover { color:#dc3545; }
+.csp-empty { text-align:center; padding:16px; color:#adb5bd; font-size:.82rem; }
+.csp-type-labels { display:flex; gap:4px; padding:.25rem .55rem; flex-wrap:wrap; }
+.csp-type-label {
+    font-size:.68rem; padding:2px 8px; border-radius:10px; font-weight:600; cursor:default;
+}
+</style>
+
+<script nonce="<?= $cspNonce ?>">
+(function(){
+    const HIST_KEY = 'spoccare:search-history';
+    const TTL_MS = 2 * 24 * 60 * 60 * 1000;
+    const now = () => Date.now();
+
+    const input = document.getElementById('topbarSearchInput');
+    const panel = document.getElementById('careSearchPanel');
+    const clearBtn = document.getElementById('adminSearchClear');
+    if (!input || !panel) return;
+
+    // ── History helpers ────────────────────────────────
+    function loadHist() {
+        try {
+            const arr = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+            const cutoff = now() - TTL_MS;
+            return arr.filter(it => it && it.q && (it.ts || 0) >= cutoff);
+        } catch { return []; }
+    }
+    function saveHist(arr) {
+        const seen = new Set();
+        const clean = arr.filter(it => {
+            const k = (it.q || '').toLowerCase();
+            if (!k || seen.has(k)) return false;
+            seen.add(k); return true;
+        }).slice(0, 30);
+        try { localStorage.setItem(HIST_KEY, JSON.stringify(clean)); } catch {}
+    }
+    function addHist(q) {
+        q = (q || '').trim();
+        if (!q || q.length < 2) return;
+        const h = loadHist().filter(it => it.q.toLowerCase() !== q.toLowerCase());
+        h.unshift({ q, ts: now() });
+        saveHist(h);
+    }
+    function delHist(q) {
+        saveHist(loadHist().filter(it => it.q.toLowerCase() !== q.toLowerCase()));
+    }
+
+    // ── Panel open/close ──────────────────────────────
+    function openPanel() { panel.classList.add('open'); }
+    function closePanel() { panel.classList.remove('open'); }
+
+    // ── Render history ────────────────────────────────
+    function renderHistory(filter) {
+        const hist = loadHist().sort((a, b) => b.ts - a.ts);
+        const f = (filter || '').toLowerCase();
+        const filtered = f ? hist.filter(it => it.q.toLowerCase().includes(f)) : hist;
+        const recent = filtered.slice(0, 3);
+        const older = filtered.slice(3, 7);
+
+        if (!recent.length && !older.length) {
+            panel.innerHTML = '<div class="csp-empty"><i class="bi bi-search" style="font-size:1.2rem;display:block;margin-bottom:4px"></i>Tapez pour rechercher</div>';
+            return;
+        }
+
+        const mkItem = (it, icon) => `
+            <div class="csp-item csp-hist-item" data-q="${escapeHtml(it.q)}">
+                <div class="csp-icon t-history"><i class="bi bi-${icon}"></i></div>
+                <div class="csp-text"><div class="csp-title">${escapeHtml(it.q)}</div></div>
+                <button class="csp-del" data-del-q="${escapeHtml(it.q)}" title="Supprimer"><i class="bi bi-x"></i></button>
+            </div>`;
+
+        let html = '<div class="csp-section">Recherches récentes</div>';
+        html += recent.map(it => mkItem(it, 'clock')).join('');
+        if (older.length) {
+            html += '<div class="csp-section">Plus anciennes</div>';
+            html += older.map(it => mkItem(it, 'search')).join('');
+        }
+        panel.innerHTML = html;
+    }
+
+    // ── Render results ────────────────────────────────
+    function renderResults(results, query) {
+        if (!results.length) {
+            panel.innerHTML = `<div class="csp-empty">Aucun résultat pour « ${escapeHtml(query)} »</div>`;
+            return;
+        }
+
+        // Group by type
+        const groups = {};
+        results.forEach(r => {
+            if (!groups[r.type]) groups[r.type] = [];
+            groups[r.type].push(r);
+        });
+
+        const typeLabels = { resident: 'Résidents', wiki: 'Wiki', annonce: 'Annonces' };
+        let html = '';
+
+        for (const [type, items] of Object.entries(groups)) {
+            html += `<div class="csp-section">${typeLabels[type] || type}</div>`;
+            items.forEach(r => {
+                html += `
+                    <div class="csp-item csp-result-item" data-url="${escapeHtml(r.url)}" data-id="${r.id}">
+                        <div class="csp-icon t-${type}"><i class="bi bi-${r.icon}"></i></div>
+                        <div class="csp-text">
+                            <div class="csp-title">${escapeHtml(r.title)}</div>
+                            <div class="csp-sub">${escapeHtml(r.subtitle)}</div>
+                        </div>
+                    </div>`;
+            });
+        }
+        panel.innerHTML = html;
+    }
+
+    // ── Search API ────────────────────────────────────
+    let searchTimer;
+    async function doSearch(q) {
+        if (q.length < 2) { renderHistory(q); return; }
+        const res = await adminApiPost('admin_care_global_search', { q });
+        if (res.success) renderResults(res.results, q);
+    }
+
+    // ── Events ────────────────────────────────────────
+    input.addEventListener('focus', () => {
+        if (!input.value) renderHistory('');
+        openPanel();
+    });
+
+    input.addEventListener('input', () => {
+        const v = input.value.trim();
+        clearBtn.style.display = v ? '' : 'none';
+        clearTimeout(searchTimer);
+        if (v.length < 2) { renderHistory(v); openPanel(); return; }
+        searchTimer = setTimeout(() => doSearch(v), 300);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closePanel(); input.blur(); }
+        if (e.key === 'Enter' && input.value.trim().length >= 2) {
+            addHist(input.value.trim());
+            doSearch(input.value.trim());
+        }
+    });
+
+    clearBtn?.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        renderHistory('');
+        input.focus();
+    });
+
+    // Click on panel items
+    panel.addEventListener('click', (e) => {
+        // Delete history
+        const del = e.target.closest('.csp-del');
+        if (del) { e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(input.value); return; }
+
+        // Click history → fill input + search
+        const hist = e.target.closest('.csp-hist-item');
+        if (hist) {
+            input.value = hist.dataset.q;
+            clearBtn.style.display = '';
+            doSearch(hist.dataset.q);
+            return;
+        }
+
+        // Click result → navigate
+        const result = e.target.closest('.csp-result-item');
+        if (result) {
+            addHist(input.value.trim());
+            closePanel();
+            const url = result.dataset.url;
+            if (url) AdminURL.go(url.split('/')[0], url.split('/')[1] || '');
+        }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#topbarSearch')) closePanel();
+    });
+})();
+</script>
 </body>
 </html>

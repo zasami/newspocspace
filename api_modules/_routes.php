@@ -70,6 +70,10 @@ return [
     'repartition' => [
         'get_repartition',
     ],
+    'wiki' => [
+        'get_wiki_categories', 'get_wiki_pages', 'get_wiki_page',
+        'get_annonces_list', 'get_annonce_detail',
+    ],
     'mur' => [
         'get_mur_config', 'get_mur_feed', 'create_mur_post', 'update_mur_post', 'delete_mur_post',
         'toggle_mur_like', 'get_mur_comments', 'add_mur_comment', 'delete_mur_comment',

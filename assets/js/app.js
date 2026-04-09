@@ -34,6 +34,7 @@ const moduleMap = {
     'cuisine-famille':      () => import('./modules/cuisine-famille.js'),
     'cuisine-vip':          () => import('./modules/cuisine-vip.js'),
     'mur':          () => import('./modules/mur.js'),
+    'wiki':         () => import('./modules/wiki.js'),
 };
 
 let currentModule = null;

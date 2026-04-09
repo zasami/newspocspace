@@ -74,6 +74,7 @@ $sidebarNav = [
             'sondages'  => ['label' => 'Sondages',        'icon' => 'clipboard2-check'],
             'documents' => ['label' => 'Documents',       'icon' => 'folder2-open'],
             'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
+            'wiki'      => ['label' => 'Base de connaissances', 'icon' => 'book'],
         ],
     ],
 ];
