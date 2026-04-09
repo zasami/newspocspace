@@ -71,7 +71,8 @@ return [
         'get_repartition',
     ],
     'wiki' => [
-        'get_wiki_categories', 'get_wiki_pages', 'get_wiki_page',
+        'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
+        'toggle_wiki_favori',
         'get_annonces_list', 'get_annonce_detail',
     ],
     'mur' => [

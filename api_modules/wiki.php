@@ -1,6 +1,6 @@
 <?php
 /**
- * Wiki / Base de connaissances — API employé (lecture seule)
+ * Wiki / Base de connaissances — API employé (lecture + favoris)
  */
 
 function get_wiki_categories()
@@ -10,43 +10,88 @@ function get_wiki_categories()
     respond(['success' => true, 'categories' => $cats]);
 }
 
-function get_wiki_pages()
+function get_wiki_tags()
 {
     require_auth();
+    $tags = Db::fetchAll("SELECT id, nom, slug, couleur FROM wiki_tags ORDER BY nom");
+    respond(['success' => true, 'tags' => $tags]);
+}
+
+function get_wiki_pages()
+{
+    $user = require_auth();
     global $params;
 
     $search = Sanitize::text($params['search'] ?? '', 200);
     $catId = $params['categorie_id'] ?? '';
+    $tagId = $params['tag_id'] ?? '';
+    $favOnly = !empty($params['favoris_only']);
 
     $where = ['p.archived_at IS NULL', 'p.visible = 1'];
     $binds = [];
 
     if ($catId) { $where[] = 'p.categorie_id = ?'; $binds[] = $catId; }
+    if ($tagId) {
+        $where[] = 'EXISTS (SELECT 1 FROM wiki_page_tags wpt WHERE wpt.page_id = p.id AND wpt.tag_id = ?)';
+        $binds[] = $tagId;
+    }
+    if ($favOnly) {
+        $where[] = 'EXISTS (SELECT 1 FROM wiki_favoris wf WHERE wf.page_id = p.id AND wf.user_id = ?)';
+        $binds[] = $user['id'];
+    }
+
+    // Use FULLTEXT if available, fallback to LIKE
     if ($search) {
-        $where[] = '(p.titre LIKE ? OR p.description LIKE ? OR p.contenu LIKE ?)';
-        $s = "%$search%";
-        $binds[] = $s; $binds[] = $s; $binds[] = $s;
+        $where[] = 'MATCH(p.titre, p.description, p.contenu) AGAINST(? IN BOOLEAN MODE)';
+        $binds[] = $search . '*';
     }
 
     $pages = Db::fetchAll(
         "SELECT p.id, p.titre, p.slug, p.description, p.categorie_id, p.version,
-                p.epingle, p.created_at, p.updated_at,
+                p.epingle, p.expert_id, p.verified_at, p.verify_next,
+                p.created_at, p.updated_at,
                 c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
-                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom
+                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
+                ex.prenom AS expert_prenom, ex.nom AS expert_nom
          FROM wiki_pages p
          LEFT JOIN wiki_categories c ON c.id = p.categorie_id
          LEFT JOIN users cr ON cr.id = p.created_by
+         LEFT JOIN users ex ON ex.id = p.expert_id
          WHERE " . implode(' AND ', $where) . "
          ORDER BY p.epingle DESC, p.updated_at DESC",
         $binds
     );
+
+    // Attach tags + favoris status
+    $pageIds = array_column($pages, 'id');
+    $tagsByPage = [];
+    $favSet = [];
+    if ($pageIds) {
+        $ph = implode(',', array_fill(0, count($pageIds), '?'));
+        $allTags = Db::fetchAll(
+            "SELECT wpt.page_id, t.id, t.nom, t.slug, t.couleur FROM wiki_page_tags wpt JOIN wiki_tags t ON t.id = wpt.tag_id WHERE wpt.page_id IN ($ph)",
+            $pageIds
+        );
+        foreach ($allTags as $t) $tagsByPage[$t['page_id']][] = $t;
+
+        $favRows = Db::fetchAll(
+            "SELECT page_id FROM wiki_favoris WHERE user_id = ? AND page_id IN ($ph)",
+            array_merge([$user['id']], $pageIds)
+        );
+        foreach ($favRows as $f) $favSet[$f['page_id']] = true;
+    }
+    foreach ($pages as &$p) {
+        $p['tags'] = $tagsByPage[$p['id']] ?? [];
+        $p['is_favori'] = isset($favSet[$p['id']]);
+    }
+    unset($p);
 
     respond(['success' => true, 'pages' => $pages]);
 }
 
 function get_wiki_page()
 {
-    require_auth();
+    $user = require_auth();
     global $params;
 
     $id = $params['id'] ?? '';
@@ -54,17 +99,48 @@ function get_wiki_page()
 
     $page = Db::fetch(
         "SELECT p.*, c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
-                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom
+                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
+                ex.prenom AS expert_prenom, ex.nom AS expert_nom
          FROM wiki_pages p
          LEFT JOIN wiki_categories c ON c.id = p.categorie_id
          LEFT JOIN users cr ON cr.id = p.created_by
+         LEFT JOIN users ex ON ex.id = p.expert_id
          WHERE p.id = ? AND p.visible = 1 AND p.archived_at IS NULL",
         [$id]
     );
 
     if (!$page) not_found('Page introuvable');
+
+    $page['tags'] = Db::fetchAll(
+        "SELECT t.id, t.nom, t.slug, t.couleur FROM wiki_page_tags wpt JOIN wiki_tags t ON t.id = wpt.tag_id WHERE wpt.page_id = ?",
+        [$id]
+    );
+    $page['is_favori'] = (bool)Db::getOne("SELECT 1 FROM wiki_favoris WHERE user_id = ? AND page_id = ?", [$user['id'], $id]);
+
     respond(['success' => true, 'page' => $page]);
 }
+
+/* ── Favoris ───────────────────────────────────────────── */
+
+function toggle_wiki_favori()
+{
+    $user = require_auth();
+    global $params;
+
+    $pageId = $params['page_id'] ?? '';
+    if (!$pageId) bad_request('page_id requis');
+
+    $exists = Db::getOne("SELECT 1 FROM wiki_favoris WHERE user_id = ? AND page_id = ?", [$user['id'], $pageId]);
+    if ($exists) {
+        Db::exec("DELETE FROM wiki_favoris WHERE user_id = ? AND page_id = ?", [$user['id'], $pageId]);
+        respond(['success' => true, 'is_favori' => false, 'message' => 'Retiré des favoris']);
+    } else {
+        Db::exec("INSERT INTO wiki_favoris (user_id, page_id) VALUES (?, ?)", [$user['id'], $pageId]);
+        respond(['success' => true, 'is_favori' => true, 'message' => 'Ajouté aux favoris']);
+    }
+}
+
+/* ── Annonces ──────────────────────────────────────────── */
 
 function get_annonces_list()
 {

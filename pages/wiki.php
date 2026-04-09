@@ -13,6 +13,9 @@ $ssrData = ['categories' => $ssrCategories];
 <!-- Category filters -->
 <div id="wikiCatFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
 
+<!-- Tag filters + Favoris -->
+<div id="wikiTagFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center"></div>
+
 <!-- Pages grid -->
 <div id="wikiGrid"></div>
 <div id="wikiEmpty" class="page-empty" style="display:none">
@@ -51,6 +54,20 @@ $ssrData = ['categories' => $ssrCategories];
 .wiki-read-content img { max-width:100%; border-radius:6px; margin:8px 0; }
 .wiki-read-content blockquote { border-left:3px solid #2d4a43; padding-left:12px; color:#6c757d; margin:12px 0; }
 .wiki-read-content ul, .wiki-read-content ol { padding-left:20px; }
+
+.wiki-tag { font-size:.65rem; padding:2px 7px; border-radius:8px; color:#fff; display:inline-flex; align-items:center; gap:2px; font-weight:600; }
+.wiki-tags-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+.wiki-tag-filter { border:1px solid #dee2e6; background:#fff; border-radius:14px; padding:3px 10px; font-size:.72rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:3px; }
+.wiki-tag-filter:hover, .wiki-tag-filter.active { color:#fff; border-color:transparent; }
+.wiki-fav-btn { background:none; border:none; cursor:pointer; font-size:1rem; color:#ccc; transition:all .15s; padding:2px; }
+.wiki-fav-btn:hover { color:#dc3545; }
+.wiki-fav-btn.active { color:#dc3545; }
+.wiki-fav-filter { border:1px solid #dee2e6; background:#fff; border-radius:14px; padding:3px 10px; font-size:.72rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:3px; }
+.wiki-fav-filter.active { background:#dc3545; color:#fff; border-color:#dc3545; }
+.wiki-verify-badge { font-size:.68rem; padding:2px 8px; border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:3px; }
+.wiki-verify-ok { background:#bcd2cb; color:#2d4a43; }
+.wiki-verify-expired { background:#E2B8AE; color:#7B3B2C; }
+.wiki-expert-badge { font-size:.68rem; color:#3B4F6B; display:inline-flex; align-items:center; gap:3px; }
 </style>
 
 <script type="application/json" id="__ss_ssr__"><?= json_encode($ssrData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?></script>

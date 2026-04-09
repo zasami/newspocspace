@@ -197,5 +197,8 @@ return [
         'admin_get_wiki_pages', 'admin_get_wiki_page', 'admin_create_wiki_page',
         'admin_update_wiki_page', 'admin_delete_wiki_page', 'admin_restore_wiki_page',
         'admin_get_wiki_versions', 'admin_restore_wiki_version', 'admin_toggle_wiki_page',
+        'admin_get_wiki_tags', 'admin_create_wiki_tag', 'admin_delete_wiki_tag', 'admin_set_wiki_page_tags',
+        'admin_assign_wiki_expert', 'admin_verify_wiki_page', 'admin_get_wiki_expired',
+        'admin_toggle_wiki_favori',
     ],
 ];

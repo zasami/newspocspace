@@ -6,19 +6,41 @@
 $user = $_SESSION['ss_user'];
 $isResponsable = in_array($user['role'], ['admin', 'direction', 'responsable']);
 
-// SSR: categories + pages initiales
+// SSR: categories + tags + pages
 $categories = Db::fetchAll("SELECT * FROM wiki_categories WHERE actif = 1 ORDER BY ordre, nom");
+$tags = Db::fetchAll("SELECT id, nom, slug, couleur FROM wiki_tags ORDER BY nom");
 $pages = Db::fetchAll(
     "SELECT p.id, p.titre, p.slug, p.description, p.categorie_id, p.version,
-            p.visible, p.epingle, p.created_at, p.updated_at,
+            p.visible, p.epingle, p.expert_id, p.verified_at, p.verify_next,
+            p.created_at, p.updated_at,
             c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
-            cr.prenom AS auteur_prenom, cr.nom AS auteur_nom
+            cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
+            ex.prenom AS expert_prenom, ex.nom AS expert_nom
      FROM wiki_pages p
      LEFT JOIN wiki_categories c ON c.id = p.categorie_id
      LEFT JOIN users cr ON cr.id = p.created_by
+     LEFT JOIN users ex ON ex.id = p.expert_id
      WHERE p.archived_at IS NULL AND p.visible = 1
      ORDER BY p.epingle DESC, p.updated_at DESC"
 );
+// Attach tags + favoris
+$pageIds = array_column($pages, 'id');
+$tagsByPage = [];
+$favSet = [];
+if ($pageIds) {
+    $ph = implode(',', array_fill(0, count($pageIds), '?'));
+    $allTags = Db::fetchAll("SELECT wpt.page_id, t.id, t.nom, t.slug, t.couleur FROM wiki_page_tags wpt JOIN wiki_tags t ON t.id = wpt.tag_id WHERE wpt.page_id IN ($ph)", $pageIds);
+    foreach ($allTags as $t) $tagsByPage[$t['page_id']][] = $t;
+    $favRows = Db::fetchAll("SELECT page_id FROM wiki_favoris WHERE user_id = ? AND page_id IN ($ph)", array_merge([$user['id']], $pageIds));
+    foreach ($favRows as $f) $favSet[$f['page_id']] = true;
+}
+foreach ($pages as &$p) {
+    $p['tags'] = $tagsByPage[$p['id']] ?? [];
+    $p['is_favori'] = isset($favSet[$p['id']]);
+}
+unset($p);
+// Count expired verifications
+$expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_at IS NULL AND verify_next IS NOT NULL AND verify_next <= NOW()");
 ?>
 <style>
 .wiki-cat-filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
@@ -126,6 +148,28 @@ $pages = Db::fetchAll(
     padding:10px 12px; margin:0 0 6px 0;
 }
 .wcat-edit-row .row { --bs-gutter-x:8px; }
+
+/* ── Tags ──────────────────────────────────────────── */
+.wiki-tag { font-size:.65rem; padding:2px 7px; border-radius:8px; color:#fff; display:inline-flex; align-items:center; gap:2px; font-weight:600; }
+.wiki-tags-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+.wiki-tag-filter { border:1px solid #dee2e6; background:#fff; border-radius:14px; padding:3px 10px; font-size:.72rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:3px; }
+.wiki-tag-filter:hover, .wiki-tag-filter.active { color:#fff; border-color:transparent; }
+
+/* ── Favoris ───────────────────────────────────────── */
+.wiki-fav-btn { background:none; border:none; cursor:pointer; font-size:1rem; color:#ccc; transition:all .15s; padding:2px; }
+.wiki-fav-btn:hover { color:#dc3545; }
+.wiki-fav-btn.active { color:#dc3545; }
+.wiki-fav-filter { border:1px solid #dee2e6; background:#fff; border-radius:14px; padding:3px 10px; font-size:.72rem; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:3px; }
+.wiki-fav-filter.active { background:#dc3545; color:#fff; border-color:#dc3545; }
+
+/* ── Verification badge ────────────────────────────── */
+.wiki-verify-badge { font-size:.68rem; padding:2px 8px; border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:3px; }
+.wiki-verify-ok { background:#bcd2cb; color:#2d4a43; }
+.wiki-verify-expired { background:#E2B8AE; color:#7B3B2C; }
+.wiki-verify-none { background:#f0eeea; color:#6c757d; }
+.wiki-expert-badge { font-size:.68rem; color:#3B4F6B; display:inline-flex; align-items:center; gap:3px; }
+.wiki-alert-bar { background:#E2B8AE; color:#7B3B2C; padding:8px 14px; border-radius:8px; font-size:.82rem; display:flex; align-items:center; gap:8px; margin-bottom:12px; cursor:pointer; }
+.wiki-alert-bar:hover { background:#d4a89c; }
 </style>
 
 <!-- LIST VIEW -->
@@ -148,8 +192,22 @@ $pages = Db::fetchAll(
       <?php endif; ?>
     </div>
 
+    <!-- Alert: expired verifications -->
+    <?php if ($isResponsable && $expiredCount > 0): ?>
+    <div class="wiki-alert-bar" id="wikiAlertBar">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span><strong><?= $expiredCount ?></strong> fiche(s) nécessitent une re-vérification</span>
+      <i class="bi bi-chevron-right ms-auto"></i>
+    </div>
+    <?php endif; ?>
+
     <!-- Category filters -->
     <div class="wiki-cat-filters" id="wikiCatFilters"></div>
+
+    <!-- Tag filters + Favoris -->
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center" id="wikiTagFilters">
+      <button class="wiki-fav-filter" id="wikiFavFilter"><i class="bi bi-heart-fill"></i> Mes favoris</button>
+    </div>
 
     <!-- Pages grid -->
     <div class="wiki-grid" id="wikiGrid"></div>
@@ -238,10 +296,14 @@ $pages = Db::fetchAll(
     const isResp = <?= $isResponsable ? 'true' : 'false' ?>;
     const ssrCategories = <?= json_encode(array_values($categories), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     const ssrPages = <?= json_encode(array_values($pages), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const ssrTags = <?= json_encode(array_values($tags), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
     let allPages = ssrPages;
     let allCategories = ssrCategories;
+    let allTags = ssrTags;
     let currentFilter = '';
+    let currentTagFilter = '';
+    let favOnlyFilter = false;
     let currentPageId = null;
     let editingCatId = null;
     let iconPickerCallback = null;
@@ -277,6 +339,7 @@ $pages = Db::fetchAll(
     // ── Init ──────────────────────────────────────────────
     function init() {
         renderCatFilters();
+        renderTagFilters();
         renderGrid();
         bindEvents();
         bindSearch();
@@ -300,6 +363,30 @@ $pages = Db::fetchAll(
         });
     }
 
+    // ── Tag filters ───────────────────────────────────────
+    function renderTagFilters() {
+        const c = document.getElementById('wikiTagFilters');
+        if (!c) return;
+        let html = `<button class="wiki-fav-filter ${favOnlyFilter ? 'active' : ''}" id="wikiFavFilter"><i class="bi bi-heart-fill"></i> Mes favoris</button>`;
+        allTags.forEach(tag => {
+            const active = currentTagFilter === tag.id;
+            html += `<button class="wiki-tag-filter ${active ? 'active' : ''}" data-tag="${tag.id}" style="background:${active ? tag.couleur : '#fff'};color:${active ? '#fff' : '#333'};border-color:${tag.couleur}">
+                ${escapeHtml(tag.nom)}
+            </button>`;
+        });
+        c.innerHTML = html;
+        c.querySelectorAll('.wiki-tag-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentTagFilter = currentTagFilter === btn.dataset.tag ? '' : btn.dataset.tag;
+                renderTagFilters(); renderGrid();
+            });
+        });
+        c.querySelector('#wikiFavFilter')?.addEventListener('click', () => {
+            favOnlyFilter = !favOnlyFilter;
+            renderTagFilters(); renderGrid();
+        });
+    }
+
     // ── Grid ──────────────────────────────────────────────
     function renderGrid() {
         const grid = document.getElementById('wikiGrid');
@@ -308,6 +395,8 @@ $pages = Db::fetchAll(
 
         let filtered = allPages;
         if (currentFilter) filtered = filtered.filter(p => p.categorie_id === currentFilter);
+        if (currentTagFilter) filtered = filtered.filter(p => (p.tags || []).some(t => t.id === currentTagFilter));
+        if (favOnlyFilter) filtered = filtered.filter(p => p.is_favori);
         if (searchVal) filtered = filtered.filter(p =>
             (p.titre || '').toLowerCase().includes(searchVal) ||
             (p.description || '').toLowerCase().includes(searchVal)
@@ -323,21 +412,50 @@ $pages = Db::fetchAll(
             const pin = p.epingle == 1 ? '<i class="bi bi-pin-angle-fill wiki-card-pin" title="Épinglé"></i>' : '';
             const date = p.updated_at ? new Date(p.updated_at).toLocaleDateString('fr-CH', {day:'numeric',month:'short',year:'numeric'}) : '';
             const auteur = p.auteur_prenom ? `${p.auteur_prenom} ${p.auteur_nom}` : '';
+            const tagsHtml = (p.tags || []).map(t => `<span class="wiki-tag" style="background:${t.couleur}">${escapeHtml(t.nom)}</span>`).join('');
+            const favIcon = p.is_favori ? 'heart-fill' : 'heart';
+            const favClass = p.is_favori ? 'active' : '';
+            // Verification status
+            let verifyBadge = '';
+            if (p.verify_next) {
+                const isExpired = new Date(p.verify_next) <= new Date();
+                verifyBadge = isExpired
+                    ? '<span class="wiki-verify-badge wiki-verify-expired"><i class="bi bi-exclamation-triangle"></i> À revérifier</span>'
+                    : '<span class="wiki-verify-badge wiki-verify-ok"><i class="bi bi-patch-check"></i> Vérifié</span>';
+            }
             return `<div class="wiki-card ${p.epingle == 1 ? 'pinned' : ''}" data-id="${p.id}">
                 ${pin}
+                <button class="wiki-fav-btn ${favClass}" data-fav-id="${p.id}" title="Favoris" style="position:absolute;top:8px;right:${p.epingle == 1 ? '28' : '10'}px"><i class="bi bi-${favIcon}"></i></button>
                 <div class="wiki-card-title">${escapeHtml(p.titre)}</div>
                 <div class="wiki-card-desc">${escapeHtml(p.description || '')}</div>
-                <div class="wiki-card-meta">
-                    ${catBadge}
+                ${tagsHtml ? `<div class="wiki-tags-row">${tagsHtml}</div>` : ''}
+                <div class="wiki-card-meta" style="margin-top:6px">
+                    ${catBadge} ${verifyBadge}
                     <span><i class="bi bi-calendar3"></i> ${date}</span>
                     ${auteur ? `<span><i class="bi bi-person"></i> ${escapeHtml(auteur)}</span>` : ''}
-                    <span>v${p.version || 1}</span>
                 </div>
             </div>`;
         }).join('');
 
         grid.querySelectorAll('.wiki-card').forEach(card => {
-            card.addEventListener('click', () => openPage(card.dataset.id));
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.wiki-fav-btn')) return;
+                openPage(card.dataset.id);
+            });
+        });
+
+        // Favori toggle on cards
+        grid.querySelectorAll('.wiki-fav-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const pid = btn.dataset.favId;
+                const res = await adminApiPost('admin_toggle_wiki_favori', { page_id: pid });
+                if (!res.success) return;
+                // Update local data
+                const page = allPages.find(p => p.id === pid);
+                if (page) page.is_favori = res.is_favori;
+                renderGrid();
+            });
         });
     }
 
@@ -605,6 +723,16 @@ $pages = Db::fetchAll(
     function bindEvents() {
         document.getElementById('btnBackToList')?.addEventListener('click', backToList);
         document.getElementById('btnNewPage')?.addEventListener('click', () => AdminURL.go('wiki-edit'));
+        document.getElementById('wikiAlertBar')?.addEventListener('click', async () => {
+            const res = await adminApiPost('admin_get_wiki_expired', {});
+            if (!res.success) return;
+            // Show expired pages inline — filter allPages to only expired
+            const expiredIds = new Set(res.expired.map(e => e.id));
+            allPages.forEach(p => { p._expired_highlight = expiredIds.has(p.id); });
+            currentFilter = ''; currentTagFilter = ''; favOnlyFilter = false;
+            renderCatFilters(); renderTagFilters(); renderGrid();
+            showToast(res.count + ' fiche(s) à revérifier');
+        });
 
         document.getElementById('btnManageCategories')?.addEventListener('click', () => {
             renderCatList();

@@ -23,6 +23,12 @@ if ($pageId) {
 }
 
 $categories = Db::fetchAll("SELECT id, nom, icone, couleur FROM wiki_categories WHERE actif = 1 ORDER BY ordre, nom");
+$tags = Db::fetchAll("SELECT id, nom, slug, couleur FROM wiki_tags ORDER BY nom");
+$experts = Db::fetchAll("SELECT id, prenom, nom FROM users WHERE is_active = 1 AND role IN ('admin','direction','responsable') ORDER BY nom, prenom");
+$pageTags = [];
+if ($pageData) {
+    $pageTags = array_column(Db::fetchAll("SELECT tag_id FROM wiki_page_tags WHERE page_id = ?", [$pageId]), 'tag_id');
+}
 $isNew = !$pageData;
 ?>
 <style>
@@ -43,6 +49,11 @@ $isNew = !$pageData;
 .wiki-tiptap-wrap .zs-ed-content { padding:16px; min-height:350px; }
 .wiki-tiptap-wrap .zs-ed-content .tiptap { outline:none; min-height:300px; }
 .wiki-tiptap-wrap .zs-ed-content .tiptap p.is-editor-empty:first-child::before { content:attr(data-placeholder); color:#adb5bd; pointer-events:none; float:left; height:0; }
+
+.wiki-edit-tag { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:14px; font-size:.78rem; cursor:pointer; transition:all .15s; border:1.5px solid #dee2e6; background:#fff; user-select:none; }
+.wiki-edit-tag input { display:none; }
+.wiki-edit-tag:has(input:checked) { background:var(--tag-color, #6c757d); color:#fff; border-color:var(--tag-color, #6c757d); }
+.wiki-edit-tag:hover { border-color:var(--tag-color, #6c757d); }
 
 .wiki-save-bar { position:sticky; bottom:0; background:#fff; border-top:1px solid #e9ecef; padding:12px 20px; margin:-20px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; border-radius:0 0 10px 10px; z-index:10; }
 .wiki-autosave { font-size:.75rem; color:#adb5bd; }
@@ -72,6 +83,29 @@ $isNew = !$pageData;
 
     <!-- Description -->
     <input type="text" class="wiki-desc-input" id="wikiDescription" placeholder="Description courte (optionnel)" value="<?= h($pageData['description'] ?? '') ?>" maxlength="500">
+
+    <!-- Tags -->
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0" id="wikiTagsWrap">
+      <?php foreach ($tags as $tag): ?>
+      <label class="wiki-edit-tag" style="--tag-color:<?= h($tag['couleur']) ?>">
+        <input type="checkbox" value="<?= $tag['id'] ?>" <?= in_array($tag['id'], $pageTags) ? 'checked' : '' ?>>
+        <span><?= h($tag['nom']) ?></span>
+      </label>
+      <?php endforeach; ?>
+    </div>
+
+    <!-- Expert + Vérification -->
+    <div class="d-flex gap-3 align-items-center mb-2 flex-wrap">
+      <div class="zs-select" id="wikiExpert" data-placeholder="— Expert —" style="min-width:200px"></div>
+      <div class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 small text-muted" style="white-space:nowrap">Revérifier tous les</label>
+        <input type="number" class="form-control form-control-sm" id="wikiVerifyDays" value="<?= (int)($pageData['verify_interval_days'] ?? 90) ?>" min="7" max="365" style="width:70px">
+        <span class="small text-muted">jours</span>
+      </div>
+      <?php if (!$isNew && $pageData['expert_id']): ?>
+      <button class="btn btn-sm btn-outline-success" id="btnVerifyPage"><i class="bi bi-patch-check"></i> Vérifier maintenant</button>
+      <?php endif; ?>
+    </div>
 
     <!-- Import zone -->
     <div class="wiki-import-zone" id="wikiImportZone">
@@ -107,6 +141,9 @@ $isNew = !$pageData;
     const catOptions = <?= json_encode(array_map(function($c) use ($pageData) {
         return ['value' => $c['id'], 'label' => $c['nom'], 'icon' => 'bi-' . ($c['icone'] ?: 'book'), 'dot' => $c['couleur'] ?: '#6c757d', 'selected' => ($pageData['categorie_id'] ?? '') === $c['id']];
     }, $categories), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+    const expertOptions = <?= json_encode(array_map(function($u) use ($pageData) {
+        return ['value' => $u['id'], 'label' => $u['prenom'] . ' ' . $u['nom'], 'selected' => ($pageData['expert_id'] ?? '') === $u['id']];
+    }, $experts), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 
     let editor = null;
     let getHTMLFn = null;
@@ -119,6 +156,19 @@ $isNew = !$pageData;
         zerdaSelect.init(catEl, opts, { search: false, dots: true, placeholder: '— Catégorie —' });
         const selected = catOptions.find(c => c.selected);
         if (selected) zerdaSelect.setValue(catEl, selected.value);
+
+        // Init zerdaSelect for expert
+        const expEl = document.getElementById('wikiExpert');
+        const expOpts = expertOptions.map(e => ({ value: e.value, label: e.label }));
+        zerdaSelect.init(expEl, expOpts, { search: true, placeholder: '— Expert référent —' });
+        const selExp = expertOptions.find(e => e.selected);
+        if (selExp) zerdaSelect.setValue(expEl, selExp.value);
+
+        // Verify button
+        document.getElementById('btnVerifyPage')?.addEventListener('click', async () => {
+            const r = await adminApiPost('admin_verify_wiki_page', { page_id: pageId });
+            if (r.success) showToast(r.message);
+        });
 
         // Dynamic import of rich-editor module
         const { createEditor, getHTML, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
@@ -296,6 +346,10 @@ $isNew = !$pageData;
     }
 
     // ── Save ──────────────────────────────────────────────
+    function getSelectedTagIds() {
+        return [...document.querySelectorAll('#wikiTagsWrap input:checked')].map(el => el.value);
+    }
+
     async function save() {
         const titre = document.getElementById('wikiTitle').value.trim();
         if (!titre) { showToast('Titre requis', 'danger'); return; }
@@ -319,6 +373,16 @@ $isNew = !$pageData;
         btn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
 
         if (res.success) {
+            const savedId = pageId || res.id;
+
+            // Save tags
+            await adminApiPost('admin_set_wiki_page_tags', { page_id: savedId, tag_ids: getSelectedTagIds() });
+
+            // Save expert
+            const expertId = zerdaSelect.getValue(document.getElementById('wikiExpert'));
+            const intervalDays = document.getElementById('wikiVerifyDays')?.value || 90;
+            await adminApiPost('admin_assign_wiki_expert', { page_id: savedId, expert_id: expertId, interval_days: intervalDays });
+
             dirty = false;
             showToast(res.message || 'Sauvegardé');
             document.getElementById('wikiAutoSave').textContent = 'Sauvegardé';
