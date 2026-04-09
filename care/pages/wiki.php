@@ -69,8 +69,12 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 .wiki-read-content h3 { font-size:1rem; font-weight:600; margin-top:16px; margin-bottom:6px; }
 .wiki-read-content ul, .wiki-read-content ol { padding-left:20px; }
 .wiki-read-content img { max-width:100%; border-radius:6px; margin:8px 0; }
-.wiki-read-content blockquote { border-left:3px solid var(--care-primary, #2d4a43); padding-left:12px; color:#6c757d; margin:12px 0; }
+.wiki-read-content blockquote { border-left:3px solid var(--care-primary, #2d4a43); padding-left:12px; color:#6c757d; margin:12px 0; font-style:italic; }
 .wiki-read-content a { color:var(--care-primary, #2d4a43); text-decoration:underline; }
+.wiki-read-content table { border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #dee2e6; border-radius:8px; overflow:hidden; }
+.wiki-read-content table th { background:#f8f9fa; font-weight:600; font-size:.85rem; padding:10px 12px; border:1px solid #dee2e6; text-align:left; }
+.wiki-read-content table td { padding:10px 12px; border:1px solid #dee2e6; font-size:.88rem; vertical-align:top; }
+.wiki-read-content table tr:hover td { background:#fafaf7; }
 
 .wiki-empty { text-align:center; padding:60px 20px; color:#adb5bd; }
 .wiki-empty .bi { font-size:3rem; display:block; margin-bottom:12px; }
@@ -351,6 +355,7 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
     let currentTagFilter = '';
     let favOnlyFilter = false;
     let currentPageId = null;
+    let currentViewer = null;
     let editingCatId = null;
     let iconPickerCallback = null;
 
@@ -523,6 +528,9 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         const heroImg = p.image_url ? `<img class="wiki-read-hero" src="${escapeHtml(p.image_url)}" alt="">` : '';
         const tagsHtml = (p.tags || []).map(t => `<span class="wiki-tag" style="background:${t.couleur}">${escapeHtml(t.nom)}</span>`).join('');
 
+        // Destroy previous viewer
+        if (currentViewer) { currentViewer.destroy(); currentViewer = null; }
+
         document.getElementById('wikiReadPanel').innerHTML = `
             ${heroImg}
             <div class="wiki-read-content-wrap">
@@ -536,9 +544,18 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
                     &middot; Version ${p.version || 1}
                     ${p.expert_prenom ? ` &middot; <span class="wiki-expert-badge"><i class="bi bi-person-check"></i> ${escapeHtml(p.expert_prenom + ' ' + p.expert_nom)}</span>` : ''}
                 </div>
-                <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
+                <div class="wiki-read-content" id="wikiViewerMount"></div>
             </div>
         `;
+
+        // Render content with TipTap viewer (same rendering as editor)
+        const { createViewer, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
+        const mount = document.getElementById('wikiViewerMount');
+        if (p.contenu) {
+            currentViewer = await createViewer(mount, p.contenu);
+        } else {
+            mount.innerHTML = '<p class="text-muted">Aucun contenu</p>';
+        }
 
         let actions = `<button class="btn btn-outline-secondary btn-sm" id="btnVersions"><i class="bi bi-clock-history"></i> Versions</button>`;
         if (isResp) {
@@ -569,6 +586,7 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 
     function backToList() {
         currentPageId = null;
+        if (currentViewer) { currentViewer.destroy(); currentViewer = null; }
         document.getElementById('wikiReadView').style.display = 'none';
         document.getElementById('wikiListView').style.display = '';
     }

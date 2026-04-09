@@ -54,8 +54,12 @@ $ssrData = ['categories' => $ssrCategories];
 .wiki-read-content h2 { font-size:1.1rem; font-weight:700; margin-top:20px; margin-bottom:8px; color:#2d4a43; }
 .wiki-read-content h3 { font-size:.95rem; font-weight:600; margin-top:16px; }
 .wiki-read-content img { max-width:100%; border-radius:6px; margin:8px 0; }
-.wiki-read-content blockquote { border-left:3px solid #2d4a43; padding-left:12px; color:#6c757d; margin:12px 0; }
+.wiki-read-content blockquote { border-left:3px solid #2d4a43; padding-left:12px; color:#6c757d; margin:12px 0; font-style:italic; }
 .wiki-read-content ul, .wiki-read-content ol { padding-left:20px; }
+.wiki-read-content table { border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #dee2e6; }
+.wiki-read-content table th { background:#f8f9fa; font-weight:600; font-size:.85rem; padding:10px 12px; border:1px solid #dee2e6; text-align:left; }
+.wiki-read-content table td { padding:10px 12px; border:1px solid #dee2e6; font-size:.88rem; vertical-align:top; }
+.wiki-read-content table tr:hover td { background:#fafaf7; }
 
 .wiki-tag { font-size:.65rem; padding:2px 7px; border-radius:8px; color:#fff; display:inline-flex; align-items:center; gap:2px; font-weight:600; }
 .wiki-tags-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }

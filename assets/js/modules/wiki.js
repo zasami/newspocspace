@@ -6,6 +6,7 @@ import { apiPost, escapeHtml } from '../helpers.js';
 let categories = [];
 let tags = [];
 let allPages = [];
+let currentViewer = null;
 let currentFilter = '';
 let currentTagFilter = '';
 let favOnlyFilter = false;
@@ -133,6 +134,9 @@ async function openPage(id) {
 
     const heroImg = p.image_url ? `<img class="wiki-read-hero" src="${escapeHtml(p.image_url)}" alt="">` : '';
 
+    // Destroy previous viewer
+    if (currentViewer) { currentViewer.destroy(); currentViewer = null; }
+
     document.getElementById('wikiReadPanel').innerHTML = `
         ${heroImg}
         <div class="wiki-read-content-wrap">
@@ -144,9 +148,18 @@ async function openPage(id) {
                 ${expertInfo ? ` &middot; ${expertInfo}` : ''}
                 &middot; v${p.version || 1}
             </div>
-            <div class="wiki-read-content">${p.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
+            <div class="wiki-read-content" id="wikiViewerMount"></div>
         </div>
     `;
+
+    // Render with TipTap viewer
+    const { createViewer } = await import('../rich-editor.js');
+    const mount = document.getElementById('wikiViewerMount');
+    if (p.contenu) {
+        currentViewer = await createViewer(mount, p.contenu);
+    } else {
+        mount.innerHTML = '<p class="text-muted">Aucun contenu</p>';
+    }
 
     document.getElementById('wikiCatFilters').style.display = 'none';
     document.getElementById('wikiTagFilters').style.display = 'none';
@@ -156,6 +169,7 @@ async function openPage(id) {
 }
 
 function backToList() {
+    if (currentViewer) { currentViewer.destroy(); currentViewer = null; }
     document.getElementById('wikiReadView').style.display = 'none';
     document.getElementById('wikiCatFilters').style.display = '';
     document.getElementById('wikiTagFilters').style.display = '';
@@ -188,6 +202,7 @@ export async function init() {
 }
 
 export function destroy() {
+    if (currentViewer) { currentViewer.destroy(); currentViewer = null; }
     categories = []; tags = []; allPages = [];
     currentFilter = ''; currentTagFilter = ''; favOnlyFilter = false;
     const searchInput = document.getElementById('feSearchInput');

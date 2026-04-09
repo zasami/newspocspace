@@ -10,6 +10,7 @@ const LIB_VERSION = '3.14.0';
 
 // Library references (loaded once)
 let EditorClass, StarterKit, TextAlign, Highlight, Placeholder, ImageExt, Underline, LinkExt;
+let TableExt, TableRow, TableCell, TableHeader;
 let libLoaded = false;
 
 // Track emoji picker instances for cleanup
@@ -24,7 +25,7 @@ async function loadLib() {
     const enc = (m) => PROXY + encodeURIComponent(m);
 
     try {
-        const [core, starter, textAlign, highlight, placeholder, image, underline, link] = await Promise.all([
+        const [core, starter, textAlign, highlight, placeholder, image, underline, link, table, tableRow, tableCell, tableHeader] = await Promise.all([
             import(enc(`@tiptap/core@${LIB_VERSION}`)),
             import(enc(`@tiptap/starter-kit@${LIB_VERSION}`)),
             import(enc(`@tiptap/extension-text-align@${LIB_VERSION}`)),
@@ -33,6 +34,10 @@ async function loadLib() {
             import(enc(`@tiptap/extension-image@${LIB_VERSION}`)),
             import(enc(`@tiptap/extension-underline@${LIB_VERSION}`)),
             import(enc(`@tiptap/extension-link@${LIB_VERSION}`)),
+            import(enc(`@tiptap/extension-table@${LIB_VERSION}`)),
+            import(enc(`@tiptap/extension-table-row@${LIB_VERSION}`)),
+            import(enc(`@tiptap/extension-table-cell@${LIB_VERSION}`)),
+            import(enc(`@tiptap/extension-table-header@${LIB_VERSION}`)),
         ]);
 
         EditorClass = core.Editor;
@@ -43,6 +48,10 @@ async function loadLib() {
         ImageExt = image.Image || image.default;
         Underline = underline.Underline || underline.default;
         LinkExt = link.Link || link.default;
+        TableExt = table.Table || table.default;
+        TableRow = tableRow.TableRow || tableRow.default;
+        TableCell = tableCell.TableCell || tableCell.default;
+        TableHeader = tableHeader.TableHeader || tableHeader.default;
 
         libLoaded = true;
         return true;
@@ -96,6 +105,12 @@ function buildToolbar(mode = 'full') {
         ${btn('link', 'link-45deg', 'Link')}
         ${btn('image', 'image', 'Image')}
         ${sep}
+        ${btn('table', 'table', 'Tableau')}
+        ${btn('tableDelRow', 'dash-lg', 'Suppr. ligne')}
+        ${btn('tableDelCol', 'x', 'Suppr. colonne')}
+        ${btn('tableAddRow', 'plus-lg', 'Ajouter ligne')}
+        ${btn('tableAddCol', 'plus-square', 'Ajouter colonne')}
+        ${sep}
         ${btn('emoji', 'emoji-smile', 'Emoji')}
         ${sep}
         ${btn('undo', 'arrow-counterclockwise', 'Undo')}
@@ -107,6 +122,11 @@ function buildToolbar(mode = 'full') {
  * Attach toolbar button handlers
  */
 function attachToolbar(toolbar, editor) {
+    // Prevent mousedown from stealing focus from editor
+    toolbar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('[data-ed-action]')) e.preventDefault();
+    });
+
     toolbar.querySelectorAll('[data-ed-action]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -127,6 +147,11 @@ function attachToolbar(toolbar, editor) {
                 case 'alignCenter': editor.chain().focus().setTextAlign('center').run(); break;
                 case 'alignRight': editor.chain().focus().setTextAlign('right').run(); break;
                 case 'alignJustify': editor.chain().focus().setTextAlign('justify').run(); break;
+                case 'table': editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+                case 'tableAddRow': editor.chain().focus().addRowAfter().run(); break;
+                case 'tableAddCol': editor.chain().focus().addColumnAfter().run(); break;
+                case 'tableDelRow': editor.chain().focus().deleteRow().run(); break;
+                case 'tableDelCol': editor.chain().focus().deleteColumn().run(); break;
                 case 'undo': editor.chain().focus().undo().run(); break;
                 case 'redo': editor.chain().focus().redo().run(); break;
                 case 'link': {
@@ -337,7 +362,7 @@ function showLinkModal(editor) {
 }
 
 /**
- * Confirm modal — replaces browser confirm()
+ * Confirm modal — same style as care modals (header + body + footer)
  */
 let confirmModalEl = null;
 
@@ -349,12 +374,17 @@ function ensureConfirmModal() {
     confirmModalEl.innerHTML = `
         <div class="zs-confirm-overlay"></div>
         <div class="zs-confirm-dialog">
-            <div class="zs-confirm-icon"><i class="bi bi-exclamation-triangle"></i></div>
-            <h6 class="zs-confirm-title"></h6>
-            <p class="zs-confirm-text"></p>
+            <div class="zs-confirm-header">
+                <h5 class="zs-confirm-title"></h5>
+                <button type="button" class="zs-confirm-close" id="zsConfirmClose"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="zs-confirm-body">
+                <div class="zs-confirm-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                <p class="zs-confirm-text"></p>
+            </div>
             <div class="zs-confirm-footer">
-                <button type="button" class="zs-link-btn zs-link-btn-cancel" id="zsConfirmCancel">Annuler</button>
-                <button type="button" class="zs-link-btn" id="zsConfirmOk">Confirmer</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="zsConfirmCancel">Annuler</button>
+                <button type="button" class="btn btn-sm" id="zsConfirmOk">Confirmer</button>
             </div>
         </div>`;
     document.body.appendChild(confirmModalEl);
@@ -366,15 +396,21 @@ function ensureConfirmModal() {
             #zsEdConfirmModal { position:fixed; inset:0; z-index:10001; display:none; align-items:center; justify-content:center; }
             #zsEdConfirmModal.open { display:flex; }
             .zs-confirm-overlay { position:absolute; inset:0; background:rgba(0,0,0,.3); }
-            .zs-confirm-dialog { position:relative; background:#fff; border-radius:14px; width:380px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.15); text-align:center; padding:28px 24px 20px; animation:zsLinkIn .2s ease; }
-            .zs-confirm-icon { width:52px; height:52px; border-radius:50%; background:#FFF3E0; color:#E65100; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 14px; }
-            .zs-confirm-title { font-weight:700; font-size:.95rem; margin-bottom:6px; }
-            .zs-confirm-text { font-size:.85rem; color:#6c757d; margin-bottom:18px; }
-            .zs-confirm-footer { display:flex; justify-content:center; gap:8px; }
-            .zs-confirm-danger { background:#dc3545; color:#fff; }
-            .zs-confirm-danger:hover { background:#c82333; }
-            .zs-confirm-warn { background:#E65100; color:#fff; }
-            .zs-confirm-warn:hover { background:#BF360C; }
+            .zs-confirm-dialog { position:relative; background:#fff; border-radius:12px; width:420px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.15); overflow:hidden; animation:zsLinkIn .2s ease; }
+            .zs-confirm-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #f0eeea; }
+            .zs-confirm-title { font-weight:600; font-size:.95rem; margin:0; }
+            .zs-confirm-close { width:32px; height:32px; border-radius:50%; border:1px solid #dee2e6; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#6c757d; font-size:.85rem; transition:all .15s; }
+            .zs-confirm-close:hover { background:#f0f0f0; color:#333; }
+            .zs-confirm-body { padding:20px 18px; text-align:center; }
+            .zs-confirm-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 14px; }
+            .zs-confirm-icon-warn { background:#FFF3E0; color:#E65100; }
+            .zs-confirm-icon-danger { background:#FFEBEE; color:#dc3545; }
+            .zs-confirm-text { font-size:.88rem; color:#6c757d; margin:0; }
+            .zs-confirm-footer { display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid #f0eeea; }
+            .zs-confirm-btn-warn { background:#E65100; color:#fff; border:none; }
+            .zs-confirm-btn-warn:hover { background:#BF360C; color:#fff; }
+            .zs-confirm-btn-danger { background:#dc3545; color:#fff; border:none; }
+            .zs-confirm-btn-danger:hover { background:#c82333; color:#fff; }
         `;
         document.head.appendChild(style);
     }
@@ -387,25 +423,32 @@ export function editorConfirm({ title = 'Confirmer', text = '', okText = 'Confir
         const modal = ensureConfirmModal();
         modal.querySelector('.zs-confirm-title').textContent = title;
         modal.querySelector('.zs-confirm-text').textContent = text;
+        const iconEl = modal.querySelector('.zs-confirm-icon');
+        iconEl.className = 'zs-confirm-icon zs-confirm-icon-' + type;
         const okBtn = modal.querySelector('#zsConfirmOk');
         okBtn.textContent = okText;
-        okBtn.className = `zs-link-btn zs-confirm-${type}`;
+        okBtn.className = `btn btn-sm zs-confirm-btn-${type}`;
         modal.classList.add('open');
 
         function close(val) {
             modal.classList.remove('open');
-            okBtn.removeEventListener('click', onOk);
-            modal.querySelector('#zsConfirmCancel').removeEventListener('click', onCancel);
-            modal.querySelector('.zs-confirm-overlay').removeEventListener('click', onCancel);
-            document.removeEventListener('keydown', onKey);
+            cleanup();
             resolve(val);
         }
         function onOk() { close(true); }
         function onCancel() { close(false); }
         function onKey(e) { if (e.key === 'Escape') close(false); }
+        function cleanup() {
+            okBtn.removeEventListener('click', onOk);
+            modal.querySelector('#zsConfirmCancel').removeEventListener('click', onCancel);
+            modal.querySelector('#zsConfirmClose').removeEventListener('click', onCancel);
+            modal.querySelector('.zs-confirm-overlay').removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKey);
+        }
 
         okBtn.addEventListener('click', onOk);
         modal.querySelector('#zsConfirmCancel').addEventListener('click', onCancel);
+        modal.querySelector('#zsConfirmClose').addEventListener('click', onCancel);
         modal.querySelector('.zs-confirm-overlay').addEventListener('click', onCancel);
         document.addEventListener('keydown', onKey);
     });
@@ -450,17 +493,93 @@ export async function createEditor(container, options = {}) {
                 placeholder: placeholder,
             }),
             ImageExt.configure({
-                inline: true,
+                inline: false,
                 allowBase64: true,
+                HTMLAttributes: { class: 'zs-ed-img' },
             }),
             LinkExt.configure({
                 openOnClick: false,
                 HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
             }),
+            TableExt.configure({
+                resizable: true,
+                HTMLAttributes: { class: 'zs-ed-table' },
+            }),
+            TableRow,
+            TableCell,
+            TableHeader,
         ],
         content: content,
         editable: true,
     });
+
+    // Inject table + image CSS once
+    if (!document.getElementById('zsEdTableCSS')) {
+        const style = document.createElement('style');
+        style.id = 'zsEdTableCSS';
+        style.textContent = `
+            /* Table styling — target all tables in editor */
+            .zs-ed-content table,
+            .zs-ed-table { border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #dee2e6; }
+            .zs-ed-content table td,
+            .zs-ed-content table th,
+            .zs-ed-table td,
+            .zs-ed-table th { border:1px solid #dee2e6; padding:8px 10px; vertical-align:top; min-width:80px; position:relative; }
+            .zs-ed-content table th,
+            .zs-ed-table th { background:#f8f9fa; font-weight:600; font-size:.88rem; }
+            .zs-ed-content table td,
+            .zs-ed-table td { font-size:.88rem; }
+            .zs-ed-content .tableWrapper { overflow-x:auto; margin:12px 0; }
+            .zs-ed-content table .selectedCell { background:rgba(45,74,67,.1); }
+            .zs-ed-content table .column-resize-handle { position:absolute; right:-2px; top:0; bottom:-2px; width:4px; background:#2d4a43; pointer-events:auto; cursor:col-resize; }
+            .zs-ed-content table p { margin:0; }
+            /* Blockquote */
+            .zs-ed-content blockquote { border-left:3px solid #2d4a43; padding-left:14px; margin:12px 0; color:#6c757d; font-style:italic; }
+            /* Image */
+            .zs-ed-img { max-width:100%; height:auto; border-radius:6px; margin:8px 0; cursor:pointer; transition:outline .15s; }
+            .zs-ed-img.ProseMirror-selectednode { outline:2px solid #2d4a43; outline-offset:2px; }
+            .zs-ed-content img { max-width:100%; height:auto; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Image resize on click — show size controls
+    contentEl.addEventListener('click', (e) => {
+        const img = e.target.closest('img.zs-ed-img');
+        // Remove any existing resize bar
+        contentEl.querySelectorAll('.zs-img-resize-bar').forEach(b => b.remove());
+        if (!img) return;
+
+        const bar = document.createElement('div');
+        bar.className = 'zs-img-resize-bar';
+        bar.innerHTML = ['25','50','75','100'].map(s =>
+            `<button type="button" class="zs-img-size-btn" data-size="${s}">${s}%</button>`
+        ).join('');
+        img.parentNode.insertBefore(bar, img.nextSibling);
+
+        bar.querySelectorAll('.zs-img-size-btn').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                img.style.width = btn.dataset.size + '%';
+                img.setAttribute('width', btn.dataset.size + '%');
+                bar.remove();
+                editor.commands.focus();
+            });
+        });
+    });
+
+    // Inject image resize bar CSS
+    if (!document.getElementById('zsEdImgResizeCSS')) {
+        const s = document.createElement('style');
+        s.id = 'zsEdImgResizeCSS';
+        s.textContent = `
+            .zs-img-resize-bar { display:flex; gap:4px; justify-content:center; margin:4px 0 8px; }
+            .zs-img-size-btn { border:1px solid #dee2e6; background:#fff; border-radius:6px; padding:3px 10px; font-size:.75rem; cursor:pointer; transition:all .12s; font-weight:600; color:#6c757d; }
+            .zs-img-size-btn:hover { background:#2d4a43; color:#fff; border-color:#2d4a43; }
+        `;
+        document.head.appendChild(s);
+    }
 
     attachToolbar(toolbarEl, editor);
 
@@ -523,4 +642,55 @@ export async function createBareEditor(element, options = {}) {
         content,
         editable: true,
     });
+}
+
+/**
+ * Create a read-only viewer (same extensions as editor, no toolbar, not editable)
+ * Ensures tables/blockquotes/images render identically to the editor
+ * @param {HTMLElement} element - The element to mount the viewer in
+ * @param {string} content - HTML content to display
+ * @returns {Object|null} editor instance (call destroyEditor to cleanup)
+ */
+export async function createViewer(element, content = '') {
+    const loaded = await loadLib();
+    if (!loaded) { element.innerHTML = content; return null; }
+
+    // Inject table/image CSS (same as editor)
+    if (!document.getElementById('zsEdTableCSS')) {
+        const style = document.createElement('style');
+        style.id = 'zsEdTableCSS';
+        style.textContent = `
+            .zs-ed-content table, .zs-ed-table { border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #dee2e6; }
+            .zs-ed-content table td, .zs-ed-content table th { border:1px solid #dee2e6; padding:8px 10px; vertical-align:top; min-width:80px; position:relative; }
+            .zs-ed-content table th { background:#f8f9fa; font-weight:600; font-size:.88rem; }
+            .zs-ed-content table td { font-size:.88rem; }
+            .zs-ed-content .tableWrapper { overflow-x:auto; margin:12px 0; }
+            .zs-ed-content table p { margin:0; }
+            .zs-ed-content blockquote { border-left:3px solid #2d4a43; padding-left:14px; margin:12px 0; color:#6c757d; font-style:italic; }
+            .zs-ed-content img { max-width:100%; height:auto; border-radius:6px; margin:8px 0; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    element.classList.add('zs-ed-content');
+
+    const viewer = new EditorClass({
+        element,
+        extensions: [
+            StarterKit.configure({ heading: { levels: [2, 3] } }),
+            Underline,
+            Highlight,
+            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            ImageExt.configure({ inline: false, allowBase64: true }),
+            LinkExt.configure({ openOnClick: true, HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' } }),
+            TableExt.configure({ resizable: false }),
+            TableRow,
+            TableCell,
+            TableHeader,
+        ],
+        content,
+        editable: false,
+    });
+
+    return viewer;
 }

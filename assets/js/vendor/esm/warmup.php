@@ -35,6 +35,11 @@ $modules = [
     "@tiptap/extension-image@{$v}",
     "@tiptap/extension-underline@{$v}",
     "@tiptap/extension-link@{$v}",
+    "@tiptap/extension-table@{$v}",
+    "@tiptap/extension-table-row@{$v}",
+    "@tiptap/extension-table-cell@{$v}",
+    "@tiptap/extension-table-header@{$v}",
+    "@tiptap/pm@{$v}/tables",
     "@tiptap/extension-list@{$v}",
     "@tiptap/extensions@{$v}",
     // StarterKit sub-extensions
@@ -68,6 +73,8 @@ $modules = [
     "prosemirror-dropcursor@1.8.2",
     "prosemirror-gapcursor@1.4.0",
     "prosemirror-inputrules@1.5.0",
+    "prosemirror-tables@1.6.4",
+    "prosemirror-tables@1.8.3",
     // Utilities
     "linkifyjs@4.3.2",
     "w3c-keyname@2.2.8",

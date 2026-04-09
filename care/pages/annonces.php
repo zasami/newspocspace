@@ -63,7 +63,11 @@ $catLabels = [
 .ann-read-body h2 { font-size:1.15rem; font-weight:700; margin-top:20px; margin-bottom:8px; color:var(--care-primary, #2d4a43); }
 .ann-read-body h3 { font-size:1rem; font-weight:600; margin-top:16px; margin-bottom:6px; }
 .ann-read-body img { max-width:100%; border-radius:6px; margin:8px 0; }
-.ann-read-body blockquote { border-left:3px solid var(--care-primary, #2d4a43); padding-left:12px; color:#6c757d; margin:12px 0; }
+.ann-read-body blockquote { border-left:3px solid var(--care-primary, #2d4a43); padding-left:12px; color:#6c757d; margin:12px 0; font-style:italic; }
+.ann-read-body table { border-collapse:collapse; width:100%; margin:12px 0; border:1px solid #dee2e6; }
+.ann-read-body table th { background:#f8f9fa; font-weight:600; font-size:.85rem; padding:10px 12px; border:1px solid #dee2e6; text-align:left; }
+.ann-read-body table td { padding:10px 12px; border:1px solid #dee2e6; font-size:.88rem; vertical-align:top; }
+.ann-read-body table tr:hover td { background:#fafaf7; }
 
 .ann-empty { text-align:center; padding:60px 20px; color:#adb5bd; }
 .ann-empty .bi { font-size:3rem; display:block; margin-bottom:12px; }

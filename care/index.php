@@ -420,8 +420,9 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
     }
 
     // ── Panel open/close ──────────────────────────────
+    const searchWrap = document.getElementById('topbarSearch');
     function openPanel() { panel.classList.add('open'); }
-    function closePanel() { panel.classList.remove('open'); }
+    function closePanel() { panel.classList.remove('open'); if (searchWrap) searchWrap.classList.remove('expanded'); }
 
     // ── Render history ────────────────────────────────
     function renderHistory(filter) {
@@ -495,8 +496,12 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 
     // ── Events ────────────────────────────────────────
     input.addEventListener('focus', () => {
+        if (searchWrap) searchWrap.classList.add('expanded');
         if (!input.value) renderHistory('');
         openPanel();
+    });
+    input.addEventListener('blur', () => {
+        setTimeout(() => { if (searchWrap && !panel.classList.contains('open')) searchWrap.classList.remove('expanded'); }, 200);
     });
 
     input.addEventListener('input', () => {
