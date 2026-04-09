@@ -537,3 +537,230 @@ function admin_get_wiki_expired()
 
     respond(['success' => true, 'expired' => $expired, 'count' => count($expired)]);
 }
+
+/* ── Permissions par rôle ──────────────────────────────── */
+
+function admin_get_wiki_page_permissions()
+{
+    require_responsable();
+    global $params;
+    $pageId = $params['page_id'] ?? '';
+    if (!$pageId) bad_request('page_id requis');
+
+    $roles = Db::fetchAll("SELECT role FROM wiki_page_permissions WHERE page_id = ?", [$pageId]);
+    respond(['success' => true, 'roles' => array_column($roles, 'role')]);
+}
+
+function admin_set_wiki_page_permissions()
+{
+    require_responsable();
+    global $params;
+
+    $pageId = $params['page_id'] ?? '';
+    $roles = $params['roles'] ?? [];
+    if (!$pageId) bad_request('page_id requis');
+    if (!is_array($roles)) $roles = [];
+
+    $valid = ['collaborateur', 'responsable', 'direction', 'admin'];
+    Db::exec("DELETE FROM wiki_page_permissions WHERE page_id = ?", [$pageId]);
+
+    foreach ($roles as $r) {
+        if (in_array($r, $valid)) {
+            Db::exec("INSERT INTO wiki_page_permissions (page_id, role) VALUES (?, ?)", [$pageId, $r]);
+        }
+    }
+
+    $msg = empty($roles) ? 'Visible par tous' : 'Restreint à : ' . implode(', ', $roles);
+    respond(['success' => true, 'message' => $msg]);
+}
+
+/* ── Suggestions IA ────────────────────────────────────── */
+
+function admin_get_wiki_suggestions()
+{
+    $user = require_auth();
+    global $params;
+
+    $contextPage = Sanitize::text($params['context_page'] ?? '', 50);
+    $userRole = $user['role'] ?? 'collaborateur';
+
+    // Get recently viewed/dismissed suggestions to exclude
+    $dismissed = Db::fetchAll(
+        "SELECT page_id FROM wiki_suggestions_log WHERE user_id = ? AND dismissed = 1 AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)",
+        [$user['id']]
+    );
+    $excludeIds = array_column($dismissed, 'page_id');
+
+    // Build smart suggestion based on context
+    $suggestions = [];
+
+    // 1) Pages avec vérification expirée (priorité haute pour responsables)
+    if (in_array($userRole, ['admin', 'direction', 'responsable'])) {
+        $expired = Db::fetchAll(
+            "SELECT p.id, p.titre, p.description, c.icone AS categorie_icone, c.couleur AS categorie_couleur
+             FROM wiki_pages p
+             LEFT JOIN wiki_categories c ON c.id = p.categorie_id
+             WHERE p.archived_at IS NULL AND p.visible = 1
+               AND p.verify_next IS NOT NULL AND p.verify_next <= NOW()
+             ORDER BY p.verify_next ASC LIMIT 3"
+        );
+        foreach ($expired as $e) {
+            if (!in_array($e['id'], $excludeIds)) {
+                $suggestions[] = ['page_id' => $e['id'], 'titre' => $e['titre'], 'reason' => 'À revérifier', 'type' => 'expired',
+                    'icone' => $e['categorie_icone'] ?: 'book', 'couleur' => $e['categorie_couleur'] ?: '#6c757d'];
+            }
+        }
+    }
+
+    // 2) Pages populaires (les plus consultées/favorisées) pas encore vues
+    $popular = Db::fetchAll(
+        "SELECT p.id, p.titre, p.description, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
+                COUNT(wf.user_id) AS fav_count
+         FROM wiki_pages p
+         LEFT JOIN wiki_categories c ON c.id = p.categorie_id
+         LEFT JOIN wiki_favoris wf ON wf.page_id = p.id
+         WHERE p.archived_at IS NULL AND p.visible = 1
+           AND NOT EXISTS (SELECT 1 FROM wiki_favoris f2 WHERE f2.page_id = p.id AND f2.user_id = ?)
+         GROUP BY p.id
+         HAVING fav_count > 0
+         ORDER BY fav_count DESC, p.updated_at DESC
+         LIMIT 3",
+        [$user['id']]
+    );
+    foreach ($popular as $pp) {
+        if (!in_array($pp['id'], $excludeIds) && count($suggestions) < 5) {
+            $suggestions[] = ['page_id' => $pp['id'], 'titre' => $pp['titre'], 'reason' => 'Populaire (' . $pp['fav_count'] . ' favoris)', 'type' => 'popular',
+                'icone' => $pp['categorie_icone'] ?: 'book', 'couleur' => $pp['categorie_couleur'] ?: '#6c757d'];
+        }
+    }
+
+    // 3) Pages récentes pas encore consultées
+    if (count($suggestions) < 5) {
+        $recent = Db::fetchAll(
+            "SELECT p.id, p.titre, p.description, c.icone AS categorie_icone, c.couleur AS categorie_couleur
+             FROM wiki_pages p
+             LEFT JOIN wiki_categories c ON c.id = p.categorie_id
+             WHERE p.archived_at IS NULL AND p.visible = 1
+               AND p.created_at > DATE_SUB(NOW(), INTERVAL 14 DAY)
+             ORDER BY p.created_at DESC LIMIT 5",
+            []
+        );
+        foreach ($recent as $r) {
+            if (!in_array($r['id'], $excludeIds) && count($suggestions) < 5) {
+                $alreadySuggested = array_column($suggestions, 'page_id');
+                if (!in_array($r['id'], $alreadySuggested)) {
+                    $suggestions[] = ['page_id' => $r['id'], 'titre' => $r['titre'], 'reason' => 'Récemment ajouté', 'type' => 'recent',
+                        'icone' => $r['categorie_icone'] ?: 'book', 'couleur' => $r['categorie_couleur'] ?: '#6c757d'];
+                }
+            }
+        }
+    }
+
+    respond(['success' => true, 'suggestions' => $suggestions]);
+}
+
+function admin_dismiss_wiki_suggestion()
+{
+    $user = require_auth();
+    global $params;
+
+    $pageId = $params['page_id'] ?? '';
+    if (!$pageId) bad_request('page_id requis');
+
+    Db::exec(
+        "INSERT INTO wiki_suggestions_log (id, user_id, page_id, context_page, dismissed) VALUES (?, ?, ?, ?, 1)",
+        [Uuid::v4(), $user['id'], $pageId, Sanitize::text($params['context'] ?? '', 50)]
+    );
+    respond(['success' => true]);
+}
+
+function admin_get_wiki_ai_suggest()
+{
+    $user = require_auth();
+    global $params;
+
+    $query = Sanitize::text($params['query'] ?? '', 500);
+    if (mb_strlen($query) < 5) bad_request('Question trop courte');
+
+    // Load AI config
+    $cfg = [];
+    $cfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config WHERE config_key IN ('ai_provider','gemini_api_key','gemini_model','anthropic_api_key','anthropic_model')");
+    foreach ($cfgRows as $r) $cfg[$r['config_key']] = $r['config_value'];
+
+    $aiProvider = $cfg['ai_provider'] ?? 'gemini';
+    $aiApiKey = ($aiProvider === 'gemini') ? ($cfg['gemini_api_key'] ?? '') : ($cfg['anthropic_api_key'] ?? '');
+    $aiModel = ($aiProvider === 'gemini') ? ($cfg['gemini_model'] ?? 'gemini-2.5-flash') : ($cfg['anthropic_model'] ?? 'claude-haiku-4-5-20251001');
+
+    if (empty($aiApiKey)) bad_request('IA non configurée');
+
+    // Get all wiki page titles + descriptions for context
+    $pages = Db::fetchAll(
+        "SELECT id, titre, description FROM wiki_pages WHERE archived_at IS NULL AND visible = 1 ORDER BY titre"
+    );
+    $catalog = implode("\n", array_map(function($p) {
+        return "- [{$p['id']}] {$p['titre']}" . ($p['description'] ? " — {$p['description']}" : '');
+    }, $pages));
+
+    $prompt = "Tu es un assistant dans un EMS (établissement médico-social). " .
+        "Un collaborateur pose la question suivante : \"$query\"\n\n" .
+        "Voici le catalogue des fiches wiki disponibles :\n$catalog\n\n" .
+        "Identifie les 1 à 3 fiches les plus pertinentes pour répondre à cette question. " .
+        "Retourne UNIQUEMENT un JSON valide, un tableau d'objets avec les champs \"id\" (l'ID entre crochets) et \"raison\" (pourquoi cette fiche est pertinente, en 1 phrase courte).\n" .
+        "Si aucune fiche n'est pertinente, retourne un tableau vide [].";
+
+    $result = null;
+
+    if ($aiProvider === 'gemini') {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$aiModel}:generateContent?key={$aiApiKey}";
+        $payload = json_encode([
+            'contents' => [['parts' => [['text' => $prompt]]]],
+            'generationConfig' => ['temperature' => 0.3, 'maxOutputTokens' => 1024, 'responseMimeType' => 'application/json'],
+        ]);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_POSTFIELDS => $payload, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode === 200) {
+            $resp = json_decode($raw, true);
+            $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
+            $result = json_decode($text, true);
+        }
+    } else {
+        $url = 'https://api.anthropic.com/v1/messages';
+        $payload = json_encode([
+            'model' => $aiModel, 'max_tokens' => 1024,
+            'messages' => [['role' => 'user', 'content' => $prompt]],
+        ]);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'x-api-key: ' . $aiApiKey, 'anthropic-version: 2023-06-01'], CURLOPT_POSTFIELDS => $payload, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode === 200) {
+            $resp = json_decode($raw, true);
+            $text = $resp['content'][0]['text'] ?? '';
+            $clean = preg_replace('/```json\s*|\s*```/', '', $text);
+            $result = json_decode($clean, true);
+        }
+    }
+
+    if (!is_array($result)) $result = [];
+
+    // Enrich with page data
+    $suggestions = [];
+    foreach ($result as $item) {
+        $pid = $item['id'] ?? '';
+        $page = Db::fetch("SELECT id, titre, description FROM wiki_pages WHERE id = ? AND archived_at IS NULL AND visible = 1", [$pid]);
+        if ($page) {
+            $suggestions[] = [
+                'page_id' => $page['id'],
+                'titre' => $page['titre'],
+                'description' => $page['description'],
+                'reason' => $item['raison'] ?? '',
+            ];
+        }
+    }
+
+    respond(['success' => true, 'suggestions' => $suggestions, 'query' => $query]);
+}

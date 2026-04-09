@@ -200,5 +200,7 @@ return [
         'admin_get_wiki_tags', 'admin_create_wiki_tag', 'admin_delete_wiki_tag', 'admin_set_wiki_page_tags',
         'admin_assign_wiki_expert', 'admin_verify_wiki_page', 'admin_get_wiki_expired',
         'admin_toggle_wiki_favori',
+        'admin_get_wiki_page_permissions', 'admin_set_wiki_page_permissions',
+        'admin_get_wiki_suggestions', 'admin_dismiss_wiki_suggestion', 'admin_get_wiki_ai_suggest',
     ],
 ];

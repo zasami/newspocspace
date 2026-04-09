@@ -30,6 +30,11 @@ function get_wiki_pages()
     $where = ['p.archived_at IS NULL', 'p.visible = 1'];
     $binds = [];
 
+    // Permission filter: only show pages accessible to user's role
+    $userRole = $user['role'] ?? 'collaborateur';
+    $where[] = '(NOT EXISTS (SELECT 1 FROM wiki_page_permissions wpp WHERE wpp.page_id = p.id) OR EXISTS (SELECT 1 FROM wiki_page_permissions wpp2 WHERE wpp2.page_id = p.id AND wpp2.role = ?))';
+    $binds[] = $userRole;
+
     if ($catId) { $where[] = 'p.categorie_id = ?'; $binds[] = $catId; }
     if ($tagId) {
         $where[] = 'EXISTS (SELECT 1 FROM wiki_page_tags wpt WHERE wpt.page_id = p.id AND wpt.tag_id = ?)';
@@ -105,8 +110,10 @@ function get_wiki_page()
          LEFT JOIN wiki_categories c ON c.id = p.categorie_id
          LEFT JOIN users cr ON cr.id = p.created_by
          LEFT JOIN users ex ON ex.id = p.expert_id
-         WHERE p.id = ? AND p.visible = 1 AND p.archived_at IS NULL",
-        [$id]
+         WHERE p.id = ? AND p.visible = 1 AND p.archived_at IS NULL
+           AND (NOT EXISTS (SELECT 1 FROM wiki_page_permissions wpp WHERE wpp.page_id = p.id)
+                OR EXISTS (SELECT 1 FROM wiki_page_permissions wpp2 WHERE wpp2.page_id = p.id AND wpp2.role = ?))",
+        [$id, $user['role'] ?? 'collaborateur']
     );
 
     if (!$page) not_found('Page introuvable');

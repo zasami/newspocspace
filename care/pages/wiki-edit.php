@@ -26,8 +26,10 @@ $categories = Db::fetchAll("SELECT id, nom, icone, couleur FROM wiki_categories 
 $tags = Db::fetchAll("SELECT id, nom, slug, couleur FROM wiki_tags ORDER BY nom");
 $experts = Db::fetchAll("SELECT id, prenom, nom FROM users WHERE is_active = 1 AND role IN ('admin','direction','responsable') ORDER BY nom, prenom");
 $pageTags = [];
+$pagePerms = [];
 if ($pageData) {
     $pageTags = array_column(Db::fetchAll("SELECT tag_id FROM wiki_page_tags WHERE page_id = ?", [$pageId]), 'tag_id');
+    $pagePerms = array_column(Db::fetchAll("SELECT role FROM wiki_page_permissions WHERE page_id = ?", [$pageId]), 'role');
 }
 $isNew = !$pageData;
 ?>
@@ -105,6 +107,22 @@ $isNew = !$pageData;
       <?php if (!$isNew && $pageData['expert_id']): ?>
       <button class="btn btn-sm btn-outline-success" id="btnVerifyPage"><i class="bi bi-patch-check"></i> Vérifier maintenant</button>
       <?php endif; ?>
+    </div>
+
+    <!-- Permissions par rôle -->
+    <div style="margin:10px 0">
+      <label class="form-label small text-muted mb-1"><i class="bi bi-shield-lock"></i> Visibilité (vide = tous)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="wikiPermsWrap">
+        <?php
+        $roles = ['collaborateur' => 'Collaborateurs', 'responsable' => 'Responsables', 'direction' => 'Direction', 'admin' => 'Admin'];
+        foreach ($roles as $rk => $rl): ?>
+        <label class="wiki-edit-tag" style="--tag-color:#3B4F6B">
+          <input type="checkbox" value="<?= $rk ?>" <?= in_array($rk, $pagePerms) ? 'checked' : '' ?>>
+          <span><?= $rl ?></span>
+        </label>
+        <?php endforeach; ?>
+      </div>
+      <small class="text-muted" style="font-size:.72rem">Si aucun rôle coché, la page est visible par tout le monde</small>
     </div>
 
     <!-- Import zone -->
@@ -349,6 +367,9 @@ $isNew = !$pageData;
     function getSelectedTagIds() {
         return [...document.querySelectorAll('#wikiTagsWrap input:checked')].map(el => el.value);
     }
+    function getSelectedRoles() {
+        return [...document.querySelectorAll('#wikiPermsWrap input:checked')].map(el => el.value);
+    }
 
     async function save() {
         const titre = document.getElementById('wikiTitle').value.trim();
@@ -382,6 +403,9 @@ $isNew = !$pageData;
             const expertId = zerdaSelect.getValue(document.getElementById('wikiExpert'));
             const intervalDays = document.getElementById('wikiVerifyDays')?.value || 90;
             await adminApiPost('admin_assign_wiki_expert', { page_id: savedId, expert_id: expertId, interval_days: intervalDays });
+
+            // Save permissions
+            await adminApiPost('admin_set_wiki_page_permissions', { page_id: savedId, roles: getSelectedRoles() });
 
             dirty = false;
             showToast(res.message || 'Sauvegardé');

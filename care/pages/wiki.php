@@ -170,6 +170,26 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 .wiki-expert-badge { font-size:.68rem; color:#3B4F6B; display:inline-flex; align-items:center; gap:3px; }
 .wiki-alert-bar { background:#E2B8AE; color:#7B3B2C; padding:8px 14px; border-radius:8px; font-size:.82rem; display:flex; align-items:center; gap:8px; margin-bottom:12px; cursor:pointer; }
 .wiki-alert-bar:hover { background:#d4a89c; }
+
+/* ── Suggestions IA ────────────────────────────────── */
+.wiki-suggest-bar { background:#f8f9fa; border:1px solid #e9ecef; border-radius:10px; padding:12px 16px; margin-bottom:14px; }
+.wiki-suggest-bar .wiki-suggest-title { font-size:.82rem; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.wiki-suggest-bar .wiki-suggest-title i { color:#6610f2; }
+.wiki-suggest-items { display:flex; flex-wrap:wrap; gap:8px; }
+.wiki-suggest-item {
+    display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:8px;
+    background:#fff; border:1px solid #e9ecef; cursor:pointer; transition:all .15s; font-size:.8rem;
+}
+.wiki-suggest-item:hover { border-color:var(--care-primary, #2d4a43); box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.wiki-suggest-item .sug-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.75rem; flex-shrink:0; }
+.wiki-suggest-item .sug-reason { font-size:.68rem; color:#999; }
+.wiki-suggest-dismiss { background:none; border:none; color:#ccc; cursor:pointer; font-size:.7rem; padding:0; margin-left:auto; }
+.wiki-suggest-dismiss:hover { color:#dc3545; }
+
+.wiki-ai-ask { display:flex; gap:8px; margin-top:8px; }
+.wiki-ai-ask input { flex:1; border:1px solid #dee2e6; border-radius:6px; padding:5px 10px; font-size:.82rem; outline:none; }
+.wiki-ai-ask input:focus { border-color:var(--care-primary, #2d4a43); }
+.wiki-ai-ask button { white-space:nowrap; }
 </style>
 
 <!-- LIST VIEW -->
@@ -207,6 +227,16 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
     <!-- Tag filters + Favoris -->
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center" id="wikiTagFilters">
       <button class="wiki-fav-filter" id="wikiFavFilter"><i class="bi bi-heart-fill"></i> Mes favoris</button>
+    </div>
+
+    <!-- Suggestions IA -->
+    <div class="wiki-suggest-bar" id="wikiSuggestBar" style="display:none">
+      <div class="wiki-suggest-title"><i class="bi bi-lightbulb"></i> Suggestions pour vous</div>
+      <div class="wiki-suggest-items" id="wikiSuggestItems"></div>
+      <div class="wiki-ai-ask">
+        <input type="text" id="wikiAiInput" placeholder="Poser une question à l'IA (ex: protocole chute résident)...">
+        <button class="btn btn-sm btn-outline-secondary" id="wikiAiAskBtn"><i class="bi bi-stars"></i> Demander</button>
+      </div>
     </div>
 
     <!-- Pages grid -->
@@ -343,6 +373,7 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         renderGrid();
         bindEvents();
         bindSearch();
+        loadSuggestions();
     }
 
     // ── Categories filters ────────────────────────────────
@@ -723,6 +754,11 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
     function bindEvents() {
         document.getElementById('btnBackToList')?.addEventListener('click', backToList);
         document.getElementById('btnNewPage')?.addEventListener('click', () => AdminURL.go('wiki-edit'));
+
+        // AI Ask
+        document.getElementById('wikiAiAskBtn')?.addEventListener('click', askAI);
+        document.getElementById('wikiAiInput')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') askAI(); });
+
         document.getElementById('wikiAlertBar')?.addEventListener('click', async () => {
             const res = await adminApiPost('admin_get_wiki_expired', {});
             if (!res.success) return;
@@ -772,6 +808,83 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         if (!input) return;
         let timer;
         input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => renderGrid(), 250); });
+    }
+
+    // ── Suggestions IA ──────────────────────────────────
+    async function loadSuggestions() {
+        const res = await adminApiPost('admin_get_wiki_suggestions', { context_page: 'wiki' });
+        if (!res.success || !res.suggestions?.length) return;
+
+        const bar = document.getElementById('wikiSuggestBar');
+        const items = document.getElementById('wikiSuggestItems');
+        bar.style.display = '';
+
+        items.innerHTML = res.suggestions.map(s => `
+            <div class="wiki-suggest-item" data-page-id="${s.page_id}">
+                <div class="sug-icon" style="background:${s.couleur || '#6c757d'}"><i class="bi bi-${s.icone || 'book'}"></i></div>
+                <div>
+                    <div>${escapeHtml(s.titre)}</div>
+                    <div class="sug-reason">${escapeHtml(s.reason)}</div>
+                </div>
+                <button class="wiki-suggest-dismiss" data-dismiss-id="${s.page_id}" title="Masquer"><i class="bi bi-x"></i></button>
+            </div>
+        `).join('');
+
+        items.querySelectorAll('.wiki-suggest-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.wiki-suggest-dismiss')) return;
+                openPage(el.dataset.pageId);
+            });
+        });
+        items.querySelectorAll('.wiki-suggest-dismiss').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await adminApiPost('admin_dismiss_wiki_suggestion', { page_id: btn.dataset.dismissId, context: 'wiki' });
+                btn.closest('.wiki-suggest-item').remove();
+                if (!items.children.length) bar.style.display = 'none';
+            });
+        });
+    }
+
+    async function askAI() {
+        const input = document.getElementById('wikiAiInput');
+        const query = input.value.trim();
+        if (query.length < 5) { showToast('Question trop courte (min 5 caractères)', 'warning'); return; }
+
+        const btn = document.getElementById('wikiAiAskBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const res = await adminApiPost('admin_get_wiki_ai_suggest', { query });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-stars"></i> Demander';
+
+        if (!res.success) { showToast(res.message || 'Erreur IA', 'danger'); return; }
+
+        const bar = document.getElementById('wikiSuggestBar');
+        const items = document.getElementById('wikiSuggestItems');
+        bar.style.display = '';
+
+        if (!res.suggestions?.length) {
+            items.innerHTML = '<div style="font-size:.82rem;color:#999;padding:4px">Aucune fiche pertinente trouvée pour cette question.</div>';
+            return;
+        }
+
+        items.innerHTML = res.suggestions.map(s => `
+            <div class="wiki-suggest-item" data-page-id="${s.page_id}">
+                <div class="sug-icon" style="background:#6610f2"><i class="bi bi-stars"></i></div>
+                <div>
+                    <div>${escapeHtml(s.titre)}</div>
+                    <div class="sug-reason">${escapeHtml(s.reason)}</div>
+                </div>
+            </div>
+        `).join('');
+
+        items.querySelectorAll('.wiki-suggest-item').forEach(el => {
+            el.addEventListener('click', () => openPage(el.dataset.pageId));
+        });
+
+        input.value = '';
     }
 
     // ── Start ─────────────────────────────────────────────
