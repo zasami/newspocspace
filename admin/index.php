@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -152,6 +152,7 @@ $pageLabels = [
     'mur'              => 'Mur social',
     'wiki'             => 'Base de connaissances',
     'annonces'         => 'Annonces officielles',
+    'wiki-analytics'   => 'Analytics Wiki',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -209,6 +210,7 @@ $sidebarCategories = [
             'sondages' => ['label' => 'Sondages',             'icon' => 'clipboard2-check'],
             'mur'      => ['label' => 'Mur social',            'icon' => 'chat-square-heart'],
             'wiki'     => ['label' => 'Base de connaissances', 'icon' => 'book'],
+            'wiki-analytics' => ['label' => 'Analytics Wiki',  'icon' => 'graph-up'],
             'annonces' => ['label' => 'Annonces officielles',  'icon' => 'megaphone'],
         ],
     ],

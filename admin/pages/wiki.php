@@ -5,7 +5,7 @@
  */
 ?>
 <style>:root { --care-primary: #2d4a43; }</style>
-<script>
+<script<?= function_exists('nonce') ? nonce() : '' ?>>
 // Override AdminURL.go pour wiki-edit → rediriger vers SpocCare
 (function(){
     if (typeof AdminURL === 'undefined') return;

@@ -75,8 +75,8 @@ return [
     ],
     'wiki' => [
         'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
-        'toggle_wiki_favori',
-        'get_annonces_list', 'get_annonce_detail',
+        'toggle_wiki_favori', 'log_wiki_search',
+        'get_annonces_list', 'get_annonce_detail', 'ack_annonce',
     ],
     'mur' => [
         'get_mur_config', 'get_mur_feed', 'create_mur_post', 'update_mur_post', 'delete_mur_post',

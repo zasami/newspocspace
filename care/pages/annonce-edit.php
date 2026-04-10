@@ -102,6 +102,30 @@ $isNew = !$annonceData;
       </div>
     </div>
 
+    <!-- Read receipt config -->
+    <div class="ann-ack-bar">
+      <label class="ann-ack-toggle">
+        <input type="checkbox" id="annRequiresAck" <?= !empty($annonceData['requires_ack']) ? 'checked' : '' ?>>
+        <span><i class="bi bi-shield-check"></i> Exiger un accusé de lecture</span>
+      </label>
+      <div class="ann-ack-target" id="annAckTargetWrap" style="<?= empty($annonceData['requires_ack']) ? 'display:none' : '' ?>">
+        <label class="form-label small text-muted mb-1">Cible (vide = tous les collaborateurs actifs)</label>
+        <select class="form-select form-select-sm" id="annAckTargetRole" style="max-width:260px">
+          <option value="">— Tous —</option>
+          <?php $tr = $annonceData['ack_target_role'] ?? ''; ?>
+          <option value="collaborateur" <?= $tr === 'collaborateur' ? 'selected' : '' ?>>Collaborateurs uniquement</option>
+          <option value="responsable" <?= $tr === 'responsable' ? 'selected' : '' ?>>Responsables uniquement</option>
+          <option value="direction" <?= $tr === 'direction' ? 'selected' : '' ?>>Direction</option>
+          <option value="admin" <?= $tr === 'admin' ? 'selected' : '' ?>>Admin</option>
+        </select>
+      </div>
+      <small class="text-muted" style="font-size:.72rem;display:block;margin-top:6px">Idéal pour protocoles critiques : chaque destinataire devra confirmer la lecture.</small>
+    </div>
+
+    <?php if (!$isNew && !empty($annonceData['requires_ack'])): ?>
+    <div id="annAckStats" style="margin-top:10px"></div>
+    <?php endif; ?>
+
     <div class="ann-save-bar">
       <span class="ann-autosave" id="annAutoSave"></span>
       <div class="d-flex gap-2">
@@ -113,6 +137,19 @@ $isNew = !$annonceData;
     </div>
   </div>
 </div>
+
+<style>
+.ann-ack-bar { background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:12px; margin-top:14px; }
+.ann-ack-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:.88rem; color:#212529; }
+.ann-ack-toggle input { width:16px; height:16px; }
+.ann-ack-target { margin-top:8px; }
+.ann-ack-stats-card { background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:14px; }
+.ann-ack-progress { height:8px; background:#f1f3f5; border-radius:4px; overflow:hidden; margin:8px 0; }
+.ann-ack-progress-fill { height:100%; background:#7eb586; transition:width .3s; }
+.ann-ack-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:6px; margin-top:8px; }
+.ann-ack-user { background:#f8f9fa; border:1px solid #e9ecef; border-radius:6px; padding:5px 9px; font-size:.78rem; display:flex; align-items:center; gap:6px; }
+.ann-ack-user.acked { background:#d4edda; border-color:#a7d4b0; color:#155724; }
+</style>
 
 <!-- IMAGE PICKER MODAL (Upload + Pixabay) -->
 <div class="modal fade" id="annImageModal" tabindex="-1" aria-hidden="true">
@@ -226,8 +263,36 @@ $isNew = !$annonceData;
         $('btnSaveAnn').addEventListener('click', save);
         $('btnCancelAnn').addEventListener('click', goBack);
         $('btnBackAnn').addEventListener('click', goBack);
+
+        // Toggle ack target visibility
+        $('annRequiresAck')?.addEventListener('change', e => {
+            $('annAckTargetWrap').style.display = e.target.checked ? '' : 'none';
+            dirty = true;
+        });
+        $('annAckTargetRole')?.addEventListener('change', () => { dirty = true; });
+
+        // Load ack stats if applicable
+        loadAckStats();
+
         window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
         window.__annEditorCleanup = () => { if (editor) { destroyEditor(editor); editor = null; } };
+    }
+
+    async function loadAckStats() {
+        if (!annonceId || !$('annRequiresAck')?.checked) return;
+        const wrap = $('annAckStats');
+        if (!wrap) return;
+        const r = await adminApiPost('admin_get_annonce_acks', { id: annonceId });
+        if (!r.success) return;
+        const pct = r.total_target ? Math.round(100 * r.total_acked / r.total_target) : 0;
+        wrap.innerHTML = `<div class="ann-ack-stats-card">
+            <div class="d-flex justify-content-between"><strong><i class="bi bi-check2-square"></i> Accusés de lecture</strong><span>${r.total_acked} / ${r.total_target} (${pct}%)</span></div>
+            <div class="ann-ack-progress"><div class="ann-ack-progress-fill" style="width:${pct}%"></div></div>
+            <div class="ann-ack-list">
+                ${r.acked.map(u => `<div class="ann-ack-user acked"><i class="bi bi-check-circle-fill"></i> ${escapeHtml(u.prenom + ' ' + u.nom)}</div>`).join('')}
+                ${r.missing.map(u => `<div class="ann-ack-user"><i class="bi bi-circle"></i> ${escapeHtml(u.prenom + ' ' + u.nom)}</div>`).join('')}
+            </div>
+        </div>`;
     }
 
     // ══════════════════════════════════════════════════════
@@ -404,11 +469,14 @@ $isNew = !$annonceData;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
+        const requires_ack = $('annRequiresAck').checked ? 1 : 0;
+        const ack_target_role = $('annAckTargetRole')?.value || '';
+
         let res;
         if (annonceId) {
-            res = await adminApiPost('admin_update_annonce', { id: annonceId, titre, contenu, description, categorie, image_url: coverUrl });
+            res = await adminApiPost('admin_update_annonce', { id: annonceId, titre, contenu, description, categorie, image_url: coverUrl, requires_ack, ack_target_role });
         } else {
-            res = await adminApiPost('admin_create_annonce', { titre, contenu, description, categorie, image_url: coverUrl });
+            res = await adminApiPost('admin_create_annonce', { titre, contenu, description, categorie, image_url: coverUrl, requires_ack, ack_target_role });
         }
 
         btn.disabled = false;

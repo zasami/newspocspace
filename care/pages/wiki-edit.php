@@ -174,6 +174,33 @@ $isNew = !$pageData;
       </div>
     </div>
 
+    <!-- Workflow status -->
+    <?php $currentStatus = $pageData['status'] ?? 'brouillon'; ?>
+    <div class="wiki-workflow-bar">
+      <label class="form-label small text-muted mb-1" style="display:block"><i class="bi bi-flag"></i> Statut de publication</label>
+      <div class="wiki-status-tabs">
+        <label class="wiki-status-tab"><input type="radio" name="wikiStatus" value="brouillon" <?= $currentStatus === 'brouillon' ? 'checked' : '' ?>><span><i class="bi bi-pencil"></i> Brouillon</span></label>
+        <label class="wiki-status-tab"><input type="radio" name="wikiStatus" value="review" <?= $currentStatus === 'review' ? 'checked' : '' ?>><span><i class="bi bi-eye"></i> En review</span></label>
+        <label class="wiki-status-tab"><input type="radio" name="wikiStatus" value="publie" <?= $currentStatus === 'publie' ? 'checked' : '' ?>><span><i class="bi bi-check-circle"></i> Publié</span></label>
+      </div>
+      <small class="text-muted" style="font-size:.72rem">Brouillon : seul vous voyez. Review : visible aux responsables. Publié : visible par tous selon les permissions.</small>
+    </div>
+
+    <?php if (!$isNew && $currentStatus === 'review'): ?>
+    <div class="wiki-review-actions">
+      <i class="bi bi-eye-fill"></i> En attente de review
+      <div class="d-flex gap-2 mt-2">
+        <button class="btn btn-success btn-sm" id="btnReviewApprove"><i class="bi bi-check2"></i> Approuver et publier</button>
+        <button class="btn btn-warning btn-sm" id="btnReviewChanges"><i class="bi bi-arrow-counterclockwise"></i> Demander modifs</button>
+        <button class="btn btn-light btn-sm" id="btnReviewComment"><i class="bi bi-chat"></i> Commenter</button>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!$isNew): ?>
+    <div id="wikiReviewsList" style="margin-top:10px"></div>
+    <?php endif; ?>
+
     <!-- Save bar -->
     <div class="wiki-save-bar">
       <span class="wiki-autosave" id="wikiAutoSave"></span>
@@ -186,6 +213,22 @@ $isNew = !$pageData;
     </div>
   </div>
 </div>
+
+<style>
+.wiki-workflow-bar { background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:12px; margin-top:14px; }
+.wiki-status-tabs { display:flex; gap:6px; margin-bottom:6px; }
+.wiki-status-tab { flex:1; cursor:pointer; }
+.wiki-status-tab input { display:none; }
+.wiki-status-tab span { display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 12px; background:#fff; border:1.5px solid #dee2e6; border-radius:6px; font-size:.82rem; color:#6c757d; transition:all .15s; }
+.wiki-status-tab:hover span { border-color:var(--care-primary, #2d4a43); }
+.wiki-status-tab input:checked + span { background:var(--care-primary, #2d4a43); color:#fff; border-color:var(--care-primary, #2d4a43); font-weight:600; }
+.wiki-review-actions { background:#fff8e1; border:1px solid #ffe082; border-radius:8px; padding:12px; margin-top:10px; font-size:.85rem; color:#7a5c00; }
+.wiki-review-item { background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:10px 14px; margin-bottom:6px; font-size:.82rem; }
+.wiki-review-item .wri-decision { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; margin-right:6px; }
+.wiki-review-item .wri-approved { background:#d4edda; color:#155724; }
+.wiki-review-item .wri-changes { background:#fff3cd; color:#856404; }
+.wiki-review-item .wri-commented { background:#e9ecef; color:#495057; }
+</style>
 
 <!-- IMAGE PICKER MODAL (Upload + Pixabay) -->
 <div class="modal fade" id="wikiImageModal" tabindex="-1" aria-hidden="true">
@@ -294,6 +337,38 @@ $isNew = !$pageData;
             const r = await adminApiPost('admin_verify_wiki_page', { page_id: pageId });
             if (r.success) showToast(r.message);
         });
+
+        // ── Workflow review actions ────────────────────────
+        async function doReview(decision) {
+            const comment = decision === 'commented' || decision === 'changes_requested'
+                ? prompt(decision === 'changes_requested' ? 'Modifications demandées :' : 'Commentaire :') || ''
+                : '';
+            const r = await adminApiPost('admin_review_wiki_page', { id: pageId, decision, comment });
+            if (r.success) { showToast(r.message); loadReviews(); if (decision === 'approved') location.reload(); }
+        }
+        document.getElementById('btnReviewApprove')?.addEventListener('click', () => doReview('approved'));
+        document.getElementById('btnReviewChanges')?.addEventListener('click', () => doReview('changes_requested'));
+        document.getElementById('btnReviewComment')?.addEventListener('click', () => doReview('commented'));
+
+        async function loadReviews() {
+            if (!pageId) return;
+            const list = document.getElementById('wikiReviewsList');
+            if (!list) return;
+            const r = await adminApiPost('admin_get_wiki_reviews', { page_id: pageId });
+            if (!r.success || !r.reviews.length) { list.innerHTML = ''; return; }
+            const labels = { approved: 'Approuvé', changes_requested: 'Modifs demandées', commented: 'Commentaire' };
+            const cls = { approved: 'wri-approved', changes_requested: 'wri-changes', commented: 'wri-commented' };
+            list.innerHTML = '<div class="form-label small text-muted mb-1"><i class="bi bi-chat-square-text"></i> Historique des reviews</div>' + r.reviews.map(rv => {
+                const d = new Date(rv.created_at).toLocaleString('fr-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                return `<div class="wiki-review-item">
+                    <span class="wri-decision ${cls[rv.decision]}">${labels[rv.decision] || rv.decision}</span>
+                    <strong>${escapeHtml((rv.prenom || '') + ' ' + (rv.nom || ''))}</strong>
+                    <span class="text-muted" style="font-size:.72rem">${d}</span>
+                    ${rv.comment ? `<div style="margin-top:4px;color:#495057">${escapeHtml(rv.comment)}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+        loadReviews();
 
         // Dynamic import of rich-editor module
         const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/spocspace/assets/js/rich-editor.js');
@@ -599,11 +674,17 @@ $isNew = !$pageData;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
+        const status = document.querySelector('input[name="wikiStatus"]:checked')?.value || 'brouillon';
+
         let res;
         if (pageId) {
-            res = await adminApiPost('admin_update_wiki_page', { id: pageId, titre, contenu, description, categorie_id, image_url: coverUrl });
+            res = await adminApiPost('admin_update_wiki_page', { id: pageId, titre, contenu, description, categorie_id, image_url: coverUrl, status });
         } else {
             res = await adminApiPost('admin_create_wiki_page', { titre, contenu, description, categorie_id, image_url: coverUrl });
+            // Apply status after creation if not default
+            if (res.success && res.id && status !== 'publie') {
+                await adminApiPost('admin_update_wiki_page', { id: res.id, status });
+            }
         }
 
         btn.disabled = false;

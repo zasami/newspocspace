@@ -194,6 +194,7 @@ return [
         'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
         'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',
         'admin_save_pixabay_annonce',
+        'admin_ack_annonce', 'admin_get_annonce_acks',
     ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',
@@ -206,5 +207,7 @@ return [
         'admin_get_wiki_page_permissions', 'admin_set_wiki_page_permissions',
         'admin_get_wiki_suggestions', 'admin_dismiss_wiki_suggestion', 'admin_get_wiki_ai_suggest',
         'admin_upload_wiki_image', 'admin_save_pixabay_wiki',
+        'admin_log_wiki_search', 'admin_get_wiki_analytics', 'admin_get_knowledge_gaps',
+        'admin_request_wiki_review', 'admin_review_wiki_page', 'admin_get_wiki_reviews', 'admin_get_pending_reviews',
     ],
 ];

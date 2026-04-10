@@ -27,7 +27,7 @@ function get_wiki_pages()
     $tagId = $params['tag_id'] ?? '';
     $favOnly = !empty($params['favoris_only']);
 
-    $where = ['p.archived_at IS NULL', 'p.visible = 1'];
+    $where = ['p.archived_at IS NULL', 'p.visible = 1', "p.status = 'publie'"];
     $binds = [];
 
     // Permission filter: only show pages accessible to user's role
@@ -110,13 +110,18 @@ function get_wiki_page()
          LEFT JOIN wiki_categories c ON c.id = p.categorie_id
          LEFT JOIN users cr ON cr.id = p.created_by
          LEFT JOIN users ex ON ex.id = p.expert_id
-         WHERE p.id = ? AND p.visible = 1 AND p.archived_at IS NULL
+         WHERE p.id = ? AND p.visible = 1 AND p.archived_at IS NULL AND p.status = 'publie'
            AND (NOT EXISTS (SELECT 1 FROM wiki_page_permissions wpp WHERE wpp.page_id = p.id)
                 OR EXISTS (SELECT 1 FROM wiki_page_permissions wpp2 WHERE wpp2.page_id = p.id AND wpp2.role = ?))",
         [$id, $user['role'] ?? 'collaborateur']
     );
 
     if (!$page) not_found('Page introuvable');
+
+    // Log view
+    try {
+        Db::exec("INSERT INTO wiki_page_views (id, page_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $id, $user['id']]);
+    } catch (\Throwable $e) {}
 
     $page['tags'] = Db::fetchAll(
         "SELECT t.id, t.nom, t.slug, t.couleur FROM wiki_page_tags wpt JOIN wiki_tags t ON t.id = wpt.tag_id WHERE wpt.page_id = ?",
@@ -125,6 +130,19 @@ function get_wiki_page()
     $page['is_favori'] = (bool)Db::getOne("SELECT 1 FROM wiki_favoris WHERE user_id = ? AND page_id = ?", [$user['id'], $id]);
 
     respond(['success' => true, 'page' => $page]);
+}
+
+function log_wiki_search()
+{
+    $user = require_auth();
+    global $params;
+    $q = trim(Sanitize::text($params['q'] ?? '', 200));
+    if (mb_strlen($q) < 2) respond(['success' => true]);
+    Db::exec(
+        "INSERT INTO wiki_search_log (id, user_id, q, results_count) VALUES (?, ?, ?, ?)",
+        [Uuid::v4(), $user['id'], $q, (int)($params['results_count'] ?? 0)]
+    );
+    respond(['success' => true]);
 }
 
 /* ── Favoris ───────────────────────────────────────────── */
@@ -183,7 +201,7 @@ function get_annonces_list()
 
 function get_annonce_detail()
 {
-    require_auth();
+    $user = require_auth();
     global $params;
 
     $id = $params['id'] ?? '';
@@ -198,5 +216,26 @@ function get_annonce_detail()
     );
 
     if (!$a) not_found('Annonce introuvable');
+
+    // Log view + ack status
+    try {
+        Db::exec("INSERT INTO annonce_views (id, annonce_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $id, $user['id']]);
+    } catch (\Throwable $e) {}
+    if (!empty($a['requires_ack'])) {
+        $a['user_acked'] = (bool)Db::getOne("SELECT 1 FROM annonce_acks WHERE annonce_id = ? AND user_id = ?", [$id, $user['id']]);
+    }
+
     respond(['success' => true, 'annonce' => $a]);
+}
+
+function ack_annonce()
+{
+    $user = require_auth();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    $a = Db::fetch("SELECT requires_ack FROM annonces WHERE id = ?", [$id]);
+    if (!$a || empty($a['requires_ack'])) bad_request('Annonce sans accusé requis');
+    Db::exec("INSERT IGNORE INTO annonce_acks (annonce_id, user_id) VALUES (?, ?)", [$id, $user['id']]);
+    respond(['success' => true, 'message' => 'Lecture confirmée']);
 }

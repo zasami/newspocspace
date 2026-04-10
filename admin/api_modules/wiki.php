@@ -142,10 +142,21 @@ function admin_get_wiki_pages()
 
     $whereSql = implode(' AND ', $where);
 
+    // Status filter (responsable+ peuvent voir brouillons/review, autres uniquement publié)
+    $u = $_SESSION['ss_user'] ?? null;
+    $isResp = $u && in_array($u['role'] ?? '', ['admin','direction','responsable']);
+    if (!$isResp) {
+        $where[] = "p.status = 'publie'";
+    } elseif (!empty($params['status_filter']) && in_array($params['status_filter'], ['brouillon','review','publie'])) {
+        $where[] = 'p.status = ?';
+        $binds[] = $params['status_filter'];
+    }
+    $whereSql = implode(' AND ', $where);
+
     $pages = Db::fetchAll(
         "SELECT p.id, p.titre, p.slug, p.description, p.categorie_id, p.version,
                 p.visible, p.epingle, p.expert_id, p.verified_at, p.verify_next,
-                p.verify_interval_days, p.created_at, p.updated_at,
+                p.verify_interval_days, p.status, p.created_at, p.updated_at,
                 c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
                 cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
                 up.prenom AS modif_prenom, up.nom AS modif_nom,
@@ -196,17 +207,27 @@ function admin_get_wiki_page()
         "SELECT p.*, c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
                 cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
                 up.prenom AS modif_prenom, up.nom AS modif_nom,
-                ex.prenom AS expert_prenom, ex.nom AS expert_nom
+                ex.prenom AS expert_prenom, ex.nom AS expert_nom,
+                rr.prenom AS review_requested_by_prenom, rr.nom AS review_requested_by_nom
          FROM wiki_pages p
          LEFT JOIN wiki_categories c ON c.id = p.categorie_id
          LEFT JOIN users cr ON cr.id = p.created_by
          LEFT JOIN users up ON up.id = p.updated_by
          LEFT JOIN users ex ON ex.id = p.expert_id
+         LEFT JOIN users rr ON rr.id = p.review_requested_by
          WHERE p.id = ?",
         [$id]
     );
 
     if (!$page) not_found('Page introuvable');
+
+    // Log view (don't fail if logging fails)
+    try {
+        $u = $_SESSION['ss_user'] ?? null;
+        if ($u && empty($params['no_log'])) {
+            Db::exec("INSERT INTO wiki_page_views (id, page_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $id, $u['id']]);
+        }
+    } catch (\Throwable $e) {}
 
     // Attach tags
     $page['tags'] = Db::fetchAll(
@@ -299,6 +320,15 @@ function admin_update_wiki_page()
     if (isset($params['visible'])) { $sets[] = 'visible = ?'; $binds[] = (int)$params['visible']; }
     if (isset($params['epingle'])) { $sets[] = 'epingle = ?'; $binds[] = (int)$params['epingle']; }
     if (isset($params['image_url'])) { $sets[] = 'image_url = ?'; $binds[] = Sanitize::text($params['image_url'], 500); }
+    if (isset($params['status']) && in_array($params['status'], ['brouillon','review','publie'])) {
+        $sets[] = 'status = ?';
+        $binds[] = $params['status'];
+        if ($params['status'] === 'review') {
+            $sets[] = 'review_requested_at = NOW()';
+            $sets[] = 'review_requested_by = ?';
+            $binds[] = $user['id'];
+        }
+    }
 
     $binds[] = $id;
     Db::exec("UPDATE wiki_pages SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
@@ -832,3 +862,178 @@ function admin_save_pixabay_wiki()
 
     respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
 }
+
+/* ── Phase 3 : Analytics ──────────────────────────────── */
+
+function admin_log_wiki_search()
+{
+    $u = require_auth();
+    global $params;
+    $q = trim(Sanitize::text($params['q'] ?? '', 200));
+    if (mb_strlen($q) < 2) respond(['success' => true]);
+    $count = (int)($params['results_count'] ?? 0);
+    Db::exec(
+        "INSERT INTO wiki_search_log (id, user_id, q, results_count) VALUES (?, ?, ?, ?)",
+        [Uuid::v4(), $u['id'], $q, $count]
+    );
+    respond(['success' => true]);
+}
+
+function admin_get_wiki_analytics()
+{
+    require_responsable();
+    global $params;
+    $days = (int)($params['days'] ?? 30);
+    $days = max(1, min($days, 365));
+
+    // Total stats
+    $totalPages = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_at IS NULL");
+    $totalViews = (int)Db::getOne("SELECT COUNT(*) FROM wiki_page_views WHERE viewed_at >= DATE_SUB(NOW(), INTERVAL ? DAY)", [$days]);
+    $uniqueViewers = (int)Db::getOne("SELECT COUNT(DISTINCT user_id) FROM wiki_page_views WHERE viewed_at >= DATE_SUB(NOW(), INTERVAL ? DAY)", [$days]);
+    $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_at IS NULL AND verify_next IS NOT NULL AND verify_next <= NOW()");
+
+    // Top pages
+    $topPages = Db::fetchAll(
+        "SELECT p.id, p.titre, p.slug, COUNT(v.id) AS views
+         FROM wiki_page_views v
+         JOIN wiki_pages p ON p.id = v.page_id
+         WHERE v.viewed_at >= DATE_SUB(NOW(), INTERVAL ? DAY) AND p.archived_at IS NULL
+         GROUP BY p.id, p.titre, p.slug
+         ORDER BY views DESC LIMIT 10",
+        [$days]
+    );
+
+    // Orphan pages (no views in period AND not updated for 90+ days)
+    $orphans = Db::fetchAll(
+        "SELECT p.id, p.titre, p.slug, p.updated_at,
+                (SELECT COUNT(*) FROM wiki_page_views v WHERE v.page_id = p.id AND v.viewed_at >= DATE_SUB(NOW(), INTERVAL ? DAY)) AS recent_views
+         FROM wiki_pages p
+         WHERE p.archived_at IS NULL
+           AND p.updated_at < DATE_SUB(NOW(), INTERVAL 90 DAY)
+         HAVING recent_views = 0
+         ORDER BY p.updated_at ASC LIMIT 20",
+        [$days]
+    );
+
+    // Daily views (for sparkline)
+    $daily = Db::fetchAll(
+        "SELECT DATE(viewed_at) AS d, COUNT(*) AS c
+         FROM wiki_page_views
+         WHERE viewed_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+         GROUP BY DATE(viewed_at)
+         ORDER BY d",
+        [$days]
+    );
+
+    respond([
+        'success' => true,
+        'days' => $days,
+        'totals' => [
+            'pages' => $totalPages,
+            'views' => $totalViews,
+            'unique_viewers' => $uniqueViewers,
+            'expired' => $expiredCount,
+        ],
+        'top_pages' => $topPages,
+        'orphans' => $orphans,
+        'daily' => $daily,
+    ]);
+}
+
+function admin_get_knowledge_gaps()
+{
+    require_responsable();
+    global $params;
+    $days = (int)($params['days'] ?? 30);
+    $days = max(1, min($days, 365));
+
+    // Top empty searches
+    $empty = Db::fetchAll(
+        "SELECT q, COUNT(*) AS hits, MAX(created_at) AS last_search
+         FROM wiki_search_log
+         WHERE results_count = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+         GROUP BY q
+         ORDER BY hits DESC, last_search DESC
+         LIMIT 30",
+        [$days]
+    );
+
+    // Top searches overall
+    $top = Db::fetchAll(
+        "SELECT q, COUNT(*) AS hits
+         FROM wiki_search_log
+         WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+         GROUP BY q
+         ORDER BY hits DESC LIMIT 20",
+        [$days]
+    );
+
+    respond(['success' => true, 'empty_searches' => $empty, 'top_searches' => $top, 'days' => $days]);
+}
+
+/* ── Phase 3 : Reviews / Workflow ─────────────────────── */
+
+function admin_request_wiki_review()
+{
+    $u = require_auth();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    Db::exec(
+        "UPDATE wiki_pages SET status = 'review', review_requested_at = NOW(), review_requested_by = ? WHERE id = ?",
+        [$u['id'], $id]
+    );
+    respond(['success' => true, 'message' => 'Demande de review envoyée']);
+}
+
+function admin_review_wiki_page()
+{
+    $u = require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    $decision = $params['decision'] ?? '';
+    if (!$id) bad_request('ID requis');
+    if (!in_array($decision, ['approved','changes_requested','commented'])) bad_request('Décision invalide');
+
+    Db::exec(
+        "INSERT INTO wiki_page_reviews (id, page_id, reviewer_id, decision, comment) VALUES (?, ?, ?, ?, ?)",
+        [Uuid::v4(), $id, $u['id'], $decision, Sanitize::text($params['comment'] ?? '', 1000)]
+    );
+
+    if ($decision === 'approved') {
+        Db::exec("UPDATE wiki_pages SET status = 'publie' WHERE id = ?", [$id]);
+    } elseif ($decision === 'changes_requested') {
+        Db::exec("UPDATE wiki_pages SET status = 'brouillon' WHERE id = ?", [$id]);
+    }
+
+    respond(['success' => true, 'message' => 'Review enregistrée']);
+}
+
+function admin_get_wiki_reviews()
+{
+    require_auth();
+    global $params;
+    $id = $params['page_id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    $reviews = Db::fetchAll(
+        "SELECT r.*, u.prenom, u.nom FROM wiki_page_reviews r
+         LEFT JOIN users u ON u.id = r.reviewer_id
+         WHERE r.page_id = ? ORDER BY r.created_at DESC",
+        [$id]
+    );
+    respond(['success' => true, 'reviews' => $reviews]);
+}
+
+function admin_get_pending_reviews()
+{
+    require_responsable();
+    $rows = Db::fetchAll(
+        "SELECT p.id, p.titre, p.slug, p.review_requested_at, u.prenom, u.nom
+         FROM wiki_pages p
+         LEFT JOIN users u ON u.id = p.review_requested_by
+         WHERE p.status = 'review' AND p.archived_at IS NULL
+         ORDER BY p.review_requested_at ASC"
+    );
+    respond(['success' => true, 'pages' => $rows]);
+}
+

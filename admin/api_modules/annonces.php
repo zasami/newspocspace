@@ -45,8 +45,10 @@ function admin_get_annonces()
 
     $annonces = Db::fetchAll(
         "SELECT a.id, a.titre, a.slug, a.description, a.image_url, a.categorie,
-                a.epingle, a.visible, a.published_at, a.created_at, a.updated_at,
-                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom
+                a.epingle, a.visible, a.requires_ack, a.ack_target_role,
+                a.published_at, a.created_at, a.updated_at,
+                cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
+                (SELECT COUNT(*) FROM annonce_acks WHERE annonce_id = a.id) AS ack_count
          FROM annonces a
          LEFT JOIN users cr ON cr.id = a.created_by
          WHERE $whereSql
@@ -74,6 +76,18 @@ function admin_get_annonce()
     );
 
     if (!$a) not_found('Annonce introuvable');
+
+    // Log view + check ack status for current user
+    try {
+        $u = $_SESSION['ss_user'] ?? null;
+        if ($u && empty($params['no_log'])) {
+            Db::exec("INSERT INTO annonce_views (id, annonce_id, user_id) VALUES (?, ?, ?)", [Uuid::v4(), $id, $u['id']]);
+            if (!empty($a['requires_ack'])) {
+                $a['user_acked'] = (bool)Db::getOne("SELECT 1 FROM annonce_acks WHERE annonce_id = ? AND user_id = ?", [$id, $u['id']]);
+            }
+        }
+    } catch (\Throwable $e) {}
+
     respond(['success' => true, 'annonce' => $a]);
 }
 
@@ -97,15 +111,19 @@ function admin_create_annonce()
     if (!in_array($categorie, $validCats)) $categorie = 'direction';
 
     $id = Uuid::v4();
+    $requiresAck = !empty($params['requires_ack']) ? 1 : 0;
+    $ackRole = $params['ack_target_role'] ?? null;
+    if ($ackRole && !in_array($ackRole, ['collaborateur','responsable','direction','admin'])) $ackRole = null;
     Db::exec(
-        "INSERT INTO annonces (id, titre, slug, contenu, description, image_url, categorie, published_at, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)",
+        "INSERT INTO annonces (id, titre, slug, contenu, description, image_url, categorie, requires_ack, ack_target_role, published_at, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)",
         [
             $id, $titre, $slug,
             $params['contenu'] ?? '',
             Sanitize::text($params['description'] ?? '', 500),
             Sanitize::text($params['image_url'] ?? '', 500),
             $categorie,
+            $requiresAck, $ackRole,
             $user['id'],
         ]
     );
@@ -135,6 +153,12 @@ function admin_update_annonce()
     if (isset($params['categorie'])) { $sets[] = 'categorie = ?'; $binds[] = $params['categorie']; }
     if (isset($params['visible'])) { $sets[] = 'visible = ?'; $binds[] = (int)$params['visible']; }
     if (isset($params['epingle'])) { $sets[] = 'epingle = ?'; $binds[] = (int)$params['epingle']; }
+    if (isset($params['requires_ack'])) { $sets[] = 'requires_ack = ?'; $binds[] = (int)$params['requires_ack']; }
+    if (isset($params['ack_target_role'])) {
+        $role = $params['ack_target_role'];
+        $sets[] = 'ack_target_role = ?';
+        $binds[] = in_array($role, ['collaborateur','responsable','direction','admin']) ? $role : null;
+    }
 
     $binds[] = $id;
     Db::exec("UPDATE annonces SET " . implode(', ', $sets) . " WHERE id = ?", $binds);
@@ -238,3 +262,71 @@ function admin_save_pixabay_annonce()
     $url = '/spocspace/assets/uploads/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
+
+/* ── Phase 3 : Read receipts ─────────────────────────── */
+
+function admin_ack_annonce()
+{
+    $u = require_auth();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    $a = Db::fetch("SELECT id, requires_ack FROM annonces WHERE id = ?", [$id]);
+    if (!$a) not_found('Annonce introuvable');
+    if (empty($a['requires_ack'])) bad_request('Cette annonce ne nécessite pas d\'accusé');
+
+    Db::exec(
+        "INSERT IGNORE INTO annonce_acks (annonce_id, user_id) VALUES (?, ?)",
+        [$id, $u['id']]
+    );
+    respond(['success' => true, 'message' => 'Lecture confirmée']);
+}
+
+function admin_get_annonce_acks()
+{
+    require_responsable();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+
+    $a = Db::fetch("SELECT id, titre, requires_ack, ack_target_role FROM annonces WHERE id = ?", [$id]);
+    if (!$a) not_found('Annonce introuvable');
+
+    $where = ['is_active = 1'];
+    $binds = [];
+    if (!empty($a['ack_target_role'])) {
+        $where[] = 'role = ?';
+        $binds[] = $a['ack_target_role'];
+    }
+    $whereSql = implode(' AND ', $where);
+    $totalTarget = (int)Db::getOne("SELECT COUNT(*) FROM users WHERE $whereSql", $binds);
+
+    $acked = Db::fetchAll(
+        "SELECT u.id, u.prenom, u.nom, u.role, k.acked_at
+         FROM annonce_acks k JOIN users u ON u.id = k.user_id
+         WHERE k.annonce_id = ?
+         ORDER BY k.acked_at DESC",
+        [$id]
+    );
+
+    $ackedIds = array_column($acked, 'id');
+    $missingWhere = $where;
+    $missingBinds = $binds;
+    if ($ackedIds) {
+        $ph = implode(',', array_fill(0, count($ackedIds), '?'));
+        $missingWhere[] = "id NOT IN ($ph)";
+        $missingBinds = array_merge($missingBinds, $ackedIds);
+    }
+    $missingSql = implode(' AND ', $missingWhere);
+    $missing = Db::fetchAll("SELECT id, prenom, nom, role FROM users WHERE $missingSql ORDER BY nom, prenom", $missingBinds);
+
+    respond([
+        'success' => true,
+        'annonce' => $a,
+        'total_target' => $totalTarget,
+        'total_acked' => count($acked),
+        'acked' => $acked,
+        'missing' => $missing,
+    ]);
+}
+

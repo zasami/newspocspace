@@ -76,6 +76,10 @@ $catLabels = [
     .ann-card { flex-direction:column; }
     .ann-card-img, .ann-card-img-placeholder { width:100%; height:140px; }
 }
+
+.ann-ack-badge { display:inline-block; background:#fff3cd; color:#856404; padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; }
+.ann-ack-required { background:#fff8e1; border:1px solid #ffe082; border-radius:8px; padding:14px; margin:14px 0; color:#7a5c00; font-size:.88rem; }
+.ann-ack-confirmed { background:#d4edda; border:1px solid #a7d4b0; border-radius:8px; padding:10px 14px; margin:14px 0; color:#155724; font-size:.85rem; display:flex; align-items:center; gap:8px; }
 </style>
 
 <!-- LIST VIEW -->
@@ -204,6 +208,13 @@ $catLabels = [
         const auteur = a.auteur_prenom ? `${a.auteur_prenom} ${a.auteur_nom}` : '';
         const heroImg = a.image_url ? `<img class="ann-read-hero" src="${escapeHtml(a.image_url)}" alt="">` : '';
 
+        const ackBlock = a.requires_ack ? (a.user_acked
+            ? `<div class="ann-ack-confirmed"><i class="bi bi-check-circle-fill"></i> Vous avez confirmé la lecture de cette annonce</div>`
+            : `<div class="ann-ack-required">
+                 <div><i class="bi bi-shield-exclamation"></i> Cette annonce nécessite votre accusé de lecture</div>
+                 <button class="btn btn-success btn-sm mt-2" id="btnAckAnnonce"><i class="bi bi-check2"></i> J'ai lu et compris</button>
+               </div>`) : '';
+
         document.getElementById('annReadPanel').innerHTML = `
             ${heroImg}
             <div class="ann-read-content-wrap">
@@ -212,10 +223,17 @@ $catLabels = [
                     <span class="ann-card-cat" style="background:${cat.color}"><i class="bi bi-${cat.icon}"></i> ${cat.label}</span>
                     <span class="ms-2"><i class="bi bi-calendar3"></i> ${date}</span>
                     ${auteur ? ` &middot; <i class="bi bi-person"></i> ${escapeHtml(auteur)}` : ''}
+                    ${a.requires_ack ? ' &middot; <span class="ann-ack-badge"><i class="bi bi-shield-check"></i> Accusé requis</span>' : ''}
                 </div>
+                ${ackBlock}
                 <div class="ann-read-body">${a.contenu || '<p class="text-muted">Aucun contenu</p>'}</div>
             </div>
         `;
+
+        document.getElementById('btnAckAnnonce')?.addEventListener('click', async () => {
+            const r = await adminApiPost('admin_ack_annonce', { id });
+            if (r.success) { showToast('Lecture confirmée'); openAnnonce(id); }
+        });
 
         let actions = '';
         if (isResp) {

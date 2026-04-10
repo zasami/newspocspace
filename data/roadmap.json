@@ -243,13 +243,22 @@
         "order": 27
     },
     {
+        "id": "anne-ga-lle-demande-d-information",
+        "title": "Anne-Gaëlle et Sophie demande d'informations",
+        "desc": "Voici une version corrigée et professionnelle de ton texte :\n\n1.Il faut des documents de qualité pour :\n\n  - construire les formulaires,\n  - automatiser les processus,\n  - avoir un suivi en direct sur une page dédiée à l’évolution du projet.\n\n2. Définir les rôles de chacun : qui fait quoi ?\n\n- Identifier les fonctions qui existent déjà dans Polypoint et qui doivent être intégrées dans SpocSpace.\n\n- Établir une liste des fonctions qui seront utiles pour l’équipe (soins, RH, administration, cuisine, hôtellerie, etc.) et qu’il est important de développer.",
+        "difficulty": "difficile",
+        "category": "General",
+        "done": false,
+        "order": 28
+    },
+    {
         "id": "module-animation",
         "title": "Module Animation",
         "desc": "Saisie des activites, animations repetitives, affichage auto sur le site, objectifs animation.",
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 28
+        "order": 29
     },
     {
         "id": "ia-animations",
@@ -258,7 +267,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 29
+        "order": 30
     },
     {
         "id": "formation",
@@ -267,7 +276,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 30
+        "order": 31
     },
     {
         "id": "postulation",
@@ -276,7 +285,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 31
+        "order": 32
     },
     {
         "id": "suivi-dossier",
@@ -285,7 +294,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 32
+        "order": 33
     },
     {
         "id": "transcription-pv",
@@ -294,7 +303,7 @@
         "difficulty": "difficile",
         "category": "PV \/ IA",
         "done": false,
-        "order": 33
+        "order": 34
     },
     {
         "id": "chiffrement",
@@ -303,7 +312,7 @@
         "difficulty": "difficile",
         "category": "Securite",
         "done": false,
-        "order": 34
+        "order": 35
     },
     {
         "id": "ajoute-sur-le-site-une-page-envoy-ma-condidature",
@@ -312,7 +321,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 35
+        "order": 36
     },
     {
         "id": "ajoute-page-gal-rie-pour-la-famille",
@@ -321,7 +330,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 36
+        "order": 37
     },
     {
         "id": "module-pour-les-interims",
@@ -330,7 +339,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 37
+        "order": 38
     },
     {
         "id": "espace-famille-r-sident",
@@ -339,7 +348,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 38
+        "order": 39
     },
     {
         "id": "organigrame-de-l-ems",
@@ -348,7 +357,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 39
+        "order": 40
     },
     {
         "id": "popup-email",
@@ -357,7 +366,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 40
+        "order": 41
     },
     {
         "id": "param-tres-fonctions-et-horraires",
@@ -366,7 +375,7 @@
         "difficulty": "difficile",
         "category": "Planning",
         "done": false,
-        "order": 41
+        "order": 42
     },
     {
         "id": "espace-famille",
@@ -375,7 +384,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": true,
-        "order": 42
+        "order": 43
     },
     {
         "id": "r-diger-le-help",
@@ -384,7 +393,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 43
+        "order": 44
     },
     {
         "id": "ajouter-rubrique-am-lioration",
@@ -393,7 +402,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 44
+        "order": 45
     },
     {
         "id": "mur-social",
@@ -402,7 +411,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 45
+        "order": 46
     },
     {
         "id": "r-ponse-aux-candidatures",
@@ -411,7 +420,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 46
+        "order": 47
     },
     {
         "id": "base-de-connaissances",
@@ -420,6 +429,6 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 47
+        "order": 48
     }
 ]

@@ -11,7 +11,7 @@ $categories = Db::fetchAll("SELECT * FROM wiki_categories WHERE actif = 1 ORDER 
 $tags = Db::fetchAll("SELECT id, nom, slug, couleur FROM wiki_tags ORDER BY nom");
 $pages = Db::fetchAll(
     "SELECT p.id, p.titre, p.slug, p.description, p.categorie_id, p.version,
-            p.visible, p.epingle, p.expert_id, p.verified_at, p.verify_next,
+            p.visible, p.epingle, p.expert_id, p.verified_at, p.verify_next, p.status,
             p.created_at, p.updated_at,
             c.nom AS categorie_nom, c.icone AS categorie_icone, c.couleur AS categorie_couleur,
             cr.prenom AS auteur_prenom, cr.nom AS auteur_nom,
@@ -21,6 +21,7 @@ $pages = Db::fetchAll(
      LEFT JOIN users cr ON cr.id = p.created_by
      LEFT JOIN users ex ON ex.id = p.expert_id
      WHERE p.archived_at IS NULL AND p.visible = 1
+       " . ($isResponsable ? "" : "AND p.status = 'publie'") . "
      ORDER BY p.epingle DESC, p.updated_at DESC"
 );
 // Attach tags + favoris
@@ -57,6 +58,9 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
 .wiki-card-meta { font-size:.72rem; color:#adb5bd; display:flex; gap:10px; align-items:center; }
 .wiki-card-cat { font-size:.7rem; padding:2px 8px; border-radius:10px; color:#fff; display:inline-flex; align-items:center; gap:3px; }
 .wiki-card-pin { position:absolute; top:8px; right:10px; color:var(--care-primary, #2d4a43); font-size:.85rem; }
+.wiki-status-badge { font-size:.65rem; padding:1px 6px; border-radius:8px; font-weight:600; vertical-align:middle; margin-left:4px; }
+.wiki-status-draft { background:#e9ecef; color:#495057; }
+.wiki-status-review { background:#fff3cd; color:#856404; }
 
 /* Read view (same style as annonces) */
 .wiki-read-panel { background:#fff; border:1px solid #e9ecef; border-radius:10px; overflow:hidden; }
@@ -478,10 +482,13 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
                     ? '<span class="wiki-verify-badge wiki-verify-expired"><i class="bi bi-exclamation-triangle"></i> À revérifier</span>'
                     : '<span class="wiki-verify-badge wiki-verify-ok"><i class="bi bi-patch-check"></i> Vérifié</span>';
             }
+            let statusBadge = '';
+            if (p.status === 'brouillon') statusBadge = '<span class="wiki-status-badge wiki-status-draft"><i class="bi bi-pencil"></i> Brouillon</span>';
+            else if (p.status === 'review') statusBadge = '<span class="wiki-status-badge wiki-status-review"><i class="bi bi-eye"></i> En review</span>';
             return `<div class="wiki-card ${p.epingle == 1 ? 'pinned' : ''}" data-id="${p.id}">
                 ${pin}
                 <button class="wiki-fav-btn ${favClass}" data-fav-id="${p.id}" title="Favoris" style="position:absolute;top:8px;right:${p.epingle == 1 ? '28' : '10'}px"><i class="bi bi-${favIcon}"></i></button>
-                <div class="wiki-card-title">${escapeHtml(p.titre)}</div>
+                <div class="wiki-card-title">${escapeHtml(p.titre)} ${statusBadge}</div>
                 <div class="wiki-card-desc">${escapeHtml(p.description || '')}</div>
                 ${tagsHtml ? `<div class="wiki-tags-row">${tagsHtml}</div>` : ''}
                 <div class="wiki-card-meta" style="margin-top:6px">
@@ -888,7 +895,20 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         const input = document.getElementById('topbarSearchInput');
         if (!input) return;
         let timer;
-        input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => renderGrid(), 250); });
+        let logTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => renderGrid(), 250);
+            // Log search after user stopped typing for 1.5s
+            clearTimeout(logTimer);
+            const q = input.value.trim();
+            if (q.length >= 2) {
+                logTimer = setTimeout(() => {
+                    const visible = document.querySelectorAll('#wikiGrid .wiki-card').length;
+                    adminApiPost('admin_log_wiki_search', { q, results_count: visible });
+                }, 1500);
+            }
+        });
     }
 
     // ── Suggestions IA ──────────────────────────────────

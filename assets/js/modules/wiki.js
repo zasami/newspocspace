@@ -199,8 +199,18 @@ export async function init(pageId, params) {
 
     const searchInput = document.getElementById('feSearchInput');
     if (searchInput) {
-        let timer;
-        searchInput.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(renderGrid, 250); });
+        let timer, logTimer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timer); timer = setTimeout(renderGrid, 250);
+            clearTimeout(logTimer);
+            const q = searchInput.value.trim();
+            if (q.length >= 2) {
+                logTimer = setTimeout(() => {
+                    const count = document.querySelectorAll('#wikiGrid .wiki-card').length;
+                    apiPost('log_wiki_search', { q, results_count: count });
+                }, 1500);
+            }
+        });
     }
 }
 
