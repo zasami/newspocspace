@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -150,6 +150,8 @@ $pageLabels = [
     'rh-candidatures'  => 'Candidatures',
     'rh-formations'    => 'Formations collaborateurs',
     'mur'              => 'Mur social',
+    'wiki'             => 'Base de connaissances',
+    'annonces'         => 'Annonces officielles',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -206,6 +208,8 @@ $sidebarCategories = [
             'pv'       => ['label' => 'Procès-Verbaux',       'icon' => 'file-earmark-text'],
             'sondages' => ['label' => 'Sondages',             'icon' => 'clipboard2-check'],
             'mur'      => ['label' => 'Mur social',            'icon' => 'chat-square-heart'],
+            'wiki'     => ['label' => 'Base de connaissances', 'icon' => 'book'],
+            'annonces' => ['label' => 'Annonces officielles',  'icon' => 'megaphone'],
         ],
     ],
     'rh' => [
@@ -316,7 +320,7 @@ $activeSection = match($page) {
     <h5 class="mb-0 topbar-title"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
     <div class="topbar-search ms-auto me-3" id="topbarSearch">
       <i class="bi bi-search search-icon"></i>
-      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="<?= h($topbarPlaceholder) ?>" autocomplete="off">
+      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="Rechercher partout..." autocomplete="off">
       <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
       <div class="topbar-search-results" id="topbarSearchResults"></div>
     </div>
@@ -499,6 +503,9 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
         fetch(ajaxUrl, { credentials: 'same-origin' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                // Push state BEFORE running scripts so AdminURL.currentId() reflects new URL
+                if (pushState !== false) history.pushState({ page: page }, '', url);
+
                 // Inject HTML (scripts in innerHTML don't execute — we'll activate them)
                 contentEl.innerHTML = data.html;
 
@@ -541,7 +548,6 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
 
                 document.title = data.title;
                 if (titleEl) titleEl.textContent = data.title.split(' — ')[0];
-                if (pushState !== false) history.pushState({ page: page }, '', url);
                 window.scrollTo(0, 0);
             })
             .catch(function(err) {

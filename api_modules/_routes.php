@@ -70,6 +70,9 @@ return [
     'repartition' => [
         'get_repartition',
     ],
+    'search' => [
+        'global_search',
+    ],
     'wiki' => [
         'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
         'toggle_wiki_favori',

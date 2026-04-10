@@ -2255,7 +2255,7 @@ function startLiveTranscriber() {
 function startLiveTranscriberExternal() {
     if (!deepgramApiKey || !audioStream) return;
 
-    const url = 'wss://api.deepgram.com/v1/listen?language=fr&model=nova-2&punctuate=true&smart_format=true';
+    const url = 'wss://api.deepgram.com/v1/listen?language=fr&model=nova-2&punctuate=true&smart_format=true&mip_opt_out=true';
     deepgramSocket = new WebSocket(url, ['token', deepgramApiKey]);
 
     deepgramSocket.onopen = () => {

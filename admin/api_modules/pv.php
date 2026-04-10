@@ -700,7 +700,7 @@ function admin_transcribe_external()
     }
 
     // Deepgram API
-    $url = 'https://api.deepgram.com/v1/listen?language=fr&model=nova-2&smart_format=true&punctuate=true';
+    $url = 'https://api.deepgram.com/v1/listen?language=fr&model=nova-2&smart_format=true&punctuate=true&mip_opt_out=true';
     $audioData = file_get_contents($file['tmp_name']);
     $contentType = $file['type'] ?: 'audio/webm';
 

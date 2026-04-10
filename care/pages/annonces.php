@@ -129,6 +129,8 @@ $catLabels = [
         renderList();
         bindEvents();
         bindSearch();
+        const urlId = (typeof AdminURL !== 'undefined') ? AdminURL.currentId() : '';
+        if (urlId) openAnnonce(urlId);
     }
 
     function renderFilters() {

@@ -60,90 +60,108 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ── Topbar search (autocomplete) ──
+    // ── Topbar global search (with history) ──
     const searchInput = document.getElementById('topbarSearchInput');
-    const searchResults = document.getElementById('topbarSearchResults');
+    const searchPanel = document.getElementById('topbarSearchResults');
     let searchTimer = null;
 
-    // On certain pages, topbar search is hijacked by the page script — skip default user search
     const currentPage = AdminURL.currentPage();
-    const searchOverridePages = ['messages', 'sondages', 'documents', 'users', 'todos', 'notes', 'pv'];
-    const isSearchOverride = searchOverridePages.includes(currentPage);
-
     const searchClear = document.getElementById('adminSearchClear');
     const searchWrap = document.getElementById('topbarSearch');
 
-    if (searchInput && searchResults) {
-        function updateClear() {
-            if (searchClear) searchClear.style.display = searchInput.value.length > 0 ? '' : 'none';
+    if (searchInput && searchPanel) {
+        const HIST_KEY = 'spocadmin:search-history';
+        const TTL_MS = 2 * 24 * 60 * 60 * 1000;
+        const now = () => Date.now();
+
+        function loadHist() { try { const a = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); return a.filter(it=>it&&it.q&&(it.ts||0)>=now()-TTL_MS); } catch { return []; } }
+        function saveHist(arr) { const seen = new Set(); const c = arr.filter(it => { const k=(it.q||'').toLowerCase(); if(!k||seen.has(k)) return false; seen.add(k); return true; }).slice(0,30); try { localStorage.setItem(HIST_KEY,JSON.stringify(c)); } catch {} }
+        function addHist(q) { q=(q||'').trim(); if(!q||q.length<2) return; const h=loadHist().filter(it=>it.q.toLowerCase()!==q.toLowerCase()); h.unshift({q,ts:now()}); saveHist(h); }
+        function delHist(q) { saveHist(loadHist().filter(it=>it.q.toLowerCase()!==q.toLowerCase())); }
+
+        function openPanel() { searchPanel.classList.add('show'); }
+        function closePanel() { searchPanel.classList.remove('show'); if (searchWrap) searchWrap.classList.remove('expanded'); }
+        function updateClear() { if (searchClear) searchClear.style.display = searchInput.value.length > 0 ? '' : 'none'; }
+
+        function renderHistory(filter) {
+            const hist = loadHist().sort((a,b)=>b.ts-a.ts);
+            const f = (filter||'').toLowerCase();
+            const filtered = f ? hist.filter(it=>it.q.toLowerCase().includes(f)) : hist;
+            if (!filtered.length) { searchPanel.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:.85rem">Tapez pour rechercher</div>'; return; }
+            searchPanel.innerHTML = filtered.slice(0,6).map((it,i) => {
+                const icon = i < 2 ? 'clock' : 'search';
+                return `<div class="search-result-item" style="cursor:pointer" data-hist-q="${escapeHtml(it.q)}">
+                    <div class="search-result-avatar" style="background:#f0eeea;color:#999"><i class="bi bi-${icon}"></i></div>
+                    <div class="search-result-name">${escapeHtml(it.q)}</div>
+                    <button class="admin-hist-del" data-del-q="${escapeHtml(it.q)}" style="background:none;border:none;color:#ccc;cursor:pointer;margin-left:auto;font-size:.75rem"><i class="bi bi-x"></i></button>
+                </div>`;
+            }).join('');
         }
+
+        function renderResults(results) {
+            if (!results.length) { searchPanel.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:.85rem">Aucun résultat</div>'; searchPanel.classList.add('show'); return; }
+            const groups = {};
+            results.forEach(r => { if (!groups[r.type]) groups[r.type]=[]; groups[r.type].push(r); });
+            const typeLabels = { user:'Utilisateurs', resident:'Résidents', wiki:'Wiki', annonce:'Annonces', document:'Documents' };
+            let html = '';
+            for (const [type, items] of Object.entries(groups)) {
+                html += `<div style="font-size:.7rem;color:#999;padding:4px 12px;font-weight:600;text-transform:uppercase">${typeLabels[type]||type}</div>`;
+                items.forEach(r => {
+                    const href = r.external_url ? r.external_url : AdminURL.page(r.page, r.page_id || r.id);
+                    html += `<a class="search-result-item" href="${href}" style="text-decoration:none;color:inherit">
+                        <div class="search-result-avatar"><i class="bi bi-${r.icon}"></i></div>
+                        <div>
+                            <div class="search-result-name">${escapeHtml(r.title)}</div>
+                            <div class="search-result-meta">${escapeHtml(r.subtitle||'')}</div>
+                        </div>
+                    </a>`;
+                });
+            }
+            searchPanel.innerHTML = html;
+            searchPanel.classList.add('show');
+        }
+
+        async function doSearch(q) {
+            if (q.length < 2) { renderHistory(q); return; }
+            const res = await adminApiPost('admin_global_search', { q });
+            if (res.success) renderResults(res.results);
+        }
+
+        searchInput.addEventListener('focus', () => {
+            if (searchWrap) searchWrap.classList.add('expanded');
+            if (!searchInput.value) renderHistory('');
+            openPanel();
+        });
 
         searchInput.addEventListener('input', () => {
             updateClear();
             clearTimeout(searchTimer);
-            const raw = searchInput.value.trim();
-            const isMention = raw.startsWith('@');
-            const q = isMention ? raw.slice(1) : raw;
-
-            if (isMention && q.length >= 2) {
-                searchTimer = setTimeout(() => runUserSearch(q), 200);
-            } else if (!isSearchOverride && q.length >= 3) {
-                searchTimer = setTimeout(() => runUserSearch(q), 250);
-            } else {
-                searchResults.classList.remove('show');
-            }
+            const v = searchInput.value.trim();
+            if (v.length < 2) { renderHistory(v); openPanel(); return; }
+            searchTimer = setTimeout(() => doSearch(v), 300);
         });
 
-        searchInput.addEventListener('focus', () => {
-            if (searchWrap) searchWrap.classList.add('expanded');
-            const raw = searchInput.value.trim();
-            const isMention = raw.startsWith('@');
-            const q = isMention ? raw.slice(1) : raw;
-            if ((isMention && q.length >= 2) || (!isSearchOverride && q.length >= 3)) runUserSearch(q);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closePanel(); searchInput.blur(); }
+            if (e.key === 'Enter' && searchInput.value.trim().length >= 2) { addHist(searchInput.value.trim()); doSearch(searchInput.value.trim()); }
         });
 
         searchInput.addEventListener('blur', () => {
-            setTimeout(() => { if (searchWrap) searchWrap.classList.remove('expanded'); }, 200);
+            setTimeout(() => { if (!searchPanel.classList.contains('show')) { if (searchWrap) searchWrap.classList.remove('expanded'); } }, 200);
         });
 
         if (searchClear) {
-            searchClear.addEventListener('click', () => {
-                searchInput.value = '';
-                searchResults.classList.remove('show');
-                updateClear();
-                searchInput.focus();
-            });
+            searchClear.addEventListener('click', () => { searchInput.value = ''; updateClear(); renderHistory(''); searchInput.focus(); });
         }
 
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { searchInput.value = ''; searchResults.classList.remove('show'); updateClear(); searchInput.blur(); }
+        searchPanel.addEventListener('click', (e) => {
+            const del = e.target.closest('.admin-hist-del');
+            if (del) { e.preventDefault(); e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(searchInput.value); return; }
+            const hist = e.target.closest('[data-hist-q]');
+            if (hist && !e.target.closest('.admin-hist-del')) { searchInput.value = hist.dataset.histQ; updateClear(); doSearch(hist.dataset.histQ); return; }
         });
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#topbarSearch')) searchResults.classList.remove('show');
-        });
-
-        async function runUserSearch(q) {
-            const res = await adminApiPost('admin_search_users', { q });
-            const users = res.users || [];
-            if (!users.length) {
-                searchResults.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.85rem">Aucun résultat</div>';
-                searchResults.classList.add('show');
-                return;
-            }
-            searchResults.innerHTML = users.map(u => {
-                const initials = (u.prenom?.[0] || '') + (u.nom?.[0] || '');
-                const meta = [u.fonction_code, u.modules_codes].filter(Boolean).join(' — ');
-                return `<a class="search-result-item" href="${AdminURL.page('user-detail', u.id)}">
-                    <div class="search-result-avatar">${escapeHtml(initials.toUpperCase())}</div>
-                    <div>
-                        <div class="search-result-name">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</div>
-                        <div class="search-result-meta">${escapeHtml(meta)}</div>
-                    </div>
-                </a>`;
-            }).join('');
-            searchResults.classList.add('show');
-        }
+        document.addEventListener('click', (e) => { if (!e.target.closest('#topbarSearch')) closePanel(); });
     }
 
     // ── Page-specific init ──

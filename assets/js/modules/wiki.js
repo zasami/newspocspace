@@ -177,7 +177,7 @@ function backToList() {
     renderGrid();
 }
 
-export async function init() {
+export async function init(pageId, params) {
     const ssr = window.__SS_PAGE_DATA__;
     if (ssr?.categories) categories = ssr.categories;
 
@@ -191,6 +191,9 @@ export async function init() {
     // Load pages
     const res = await apiPost('get_wiki_pages', {});
     if (res.success) { allPages = res.pages; renderGrid(); }
+
+    // Open specific page if id provided (from search)
+    if (params?.id) openPage(params.id);
 
     document.getElementById('wikiBackBtn')?.addEventListener('click', backToList);
 

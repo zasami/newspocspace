@@ -395,6 +395,9 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         bindEvents();
         bindSearch();
         loadSuggestions();
+        // Open specific page if id in URL
+        const urlId = (typeof AdminURL !== 'undefined') ? AdminURL.currentId() : '';
+        if (urlId) openPage(urlId);
     }
 
     // ── Categories filters ────────────────────────────────

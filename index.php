@@ -238,7 +238,7 @@ if ($user && !empty($deniedPerms)) {
     </div>
     <div class="fe-topbar-search" id="feTopbarSearch">
       <i class="bi bi-search fe-search-icon"></i>
-      <input type="text" class="form-control" id="feSearchInput" placeholder="Rechercher (collègues, pages…)" autocomplete="off">
+      <input type="text" class="form-control" id="feSearchInput" placeholder="Rechercher partout..." autocomplete="off">
       <button type="button" class="fe-search-clear" id="feSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
       <div class="fe-search-results" id="feSearchResults"></div>
     </div>

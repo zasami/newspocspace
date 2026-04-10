@@ -184,6 +184,9 @@ return [
         'admin_email_ext_get_contacts', 'admin_email_ext_save_contact', 'admin_email_ext_delete_contact',
         'admin_email_ext_import_contacts', 'admin_email_ext_extract_contacts',
     ],
+    'global_search' => [
+        'admin_global_search',
+    ],
     'care_search' => [
         'admin_care_global_search',
     ],

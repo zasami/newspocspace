@@ -267,170 +267,112 @@ function setupLogout() {
 /* ── Global Search ── */
 
 let searchTimer = null;
-let colleaguesCache = null;
 
 function setupSearch() {
     const input = document.getElementById('feSearchInput');
-    const results = document.getElementById('feSearchResults');
+    const panel = document.getElementById('feSearchResults');
     const clearBtn = document.getElementById('feSearchClear');
     const wrap = document.getElementById('feTopbarSearch');
-    if (!input || !results) return;
+    if (!input || !panel) return;
 
-    function updateClear() {
-        if (clearBtn) clearBtn.style.display = input.value.length > 0 ? '' : 'none';
+    const HIST_KEY = 'spocspace:search-history';
+    const TTL_MS = 2 * 24 * 60 * 60 * 1000;
+    const now = () => Date.now();
+
+    function loadHist() { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return a.filter(it => it && it.q && (it.ts||0) >= now() - TTL_MS); } catch { return []; } }
+    function saveHist(arr) { const seen = new Set(); const c = arr.filter(it => { const k = (it.q||'').toLowerCase(); if (!k||seen.has(k)) return false; seen.add(k); return true; }).slice(0,30); try { localStorage.setItem(HIST_KEY, JSON.stringify(c)); } catch {} }
+    function addHist(q) { q=(q||'').trim(); if(!q||q.length<2) return; const h=loadHist().filter(it=>it.q.toLowerCase()!==q.toLowerCase()); h.unshift({q,ts:now()}); saveHist(h); }
+    function delHist(q) { saveHist(loadHist().filter(it=>it.q.toLowerCase()!==q.toLowerCase())); }
+
+    function openPanel() { panel.classList.add('show'); }
+    function closePanel() { panel.classList.remove('show'); if (wrap) wrap.classList.remove('expanded'); }
+
+    function updateClear() { if (clearBtn) clearBtn.style.display = input.value.length > 0 ? '' : 'none'; }
+
+    function renderHistory(filter) {
+        const hist = loadHist().sort((a,b)=>b.ts-a.ts);
+        const f = (filter||'').toLowerCase();
+        const filtered = f ? hist.filter(it=>it.q.toLowerCase().includes(f)) : hist;
+        const recent = filtered.slice(0,3);
+        const older = filtered.slice(3,7);
+        if (!recent.length && !older.length) { panel.innerHTML = '<div class="fe-search-item" style="opacity:.5;justify-content:center"><span>Tapez pour rechercher</span></div>'; return; }
+        const mkItem = (it, icon) => `<div class="fe-search-item fe-hist-item" data-q="${escapeHtml(it.q)}"><span class="fe-search-item-icon"><i class="bi bi-${icon}"></i></span><span class="fe-search-item-name">${escapeHtml(it.q)}</span><button class="fe-hist-del" data-del-q="${escapeHtml(it.q)}"><i class="bi bi-x"></i></button></div>`;
+        let html = recent.map(it=>mkItem(it,'clock')).join('');
+        if (older.length) html += '<div style="font-size:.7rem;color:#999;padding:4px 10px">Plus anciennes</div>' + older.map(it=>mkItem(it,'search')).join('');
+        panel.innerHTML = html;
     }
+
+    function renderResults(results, query) {
+        if (!results.length) { panel.innerHTML = '<div class="fe-search-item" style="opacity:.5;justify-content:center"><span>Aucun résultat</span></div>'; return; }
+        const groups = {};
+        results.forEach(r => { if (!groups[r.type]) groups[r.type]=[]; groups[r.type].push(r); });
+        const typeLabels = { collegue:'Collègues', wiki:'Wiki', annonce:'Annonces', document:'Documents', page:'Pages' };
+        const typeColors = { collegue:'#bcd2cb', wiki:'#B8C9D4', annonce:'#D0C4D8', document:'#D4C4A8', page:'#f0eeea' };
+        let html = '';
+        for (const [type, items] of Object.entries(groups)) {
+            html += `<div style="font-size:.7rem;color:#999;padding:4px 10px;font-weight:600">${typeLabels[type]||type}</div>`;
+            items.forEach(r => {
+                html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
+            });
+        }
+        panel.innerHTML = html;
+    }
+
+    async function doSearch(q) {
+        if (q.length < 2) { renderHistory(q); return; }
+        try {
+            const { apiPost } = await import('./helpers.js');
+            const res = await apiPost('global_search', { q });
+            if (res.success) renderResults(res.results, q);
+        } catch { renderHistory(q); }
+    }
+
+    input.addEventListener('focus', () => {
+        if (wrap) wrap.classList.add('expanded');
+        if (!input.value) renderHistory('');
+        openPanel();
+    });
 
     input.addEventListener('input', () => {
         updateClear();
         clearTimeout(searchTimer);
-        const raw = input.value.trim();
-        const isMention = raw.startsWith('@');
-        const q = (isMention ? raw.slice(1) : raw).toLowerCase();
-        const minLen = isMention ? 2 : 1;
-        if (q.length < minLen) { results.classList.remove('show'); return; }
-        searchTimer = setTimeout(() => runSearch(q, results), 200);
-    });
-
-    input.addEventListener('focus', () => {
-        if (wrap) wrap.classList.add('expanded');
-        const raw = input.value.trim();
-        const isMention = raw.startsWith('@');
-        const q = (isMention ? raw.slice(1) : raw).toLowerCase();
-        const minLen = isMention ? 2 : 1;
-        if (q.length >= minLen) runSearch(q, results);
-    });
-
-    input.addEventListener('blur', () => {
-        setTimeout(() => { if (wrap) wrap.classList.remove('expanded'); }, 200);
-    });
-
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            input.value = '';
-            results.classList.remove('show');
-            updateClear();
-            input.focus();
-        });
-    }
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.fe-topbar-search')) results.classList.remove('show');
+        const v = input.value.trim();
+        if (v.length < 2) { renderHistory(v); openPanel(); return; }
+        searchTimer = setTimeout(() => doSearch(v), 300);
     });
 
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { input.value = ''; results.classList.remove('show'); updateClear(); input.blur(); }
-    });
-}
-
-async function runSearch(q, container) {
-    const items = [];
-
-    // Search pages
-    const labels = window.__SS__?.pageLabels || {};
-    for (const [key, label] of Object.entries(labels)) {
-        if (label.toLowerCase().includes(q) || key.toLowerCase().includes(q)) {
-            items.push({ type: 'page', key, label });
-        }
-    }
-
-    // Search colleagues
-    const colleagues = await getColleagues();
-    const matchedColleagues = colleagues.filter(c => {
-        const full = `${c.prenom} ${c.nom}`.toLowerCase();
-        return full.includes(q);
-    }).slice(0, 8);
-
-    matchedColleagues.forEach(c => {
-        items.push({
-            type: 'user',
-            key: c.id,
-            label: `${c.prenom} ${c.nom}`,
-            meta: c.fonction_nom || ''
-        });
+        if (e.key === 'Escape') { closePanel(); input.blur(); }
+        if (e.key === 'Enter' && input.value.trim().length >= 2) { addHist(input.value.trim()); doSearch(input.value.trim()); }
     });
 
-    // Search residents — on cuisine pages or with @ prefix or digits
-    const residentPages = ['cuisine-vip', 'cuisine-famille', 'cuisine-home'];
-    const isResidentPage = residentPages.includes(currentPage);
-    if (isResidentPage || window.__SS__?.user?.type_employe === 'externe' || q.match(/^\d/)) {
-        try {
-            const { apiPost } = await import('./helpers.js');
-            const resRes = await apiPost('cuisine_get_residents', { search: q });
-            if (resRes.residents) {
-                resRes.residents.slice(0, 6).forEach(r => {
-                    items.push({
-                        type: 'resident',
-                        key: r.id,
-                        label: `${r.prenom} ${r.nom}`,
-                        meta: `Ch. ${r.chambre || '-'} · Ét. ${r.etage || '-'}`,
-                        chambre: r.chambre,
-                        isVip: r.is_vip
-                    });
-                });
-            }
-        } catch (e) {}
-    }
-
-    if (items.length === 0) {
-        container.innerHTML = '<div class="fe-search-item" style="opacity:.5"><span>Aucun résultat</span></div>';
-        container.classList.add('show');
-        return;
-    }
-
-    container.innerHTML = items.map(item => {
-        if (item.type === 'page') {
-            return `<a class="fe-search-item" data-link="${item.key}">
-                <span class="fe-search-item-icon"><i class="bi bi-file-text"></i></span>
-                <span class="fe-search-item-name">${escapeHtml(item.label)}</span>
-            </a>`;
-        }
-        if (item.type === 'resident') {
-            const initials = (item.label.split(' ').map(w => w[0] || '').join('').substring(0, 2)).toUpperCase();
-            return `<a class="fe-search-item fe-search-resident" data-resident-id="${item.key}" data-resident-name="${escapeHtml(item.label)}">
-                <span class="fe-search-item-icon" style="background:#D4C4A8;color:#6B5B3E">${escapeHtml(initials)}</span>
-                <div>
-                    <div class="fe-search-item-name">${escapeHtml(item.label)}</div>
-                    <div class="fe-search-item-meta"><i class="bi bi-door-open"></i> ${escapeHtml(item.meta)}</div>
-                </div>
-            </a>`;
-        }
-        const initials = (item.label.split(' ').map(w => w[0] || '').join('').substring(0, 2)).toUpperCase();
-        return `<a class="fe-search-item" data-link="collegues" data-slug="${item.key}">
-            <span class="fe-search-item-icon user-icon">${escapeHtml(initials)}</span>
-            <div>
-                <div class="fe-search-item-name">${escapeHtml(item.label)}</div>
-                ${item.meta ? `<div class="fe-search-item-meta">${escapeHtml(item.meta)}</div>` : ''}
-            </div>
-        </a>`;
-    }).join('');
-    container.classList.add('show');
-
-    // Resident click → dispatch event for active page to handle
-    container.querySelectorAll('.fe-search-resident').forEach(el => {
-        el.addEventListener('click', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            const id = el.dataset.residentId;
-            const name = el.dataset.residentName;
-            container.classList.remove('show');
-            document.getElementById('feSearchInput').value = '';
-            window.dispatchEvent(new CustomEvent('resident-selected', { detail: { id, name } }));
-        });
+    input.addEventListener('blur', () => {
+        setTimeout(() => { if (!panel.classList.contains('show')) { if (wrap) wrap.classList.remove('expanded'); } }, 200);
     });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => { input.value = ''; updateClear(); renderHistory(''); input.focus(); });
+    }
+
+    panel.addEventListener('click', (e) => {
+        const del = e.target.closest('.fe-hist-del');
+        if (del) { e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(input.value); return; }
+        const hist = e.target.closest('.fe-hist-item');
+        if (hist) { input.value = hist.dataset.q; updateClear(); doSearch(hist.dataset.q); return; }
+        const result = e.target.closest('.fe-result-item');
+        if (result) {
+            addHist(input.value.trim());
+            closePanel();
+            const page = result.dataset.page;
+            const id = result.dataset.id;
+            if (page && typeof window.loadPage === 'function') window.loadPage(page, id ? { id } : undefined);
+        }
+    });
+
+    document.addEventListener('click', (e) => { if (!e.target.closest('.fe-topbar-search')) closePanel(); });
 }
 
-async function getColleagues() {
-    if (colleaguesCache) return colleaguesCache;
-    try {
-        const { apiPost } = await import('./helpers.js');
-        const res = await apiPost('get_collegues');
-        if (res.ok && Array.isArray(res.data)) {
-            colleaguesCache = res.data;
-            return res.data;
-        }
-    } catch (e) { console.warn('getColleagues error:', e); }
-    return [];
-}
+// Old runSearch and getColleagues removed — replaced by global_search API in setupSearch()
 
 function escapeHtml(str) {
     const d = document.createElement('div');

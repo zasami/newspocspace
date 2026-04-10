@@ -56,7 +56,7 @@ function admin_care_global_search()
             'id' => $w['id'],
             'title' => $w['titre'],
             'subtitle' => $w['cat_nom'] ?: 'Wiki',
-            'url' => 'wiki',
+            'url' => 'wiki/' . $w['id'],
         ];
     }
 
@@ -81,7 +81,7 @@ function admin_care_global_search()
             'id' => $a['id'],
             'title' => $a['titre'],
             'subtitle' => ucfirst(str_replace('_', ' ', $a['categorie'])),
-            'url' => 'annonces',
+            'url' => 'annonces/' . $a['id'],
         ];
     }
 

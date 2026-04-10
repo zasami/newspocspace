@@ -467,6 +467,8 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 }
 .fe-search-item-name { font-weight: 500; }
 .fe-search-item-meta { font-size: 0.75rem; color: var(--ss-text-muted); }
+.fe-hist-del { background:none; border:none; color:#ccc; cursor:pointer; padding:2px; margin-left:auto; font-size:.75rem; transition:color .12s; flex-shrink:0; }
+.fe-hist-del:hover { color:#dc3545; }
 
 /* Topbar right */
 .fe-topbar-right {
