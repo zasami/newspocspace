@@ -430,5 +430,14 @@
         "category": "General",
         "done": false,
         "order": 48
+    },
+    {
+        "id": "rh-abscences",
+        "title": "RH abscences",
+        "desc": "Le RH reçoit la fiche maladie validée, les RUV voient la validation en cours.\nUne fois l'absence validée par le RH, la durée sera intégrée automatiquement dans le planning.\n et les RUV ou responsable voie état absent sur le profil collaborateur \n_ Problème RH prêt à jouer le jeux pour SpcoSpace",
+        "difficulty": "difficile",
+        "category": "Admin",
+        "done": false,
+        "order": 49
     }
 ]

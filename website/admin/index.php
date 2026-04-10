@@ -72,6 +72,9 @@ $sectionTypes = [
         <a href="/spocspace/website/" class="wa-btn wa-btn-ghost" target="_blank">
             <i class="bi bi-eye"></i> Voir le site
         </a>
+        <a href="/spocspace/website/admin/livre-or.php" class="wa-btn wa-btn-ghost">
+            <i class="bi bi-journal-bookmark-fill"></i> Livre d'or
+        </a>
         <a href="/spocspace/admin/" class="wa-btn wa-btn-ghost">
             <i class="bi bi-arrow-left"></i> Admin SpocSpace
         </a>

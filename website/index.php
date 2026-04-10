@@ -1193,6 +1193,466 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 <?php endif; /* contact */ ?>
 
+<!-- ═══ CAROUSEL TÉMOIGNAGES ═══ -->
+<section class="ws-lo-carousel-section">
+  <div class="ws-lo-carousel-head">
+    <span class="ws-lo-carousel-overtitle">Livre d'or</span>
+    <h2 class="ws-lo-carousel-title">Ce que disent <em>les familles</em></h2>
+  </div>
+  <div class="ws-lo-carousel" id="wsLoCarousel">
+    <div class="ws-lo-carousel-track" id="wsLoTrack">
+      <div class="ws-lo-loader"><i class="bi bi-arrow-repeat"></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FLÈCHE + CARTE LIVRE D'OR ═══ -->
+<div class="ws-livre-or-wrap">
+  <div class="ws-lo-arrow" aria-hidden="true"></div>
+  <div class="ws-livre-or-row">
+    <a href="/spocspace/website/livre-or.php" class="ws-livre-or-card">
+      <div class="ws-lo-img-wrap">
+        <img src="/spocspace/website/assets/img/livre-or.webp" alt="Livre d'or" class="ws-lo-img" loading="lazy">
+        <div class="ws-lo-img-shine"></div>
+      </div>
+      <div class="ws-lo-content">
+        <div class="ws-lo-overtitle">Témoignages des familles</div>
+        <h3 class="ws-lo-title">Livre d'or</h3>
+        <p class="ws-lo-text">Découvrez les témoignages des proches sur la prise en charge de leurs parents et la vie au sein de notre établissement.</p>
+        <span class="ws-lo-cta">Lire les témoignages <i class="bi bi-arrow-right"></i></span>
+      </div>
+    </a>
+    <div class="ws-lo-deco">
+      <div class="ws-lo-rating-num">
+        <span class="ws-lo-rating-val" id="wsLoAvg">—</span><small>/5</small>
+      </div>
+      <span class="ws-lo-stars" id="wsLoStars">★★★★★</span>
+      <div class="ws-lo-rating-count">
+        <span id="wsLoCount">0</span> témoignages
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ws-livre-or-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 20px;
+  position: relative;
+}
+.ws-lo-arrow {
+  width: 160px;
+  height: 165px;
+  display: block;
+  margin: 0 auto -18px;
+  background-color: #2E7D32;
+  -webkit-mask-image: url('/spocspace/website/assets/img/arrow-2.webp');
+          mask-image: url('/spocspace/website/assets/img/arrow-2.webp');
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: top center;
+          mask-position: top center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+  opacity: .92;
+  filter: drop-shadow(0 6px 14px rgba(46,125,50,.18));
+  position: relative;
+  z-index: 2;
+  animation: wsLoArrowBounce 1.8s cubic-bezier(.5, .05, .5, .95) infinite;
+  transform-origin: bottom center;
+}
+@keyframes wsLoArrowBounce {
+  0%   { transform: translateY(-14px); }
+  50%  { transform: translateY(0); }
+  55%  { transform: translateY(-2px) scaleY(.98); }
+  60%  { transform: translateY(0)    scaleY(1); }
+  100% { transform: translateY(-14px); }
+}
+@media (max-width: 768px) {
+  .ws-lo-arrow { width: 100px; height: 105px; margin-bottom: -12px; }
+}
+.ws-livre-or-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 20px;
+}
+.ws-livre-or-card {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  align-items: stretch;
+  gap: 36px;
+  background: linear-gradient(135deg, #FFFCEB 0%, #FAFDF7 60%, #F3F8EF 100%);
+  border: 1px solid rgba(230,194,32,.35);
+  border-radius: 22px;
+  padding: 28px 36px 28px 28px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 4px 20px rgba(46,125,50,.06), 0 1px 3px rgba(0,0,0,.03);
+  transition: transform .35s cubic-bezier(.4,0,.2,1), box-shadow .35s, border-color .35s;
+  position: relative;
+  overflow: hidden;
+}
+.ws-livre-or-card::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -10%;
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, rgba(230,194,32,.14) 0%, transparent 60%);
+  pointer-events: none;
+  transition: transform .6s ease;
+}
+.ws-livre-or-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 50px rgba(46,125,50,.14), 0 6px 14px rgba(0,0,0,.06);
+  border-color: rgba(230,194,32,.65);
+}
+.ws-livre-or-card:hover::before { transform: scale(1.2); }
+
+/* ── Image livre d'or ── */
+.ws-lo-img-wrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 2px 6px rgba(46,125,50,.06),
+    0 1px 2px rgba(0,0,0,.04);
+  min-height: 220px;
+  background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+  z-index: 1;
+}
+.ws-lo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  position: absolute;
+  inset: 0;
+  transition: transform .8s cubic-bezier(.4,0,.2,1), filter .4s;
+  filter: saturate(1.05) contrast(1.02);
+}
+.ws-livre-or-card:hover .ws-lo-img {
+  transform: scale(1.08);
+  filter: saturate(1.15) contrast(1.05);
+}
+.ws-lo-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 50%, rgba(26,46,26,.35) 100%);
+  pointer-events: none;
+}
+.ws-lo-img-shine {
+  position: absolute;
+  top: 0; left: -75%;
+  width: 50%; height: 100%;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.25) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  transition: left .8s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  z-index: 2;
+}
+.ws-livre-or-card:hover .ws-lo-img-shine { left: 125%; }
+.ws-lo-content { position: relative; z-index: 1; min-width: 0; }
+.ws-lo-overtitle {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #2E7D32;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.ws-lo-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1A2E1A;
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+.ws-lo-text {
+  font-size: .95rem;
+  color: #4A6548;
+  margin: 0 0 14px;
+  line-height: 1.55;
+  max-width: 540px;
+}
+.ws-lo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  color: #2E7D32;
+  transition: gap .25s;
+}
+.ws-livre-or-card:hover .ws-lo-cta { gap: 14px; }
+.ws-lo-cta i { transition: transform .25s; }
+.ws-livre-or-card:hover .ws-lo-cta i { transform: translateX(4px); }
+.ws-lo-deco {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 22px 28px;
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(230,194,32,.35);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px rgba(46,125,50,.06);
+  min-width: 150px;
+  overflow: hidden;
+}
+.ws-lo-deco::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: 85%;
+  height: 40%;
+  background-color: #2E7D32;
+  -webkit-mask-image: url('/spocspace/website/assets/img/bg-spocspace-note.webp');
+          mask-image: url('/spocspace/website/assets/img/bg-spocspace-note.webp');
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: center bottom;
+          mask-position: center bottom;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+  opacity: .18;
+  pointer-events: none;
+  z-index: 0;
+}
+.ws-lo-deco > * { position: relative; z-index: 1; }
+.ws-lo-rating-num {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #1A2E1A;
+  line-height: 1;
+}
+.ws-lo-rating-num small {
+  font-family: 'Inter', sans-serif;
+  font-size: .85rem;
+  font-weight: 500;
+  color: #7E9A7A;
+}
+.ws-lo-stars {
+  display: block;
+  color: #E6C220;
+  font-size: 1.15rem;
+  letter-spacing: 3px;
+  text-shadow: 0 2px 8px rgba(230,194,32,.3);
+}
+.ws-lo-rating-count {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4A6548;
+  font-weight: 600;
+  margin-top: 2px;
+}
+@media (max-width: 900px) {
+  .ws-livre-or-row { grid-template-columns: 1fr; gap: 16px; }
+  .ws-livre-or-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 24px;
+    gap: 22px;
+  }
+  .ws-lo-img-wrap { min-height: 180px; max-width: 420px; margin: 0 auto; width: 100%; }
+  .ws-lo-text { margin-left: auto; margin-right: auto; }
+  .ws-lo-title { font-size: 1.5rem; }
+  .ws-lo-deco { margin: 0 auto; max-width: 300px; }
+}
+@media (max-width: 768px) {
+  .ws-livre-or-wrap { padding: 40px 16px 10px; }
+  .ws-livre-or-sep { margin-bottom: 32px; }
+}
+
+/* ─── Carrousel témoignages (boucle infinie) ─── */
+.ws-lo-carousel-section {
+  padding: 70px 0 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.ws-lo-carousel-head {
+  text-align: center;
+  margin-bottom: 36px;
+  padding: 0 20px;
+}
+.ws-lo-carousel-overtitle {
+  display: inline-block;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #2E7D32;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.ws-lo-carousel-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 600;
+  color: #1A2E1A;
+  margin: 0;
+}
+.ws-lo-carousel-title em { color: #2E7D32; font-style: italic; }
+
+.ws-lo-carousel {
+  position: relative;
+  overflow-x: clip;
+  overflow-y: visible;
+  padding: 60px 0;
+}
+/* Masques fade seulement sur les côtés, sans clipper le haut/bas */
+.ws-lo-carousel::before,
+.ws-lo-carousel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8%;
+  z-index: 5;
+  pointer-events: none;
+}
+.ws-lo-carousel::before {
+  left: 0;
+  background: linear-gradient(90deg, #FAFDF7 0%, rgba(250,253,247,0) 100%);
+}
+.ws-lo-carousel::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(250,253,247,0) 0%, #FAFDF7 100%);
+}
+.ws-lo-carousel-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  -webkit-font-smoothing: antialiased;
+  padding: 20px 0;
+}
+
+.ws-lo-tcard {
+  flex: 0 0 340px;
+  margin-right: 24px;
+  background: #FFFFFF;
+  border: 1px solid #D8E8D0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(46,125,50,.05), 0 1px 2px rgba(0,0,0,.02);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transform-origin: center center;
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1),
+              box-shadow .45s cubic-bezier(.22, 1, .36, 1),
+              border-color .35s ease,
+              z-index 0s linear .35s,
+              filter .4s ease,
+              opacity .4s ease;
+  z-index: 1;
+}
+.ws-lo-tcard:hover {
+  transform: scale(1.14) translateY(-6px);
+  box-shadow:
+    0 28px 60px rgba(46,125,50,.22),
+    0 10px 24px rgba(0,0,0,.10);
+  border-color: #81C784;
+  z-index: 20;
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1),
+              box-shadow .45s cubic-bezier(.22, 1, .36, 1),
+              border-color .35s ease,
+              z-index 0s linear 0s;
+}
+/* Flou léger sur les autres cartes quand l'une est survolée */
+.ws-lo-carousel-track:has(.ws-lo-tcard:hover) .ws-lo-tcard:not(:hover) {
+  filter: blur(2px) saturate(.85);
+  opacity: .7;
+}
+.ws-lo-tcard.ws-lo-pinned {
+  border-color: #E6C220;
+  background: linear-gradient(180deg, #FFFCEB 0%, #fff 60%);
+}
+.ws-lo-tquote {
+  position: absolute;
+  top: 14px; right: 18px;
+  font-size: 3rem;
+  font-family: 'Playfair Display', serif;
+  color: #81C784;
+  opacity: .35;
+  line-height: 1;
+}
+.ws-lo-tstars { color: #E6C220; font-size: 1rem; letter-spacing: 2px; margin-bottom: 10px; }
+.ws-lo-ttitle { font-size: 1.05rem; font-weight: 600; color: #1A2E1A; margin: 0 0 8px; }
+.ws-lo-ttext {
+  color: #4A6548;
+  font-size: .92rem;
+  flex: 1;
+  margin: 0 0 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.55;
+}
+.ws-lo-tfooter {
+  border-top: 1px solid #D8E8D0;
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ws-lo-tauthor { font-size: .85rem; font-weight: 600; color: #1A2E1A; }
+.ws-lo-tauthor small {
+  display: block;
+  font-size: .72rem;
+  font-weight: 400;
+  color: #7E9A7A;
+  margin-top: 2px;
+}
+.ws-lo-tcible {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  background: rgba(46,125,50,.08);
+  color: #2E7D32;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+.ws-lo-tcard.ws-lo-pinned .ws-lo-tcible {
+  background: rgba(230,194,32,.15);
+  color: #B58E0E;
+}
+.ws-lo-loader {
+  text-align: center;
+  padding: 40px;
+  color: #7E9A7A;
+  font-size: 1.6rem;
+  width: 100%;
+}
+.ws-lo-loader i { animation: wsLoSpin 1s linear infinite; display: inline-block; }
+@keyframes wsLoSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .ws-lo-carousel-section { padding-top: 50px; }
+  .ws-lo-tcard { flex-basis: 280px; margin-right: 16px; }
+}
+</style>
+
 <!-- ═══ FOOTER ═══ -->
 <?php include __DIR__ . '/includes/footer.php'; ?>
 
@@ -1269,6 +1729,109 @@ if ('IntersectionObserver' in window) {
 } else {
     document.querySelectorAll('[data-reveal]').forEach(el => el.classList.add('revealed'));
 }
+
+/* ─── Carrousel témoignages livre d'or ─── */
+(function() {
+  const TRACK = document.getElementById('wsLoTrack');
+  if (!TRACK) return;
+
+  const CIBLE_LABELS = {
+    ems: "Établissement", personnel: "Personnel",
+    prise_en_charge: "Prise en charge", vie: "Vie sociale", autre: "Autre"
+  };
+  function escHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function stars(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f); }
+
+  function buildCard(t) {
+    const title = t.titre ? `<h3 class="ws-lo-ttitle">${escHtml(t.titre)}</h3>` : '';
+    const lien = t.lien_resident ? `<small>${escHtml(t.lien_resident)}</small>` : '';
+    return `
+      <article class="ws-lo-tcard ${t.epingle == 1 ? 'ws-lo-pinned' : ''}">
+        <div class="ws-lo-tquote">"</div>
+        <div class="ws-lo-tstars" aria-label="${t.note}/5">${stars(t.note)}</div>
+        ${title}
+        <p class="ws-lo-ttext">${escHtml(t.message)}</p>
+        <div class="ws-lo-tfooter">
+          <div class="ws-lo-tauthor">${escHtml(t.nom)}${lien}</div>
+          <span class="ws-lo-tcible">${escHtml(CIBLE_LABELS[t.cible] || t.cible)}</span>
+        </div>
+      </article>`;
+  }
+
+  fetch('/spocspace/website/api.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'livre_or_get_approved', limit: 10, order: 'desc' })
+  })
+  .then(r => r.json())
+  .then(data => {
+    // Stats dans la carte CTA
+    if (data.success && data.stats && data.stats.total > 0) {
+      const avgEl = document.getElementById('wsLoAvg');
+      const cntEl = document.getElementById('wsLoCount');
+      const starsEl = document.getElementById('wsLoStars');
+      if (avgEl) avgEl.textContent = data.stats.moyenne.toFixed(1);
+      if (cntEl) cntEl.textContent = data.stats.total;
+      if (starsEl) starsEl.textContent = stars(data.stats.moyenne);
+    }
+    if (!data.success || !data.temoignages || !data.temoignages.length) {
+      TRACK.parentElement.parentElement.style.display = 'none';
+      return;
+    }
+    const list = data.temoignages;
+    const html = list.map(buildCard).join('');
+    // Duplique pour boucle infinie continue
+    TRACK.innerHTML = html + html;
+
+    // ─── Défilement ultra-doux via requestAnimationFrame ───
+    const SPEED = 30; // pixels par seconde — réglable
+    let pos = 0;
+    let lastTs = null;
+    let paused = false;
+    let halfWidth = 0;
+
+    const computeHalf = () => {
+      // Largeur de la moitié dupliquée (l'autre moitié est identique)
+      halfWidth = TRACK.scrollWidth / 2;
+    };
+    computeHalf();
+    window.addEventListener('resize', computeHalf);
+
+    const carouselEl = document.getElementById('wsLoCarousel');
+    carouselEl.addEventListener('mouseenter', () => { paused = true; });
+    carouselEl.addEventListener('mouseleave', () => { paused = false; lastTs = null; });
+    // Pause si l'onglet n'est pas visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { paused = true; } else { paused = false; lastTs = null; }
+    });
+
+    function tick(ts) {
+      if (lastTs === null) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      if (!paused && halfWidth > 0) {
+        pos += SPEED * dt;
+        if (pos >= halfWidth) pos -= halfWidth;
+        TRACK.style.transform = `translate3d(${-pos}px, 0, 0)`;
+      }
+      requestAnimationFrame(tick);
+    }
+    // Recalcule la largeur après chargement complet des images/fonts
+    requestAnimationFrame(() => {
+      computeHalf();
+      requestAnimationFrame(tick);
+    });
+    // Re-compute quand les fonts web sont prêtes (Playfair/Inter)
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(computeHalf);
+    }
+    // Re-compute après que toutes les images sont chargées
+    window.addEventListener('load', computeHalf);
+  })
+  .catch(() => { TRACK.parentElement.parentElement.style.display = 'none'; });
+})();
 </script>
 </body>
 </html>

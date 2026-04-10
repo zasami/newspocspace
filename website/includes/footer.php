@@ -1,3 +1,53 @@
+<?php
+// Charge les styles footer si pas déjà présents
+if (!defined('WS_FOOTER_STYLES_LOADED')) {
+    include __DIR__ . '/footer-styles.php';
+}
+
+// Liste des partenaires pour le carousel
+$wsPartenaires = [
+  ['name' => 'République et Canton de Genève', 'file' => 'canton-geneve.webp'],
+  ['name' => 'Conseil du Canton de Genève',    'file' => 'cdc-ge.webp'],
+  ['name' => 'FEGEMS',                          'file' => 'fegems.webp'],
+  ['name' => 'Eldora',                          'file' => 'eldora.webp'],
+  ['name' => 'Label Fait Maison',               'file' => 'fait-maison.webp'],
+  ['name' => '1+ pour tous',                    'file' => '1plus-pour-tous.webp'],
+  ['name' => 'SQS',                             'file' => 'sqs.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-01.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-02.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-03.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-04.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-05.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-06.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-07.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-08.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-09.webp'],
+  ['name' => 'Partenaire',                      'file' => 'sponsor-10.webp'],
+];
+?>
+
+<!-- ═══ CAROUSEL PARTENAIRES ═══ -->
+<section class="ws-partners" aria-label="Nos partenaires">
+  <div class="ws-partners-inner">
+    <h4 class="ws-partners-title">Nos partenaires</h4>
+    <div class="ws-partners-carousel">
+      <div class="ws-partners-track" id="wsPartnersTrack">
+        <?php
+        // Rendu double pour boucle infinie
+        for ($i = 0; $i < 2; $i++):
+          foreach ($wsPartenaires as $p): ?>
+            <div class="ws-partner-item">
+              <img src="/spocspace/website/assets/img/partenaires/<?= h($p['file']) ?>"
+                   alt="<?= h($p['name']) ?>"
+                   loading="lazy">
+            </div>
+        <?php endforeach;
+        endfor; ?>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer class="ws-footer">
   <div style="max-width:1200px;margin:0 auto;padding:0 20px">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px">

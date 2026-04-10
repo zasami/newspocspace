@@ -624,6 +624,81 @@ case 'track_candidature':
     ]);
     break;
 
+// ── Livre d'or ─────────────────────────────────────────────────────────────
+
+case 'livre_or_get_approved':
+    $limit = max(1, min(200, (int)($input['limit'] ?? 50)));
+    $orderInput = $input['order'] ?? 'desc';
+    if ($orderInput === 'random') {
+        $orderClause = 'epingle DESC, RAND()';
+    } elseif ($orderInput === 'asc') {
+        $orderClause = 'epingle DESC, created_at ASC';
+    } else {
+        $orderClause = 'epingle DESC, created_at DESC';
+    }
+    $rows = Db::fetchAll(
+        "SELECT id, nom, lien_resident, note, titre, message, cible, epingle, created_at
+         FROM livre_or
+         WHERE statut = 'approuve'
+         ORDER BY $orderClause
+         LIMIT $limit"
+    );
+    $stats = Db::fetch(
+        "SELECT COUNT(*) AS total, COALESCE(AVG(note), 0) AS moyenne
+         FROM livre_or WHERE statut = 'approuve'"
+    );
+    respond([
+        'success' => true,
+        'temoignages' => $rows,
+        'stats' => [
+            'total' => (int)($stats['total'] ?? 0),
+            'moyenne' => round((float)($stats['moyenne'] ?? 0), 2),
+        ],
+    ]);
+    break;
+
+case 'livre_or_submit':
+    famille_rate_check(); // anti-spam (réutilise le rate-limit famille)
+
+    $nom = Sanitize::text($input['nom'] ?? '', 120);
+    $email = trim($input['email'] ?? '');
+    $lien = Sanitize::text($input['lien_resident'] ?? '', 200);
+    $note = (int)($input['note'] ?? 0);
+    $titre = Sanitize::text($input['titre'] ?? '', 200);
+    $message = Sanitize::text($input['message'] ?? '', 3000);
+    $cible = $input['cible'] ?? 'ems';
+
+    $allowedCibles = ['ems','personnel','prise_en_charge','vie','autre'];
+    if (!in_array($cible, $allowedCibles, true)) $cible = 'ems';
+
+    if (!$nom || !$message || $note < 1 || $note > 5) {
+        respond(['success' => false, 'message' => 'Nom, note et message sont obligatoires.'], 400);
+    }
+    if (mb_strlen($message) < 10) {
+        respond(['success' => false, 'message' => 'Le message doit contenir au moins 10 caractères.'], 400);
+    }
+    if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        respond(['success' => false, 'message' => 'Adresse email invalide.'], 400);
+    }
+
+    $id = Uuid::v4();
+    Db::exec(
+        "INSERT INTO livre_or (id, nom, email, lien_resident, note, titre, message, cible, statut, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en_attente', ?)",
+        [$id, $nom, $email ?: null, $lien ?: null, $note, $titre ?: null, $message, $cible, $_SERVER['REMOTE_ADDR'] ?? '']
+    );
+
+    // Notif admin
+    $adminEmail = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_email'");
+    if ($adminEmail && function_exists('mail')) {
+        $headers = "From: noreply@ems-la-terrassiere.ch\r\nContent-Type: text/plain; charset=UTF-8";
+        $body = "Nouveau témoignage à modérer.\n\nDe: $nom\nNote: $note/5\nCible: $cible\n\n$message";
+        @mail($adminEmail, "[Livre d'or] Nouveau témoignage de $nom", $body, $headers);
+    }
+
+    respond(['success' => true, 'message' => 'Merci ! Votre témoignage a été envoyé. Il sera publié après modération.']);
+    break;
+
 // ── Contact form ──────────────────────────────────────────────────────────
 
 case 'contact_submit':
