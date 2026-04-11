@@ -245,7 +245,7 @@
     {
         "id": "anne-ga-lle-demande-d-information",
         "title": "Anne-Gaëlle et Sophie demande d'informations",
-        "desc": "Voici une version corrigée et professionnelle de ton texte :\n\n1.Il faut des documents de qualité pour :\n\n  - construire les formulaires,\n  - automatiser les processus,\n  - avoir un suivi en direct sur une page dédiée à l’évolution du projet.\n\n2. Définir les rôles de chacun : qui fait quoi ?\n\n- Identifier les fonctions qui existent déjà dans Polypoint et qui doivent être intégrées dans SpocSpace.\n\n- Établir une liste des fonctions qui seront utiles pour l’équipe (soins, RH, administration, cuisine, hôtellerie, etc.) et qu’il est important de développer.",
+        "desc": "1.Il faut des documents de qualité pour :\n\n  - construire les formulaires,\n  - automatiser les processus,\n  - avoir un suivi en direct sur une page dédiée à l’évolution du projet.\n\n2. Définir les rôles de chacun : qui fait quoi ?\n\n- Identifier les fonctions qui existent déjà dans Polypoint et qui doivent être intégrées dans SpocSpace.\n\n- Établir une liste des fonctions qui seront utiles pour l’équipe (soins, RH, administration, cuisine, hôtellerie, etc.) et qu’il est important de développer.",
         "difficulty": "difficile",
         "category": "General",
         "done": false,

@@ -322,7 +322,7 @@ $activeSection = match($page) {
     <h5 class="mb-0 topbar-title"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
     <div class="topbar-search ms-auto me-3" id="topbarSearch">
       <i class="bi bi-search search-icon"></i>
-      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="Rechercher partout..." autocomplete="off">
+      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="Rechercher partout... (@ pour la page actuelle)" autocomplete="off">
       <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
       <div class="topbar-search-results" id="topbarSearchResults"></div>
     </div>

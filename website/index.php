@@ -761,12 +761,22 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
       </div>
       <p class="ws-menu-note"><i class="bi bi-info-circle"></i> Programme susceptible de modifications. Consultez l'affichage à l'accueil pour les mises à jour.</p>
+      <div class="ws-anim-cta">
+        <a href="/spocspace/website/animation.php" class="ws-anim-cta-btn">
+          <i class="bi bi-palette2"></i>
+          <span>
+            <strong>Découvrir toutes nos animations</strong>
+            <small>Photos, vidéos et programme complet</small>
+          </span>
+          <i class="bi bi-arrow-right ws-anim-cta-arrow"></i>
+        </a>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ═══ MODULES / ORGANISATION ═══ -->
-<section class="ws-section ws-section-alt" id="modules" data-reveal="fade-up">
+<section class="ws-section ws-section-pattern" id="modules" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi bi-building"></i> Organisation</div>
@@ -810,16 +820,30 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
       </div>
     </div>
-    <div class="ws-coverage-banner">
-      <div class="row align-items-center">
-        <div class="col-md-8">
-          <h4><i class="bi bi-shield-check"></i> Couverture 24h/24, 7j/7</h4>
-          <p class="mb-0">Chaque module dispose d'au minimum 2 soignants de 7h à 20h30, complétés par une équipe de nuit dédiée de 20h15 à 7h15.</p>
+
+    <!-- Bande Couverture 24/7 intégrée -->
+    <div class="ws-coverage-band">
+      <div class="ws-coverage-band-inner">
+        <div class="ws-coverage-text">
+          <div>
+            <h3>Couverture <span>24h/24, 7j/7</span></h3>
+            <p>Chaque module dispose d'au minimum 2 soignants de 7h à 20h30, complétés par une équipe de nuit dédiée de 20h15 à 7h15.</p>
+          </div>
         </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-          <div class="ws-coverage-hours">
-            <div><strong>Jour</strong> 7h00 – 20h30</div>
-            <div><strong>Nuit</strong> 20h15 – 7h15</div>
+        <div class="ws-coverage-hours-new">
+          <div class="ws-coverage-hour">
+            <div class="ws-coverage-hour-ic"><i class="bi bi-brightness-high-fill"></i></div>
+            <div>
+              <span class="ws-coverage-hour-label">Jour</span>
+              <strong class="ws-coverage-hour-val">7h00 – 20h30</strong>
+            </div>
+          </div>
+          <div class="ws-coverage-hour">
+            <div class="ws-coverage-hour-ic ws-coverage-hour-ic-night"><i class="bi bi-moon-stars-fill"></i></div>
+            <div>
+              <span class="ws-coverage-hour-label">Nuit</span>
+              <strong class="ws-coverage-hour-val">20h15 – 7h15</strong>
+            </div>
           </div>
         </div>
       </div>
@@ -828,6 +852,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 </section>
 
 <!-- ═══ TEAM ═══ -->
+<!-- Flèche de transition vers l'équipe -->
+<div class="ws-section-arrow" aria-hidden="true"></div>
+
 <section class="ws-section" id="team" data-reveal="fade-up">
   <div class="container">
     <div class="ws-section-header">
@@ -876,7 +903,10 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         $pinnedSig   = $pinned['signature'] ?? '';
         $pinnedImg   = $pinned['image'] ?? '';
     ?>
-    <div class="ws-team-cta ws-cta-pinned" data-reveal="fade-up">
+    <div class="ws-pinned-wrap" data-reveal="fade-up">
+      <img src="/spocspace/website/assets/img/curved-shape.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-curve" aria-hidden="true">
+      <img src="/spocspace/website/assets/img/pointer-up.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-pointer" aria-hidden="true">
+    <div class="ws-team-cta ws-cta-pinned">
       <div class="row align-items-center g-4">
         <?php if ($pinnedImg): ?>
         <div class="col-lg-5 text-center">
@@ -901,6 +931,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
           <?php endif; ?>
         </div>
       </div>
+    </div>
     </div>
     <?php endif; ?>
 
@@ -1007,6 +1038,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
   </div>
 </section>
 
+<!-- Flèche de transition vers la citation de clôture -->
+<div class="ws-section-arrow ws-section-arrow-3" aria-hidden="true"></div>
+
 <!-- ═══ CLOSING HERO (full width, bg image) ═══ -->
 <?php
   $closingBg = $ben['closing_bg'] ?? '';
@@ -1040,36 +1074,42 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
     </div>
     <div class="row g-4">
       <div class="col-lg-8">
-        <div class="ws-video-card ws-video-card-lg">
+        <a href="/spocspace/website/animation.php" class="ws-video-card ws-video-card-lg ws-video-link">
           <video autoplay muted loop playsinline>
             <source src="assets/video/6096_medium.mp4" type="video/mp4">
           </video>
           <div class="ws-video-card-overlay">
-            <span class="ws-video-card-label"><i class="bi bi-play-circle"></i> Notre environnement</span>
+            <span class="ws-video-card-label"><i class="bi bi-palette2"></i> Animation</span>
+            <span class="ws-video-card-sub">Activités, sorties et ateliers</span>
+            <span class="ws-video-card-cta">Découvrir <i class="bi bi-arrow-right"></i></span>
           </div>
-        </div>
+        </a>
       </div>
       <div class="col-lg-4">
         <div class="row g-4">
           <div class="col-12">
-            <div class="ws-video-card">
+            <a href="/spocspace/website/hotellerie.php" class="ws-video-card ws-video-link">
               <video autoplay muted loop playsinline>
                 <source src="assets/video/229069_medium.mp4" type="video/mp4">
               </video>
               <div class="ws-video-card-overlay">
-                <span class="ws-video-card-label"><i class="bi bi-play-circle"></i> Le quotidien</span>
+                <span class="ws-video-card-label"><i class="bi bi-house-heart"></i> Hôtellerie</span>
+                <span class="ws-video-card-sub">Chambres et accueil</span>
+                <span class="ws-video-card-cta">Voir <i class="bi bi-arrow-right"></i></span>
               </div>
-            </div>
+            </a>
           </div>
           <div class="col-12">
-            <div class="ws-video-card">
+            <a href="/spocspace/website/cuisine.php" class="ws-video-card ws-video-link">
               <video autoplay muted loop playsinline>
                 <source src="assets/video/229071_medium.mp4" type="video/mp4">
               </video>
               <div class="ws-video-card-overlay">
-                <span class="ws-video-card-label"><i class="bi bi-play-circle"></i> Les soins</span>
+                <span class="ws-video-card-label"><i class="bi bi-cup-hot"></i> Cuisine</span>
+                <span class="ws-video-card-sub">Repas faits maison</span>
+                <span class="ws-video-card-cta">Voir <i class="bi bi-arrow-right"></i></span>
               </div>
-            </div>
+            </a>
           </div>
         </div>
       </div>
@@ -1087,13 +1127,30 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'values', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'values', 'badge_text')) ?></div>
       <h2 class="ws-section-title"><?= ws_safe(ws_get($cms, 'values', 'title') ?? '') ?></h2>
     </div>
-    <div class="row g-4">
-      <?php foreach ($valCards as $c): ?>
+    <div class="row g-4 ws-values-row">
+      <?php foreach ($valCards as $c):
+        $title = $c['title'] ?? '';
+        // Mappe le titre vers le nom de fichier image (conserve la casse des originaux)
+        $imgMap = [
+          'respect'       => 'respect.webp',
+          'bienveillance' => 'Bienveillance.webp',
+          'excellence'    => 'excellence.webp',
+          'collaboration' => 'collaboration.webp',
+        ];
+        $key = mb_strtolower($title);
+        $imgFile = $imgMap[$key] ?? null;
+      ?>
       <div class="col-md-6 col-lg-3">
         <div class="ws-value-card">
-          <div class="ws-value-icon"><i class="bi <?= h($c['icon'] ?? '') ?>"></i></div>
-          <h5><?= h($c['title'] ?? '') ?></h5>
-          <p><?= h($c['text'] ?? '') ?></p>
+          <?php if ($imgFile): ?>
+          <div class="ws-value-img">
+            <img src="/spocspace/website/assets/img/bg/<?= h($imgFile) ?>" alt="<?= h($title) ?>" loading="lazy">
+          </div>
+          <?php endif; ?>
+          <div class="ws-value-body">
+            <h5><?= h($title) ?></h5>
+            <p><?= h($c['text'] ?? '') ?></p>
+          </div>
         </div>
       </div>
       <?php endforeach; ?>

@@ -92,8 +92,60 @@ body {
   .rec-nav-links a { padding: 10px 16px; }
 }
 
+/* ── Hero ── */
+.rec-hero-section {
+  background-color: #D8E8CC;
+  background-image:
+    linear-gradient(135deg, rgba(186,214,168,0.65) 0%, rgba(216,232,204,0.60) 100%),
+    url('/spocspace/website/assets/img/background-image-pattern-plus.spoc-space.svg');
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 120px 120px;
+  padding: 120px 20px 60px;
+  text-align: center;
+  border-bottom: 1px solid var(--rec-border);
+}
+.rec-hero-section h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  color: var(--rec-text);
+  margin: 0 0 12px;
+}
+.rec-hero-section h1 i { color: #E6C220; margin-right: 10px; }
+.rec-hero-section p {
+  font-size: 1.05rem;
+  color: var(--rec-text-secondary);
+  max-width: 640px;
+  margin: 0 auto;
+}
+/* Breadcrumb */
+.rec-breadcrumb-wrap { border-bottom: 1px solid #E5EAE078; }
+.rec-breadcrumb {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .87rem;
+  color: var(--rec-text-muted);
+  list-style: none;
+}
+.rec-breadcrumb a {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--rec-text-secondary); text-decoration: none;
+  transition: color .2s; font-weight: 500;
+}
+.rec-breadcrumb a:hover { color: var(--rec-green); }
+.rec-breadcrumb-sep { color: #C8D4C2; }
+.rec-breadcrumb-current {
+  color: var(--rec-text); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.rec-breadcrumb-current i { color: #E6C220; }
+
 /* ── Shell ── */
-.rec-shell { min-height: 100vh; padding: 100px 16px 60px; }
+.rec-shell { min-height: 100vh; padding: 50px 16px 60px; }
 .rec-container { max-width: 960px; margin: 0 auto; }
 
 /* ── Back link ── */
@@ -357,13 +409,26 @@ body {
 
 <?php include __DIR__ . '/includes/navbar.php'; ?>
 
+<!-- ═══ HERO ═══ -->
+<section class="rec-hero-section">
+  <h1><i class="bi bi-briefcase-fill"></i> Emploi &amp; formation</h1>
+  <p>Rejoignez une équipe passionnée au service du bien-être des personnes âgées. Soins, animation, formation — trouvez votre place à La Terrassière.</p>
+</section>
+
+<!-- ═══ BREADCRUMB ═══ -->
+<nav class="rec-breadcrumb-wrap" aria-label="Fil d'Ariane">
+  <ol class="rec-breadcrumb">
+    <li><a href="/spocspace/website/"><i class="bi bi-house-door-fill"></i> Accueil</a></li>
+    <li class="rec-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+    <li class="rec-breadcrumb-current" aria-current="page"><i class="bi bi-briefcase-fill"></i> Emploi</li>
+  </ol>
+</nav>
+
 <div class="rec-shell">
 <div class="rec-container">
 
-  <!-- ═══ HEADER ═══ -->
+  <!-- ═══ TABS ═══ -->
   <div class="rec-header">
-    <h1><i class="bi bi-heart-pulse" style="color:var(--rec-green)"></i> Offres d'emploi</h1>
-    <p>Rejoignez une équipe passionnée au service du bien-être des personnes âgées. Soins, animation, formation — trouvez votre place à La Terrassière.</p>
     <div class="rec-tabs">
       <button class="rec-tab active" data-view="offres"><i class="bi bi-briefcase"></i> Offres</button>
       <button class="rec-tab" data-view="suivi"><i class="bi bi-search"></i> Suivi candidature</button>

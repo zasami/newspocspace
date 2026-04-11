@@ -30,6 +30,7 @@ function wsNavHref($target) {
         <li><a href="<?= wsNavHref('#services') ?>">Nos soins</a></li>
         <li><a href="<?= wsNavHref('#team') ?>">Équipe</a></li>
         <li><a href="/spocspace/website/admissions.php" class="<?= wsNavActive('admissions') ?>">Admissions</a></li>
+        <li><a href="/spocspace/website/actualites.php" class="<?= wsNavActive('actualites') ?>">Actualités</a></li>
         <li><a href="/spocspace/website/recrutement.php" class="<?= wsNavActive('recrutement') ?>">Emploi</a></li>
         <li><a href="/spocspace/website/famille.php" class="<?= wsNavActive('famille') ?>">Famille</a></li>
         <li><a href="<?= wsNavHref('#contact') ?>">Contact</a></li>

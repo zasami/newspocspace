@@ -225,6 +225,8 @@ body {
 .lo-action-btn.lo-delete:hover { background: #fee2e2; color: #dc2626; }
 .lo-action-btn.lo-edit { color: #2563eb; border-color: rgba(37,99,235,.3); }
 .lo-action-btn.lo-edit:hover { background: rgba(37,99,235,.08); }
+.lo-action-btn.lo-reply { color: #7c3aed; border-color: rgba(124,58,237,.3); }
+.lo-action-btn.lo-reply:hover { background: rgba(124,58,237,.08); }
 
 /* Status pill */
 .lo-status {
@@ -273,16 +275,35 @@ body {
 .lo-modal-overlay.show { display: flex; }
 .lo-modal {
   background: #fff; border-radius: 14px; max-width: 640px; width: 100%;
-  max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 80px rgba(0,0,0,.3);
+  max-height: calc(100vh - 40px);
+  box-shadow: 0 25px 80px rgba(0,0,0,.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .lo-modal-header {
   padding: 18px 24px; border-bottom: 1px solid #e5e7eb;
   display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
 }
-.lo-modal-header h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
-.lo-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #6b7280; }
-.lo-modal-body { padding: 24px; }
-.lo-modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 10px; justify-content: flex-end; }
+.lo-modal-header h3 { margin: 0; font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.lo-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #6b7280; line-height: 1; }
+.lo-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.lo-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  background: #fff;
+}
 .lo-form-group { margin-bottom: 16px; }
 .lo-form-group label { display: block; font-size: .82rem; font-weight: 500; color: #4b5563; margin-bottom: 6px; }
 .lo-form-group input, .lo-form-group textarea, .lo-form-group select {
@@ -296,8 +317,118 @@ body {
 .lo-btn-primary {
   padding: 10px 22px; background: #2E7D32; color: #fff; border: none;
   border-radius: 8px; font-size: .88rem; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
 }
 .lo-btn-primary:hover { background: #1B5E20; }
+.lo-btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+.lo-btn-primary:disabled:hover { background: #9ca3af; }
+.lo-btn-ghost {
+  padding: 10px 20px; background: transparent; border: 1px solid #e5e7eb;
+  border-radius: 8px; font-size: .85rem; font-weight: 500; cursor: pointer;
+  color: #4b5563;
+}
+.lo-btn-ghost:hover { background: #f9fafb; }
+
+/* Reply modal styles */
+.lo-reply-original {
+  background: #f9fafb;
+  border-left: 3px solid #7c3aed;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.lo-reply-original-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #4b5563;
+  font-size: .88rem;
+}
+.lo-reply-original-header i {
+  color: #7c3aed;
+  font-size: 1.15rem;
+}
+.lo-reply-original-header strong {
+  color: #111827;
+  display: block;
+  font-size: .92rem;
+}
+.lo-reply-original-header small {
+  color: #9ca3af;
+  font-size: .75rem;
+}
+.lo-reply-quote {
+  color: #374151;
+  font-style: italic;
+  font-size: .88rem;
+  line-height: 1.55;
+  padding-left: 4px;
+  border-left: 2px dashed #e5e7eb;
+  margin-left: 4px;
+  padding: 4px 0 4px 12px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.lo-reply-info {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(124,58,237,.06) 0%, rgba(249,216,53,.06) 100%);
+  border: 1px solid rgba(124,58,237,.15);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.lo-reply-info-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(124,58,237,.12);
+  color: #7c3aed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.lo-reply-info strong {
+  display: block;
+  font-size: .88rem;
+  color: #111827;
+  margin-bottom: 4px;
+}
+.lo-reply-info p {
+  margin: 0;
+  font-size: .82rem;
+  color: #4b5563;
+  line-height: 1.55;
+}
+
+.lo-reply-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  opacity: .6;
+}
+.lo-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  color: #4b5563;
+  cursor: not-allowed;
+}
+.lo-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #7c3aed;
+}
 </style>
 </head>
 <body>
@@ -399,6 +530,56 @@ body {
   </div>
 </div>
 
+<!-- Reply modal -->
+<div class="lo-modal-overlay" id="loReplyModal">
+  <div class="lo-modal">
+    <div class="lo-modal-header">
+      <h3><i class="bi bi-reply"></i> Répondre au témoignage</h3>
+      <button class="lo-modal-close" onclick="loCloseReply()">&times;</button>
+    </div>
+    <div class="lo-modal-body">
+      <!-- Rappel du témoignage -->
+      <div class="lo-reply-original">
+        <div class="lo-reply-original-header">
+          <i class="bi bi-chat-left-quote"></i>
+          <div>
+            <strong id="loReplyAuthor">Auteur</strong>
+            <small id="loReplyEmail"></small>
+          </div>
+        </div>
+        <div id="loReplyQuote" class="lo-reply-quote"></div>
+      </div>
+
+      <!-- Bannière info -->
+      <div class="lo-reply-info">
+        <div class="lo-reply-info-icon"><i class="bi bi-info-circle-fill"></i></div>
+        <div>
+          <strong>Fonctionnalité à venir</strong>
+          <p>La réponse sera envoyée par email à l'auteur et affichée publiquement sous son témoignage sur le site, comme une réponse officielle de la direction.</p>
+        </div>
+      </div>
+
+      <div class="lo-form-group">
+        <label>Votre réponse <small style="color:#9ca3af;font-weight:400">(sera signée au nom de la direction)</small></label>
+        <textarea id="loReplyMessage" maxlength="2000" rows="6" placeholder="Chère Madame, Cher Monsieur,&#10;&#10;Nous vous remercions chaleureusement pour votre témoignage..."></textarea>
+      </div>
+
+      <div class="lo-reply-options">
+        <label class="lo-check">
+          <input type="checkbox" id="loReplySendEmail" disabled> Envoyer par email à l'auteur
+        </label>
+        <label class="lo-check">
+          <input type="checkbox" id="loReplyPublic" disabled checked> Afficher publiquement sur le site
+        </label>
+      </div>
+    </div>
+    <div class="lo-modal-footer">
+      <button class="lo-btn-ghost" onclick="loCloseReply()">Annuler</button>
+      <button class="lo-btn-primary" disabled title="Fonctionnalité à venir"><i class="bi bi-send"></i> Envoyer (bientôt)</button>
+    </div>
+  </div>
+</div>
+
 <div class="lo-toast" id="loToast"></div>
 
 <script>
@@ -496,6 +677,7 @@ function renderItem(t) {
         ${isPending || isApproved ? `<button class="lo-action-btn lo-reject" onclick="loReject('${t.id}')"><i class="bi bi-x-lg"></i> Rejeter</button>` : ''}
         ${isApproved ? `<button class="lo-action-btn lo-pin" onclick="loTogglePin('${t.id}')"><i class="bi bi-pin-angle${t.epingle == 1 ? '-fill' : ''}"></i> ${t.epingle == 1 ? 'Désépingler' : 'Épingler'}</button>` : ''}
         <button class="lo-action-btn lo-edit" onclick='loOpenEdit(${JSON.stringify({id:t.id,titre:t.titre||"",note:t.note,message:t.message}).replace(/'/g,"&#39;")})'><i class="bi bi-pencil"></i> Modifier</button>
+        <button class="lo-action-btn lo-reply" onclick='loOpenReply(${JSON.stringify({id:t.id,nom:t.nom,email:t.email||"",titre:t.titre||"",message:t.message}).replace(/'/g,"&#39;")})'><i class="bi bi-reply"></i> Répondre</button>
         <button class="lo-action-btn lo-delete" onclick="loDelete('${t.id}')"><i class="bi bi-trash"></i> Supprimer</button>
       </div>
     </div>
@@ -552,9 +734,24 @@ document.querySelectorAll('.lo-tab').forEach(btn => {
   });
 });
 
-// Close modal on overlay click
+// Close edit modal on overlay click
 document.getElementById('loEditModal').addEventListener('click', (e) => {
   if (e.target.id === 'loEditModal') loCloseEdit();
+});
+
+// ── Reply modal (fonctionnalité à venir) ──
+function loOpenReply(data) {
+  document.getElementById('loReplyAuthor').textContent = data.nom || '';
+  document.getElementById('loReplyEmail').textContent = data.email ? '· ' + data.email : '(aucun email)';
+  document.getElementById('loReplyQuote').textContent = data.message || '';
+  document.getElementById('loReplyMessage').value = '';
+  document.getElementById('loReplyModal').classList.add('show');
+}
+function loCloseReply() {
+  document.getElementById('loReplyModal').classList.remove('show');
+}
+document.getElementById('loReplyModal').addEventListener('click', (e) => {
+  if (e.target.id === 'loReplyModal') loCloseReply();
 });
 
 load();

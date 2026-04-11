@@ -127,6 +127,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.success) renderResults(res.results);
         }
 
+        // ── Mode recherche locale (@ prefix) ──
+        const ORIGINAL_PLACEHOLDER = searchInput.placeholder;
+        const LOCAL_PLACEHOLDER = 'Rechercher sur la page…';
+
+        function isLocalMode(val) { return (val || '').trim().startsWith('@'); }
+
+        function applyLocalSearch(raw) {
+            const q = raw.replace(/^@/, '').trim();
+            // Appelle le handler spécifique à la page si dispo
+            if (typeof window.__pageLocalSearch === 'function') {
+                try { window.__pageLocalSearch(q); } catch(e) { console.error(e); }
+            }
+            // Panneau d'info
+            if (q.length === 0) {
+                searchPanel.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:.85rem"><i class="bi bi-funnel"></i> Mode recherche sur la page actuelle<br><small>Tapez pour filtrer…</small></div>';
+            } else {
+                const count = (typeof window.__pageLocalSearchCount === 'function')
+                    ? window.__pageLocalSearchCount() : null;
+                searchPanel.innerHTML = `<div class="p-3 text-center text-muted" style="font-size:.85rem"><i class="bi bi-funnel-fill" style="color:var(--cl-green,#2E7D32)"></i> Filtre page : <strong>${escapeHtml(q)}</strong>${count !== null ? `<br><small>${count} résultat${count > 1 ? 's' : ''} visible${count > 1 ? 's' : ''}</small>` : ''}</div>`;
+            }
+            searchPanel.classList.add('show');
+        }
+
+        function clearLocalSearch() {
+            if (typeof window.__pageLocalSearch === 'function') {
+                try { window.__pageLocalSearch(''); } catch(e) {}
+            }
+        }
+
+        function refreshPlaceholder() {
+            searchInput.placeholder = isLocalMode(searchInput.value) ? LOCAL_PLACEHOLDER : ORIGINAL_PLACEHOLDER;
+        }
+
         searchInput.addEventListener('focus', () => {
             if (searchWrap) searchWrap.classList.add('expanded');
             if (!searchInput.value) renderHistory('');
@@ -135,10 +168,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchInput.addEventListener('input', () => {
             updateClear();
+            refreshPlaceholder();
             clearTimeout(searchTimer);
-            const v = searchInput.value.trim();
-            if (v.length < 2) { renderHistory(v); openPanel(); return; }
-            searchTimer = setTimeout(() => doSearch(v), 300);
+            const v = searchInput.value;
+            // Mode local @
+            if (isLocalMode(v)) {
+                applyLocalSearch(v);
+                openPanel();
+                return;
+            }
+            // Si on était en mode local et qu'on sort, reset le filtre page
+            clearLocalSearch();
+            const trimmed = v.trim();
+            if (trimmed.length < 2) { renderHistory(trimmed); openPanel(); return; }
+            searchTimer = setTimeout(() => doSearch(trimmed), 300);
         });
 
         searchInput.addEventListener('keydown', (e) => {
@@ -151,7 +194,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (searchClear) {
-            searchClear.addEventListener('click', () => { searchInput.value = ''; updateClear(); renderHistory(''); searchInput.focus(); });
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                updateClear();
+                refreshPlaceholder();
+                clearLocalSearch();
+                renderHistory('');
+                searchInput.focus();
+            });
         }
 
         searchPanel.addEventListener('click', (e) => {

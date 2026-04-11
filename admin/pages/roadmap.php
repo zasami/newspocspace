@@ -547,21 +547,35 @@ $catCssMap = [
 
     // Filters
     let currentDiffFilter = 'all';
+    let currentSearchQuery = '';
 
     function applyFilters() {
         const catFilter = selectedCategory;
+        const q = currentSearchQuery.toLowerCase().trim();
         document.querySelectorAll('.roadmap-row').forEach(row => {
             const diff = row.dataset.difficulty;
             const done = row.dataset.done === '1';
             const cat = row.dataset.category;
+            const title = (row.dataset.title || '').toLowerCase();
+            const desc = (row.dataset.desc || '').toLowerCase();
             let show = true;
             if (currentDiffFilter === 'facile' || currentDiffFilter === 'moyen' || currentDiffFilter === 'difficile') show = diff === currentDiffFilter;
             else if (currentDiffFilter === 'done') show = done;
             else if (currentDiffFilter === 'pending') show = !done;
             if (catFilter && cat !== catFilter) show = false;
+            if (q && !(title.includes(q) || desc.includes(q) || (cat || '').toLowerCase().includes(q))) show = false;
             row.classList.toggle('rm-hidden', !show);
         });
     }
+
+    // ── Recherche locale via topbar (mode @) ──
+    window.__pageLocalSearch = function(q) {
+      currentSearchQuery = q || '';
+      applyFilters();
+    };
+    window.__pageLocalSearchCount = function() {
+      return document.querySelectorAll('.roadmap-row:not(.rm-hidden)').length;
+    };
 
     document.querySelectorAll('#roadmapFilters button').forEach(btn => {
         btn.addEventListener('click', () => {

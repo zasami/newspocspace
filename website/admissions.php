@@ -35,13 +35,59 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--adm-bg); color: var(--adm-text); line-height: 1.7; }
 
 /* ── Shell ── */
-.adm-shell { max-width: 900px; margin: 0 auto; padding: 120px 20px 60px; }
+.adm-shell { max-width: 900px; margin: 0 auto; padding: 50px 20px 60px; }
 
 /* ── Hero ── */
-.adm-hero { text-align: center; margin-bottom: 48px; }
-.adm-hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
-.adm-hero h1 i { color: var(--adm-green); }
-.adm-hero p { font-size: 1.05rem; color: var(--adm-text-secondary); max-width: 650px; margin: 0 auto; }
+.adm-hero-section {
+  background-color: #D8E8CC;
+  background-image:
+    linear-gradient(135deg, rgba(186,214,168,0.65) 0%, rgba(216,232,204,0.60) 100%),
+    url('/spocspace/website/assets/img/background-image-pattern-plus.spoc-space.svg');
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 120px 120px;
+  padding: 120px 20px 60px;
+  text-align: center;
+  border-bottom: 1px solid var(--adm-border);
+}
+.adm-hero-section h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  color: var(--adm-text);
+  margin: 0 0 12px;
+}
+.adm-hero-section h1 i { color: #E6C220; margin-right: 10px; }
+.adm-hero-section p {
+  font-size: 1.05rem;
+  color: var(--adm-text-secondary);
+  max-width: 640px;
+  margin: 0 auto;
+}
+/* Breadcrumb */
+.adm-breadcrumb-wrap { border-bottom: 1px solid #E5EAE078; }
+.adm-breadcrumb {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .87rem;
+  color: var(--adm-text-muted, #7E9A7A);
+  list-style: none;
+}
+.adm-breadcrumb a {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--adm-text-secondary); text-decoration: none;
+  transition: color .2s; font-weight: 500;
+}
+.adm-breadcrumb a:hover { color: var(--adm-green); }
+.adm-breadcrumb-sep { color: #C8D4C2; }
+.adm-breadcrumb-current {
+  color: var(--adm-text); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.adm-breadcrumb-current i { color: #E6C220; }
 
 /* ── Section ── */
 .adm-section { margin-bottom: 40px; }
@@ -93,13 +139,22 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 <?php include __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="adm-shell">
+<!-- ═══ HERO ═══ -->
+<section class="adm-hero-section">
+  <h1><i class="bi bi-clipboard-check"></i> Admissions</h1>
+  <p>Toutes les informations et documents pour préparer une admission à l'EMS La Terrassière SA. N'hésitez pas à nous contacter pour toute question.</p>
+</section>
 
-  <!-- ═══ HERO ═══ -->
-  <div class="adm-hero">
-    <h1><i class="bi bi-clipboard-check"></i> Admissions</h1>
-    <p>Toutes les informations et documents pour préparer une admission à l'EMS La Terrassière SA. N'hésitez pas à nous contacter pour toute question.</p>
-  </div>
+<!-- ═══ BREADCRUMB ═══ -->
+<nav class="adm-breadcrumb-wrap" aria-label="Fil d'Ariane">
+  <ol class="adm-breadcrumb">
+    <li><a href="/spocspace/website/"><i class="bi bi-house-door-fill"></i> Accueil</a></li>
+    <li class="adm-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+    <li class="adm-breadcrumb-current" aria-current="page"><i class="bi bi-clipboard-check"></i> Admissions</li>
+  </ol>
+</nav>
+
+<div class="adm-shell">
 
   <!-- ═══ DOCUMENTS REQUIS ═══ -->
   <div class="adm-section">

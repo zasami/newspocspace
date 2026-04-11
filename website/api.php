@@ -699,6 +699,71 @@ case 'livre_or_submit':
     respond(['success' => true, 'message' => 'Merci ! Votre témoignage a été envoyé. Il sera publié après modération.']);
     break;
 
+// ── Actualités publiques ───────────────────────────────────────────────────
+
+case 'get_actualites':
+    $limit = max(1, min(50, (int)($input['limit'] ?? 12)));
+    $offset = max(0, (int)($input['offset'] ?? 0));
+    $type = $input['type'] ?? null;
+
+    $where = "WHERE is_visible = 1";
+    $params = [];
+    if ($type && in_array($type, ['photo','video','affiche','texte','galerie'], true)) {
+        $where .= " AND type = ?";
+        $params[] = $type;
+    }
+
+    $total = (int) Db::getOne("SELECT COUNT(*) FROM website_actualites $where", $params);
+    $rows = Db::fetchAll(
+        "SELECT id, slug, titre, type, extrait, contenu, cover_url, video_url, video_poster, images, epingle, published_at, created_at
+         FROM website_actualites
+         $where
+         ORDER BY epingle DESC, COALESCE(published_at, created_at) DESC
+         LIMIT $limit OFFSET $offset",
+        $params
+    );
+    foreach ($rows as &$r) {
+        if ($r['images']) {
+            $r['images'] = json_decode($r['images'], true) ?: [];
+        } else {
+            $r['images'] = [];
+        }
+    }
+    respond([
+        'success' => true,
+        'actualites' => $rows,
+        'total' => $total,
+        'limit' => $limit,
+        'offset' => $offset,
+    ]);
+    break;
+
+case 'get_actualite_detail':
+    $slug = $input['slug'] ?? '';
+    $id = $input['id'] ?? '';
+    if (!$slug && !$id) bad_request('Identifiant requis');
+
+    $row = $slug
+        ? Db::fetch("SELECT * FROM website_actualites WHERE slug = ? AND is_visible = 1", [$slug])
+        : Db::fetch("SELECT * FROM website_actualites WHERE id = ? AND is_visible = 1", [$id]);
+
+    if (!$row) not_found('Actualité introuvable');
+    $row['images'] = $row['images'] ? (json_decode($row['images'], true) ?: []) : [];
+    respond(['success' => true, 'actualite' => $row]);
+    break;
+
+case 'get_activites_venir':
+    $limit = max(1, min(20, (int)($input['limit'] ?? 5)));
+    $rows = Db::fetchAll(
+        "SELECT id, titre, description, date_activite, heure_debut, heure_fin, lieu, image_url, icone, couleur
+         FROM website_activites_venir
+         WHERE is_visible = 1 AND date_activite >= CURDATE()
+         ORDER BY date_activite ASC, heure_debut ASC
+         LIMIT $limit"
+    );
+    respond(['success' => true, 'activites' => $rows]);
+    break;
+
 // ── Contact form ──────────────────────────────────────────────────────────
 
 case 'contact_submit':
