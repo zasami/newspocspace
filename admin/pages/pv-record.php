@@ -127,7 +127,7 @@ foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_v
   display: none;
   position: absolute;
   top: calc(100% + 8px);
-  left: 50%; transform: translateX(-50%);
+  left: 0;
   background: var(--cl-bg-card, #fff);
   border: 1px solid var(--cl-border, #e5e7eb);
   border-radius: 10px;

@@ -80,5 +80,65 @@ $ssrData = ['services' => $ssrServices];
 
 .doc-empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--ss-text-muted); }
 .doc-empty-state i { font-size:3rem; display:block; margin-bottom:.5rem; opacity:.4; }
+
+/* ─── Lightbox viewer (copié de l'admin) ─── */
+.doc-lb { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: docLbIn .2s ease; }
+.doc-lb-hidden { display: none !important; }
+.doc-lb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(8px); }
+.doc-lb-stage { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.doc-lb-stage img { max-width: 90vw; max-height: calc(100vh - 100px); object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.doc-lb-stage iframe { width: 85vw; height: calc(100vh - 100px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
+.doc-lb-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem; z-index: 10; backdrop-filter: blur(8px); transition: background .2s; }
+.doc-lb-close:hover { background: rgba(255,255,255,.22); }
+.doc-lb-title { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.12); color: #fff; padding: 8px 20px; border-radius: 20px; font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); z-index: 10; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-lb-dl, .doc-lb-fs { position: absolute; top: 16px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; z-index: 10; backdrop-filter: blur(8px); text-decoration: none; transition: background .2s; }
+.doc-lb-dl { right: 70px; }
+.doc-lb-fs { right: 120px; }
+.doc-lb-dl:hover, .doc-lb-fs:hover { background: rgba(255,255,255,.22); color: #fff; }
+.doc-lb-fs.d-none { display: none !important; }
+@keyframes docLbIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── Word / PDF wrapper ─── */
+.doc-lb-word-wrap {
+    width: 95vw; max-width: 1000px; height: 92vh;
+    display: flex; flex-direction: column;
+    background: var(--ss-card-bg, #fff); border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4); overflow: hidden;
+}
+.doc-lb-word-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--ss-border-light); flex-shrink: 0;
+}
+.doc-lb-word-header h6 { margin: 0; font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 8px; flex: 1; }
+.doc-lb-word-close {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ss-border);
+    background: var(--ss-bg, #f9fafb); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: .85rem; color: var(--ss-text-muted); transition: all .15s; flex-shrink: 0;
+}
+.doc-lb-word-close:hover { background: var(--ss-border-light); color: var(--ss-text); }
+.doc-lb-word-body {
+    flex: 1; overflow-y: auto; padding: 24px;
+    background: var(--ss-bg, #F7F5F2);
+}
+.doc-lb-word-body .docx-wrapper,
+.doc-lb-word-body > div { background: var(--ss-bg, #F7F5F2) !important; padding: 20px !important; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.doc-lb-word-body .docx-wrapper > section,
+.doc-lb-word-body .docx-wrapper section.docx,
+.doc-lb-word-body section[style] {
+    background: #fff !important; box-shadow: 0 2px 12px rgba(0,0,0,.1) !important;
+    margin: 0 auto !important; border-radius: 10px !important; border: none !important;
+}
+.doc-lb-word-body [style*="background"] { background: var(--ss-bg, #F7F5F2) !important; }
+.doc-lb-word-body section[style*="background"] { background: #fff !important; }
+.doc-lb-word-footer {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-top: 1px solid var(--ss-border-light); flex-shrink: 0;
+}
+.doc-lb-word-footer input[type="range"] { accent-color: #bcd2cb; }
+@media (max-width: 900px) {
+    .doc-lb-word-wrap { width: 100vw; height: 100vh; border-radius: 0; }
+}
+.doc-lb-word-loading { text-align: center; padding: 60px 20px; color: #999; }
+.doc-lb-word-content { padding: 24px; }
 </style>
 <script type="application/json" id="__ss_ssr__"><?php echo json_encode($ssrData, JSON_UNESCAPED_UNICODE); ?></script>
