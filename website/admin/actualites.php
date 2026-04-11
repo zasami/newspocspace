@@ -280,6 +280,7 @@ body {
 }
 .aa-action-btn:hover { background: #f9fafb; color: #111827; }
 .aa-action-btn.aa-pin-active { color: #d97706; border-color: rgba(245,158,11,.3); }
+.aa-action-btn.aa-sidebar-active { color: #2E7D32; border-color: rgba(46,125,50,.35); background: rgba(46,125,50,.08); }
 .aa-action-btn.aa-visible-active { color: #2E7D32; }
 .aa-action-btn.aa-danger:hover { background: #fee2e2; color: #dc2626; border-color: rgba(239,68,68,.3); }
 
@@ -867,6 +868,7 @@ body {
       <div class="aa-checkbox-row">
         <label class="aa-check"><input type="checkbox" id="aaVisible" checked> Visible sur le site</label>
         <label class="aa-check"><input type="checkbox" id="aaPinned"> Épingler en haut</label>
+        <label class="aa-check" id="aaSidebarPinWrap" style="display:none"><input type="checkbox" id="aaSidebarPin"> <i class="bi bi-bookmark-star" style="color:#2E7D32"></i> Accrocher sur la sidebar</label>
       </div>
       <div class="aa-form-grid">
         <div class="aa-form-group">
@@ -878,6 +880,30 @@ body {
     <div class="aa-modal-footer">
       <button class="aa-btn-ghost" onclick="aaCloseModal()">Annuler</button>
       <button class="aa-btn-primary" onclick="aaSave()"><i class="bi bi-check-lg"></i> <span id="aaSaveLabel">Enregistrer</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal Confirmation Suppression ═══ -->
+<div class="aa-modal-overlay" id="aaDeleteModal">
+  <div class="aa-modal" style="max-width:460px">
+    <div class="aa-modal-header">
+      <h3><i class="bi bi-exclamation-triangle-fill" style="color:#dc2626"></i> Supprimer cette actualité ?</h3>
+      <button class="aa-modal-close" onclick="aaCloseDeleteModal()">&times;</button>
+    </div>
+    <div class="aa-modal-body">
+      <p style="margin:0 0 10px;font-size:.92rem;color:#4b5563">
+        Vous êtes sur le point de supprimer l'actualité <strong id="aaDeleteTitle">—</strong>.
+      </p>
+      <p style="margin:0;font-size:.85rem;color:#6b7280">
+        Cette action est <strong>irréversible</strong>. Tous les médias associés (images, vidéos, galeries) seront également supprimés définitivement.
+      </p>
+    </div>
+    <div class="aa-modal-footer">
+      <button class="aa-btn-ghost" onclick="aaCloseDeleteModal()">Annuler</button>
+      <button class="aa-btn-primary" id="aaDeleteConfirmBtn" style="background:#dc2626">
+        <i class="bi bi-trash"></i> Supprimer définitivement
+      </button>
     </div>
   </div>
 </div>
@@ -1078,6 +1104,7 @@ function renderItem(a) {
         ${a.extrait ? `<p class="aa-item-extrait">${escHtml(a.extrait)}</p>` : ''}
       </div>
       <div class="aa-item-actions">
+        ${type === 'affiche' ? `<button class="aa-action-btn ${a.sidebar_pin == 1 ? 'aa-sidebar-active' : ''}" title="${a.sidebar_pin == 1 ? 'Décrocher de la sidebar' : 'Accrocher sur la sidebar'}" onclick="aaToggleSidebar('${a.id}')"><i class="bi bi-${a.sidebar_pin == 1 ? 'bookmark-star-fill' : 'bookmark-plus'}"></i></button>` : ''}
         <button class="aa-action-btn ${a.epingle == 1 ? 'aa-pin-active' : ''}" title="Épingler" onclick="aaTogglePin('${a.id}')"><i class="bi bi-pin-angle${a.epingle == 1 ? '-fill' : ''}"></i></button>
         <button class="aa-action-btn ${a.is_visible == 1 ? 'aa-visible-active' : ''}" title="Visibilité" onclick="aaToggleVisible('${a.id}')"><i class="bi bi-eye${a.is_visible == 1 ? '-fill' : '-slash'}"></i></button>
         <button class="aa-action-btn" title="Modifier" onclick="aaEdit('${a.id}')"><i class="bi bi-pencil"></i></button>
@@ -1101,6 +1128,8 @@ function refreshMediaSections() {
   document.getElementById('aaMediaPhoto').style.display = (currentType === 'photo' || currentType === 'affiche') ? '' : 'none';
   document.getElementById('aaMediaVideo').style.display = currentType === 'video' ? '' : 'none';
   document.getElementById('aaMediaGalerie').style.display = currentType === 'galerie' ? '' : 'none';
+  document.getElementById('aaSidebarPinWrap').style.display = currentType === 'affiche' ? '' : 'none';
+  if (currentType !== 'affiche') document.getElementById('aaSidebarPin').checked = false;
 }
 
 // ── Modal ──
@@ -1119,13 +1148,14 @@ window.aaOpenModal = async function(item) {
   document.getElementById('aaExtrait').value = item?.extrait || '';
   document.getElementById('aaVisible').checked = item ? item.is_visible == 1 : true;
   document.getElementById('aaPinned').checked = item?.epingle == 1;
+  document.getElementById('aaSidebarPin').checked = item?.sidebar_pin == 1;
 
-  if (item?.published_at) {
-    const d = new Date(item.published_at.replace(' ', 'T'));
-    document.getElementById('aaPublishedAt').value = d.toISOString().slice(0, 16);
-  } else {
-    document.getElementById('aaPublishedAt').value = '';
-  }
+  // datetime-local attend "YYYY-MM-DDTHH:mm", la DB renvoie "YYYY-MM-DD HH:mm:ss"
+  // Pas de conversion via Date() pour éviter tout décalage UTC/local.
+  const rawDate = item?.published_at || item?.created_at || '';
+  document.getElementById('aaPublishedAt').value = rawDate
+    ? rawDate.replace(' ', 'T').slice(0, 16)
+    : '';
 
   // Type picker
   document.querySelectorAll('.aa-type-option').forEach(o => {
@@ -1340,6 +1370,7 @@ window.aaSave = async function() {
     images: currentGallery,
     is_visible: document.getElementById('aaVisible').checked ? 1 : 0,
     epingle: document.getElementById('aaPinned').checked ? 1 : 0,
+    sidebar_pin: (currentType === 'affiche' && document.getElementById('aaSidebarPin').checked) ? 1 : 0,
     published_at: document.getElementById('aaPublishedAt').value
       ? document.getElementById('aaPublishedAt').value.replace('T', ' ') + ':00'
       : null
@@ -1365,15 +1396,56 @@ window.aaTogglePin = async function(id) {
   const res = await api('toggle_pin', { id });
   if (res.success) { toast('Mis à jour'); loadList(); }
 };
+window.aaToggleSidebar = async function(id) {
+  const res = await api('toggle_sidebar', { id });
+  if (res.success) {
+    toast(res.sidebar_pin == 1 ? 'Affiche accrochée sur la sidebar' : 'Affiche décrochée');
+    loadList();
+  } else {
+    toast(res.message || 'Erreur', true);
+  }
+};
 window.aaToggleVisible = async function(id) {
   const res = await api('toggle_visible', { id });
   if (res.success) { toast('Mis à jour'); loadList(); }
 };
-window.aaDelete = async function(id) {
-  if (!confirm('Supprimer cette actualité et tous ses médias ?')) return;
-  const res = await api('delete', { id });
-  if (res.success) { toast('Supprimée'); loadList(); }
+let aaPendingDeleteId = null;
+window.aaDelete = function(id) {
+  aaPendingDeleteId = id;
+  // Récupérer le titre depuis la carte affichée pour l'afficher dans la modale
+  const row = document.querySelector(`.aa-item[data-id="${id}"] .aa-item-title`);
+  document.getElementById('aaDeleteTitle').textContent = row ? row.textContent : 'cette actualité';
+  document.getElementById('aaDeleteModal').classList.add('show');
 };
+window.aaCloseDeleteModal = function() {
+  document.getElementById('aaDeleteModal').classList.remove('show');
+  aaPendingDeleteId = null;
+};
+document.getElementById('aaDeleteConfirmBtn').addEventListener('click', async () => {
+  if (!aaPendingDeleteId) return;
+  const btn = document.getElementById('aaDeleteConfirmBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Suppression…';
+  const res = await api('delete', { id: aaPendingDeleteId });
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-trash"></i> Supprimer définitivement';
+  if (res.success) {
+    toast('Actualité supprimée');
+    aaCloseDeleteModal();
+    loadList();
+  } else {
+    toast(res.message || 'Erreur', true);
+  }
+});
+// Clic sur overlay ou Escape pour fermer
+document.getElementById('aaDeleteModal').addEventListener('click', (e) => {
+  if (e.target.id === 'aaDeleteModal') aaCloseDeleteModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('aaDeleteModal').classList.contains('show')) {
+    aaCloseDeleteModal();
+  }
+});
 
 // ══ ACTIVITÉS À VENIR ══
 async function loadActivites() {

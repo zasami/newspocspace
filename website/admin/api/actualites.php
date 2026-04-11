@@ -124,7 +124,7 @@ switch ($action) {
 // ══ ACTUALITÉS ══
 case 'list':
     $rows = Db::fetchAll(
-        "SELECT id, slug, titre, type, extrait, cover_url, video_url, images, epingle, is_visible, published_at, created_at, updated_at
+        "SELECT id, slug, titre, type, extrait, cover_url, video_url, images, epingle, sidebar_pin, is_visible, published_at, created_at, updated_at
          FROM website_actualites
          ORDER BY epingle DESC, COALESCE(published_at, created_at) DESC"
     );
@@ -154,6 +154,7 @@ case 'save':
     $imagesArr = $input['images'] ?? [];
     if (is_string($imagesArr)) $imagesArr = json_decode($imagesArr, true) ?: [];
     $epingle = !empty($input['epingle']) ? 1 : 0;
+    $sidebar_pin = (!empty($input['sidebar_pin']) && $type === 'affiche') ? 1 : 0;
     $is_visible = !empty($input['is_visible']) ? 1 : 0;
     $published_at = trim($input['published_at'] ?? '') ?: null;
 
@@ -170,11 +171,11 @@ case 'save':
             "UPDATE website_actualites SET
                 slug = ?, titre = ?, type = ?, extrait = ?, contenu = ?,
                 cover_url = ?, video_url = ?, video_poster = ?, images = ?,
-                epingle = ?, is_visible = ?, published_at = ?, updated_by = ?
+                epingle = ?, sidebar_pin = ?, is_visible = ?, published_at = ?, updated_by = ?
              WHERE id = ?",
             [$slug, $titre, $type, $extrait ?: null, $contenu ?: null,
              $cover_url ?: null, $video_url ?: null, $video_poster ?: null, $imagesJson,
-             $epingle, $is_visible, $published_at, $userId, $id]
+             $epingle, $sidebar_pin, $is_visible, $published_at, $userId, $id]
         );
     } else {
         // INSERT
@@ -185,11 +186,11 @@ case 'save':
         Db::exec(
             "INSERT INTO website_actualites
                 (id, slug, titre, type, extrait, contenu, cover_url, video_url, video_poster, images,
-                 epingle, is_visible, published_at, created_by, updated_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 epingle, sidebar_pin, is_visible, published_at, created_by, updated_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [$id, $slug, $titre, $type, $extrait ?: null, $contenu ?: null,
              $cover_url ?: null, $video_url ?: null, $video_poster ?: null, $imagesJson,
-             $epingle, $is_visible, $publishedAtVal, $userId, $userId]
+             $epingle, $sidebar_pin, $is_visible, $publishedAtVal, $userId, $userId]
         );
     }
 
@@ -221,6 +222,21 @@ case 'toggle_pin':
 case 'toggle_visible':
     Db::exec("UPDATE website_actualites SET is_visible = 1 - is_visible, published_at = COALESCE(published_at, NOW()) WHERE id = ?", [$input['id'] ?? '']);
     echo json_encode(['success' => true]);
+    break;
+
+case 'toggle_sidebar':
+    // Accrocher / décrocher une affiche sur la sidebar du site
+    $id = $input['id'] ?? '';
+    $row = Db::fetch("SELECT type, sidebar_pin FROM website_actualites WHERE id = ?", [$id]);
+    if (!$row) { http_response_code(404); echo json_encode(['success' => false, 'message' => 'Introuvable']); exit; }
+    if ($row['type'] !== 'affiche') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Seul un article de type "affiche" peut être accroché sur la sidebar.']);
+        exit;
+    }
+    $new = $row['sidebar_pin'] ? 0 : 1;
+    Db::exec("UPDATE website_actualites SET sidebar_pin = ? WHERE id = ?", [$new, $id]);
+    echo json_encode(['success' => true, 'sidebar_pin' => $new]);
     break;
 
 // ══ UPLOADS ══

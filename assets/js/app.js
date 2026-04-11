@@ -15,7 +15,6 @@ const moduleMap = {
     'absences':   () => import('./modules/absences.js'),
     'vacances':   () => import('./modules/vacances.js'),
     'collegues':  () => import('./modules/collegues.js'),
-    'messages':   () => import('./modules/messages.js'),
     'emails':     () => import('./modules/emails.js'),
     'votes':      () => import('./modules/votes.js'),
     'pv':         () => import('./modules/pv.js'),

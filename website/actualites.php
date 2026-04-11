@@ -182,6 +182,11 @@ body {
   grid-template-columns: 1fr;
 }
 
+/* Carte sans média (ex: vidéo créée sans fichier) → corps pleine largeur */
+.ac-card.ac-card-no-media {
+  grid-template-columns: 1fr;
+}
+
 /* ═══ Carte TEXTE : style journal / magazine ═══ */
 .ac-card.ac-card-texte {
   grid-template-columns: 1fr;
@@ -211,6 +216,47 @@ body {
   pointer-events: none;
   user-select: none;
 }
+/* Décoration shape-1 dans le coin bas-droit — recolorée en vert du site via mask */
+.ac-card.ac-card-texte .ac-card-body { position: relative; }
+.ac-card.ac-card-texte .ac-card-body::after {
+  content: '';
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  width: 180px;
+  height: 180px;
+  background-color: var(--ac-green);
+  -webkit-mask: url('/spocspace/website/assets/img/shape-1.webp') no-repeat bottom right / contain;
+          mask: url('/spocspace/website/assets/img/shape-1.webp') no-repeat bottom right / contain;
+  opacity: .4;
+  pointer-events: none;
+  z-index: 0;
+}
+.ac-card.ac-card-texte .ac-card-body > * { position: relative; z-index: 1; }
+@media (max-width: 720px) {
+  .ac-card.ac-card-texte .ac-card-body::after { width: 120px; height: 120px; right: -10px; bottom: -10px; opacity: .18; }
+}
+
+/* Décoration shape-5 dans le coin bas-droit des cartes AFFICHE — recolorée en vert */
+.ac-card:has(.ac-card-media.ac-affiche) .ac-card-body { position: relative; overflow: hidden; }
+.ac-card:has(.ac-card-media.ac-affiche) .ac-card-body::after {
+  content: '';
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  width: 240px;
+  height: 90px;
+  background-color: var(--ac-green);
+  -webkit-mask: url('/spocspace/website/assets/img/shape-5.webp') no-repeat bottom right / contain;
+          mask: url('/spocspace/website/assets/img/shape-5.webp') no-repeat bottom right / contain;
+  opacity: .4;
+  pointer-events: none;
+  z-index: 0;
+}
+.ac-card:has(.ac-card-media.ac-affiche) .ac-card-body > * { position: relative; z-index: 1; }
+@media (max-width: 720px) {
+  .ac-card:has(.ac-card-media.ac-affiche) .ac-card-body::after { width: 180px; height: 70px; right: -15px; bottom: -10px; opacity: .2; }
+}
 .ac-card.ac-card-texte .ac-card-body {
   padding: 36px 48px 40px;
   max-width: 780px;
@@ -218,9 +264,9 @@ body {
   width: 100%;
 }
 .ac-card.ac-card-texte .ac-card-title {
-  font-size: 2rem;
-  line-height: 1.15;
-  letter-spacing: -.01em;
+  font-size: 1.4rem;
+  line-height: 1.25;
+  letter-spacing: -.005em;
   margin: 8px 0 14px;
   text-align: left;
 }
@@ -230,37 +276,56 @@ body {
   width: 48px;
   height: 3px;
   background: var(--ac-green);
-  margin-top: 14px;
+  margin-top: 12px;
   border-radius: 2px;
 }
+/* Extrait journal : lettrine verte sur 3 lignes + texte justifié + fondu vert vers « Lire la suite » */
 .ac-card.ac-card-texte .ac-card-extrait {
+  position: relative;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.05rem;
-  line-height: 1.75;
+  font-size: 1rem;
+  line-height: 1.7;
   color: #3a3a3a;
-  -webkit-line-clamp: 5;
+  max-height: calc(1.7em * 6);
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: hidden;
   text-align: justify;
   hyphens: auto;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
 }
 .ac-card.ac-card-texte .ac-card-extrait::first-letter {
   font-family: 'Playfair Display', serif;
-  font-size: 3.4rem;
+  font-size: 3.2em;
   font-weight: 700;
   float: left;
-  line-height: .9;
-  padding: 4px 10px 0 0;
+  line-height: .85;
+  padding: 6px 10px 0 0;
   color: var(--ac-green);
+}
+.ac-card.ac-card-texte .ac-card-extrait::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 75px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.6) 50%,
+    rgba(255,255,255,.98) 100%);
+  pointer-events: none;
 }
 .ac-card.ac-card-texte .ac-read-more {
   align-self: center;
   margin-top: 8px;
+  position: relative;
+  z-index: 1;
 }
 @media (max-width: 720px) {
   .ac-card.ac-card-texte .ac-card-body { padding: 26px 22px 28px; }
-  .ac-card.ac-card-texte .ac-card-title { font-size: 1.5rem; }
-  .ac-card.ac-card-texte .ac-card-extrait { font-size: .98rem; }
-  .ac-card.ac-card-texte .ac-card-extrait::first-letter { font-size: 2.6rem; }
+  .ac-card.ac-card-texte .ac-card-title { font-size: 1.25rem; }
+  .ac-card.ac-card-texte .ac-card-extrait { font-size: .95rem; max-height: calc(1.7em * 5); }
+  .ac-card.ac-card-texte .ac-card-extrait::first-letter { font-size: 2.8em; }
   .ac-card.ac-card-texte::after { font-size: 7rem; top: -20px; right: 10px; }
 }
 
@@ -268,6 +333,7 @@ body {
 .ac-card-media {
   position: relative;
   width: 100%;
+  min-width: 0;        /* empêche l'image naturelle d'étendre la colonne grid */
   background: #F3F8EF;
   overflow: hidden;
   min-height: 220px;
@@ -299,6 +365,26 @@ body {
 
 .ac-card-media.ac-affiche {
   background: var(--ac-bg-alt);
+}
+
+/* Placeholder quand aucune image/vidéo n'est disponible */
+.ac-card-media.ac-media-placeholder {
+  background: linear-gradient(135deg, #F3F8EF 0%, #E6EFDB 100%);
+  cursor: pointer;
+  transition: background .3s ease;
+}
+.ac-card-media.ac-media-placeholder:hover {
+  background: linear-gradient(135deg, #EDF5E5 0%, #D8E9C6 100%);
+}
+.ac-card-media.ac-media-placeholder i {
+  font-size: 4.5rem;
+  color: var(--ac-green);
+  opacity: .35;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.ac-card-media.ac-media-placeholder:hover i {
+  opacity: .55;
+  transform: scale(1.05);
 }
 .ac-card-media.ac-affiche img {
   object-fit: contain;
@@ -382,6 +468,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 .ac-card-meta {
   display: flex;
@@ -570,6 +657,99 @@ body {
 }
 .ac-article-box.ac-media-only .ac-article-text { display: none; }
 .ac-article-box.ac-media-only .ac-article-media { min-height: 70vh; }
+
+/* Mode journal : article texte sans média, style magazine pleine largeur */
+.ac-article-box.ac-article-journal {
+  max-width: 820px;
+  background: #fff;
+  flex-direction: column;
+}
+.ac-article-box.ac-article-journal .ac-article-media { display: none; }
+.ac-article-box.ac-article-journal .ac-article-fullscreen { display: none; }
+.ac-article-box.ac-article-journal .ac-article-text {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  padding: 64px 72px 52px;
+  overflow-y: auto;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    radial-gradient(circle at top left, #f3f8ef 0%, #fff 60%) border-box;
+  position: relative;
+}
+.ac-article-box.ac-article-journal .ac-article-text::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--ac-green) 0%, #9bc18a 50%, transparent 100%);
+}
+.ac-article-box.ac-article-journal .ac-article-text::after {
+  content: '\201C';
+  position: absolute;
+  top: -30px; right: 30px;
+  font-family: 'Playfair Display', serif;
+  font-size: 14rem;
+  line-height: 1;
+  color: var(--ac-green);
+  opacity: .06;
+  pointer-events: none;
+  user-select: none;
+}
+.ac-article-box.ac-article-journal .ac-article-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  margin: 10px 0 14px;
+}
+.ac-article-box.ac-article-journal .ac-article-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--ac-green);
+  margin-top: 16px;
+  border-radius: 2px;
+}
+.ac-article-box.ac-article-journal .ac-article-extrait {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #555;
+  line-height: 1.55;
+  margin: 0 0 22px;
+  padding: 0;
+  border: none;
+}
+.ac-article-box.ac-article-journal .ac-article-content {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: #2a2a2a;
+  text-align: justify;
+  hyphens: auto;
+  column-count: 1;
+}
+.ac-article-box.ac-article-journal .ac-article-content > p:first-of-type::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 4rem;
+  font-weight: 700;
+  float: left;
+  line-height: .85;
+  padding: 6px 12px 0 0;
+  color: var(--ac-green);
+}
+.ac-article-box.ac-article-journal .ac-article-content p { margin: 0 0 16px; }
+@media (max-width: 720px) {
+  .ac-article-box.ac-article-journal .ac-article-text { padding: 40px 24px 32px; }
+  .ac-article-box.ac-article-journal .ac-article-title { font-size: 1.5rem; }
+  .ac-article-box.ac-article-journal .ac-article-extrait { font-size: 1rem; }
+  .ac-article-box.ac-article-journal .ac-article-content { font-size: .98rem; }
+  .ac-article-box.ac-article-journal .ac-article-content > p:first-of-type::first-letter { font-size: 3rem; }
+  .ac-article-box.ac-article-journal .ac-article-text::after { font-size: 8rem; top: -20px; right: 15px; }
+}
 @keyframes acArticleIn {
   from { opacity: 0; transform: scale(.96) translateY(12px); }
   to   { opacity: 1; transform: none; }
@@ -867,7 +1047,33 @@ body {
 }
 
 /* ── Sidebar ── */
-.ac-sidebar { display: flex; flex-direction: column; gap: 24px; }
+.ac-sidebar { display: flex; flex-direction: column; gap: 24px; position: relative; }
+.ac-sidebar-shape-wrap {
+  position: relative;
+  margin-top: -20px;
+  margin-left: -30px;
+  height: 130px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ac-sidebar-shape-wrap::before {
+  content: '';
+  position: absolute;
+  top: -87px;
+  left: 50px;
+  width: 280px;
+  height: 280px;
+  background-color: var(--ac-green);
+  -webkit-mask: url('/spocspace/website/assets/img/shape-8.svg') no-repeat center / contain;
+          mask: url('/spocspace/website/assets/img/shape-8.svg') no-repeat center / contain;
+  transform: rotate(90deg);
+  opacity: .35;
+  filter: drop-shadow(0 8px 24px rgba(46,125,50,.08));
+}
+@media (max-width: 960px) {
+  .ac-sidebar-shape-wrap { height: 100px; margin-left: -10px; }
+  .ac-sidebar-shape-wrap::before { width: 220px; height: 220px; top: -145px; opacity: .5; }
+}
 .ac-sidebar-card {
   background: var(--ac-surface);
   border: 1px solid var(--ac-border);
@@ -1091,15 +1297,10 @@ body {
       </div>
     </div>
 
-    <!-- Affiche marchand de sable -->
-    <div class="ac-sidebar-card" style="padding:0;overflow:hidden">
-      <img src="/spocspace/website/assets/uploads/actualites/20260410_192903_909d07b7.webp"
-           alt="Marchand de sable — avril"
-           style="width:100%;height:auto;display:block;cursor:zoom-in"
-           onclick="acOpenLightbox('/spocspace/website/assets/uploads/actualites/20260410_192903_909d07b7.webp')">
-    </div>
+    <!-- Affiches accrochées par l'admin -->
+    <div id="acSidebarAffiches"></div>
 
-    <div class="ac-sidebar-card" style="background:linear-gradient(135deg,#FFFCEB 0%,#FAFDF7 100%);border-color:rgba(230,194,32,.4)">
+    <div class="ac-sidebar-card ac-sidebar-rester" style="background:linear-gradient(135deg,#FFFCEB 0%,#FAFDF7 100%);border-color:rgba(230,194,32,.4)">
       <div class="ac-sidebar-header" style="border-color:rgba(230,194,32,.3)">
         <i class="bi bi-bell-fill" style="color:var(--ac-gold-dark)"></i>
         <h3>Rester informé</h3>
@@ -1109,6 +1310,7 @@ body {
         <i class="bi bi-envelope"></i> Nous contacter
       </a>
     </div>
+    <div class="ac-sidebar-shape-wrap" aria-hidden="true"></div>
   </aside>
 </main>
 
@@ -1196,10 +1398,22 @@ body {
             </div>
           </div>
         </div>`;
+    } else if (type === 'video' && (a.video_poster || a.cover_url)) {
+      // Vidéo sans fichier vidéo : fallback cover image cliquable
+      mediaHtml = `
+        <div class="ac-card-media">
+          <img src="${escHtml(a.video_poster || a.cover_url)}" alt="" onerror="acImgFallback(this,'bi-camera-video')" onclick="acOpenArticle('${a.id}')">
+        </div>`;
+    } else if (type === 'video') {
+      // Vidéo sans rien : grand icône placeholder
+      mediaHtml = `
+        <div class="ac-card-media ac-media-placeholder" onclick="acOpenArticle('${a.id}')">
+          <i class="bi bi-camera-video"></i>
+        </div>`;
     } else if ((type === 'photo' || type === 'affiche') && a.cover_url) {
       mediaHtml = `
         <div class="ac-card-media ${type === 'affiche' ? 'ac-affiche' : ''}">
-          <img src="${escHtml(a.cover_url)}" alt="${escHtml(a.titre)}" onclick="acOpenArticle('${a.id}')">
+          <img src="${escHtml(a.cover_url)}" alt="" onerror="acImgFallback(this,'bi-image')" onclick="acOpenArticle('${a.id}')">
         </div>`;
     } else if (type === 'galerie' && a.images && a.images.length) {
       const imgs = a.images;
@@ -1231,6 +1445,18 @@ body {
           </div>
         `;
       }
+    } else if (type === 'photo' || type === 'affiche') {
+      // Photo / affiche sans image : grand icône placeholder
+      mediaHtml = `
+        <div class="ac-card-media ac-media-placeholder" onclick="acOpenArticle('${a.id}')">
+          <i class="bi bi-image"></i>
+        </div>`;
+    } else if (type === 'galerie') {
+      // Galerie sans images : grand icône placeholder
+      mediaHtml = `
+        <div class="ac-card-media ac-media-placeholder" onclick="acOpenArticle('${a.id}')">
+          <i class="bi bi-images"></i>
+        </div>`;
     }
 
     // ── Body ──
@@ -1252,6 +1478,14 @@ body {
       ctaLabel = null;
     }
 
+    // Extrait : au moins ~3 lignes de prévisualisation, fallback sur le contenu stripé
+    const stripHtml = (h) => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    let previewText = (a.extrait || '').trim();
+    const contenuText = stripHtml(a.contenu);
+    if (previewText.length < 120 && contenuText) {
+      previewText = previewText ? previewText + ' ' + contenuText : contenuText;
+    }
+
     const bodyHtml = `
       <div class="ac-card-body">
         <div class="ac-card-meta">
@@ -1260,16 +1494,16 @@ body {
           ${isPinned ? '<span class="ac-pin-chip"><i class="bi bi-pin-angle-fill"></i>Épinglé</span>' : ''}
         </div>
         <h2 class="ac-card-title" onclick="acOpenArticle('${a.id}')" style="cursor:pointer">${escHtml(a.titre)}</h2>
-        ${a.extrait ? `<p class="ac-card-extrait">${escHtml(a.extrait)}</p>` : ''}
+        ${previewText ? `<p class="ac-card-extrait">${escHtml(previewText)}</p>` : ''}
         ${ctaLabel ? `<button class="ac-read-more" type="button" onclick="acOpenArticle('${a.id}')">${ctaLabel} <i class="bi ${ctaIcon}"></i></button>` : ''}
       </div>
     `;
 
-    const noMedia = !mediaHtml;
-    const textClass = noMedia ? 'ac-card-texte' : '';
+    const textClass = type === 'texte' ? 'ac-card-texte' : '';
+    const noMediaClass = !mediaHtml ? 'ac-card-no-media' : '';
 
     return `
-      <article class="ac-card ${isPinned ? 'ac-pinned' : ''} ${textClass}" data-id="${a.id}">
+      <article class="ac-card ${isPinned ? 'ac-pinned' : ''} ${textClass} ${noMediaClass}" data-id="${a.id}">
         ${mediaHtml}
         ${bodyHtml}
       </article>
@@ -1417,6 +1651,32 @@ body {
     }
   }
 
+  // ── Affiches accrochées sur la sidebar (admin) ──
+  async function loadSidebarAffiches() {
+    const wrap = document.getElementById('acSidebarAffiches');
+    if (!wrap) return;
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_sidebar_affiches' })
+      });
+      const data = await res.json();
+      if (!data.success || !data.affiches || !data.affiches.length) { wrap.innerHTML = ''; return; }
+      wrap.innerHTML = data.affiches.map(a => {
+        if (!a.cover_url) return '';
+        return `
+          <div class="ac-sidebar-card ac-sidebar-affiche" style="padding:0;overflow:hidden">
+            <img src="${escHtml(a.cover_url)}"
+                 alt="${escHtml(a.titre)}"
+                 style="width:100%;height:auto;display:block;cursor:zoom-in"
+                 onclick="acOpenLightbox('${escHtml(a.cover_url)}')">
+          </div>`;
+      }).join('');
+    } catch (e) { wrap.innerHTML = ''; }
+  }
+  loadSidebarAffiches();
+
   FILTERS.addEventListener('click', (e) => {
     const btn = e.target.closest('.ac-filter-btn');
     if (!btn) return;
@@ -1459,6 +1719,14 @@ body {
     return plain.length > 300;
   }
 
+  // Fallback icône quand une image ne peut pas être chargée
+  window.acImgFallback = function(img, iconClass) {
+    const parent = img.parentElement;
+    if (!parent) return;
+    parent.classList.add('ac-media-placeholder');
+    parent.innerHTML = `<i class="bi ${iconClass}"></i>`;
+  };
+
   window.acOpenArticle = function(id) {
     const a = ARTICLES.get(id);
     if (!a) return;
@@ -1467,9 +1735,12 @@ body {
     const typeIcon = TYPE_ICONS[type] || 'bi-file-text';
     const dateStr = formatDate(a.published_at || a.created_at);
 
-    // Mode media-only si le texte est court
-    const mediaOnly = !isLongArticle(a);
+    // Mode journal si l'article est de type texte (pas de média)
+    const isJournal = type === 'texte';
+    // Mode media-only si le texte est court (sauf pour les articles)
+    const mediaOnly = !isJournal && !isLongArticle(a);
     const box = ART_MODAL.querySelector('.ac-article-box');
+    box.classList.toggle('ac-article-journal', isJournal);
     box.classList.toggle('ac-media-only', mediaOnly);
     box.dataset.userForceFullscreen = '';
     // Sync icon du bouton fullscreen

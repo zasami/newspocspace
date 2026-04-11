@@ -714,6 +714,16 @@ case 'livre_or_submit':
 
 // ── Actualités publiques ───────────────────────────────────────────────────
 
+case 'get_sidebar_affiches':
+    $rows = Db::fetchAll(
+        "SELECT id, slug, titre, cover_url, published_at
+         FROM website_actualites
+         WHERE type = 'affiche' AND sidebar_pin = 1 AND is_visible = 1
+         ORDER BY COALESCE(published_at, created_at) DESC"
+    );
+    respond(['success' => true, 'affiches' => $rows]);
+    break;
+
 case 'get_actualites':
     $limit = max(1, min(50, (int)($input['limit'] ?? 12)));
     $offset = max(0, (int)($input['offset'] ?? 0));

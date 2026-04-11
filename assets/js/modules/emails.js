@@ -393,8 +393,12 @@ async function loadDetail(id) {
 }
 
 async function openCompose(prefill = {}) {
-    toSelected = prefill.to || [];
-    ccSelected = prefill.cc || [];
+    // Muter en place (pas de réassignation) pour conserver la référence
+    // partagée avec setupColleagueSearch qui a capturé l'array à l'init.
+    toSelected.length = 0;
+    ccSelected.length = 0;
+    if (prefill.to) toSelected.push(...prefill.to);
+    if (prefill.cc) ccSelected.push(...prefill.cc);
     pendingFiles = [];
     currentDraftId = prefill.draftId || null;
 

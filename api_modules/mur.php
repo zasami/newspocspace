@@ -421,6 +421,33 @@ function upload_mur_media() {
     respond(['success' => true, 'media' => $uploaded, 'count' => count($uploaded)]);
 }
 
+// ── Delete a single media from a post ──
+function delete_mur_media() {
+    $user = require_auth();
+    global $params;
+
+    $mediaId = $params['media_id'] ?? '';
+    if (!$mediaId) bad_request('media_id manquant');
+
+    $media = Db::fetch(
+        "SELECT m.id, m.filename, m.post_id, p.user_id
+         FROM mur_media m
+         JOIN mur_posts p ON p.id = m.post_id AND p.deleted_at IS NULL
+         WHERE m.id = ?",
+        [$mediaId]
+    );
+    if (!$media) not_found('Média introuvable');
+    if ($media['user_id'] !== $user['id']) forbidden();
+
+    // Supprimer fichier physique
+    $filePath = __DIR__ . '/../storage/mur/' . $media['filename'];
+    if (file_exists($filePath)) @unlink($filePath);
+
+    Db::exec("DELETE FROM mur_media WHERE id = ?", [$mediaId]);
+
+    respond(['success' => true, 'message' => 'Média supprimé']);
+}
+
 // ── Get recent media (gallery) ──
 function get_mur_gallery() {
     require_auth();

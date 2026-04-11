@@ -15,9 +15,47 @@ let allGalleryUrls = [];
 let lightboxIndex = 0;
 let composerEditor = null;
 let composerEmojiPicker = null;
+const postsCache = new Map(); // postId -> post (pour récupérer media/body à l'édition)
 
 const CAT_LABELS = { general: 'Général', info: 'Info', evenement: 'Événement', social: 'Social' };
 const CAT_COLORS = { general: '#bcd2cb', info: '#B8C9D4', evenement: '#D4C4A8', social: '#D0C4D8' };
+
+// Sanitize HTML du body de post : n'autorise que les balises produites par TipTap
+// côté éditeur, supprime tout ce qui pourrait exécuter du JS.
+const SAFE_TAGS = new Set(['P','BR','STRONG','B','EM','I','U','S','DEL','UL','OL','LI','BLOCKQUOTE','CODE','A','H2','H3','H4']);
+function sanitizePostBody(html) {
+    if (!html) return '';
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    const walk = (node) => {
+        const children = Array.from(node.childNodes);
+        for (const child of children) {
+            if (child.nodeType === 1) {
+                if (!SAFE_TAGS.has(child.tagName)) {
+                    // Remplacer par son contenu texte
+                    const text = document.createTextNode(child.textContent || '');
+                    child.replaceWith(text);
+                    continue;
+                }
+                // Nettoyer tous les attributs sauf href/title sur <a>
+                for (const attr of Array.from(child.attributes)) {
+                    if (child.tagName === 'A' && (attr.name === 'href' || attr.name === 'title')) {
+                        if (attr.name === 'href' && /^\s*javascript:/i.test(attr.value)) child.removeAttribute('href');
+                        continue;
+                    }
+                    child.removeAttribute(attr.name);
+                }
+                if (child.tagName === 'A') {
+                    child.setAttribute('target', '_blank');
+                    child.setAttribute('rel', 'noopener noreferrer');
+                }
+                walk(child);
+            }
+        }
+    };
+    walk(tpl.content);
+    return tpl.innerHTML;
+}
 
 export async function init() {
     const user = window.__SS__?.user;
@@ -440,6 +478,7 @@ async function loadFeed(append) {
 // POST RENDERING
 // ══════════════════════════════════════
 function renderPost(post) {
+    postsCache.set(post.id, post);
     const user = window.__SS__?.user;
     const isOwn = user?.id === post.user_id;
     const initials = ((post.prenom || '')[0] || '') + ((post.nom || '')[0] || '');
@@ -503,11 +542,264 @@ function renderPost(post) {
             </div>
             ${isOwn ? `<div class="mur-post-actions"><button class="mur-action-btn mur-edit-btn" data-id="${post.id}" style="flex:unset;border:none"><i class="bi bi-three-dots"></i></button></div>` : ''}
         </div>
-        ${post.body ? `<div class="mur-post-body">${escapeHtml(post.body)}</div>` : ''}
+        ${post.body ? `<div class="mur-post-body">${sanitizePostBody(post.body)}</div>` : ''}
         ${imagesHtml}
         ${engagement}
         ${commentSection}
     </div>`;
+}
+
+// ══════════════════════════════════════
+// INLINE POST EDITOR (TipTap + toolbar + media)
+// ══════════════════════════════════════
+async function openInlineEditor(postEl, postId) {
+    const bodyEl = postEl?.querySelector('.mur-post-body');
+    if (!bodyEl) return;
+
+    // Récupérer le post depuis le cache (contient media + body HTML brut)
+    const post = postsCache.get(postId);
+    const originalBody = post?.body || bodyEl.innerHTML;
+    const existingMedia = [...(post?.media || [])]; // snapshot modifiable
+    const removedMediaIds = new Set();
+    const newFiles = []; // File objects pas encore uploadés
+
+    // Zone images existantes (en dehors du body, sous les photos actuelles)
+    const imagesWrap = postEl.querySelector('.mur-post-images');
+    const originalImagesDisplay = imagesWrap ? imagesWrap.style.display : null;
+    if (imagesWrap) imagesWrap.style.display = 'none'; // cacher pendant l'édition
+
+    // Restaurer body original si annulation
+    const originalBodyHtml = bodyEl.innerHTML;
+
+    bodyEl.innerHTML = `
+        <div class="mur-composer mur-edit-composer">
+            <div class="mur-composer-row">
+                <div class="mur-composer-wrap mur-composer-expanded">
+                    <div class="mur-edit-editor mur-composer-editor"></div>
+                    <div class="mur-composer-bar">
+                        <div class="mur-composer-toolbar mur-edit-toolbar">
+                            <button type="button" class="mur-tb-btn" data-action="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+                            <button type="button" class="mur-tb-btn" data-action="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+                            <button type="button" class="mur-tb-btn" data-action="highlight" title="Surligner"><i class="bi bi-brush"></i></button>
+                            <span class="mur-tb-sep"></span>
+                            <button type="button" class="mur-tb-btn" data-action="bulletList" title="Liste à puces"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="mur-tb-btn" data-action="orderedList" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+                            <span class="mur-tb-sep"></span>
+                            <button type="button" class="mur-tb-btn mur-tb-emoji" data-action="emoji" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                        </div>
+                        <div class="mur-composer-icons">
+                            <label class="mur-composer-icon-btn" title="Photo">
+                                <i class="bi bi-camera"></i>
+                                <input type="file" class="mur-edit-file-input" multiple accept="image/*" style="display:none">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mur-composer-preview mur-edit-preview" style="display:none"></div>
+            <div class="mur-composer-bottom">
+                <button type="button" class="mur-btn-cancel mur-edit-cancel">Annuler</button>
+                <button type="button" class="mur-btn-post mur-edit-save"><i class="bi bi-check-lg"></i> Enregistrer</button>
+            </div>
+        </div>
+    `;
+
+    const editorArea = bodyEl.querySelector('.mur-edit-editor');
+    const toolbar = bodyEl.querySelector('.mur-edit-toolbar');
+    const saveBtn = bodyEl.querySelector('.mur-edit-save');
+    const cancelBtn = bodyEl.querySelector('.mur-edit-cancel');
+    const mediaZone = bodyEl.querySelector('.mur-edit-preview');
+    const fileInput = bodyEl.querySelector('.mur-edit-file-input');
+
+    // Render media thumbnails (existantes + nouvelles) — même style que le composer principal
+    function renderMedia() {
+        const kept = existingMedia.filter(m => !removedMediaIds.has(m.id));
+        if (!kept.length && !newFiles.length) {
+            mediaZone.innerHTML = '';
+            mediaZone.style.display = 'none';
+            return;
+        }
+        mediaZone.style.display = 'flex';
+        let html = '';
+        kept.forEach(m => {
+            html += `<div class="mur-preview-thumb" data-type="existing" data-id="${m.id}">
+                <img src="${escapeHtml(m.url)}" alt="">
+                <button type="button" class="mur-preview-remove" title="Supprimer"><i class="bi bi-x"></i></button>
+            </div>`;
+        });
+        newFiles.forEach((f, i) => {
+            const url = URL.createObjectURL(f);
+            html += `<div class="mur-preview-thumb" data-type="new" data-idx="${i}">
+                <img src="${url}" alt="">
+                <button type="button" class="mur-preview-remove" title="Supprimer"><i class="bi bi-x"></i></button>
+            </div>`;
+        });
+        mediaZone.innerHTML = html;
+        mediaZone.querySelectorAll('.mur-preview-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const thumb = btn.closest('.mur-preview-thumb');
+                if (thumb.dataset.type === 'existing') removedMediaIds.add(thumb.dataset.id);
+                else newFiles.splice(parseInt(thumb.dataset.idx), 1);
+                renderMedia();
+            });
+        });
+    }
+    renderMedia();
+
+    fileInput.addEventListener('change', () => {
+        const keptCount = existingMedia.filter(m => !removedMediaIds.has(m.id)).length;
+        const available = 4 - keptCount - newFiles.length;
+        const files = Array.from(fileInput.files).slice(0, Math.max(0, available));
+        if (!files.length) { fileInput.value = ''; toast('Maximum 4 photos par post', true); return; }
+        newFiles.push(...files);
+        fileInput.value = '';
+        renderMedia();
+    });
+
+    const editor = await createBareEditor(editorArea, { placeholder: 'Modifier votre post...' });
+    if (!editor) {
+        bodyEl.innerHTML = originalHtml;
+        toast('Éditeur indisponible', true);
+        return;
+    }
+
+    // Pré-remplir avec le contenu existant
+    editor.commands.setContent(originalBody || '');
+    editor.commands.focus('end');
+
+    // Toolbar buttons
+    toolbar.querySelectorAll('.mur-tb-btn:not([data-action="emoji"])').forEach(b => {
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.addEventListener('click', () => {
+            const action = b.dataset.action;
+            if (action === 'bold') editor.chain().focus().toggleBold().run();
+            else if (action === 'italic') editor.chain().focus().toggleItalic().run();
+            else if (action === 'highlight') editor.chain().focus().toggleHighlight().run();
+            else if (action === 'bulletList') editor.chain().focus().toggleBulletList().run();
+            else if (action === 'orderedList') editor.chain().focus().toggleOrderedList().run();
+        });
+    });
+
+    // Emoji picker
+    const emojiBtn = toolbar.querySelector('[data-action="emoji"]');
+    if (emojiBtn) {
+        emojiBtn.classList.add('zkr-emoji-trigger');
+        const picker = new EmojiPicker();
+        picker.init(emojiBtn, (emoji) => {
+            editor.chain().focus().insertContent(emoji).run();
+        });
+    }
+
+    // Active state sync
+    const syncActive = () => {
+        toolbar.querySelectorAll('.mur-tb-btn').forEach(b => {
+            const a = b.dataset.action;
+            let active = false;
+            if (a === 'bold') active = editor.isActive('bold');
+            else if (a === 'italic') active = editor.isActive('italic');
+            else if (a === 'highlight') active = editor.isActive('highlight');
+            else if (a === 'bulletList') active = editor.isActive('bulletList');
+            else if (a === 'orderedList') active = editor.isActive('orderedList');
+            b.classList.toggle('active', active);
+        });
+    };
+    editor.on('selectionUpdate', syncActive);
+    editor.on('update', syncActive);
+
+    // Ctrl+Enter to save
+    editorArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            saveBtn.click();
+        }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        destroyEditor(editor);
+        bodyEl.innerHTML = originalBodyHtml;
+        // Réafficher les images d'origine (pas touché à la DB)
+        if (imagesWrap) imagesWrap.style.display = originalImagesDisplay || '';
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        const newBody = getHTML(editor);
+        const isEmpty = !newBody || newBody === '<p></p>';
+        const keptMedia = existingMedia.filter(m => !removedMediaIds.has(m.id));
+        if (isEmpty && !keptMedia.length && !newFiles.length) {
+            toast('Le post ne peut pas être vide', true);
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner spinner-sm"></span>';
+
+        try {
+            // 1. Update body
+            const bodyRes = await apiPost('update_mur_post', { id: postId, body: newBody });
+            if (!bodyRes.success) throw new Error(bodyRes.message || 'Erreur texte');
+
+            // 2. Delete removed media
+            for (const mediaId of removedMediaIds) {
+                await apiPost('delete_mur_media', { media_id: mediaId });
+            }
+
+            // 3. Upload new media (via FormData)
+            let uploadedMedia = [];
+            if (newFiles.length) {
+                const fd = new FormData();
+                fd.append('action', 'upload_mur_media');
+                fd.append('post_id', postId);
+                newFiles.slice(0, 4).forEach((f, i) => fd.append(`file_${i}`, f));
+                const csrfToken = window.__SS__?.csrfToken || '';
+                const resp = await fetch('/spocspace/api.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': csrfToken },
+                    credentials: 'same-origin',
+                    body: fd
+                });
+                const json = await resp.json();
+                if (!json.success) throw new Error(json.message || 'Upload échoué');
+                uploadedMedia = json.media || [];
+            }
+
+            // 4. Sync cache + UI
+            const finalMedia = [...keptMedia, ...uploadedMedia];
+            if (post) { post.body = newBody; post.media = finalMedia; }
+            postsCache.set(postId, { ...(post || { id: postId }), body: newBody, media: finalMedia });
+
+            destroyEditor(editor);
+            bodyEl.innerHTML = isEmpty ? '' : sanitizePostBody(newBody);
+
+            // Mettre à jour la zone d'images du post
+            let targetImagesWrap = postEl.querySelector('.mur-post-images');
+            if (finalMedia.length) {
+                const count = Math.min(finalMedia.length, 4);
+                const imgsHtml = finalMedia.slice(0, count).map((m, i) =>
+                    `<div class="mur-post-img" data-img-idx="${i}"><img src="${escapeHtml(m.url)}" alt="" loading="lazy"></div>`
+                ).join('');
+                if (targetImagesWrap) {
+                    targetImagesWrap.className = `mur-post-images count-${count}`;
+                    targetImagesWrap.innerHTML = imgsHtml;
+                    targetImagesWrap.style.display = ''; // réafficher
+                } else {
+                    // Créer la zone images si elle n'existait pas
+                    const newWrap = document.createElement('div');
+                    newWrap.className = `mur-post-images count-${count}`;
+                    newWrap.dataset.postId = postId;
+                    newWrap.innerHTML = imgsHtml;
+                    bodyEl.after(newWrap);
+                }
+            } else if (targetImagesWrap) {
+                targetImagesWrap.remove();
+            }
+
+            toast('Post modifié');
+        } catch (err) {
+            toast(err.message || 'Erreur', true);
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer';
+        }
+    });
 }
 
 // ══════════════════════════════════════
@@ -633,19 +925,9 @@ function setupPostHandlers(container) {
             btn.parentElement.style.position = 'relative';
             btn.parentElement.appendChild(menu);
 
-            menu.querySelector('[data-act="edit"]').addEventListener('click', () => {
+            menu.querySelector('[data-act="edit"]').addEventListener('click', async () => {
                 menu.remove();
-                const bodyEl = post?.querySelector('.mur-post-body');
-                if (!bodyEl) return;
-                const currentText = bodyEl.textContent;
-                bodyEl.innerHTML = `<textarea class="mur-edit-area">${escapeHtml(currentText)}</textarea><div class="mur-edit-actions"><button class="mur-btn-save">Enregistrer</button><button class="mur-btn-cancel">Annuler</button></div>`;
-                bodyEl.querySelector('.mur-btn-cancel')?.addEventListener('click', () => { bodyEl.textContent = currentText; });
-                bodyEl.querySelector('.mur-btn-save')?.addEventListener('click', async () => {
-                    const newBody = bodyEl.querySelector('.mur-edit-area')?.value?.trim();
-                    if (!newBody) return;
-                    const r = await apiPost('update_mur_post', { id: btn.dataset.id, body: newBody });
-                    if (r.success) { bodyEl.textContent = newBody; toast('Post modifié'); } else toast(r.message || 'Erreur');
-                });
+                await openInlineEditor(post, btn.dataset.id);
             });
 
             menu.querySelector('[data-act="delete"]').addEventListener('click', async () => {

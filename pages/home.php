@@ -18,34 +18,34 @@ $homeUnread = (int) Db::getOne(
 </div>
 
 <div class="stats-grid" id="homeStats">
-  <div class="stat-card">
+  <a href="#planning" data-link="planning" class="stat-card stat-card-link">
     <div class="stat-icon teal"><i class="bi bi-calendar3"></i></div>
     <div>
       <div class="stat-value" id="statNextShift">—</div>
       <div class="stat-label">Prochain service</div>
     </div>
-  </div>
-  <div class="stat-card">
+  </a>
+  <a href="#desirs" data-link="desirs" class="stat-card stat-card-link">
     <div class="stat-icon green"><i class="bi bi-star"></i></div>
     <div>
       <div class="stat-value" id="statDesirs">—</div>
       <div class="stat-label">Désirs ce mois</div>
     </div>
-  </div>
-  <div class="stat-card">
+  </a>
+  <a href="#vacances" data-link="vacances" class="stat-card stat-card-link">
     <div class="stat-icon orange"><i class="bi bi-calendar-x"></i></div>
     <div>
       <div class="stat-value" id="statVacances">—</div>
       <div class="stat-label">Jours vacances restants</div>
     </div>
-  </div>
-  <div class="stat-card">
+  </a>
+  <a href="#emails" data-link="emails" class="stat-card stat-card-link">
     <div class="stat-icon purple"><i class="bi bi-envelope"></i></div>
     <div>
       <div class="stat-value" id="statMessages">—</div>
       <div class="stat-label">Messages non lus</div>
     </div>
-  </div>
+  </a>
 </div>
 
 <div class="d-flex gap-2 flex-wrap" style="align-items:flex-start">

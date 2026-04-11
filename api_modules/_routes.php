@@ -81,7 +81,7 @@ return [
     'mur' => [
         'get_mur_config', 'get_mur_feed', 'create_mur_post', 'update_mur_post', 'delete_mur_post',
         'toggle_mur_like', 'get_mur_comments', 'add_mur_comment', 'delete_mur_comment',
-        'get_mur_stats', 'upload_mur_media', 'get_mur_gallery', 'search_mur_users',
+        'get_mur_stats', 'upload_mur_media', 'delete_mur_media', 'get_mur_gallery', 'search_mur_users',
         'update_mur_comment',
     ],
     'cuisine' => [

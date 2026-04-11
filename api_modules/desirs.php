@@ -9,12 +9,14 @@ function get_mes_desirs()
     $user = require_auth();
 
     $mois = $params['mois'] ?? null;
+    // Exclure les désirs auto-générés depuis un permanent (ils sont affichés
+    // séparément dans la section "Mes désirs permanents").
     $sql = "SELECT d.*, u2.prenom AS valide_par_prenom, u2.nom AS valide_par_nom,
                    ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur AS horaire_couleur
             FROM desirs d
             LEFT JOIN users u2 ON u2.id = d.valide_par
             LEFT JOIN horaires_types ht ON ht.id = d.horaire_type_id
-            WHERE d.user_id = ?";
+            WHERE d.user_id = ? AND d.permanent_id IS NULL";
     $p = [$user['id']];
 
     if ($mois && preg_match('/^\d{4}-\d{2}$/', $mois)) {
@@ -54,14 +56,21 @@ function submit_desir()
 
     $moisCible = substr($dateSouhaitee, 0, 7);
 
-    // Check max per month (from ems_config or fallback to constant)
+    // Vérifier la fenêtre de dépôt (jour d'ouverture / fermeture) + mois cible futur
+    _check_desir_window($moisCible);
+
+    // Quota mensuel = ponctuels + permanents actifs (chaque permanent = 1 slot)
     $maxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: MAX_DESIRS_PAR_MOIS);
-    $count = Db::getOne(
+    $ponctuels = (int) Db::getOne(
         "SELECT COUNT(*) FROM desirs WHERE user_id = ? AND mois_cible = ? AND statut != 'refuse' AND permanent_id IS NULL",
         [$user['id'], $moisCible]
     );
-    if ($count >= $maxDesirs) {
-        bad_request('Maximum ' . $maxDesirs . ' désirs par mois atteint');
+    $perms = (int) Db::getOne(
+        "SELECT COUNT(*) FROM desirs_permanents WHERE user_id = ? AND statut != 'refuse' AND replaces_id IS NULL AND is_active = 1",
+        [$user['id']]
+    );
+    if (($ponctuels + $perms) >= $maxDesirs) {
+        bad_request('Maximum ' . $maxDesirs . ' désirs par mois atteint (' . $perms . ' permanent' . ($perms > 1 ? 's' : '') . ' + ' . $ponctuels . ' ponctuel' . ($ponctuels > 1 ? 's' : '') . ')');
     }
 
     $id = Uuid::v4();
@@ -72,6 +81,30 @@ function submit_desir()
     );
 
     respond(['success' => true, 'message' => 'Désir soumis', 'id' => $id]);
+}
+
+/**
+ * Vérifie que la soumission/modification d'un désir respecte :
+ *  - la fenêtre temporelle du mois en cours (jours ouverture → fermeture)
+ *  - le mois cible doit être dans le futur (au minimum mois courant + 1)
+ */
+function _check_desir_window(string $moisCible): void
+{
+    $today = new DateTime('now');
+    $dayNum = (int) $today->format('j');
+    $currentMonth = $today->format('Y-m');
+
+    $ouverture = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_ouverture_jour'") ?: 1);
+    $fermeture = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_fermeture_jour'") ?: 15);
+
+    if ($dayNum < $ouverture || $dayNum > $fermeture) {
+        bad_request("La période de dépôt des désirs est fermée (ouverte du $ouverture au $fermeture du mois).");
+    }
+
+    // Le mois cible doit être strictement futur (au minimum mois courant + 1)
+    if ($moisCible <= $currentMonth) {
+        bad_request("Les désirs ne peuvent être déposés que pour un mois futur.");
+    }
 }
 
 function update_desir()
@@ -97,12 +130,20 @@ function update_desir()
     }
 
     $moisCible = substr($dateSouhaitee, 0, 7);
+
+    // Vérifier la fenêtre de dépôt + mois futur
+    _check_desir_window($moisCible);
+
     $maxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: MAX_DESIRS_PAR_MOIS);
-    $count = Db::getOne(
+    $ponctuels = (int) Db::getOne(
         "SELECT COUNT(*) FROM desirs WHERE user_id = ? AND mois_cible = ? AND statut != 'refuse' AND permanent_id IS NULL AND id != ?",
         [$user['id'], $moisCible, $id]
     );
-    if ($count >= $maxDesirs) {
+    $perms = (int) Db::getOne(
+        "SELECT COUNT(*) FROM desirs_permanents WHERE user_id = ? AND statut != 'refuse' AND replaces_id IS NULL AND is_active = 1",
+        [$user['id']]
+    );
+    if (($ponctuels + $perms) >= $maxDesirs) {
         bad_request('Maximum ' . $maxDesirs . ' désirs par mois atteint');
     }
 
@@ -226,21 +267,17 @@ function update_desir_permanent()
     if (!$id || $jourSemaine < 0 || $jourSemaine > 6) bad_request('Données invalides');
     if (!in_array($type, ['jour_off', 'horaire_special'])) bad_request('Type invalide');
 
-    $perm = Db::fetch("SELECT * FROM desirs_permanents WHERE id = ? AND user_id = ? AND is_active = 1 AND statut = 'valide'", [$id, $user['id']]);
-    if (!$perm) bad_request('Désir permanent non trouvé ou non modifiable');
-
-    // Check if there's already a pending modification for this permanent
-    $pendingModif = Db::fetch(
-        "SELECT id FROM desirs_permanents WHERE replaces_id = ? AND statut = 'en_attente'",
-        [$id]
+    // Le désir permanent ne peut être modifié directement que s'il est encore en attente de validation.
+    // Une fois validé, il est verrouillé (seule la suppression est possible).
+    $perm = Db::fetch(
+        "SELECT * FROM desirs_permanents WHERE id = ? AND user_id = ? AND statut = 'en_attente' AND replaces_id IS NULL",
+        [$id, $user['id']]
     );
-    if ($pendingModif) {
-        bad_request('Une modification est déjà en attente de validation pour ce désir');
-    }
+    if (!$perm) bad_request('Ce désir permanent est déjà validé et ne peut plus être modifié. Supprimez-le et créez-en un nouveau si nécessaire.');
 
-    // Check day conflict (only with other active permanents, excluding the one being replaced)
+    // Vérifier conflit de jour avec un autre permanent actif ou en attente
     $existing = Db::fetch(
-        "SELECT id FROM desirs_permanents WHERE user_id = ? AND jour_semaine = ? AND is_active = 1 AND id != ?",
+        "SELECT id FROM desirs_permanents WHERE user_id = ? AND jour_semaine = ? AND statut IN ('en_attente','valide') AND is_active IN (0,1) AND id != ?",
         [$user['id'], $jourSemaine, $id]
     );
     if ($existing) bad_request('Vous avez déjà un désir permanent pour ce jour');
@@ -250,16 +287,13 @@ function update_desir_permanent()
         if (!$ht) $horaireTypeId = null;
     }
 
-    // Create a new permanent desire as a modification proposal
-    // The old one stays active until admin validates the new one
-    $newId = Uuid::v4();
+    // UPDATE direct — pas de proposition de modification puisque pas encore validé
     Db::exec(
-        "INSERT INTO desirs_permanents (id, user_id, jour_semaine, type, horaire_type_id, detail, is_active, statut, replaces_id)
-         VALUES (?, ?, ?, ?, ?, ?, 0, 'en_attente', ?)",
-        [$newId, $user['id'], $jourSemaine, $type, $horaireTypeId ?: null, $detail ?: null, $id]
+        "UPDATE desirs_permanents SET jour_semaine = ?, type = ?, horaire_type_id = ?, detail = ? WHERE id = ?",
+        [$jourSemaine, $type, $horaireTypeId ?: null, $detail ?: null, $id]
     );
 
-    respond(['success' => true, 'message' => 'Modification proposée — en attente de validation', 'id' => $newId]);
+    respond(['success' => true, 'message' => 'Désir permanent mis à jour', 'id' => $id]);
 }
 
 function delete_desir_permanent()
