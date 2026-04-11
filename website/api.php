@@ -585,9 +585,9 @@ case 'submit_candidature':
         }
 
         Db::exec(
-            "INSERT INTO candidature_documents (id, candidature_id, type_document, nom_original, nom_fichier, taille, mime_type)
+            "INSERT INTO candidature_documents (id, candidature_id, type_document, original_name, filename, size, mime_type)
              VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [Uuid::v4(), $candidature_id, $fieldName, $file['name'], 'storage/candidatures/' . $storedName, $file['size'], $file['type']]
+            [Uuid::v4(), $candidature_id, $fieldName, $file['name'], $storedName, $file['size'], $file['type']]
         );
     }
 

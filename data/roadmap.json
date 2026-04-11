@@ -75,7 +75,7 @@
         "id": "espace-famille-achat-et-marquage-de-vetements",
         "title": "Espace Famille- achat et marquage de vetements",
         "desc": "Commande de vêtements : ajouter une liste que le collaborateur peut cocher, puis envoyer directement au répondant direct. Celui-ci peut recevoir une notification par e-mail et consulter la liste.\n\nLes infirmières et autres collaborateurs peuvent voir si la liste a été consultée. Ils peuvent relancer la demande d’achat ou appeler la personne concernée.\n\nPour le marquage des vêtements, ils peuvent voir directement dans la rubrique « Vêtements », sous l’onglet « Marquage », si les habits ont été marqués et remis au résident.\nD'autres fonctions peuvent être ajouter dans cette espace pour faire évoluer SpocSpaceF (famille)",
-        "difficulty": "facile",
+        "difficulty": "moyen",
         "category": "Site web",
         "done": false,
         "order": 9
@@ -236,7 +236,7 @@
     {
         "id": "commande-produit-hygi-ne",
         "title": "Commande produit hygiène",
-        "desc": "Pour la commande des produits d’hygiène, il faut ajouter une option indiquant que c’est la famille qui se charge de cette tâche. Dans ce cas, lorsqu’un ASA envoie la commande, la famille reçoit automatiquement une notification par e-mail, et le détail de la commande sera disponible dans l’espace famille, dans une rubrique intitulée « Demandes ».",
+        "desc": "Pour la commande des produits d’hygiène, il faut ajouter une option indiquant que c’est la famille qui se charge de cette tâche. Dans ce cas, lorsqu’un ASA envoie la commande, la famille reçoit automatiquement une notification par e-mail, et le détail de la commande sera disponible dans l’espace famille, dans une rubrique intitulée « Demandes ».\n- à discuter d'ajouter cette fonction",
         "difficulty": "moyen",
         "category": "Communication",
         "done": false,
@@ -448,5 +448,14 @@
         "category": "General",
         "done": false,
         "order": 50
+    },
+    {
+        "id": "formations-et-candidatures",
+        "title": "Formations et Candidatures",
+        "desc": "La possibilité d'jouter un document , modifier une candidature qui est déjà envoyé.",
+        "difficulty": "difficile",
+        "category": "Formation",
+        "done": false,
+        "order": 51
     }
 ]
