@@ -57,26 +57,63 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 .rhc-detail-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); margin-bottom: 4px; }
 .rhc-detail-val { font-size: .88rem; }
 .rhc-detail-box { white-space: pre-wrap; background: var(--cl-bg); padding: 10px; border-radius: 8px; font-size: .85rem; }
-/* ── Document cards ── */
-.rhc-docs-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.rhc-doc-card {
-    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-    border-radius: 10px; border: 1px solid var(--cl-border-light, #F0EDE8);
-    background: var(--cl-bg, #F7F5F2); cursor: pointer; transition: all .15s;
-    min-width: 180px; flex: 1; max-width: 280px;
+/* ── Documents grouped by type ── */
+.rhc-docs-wrap { margin-top: 6px; display: flex; flex-direction: column; gap: 14px; }
+.rhc-docs-group {
+    border: 1px solid var(--cl-border-light, #F0EDE8);
+    border-radius: 12px; overflow: hidden; background: var(--cl-surface, #fff);
 }
-.rhc-doc-card:hover { border-color: var(--cl-border-hover, #D4D0CA); background: var(--cl-surface, #fff); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.rhc-docs-group-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--cl-bg, #F7F5F2);
+    border-bottom: 1px solid var(--cl-border-light, #F0EDE8);
+}
+.rhc-docs-group-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+}
+.rhc-docs-group-title {
+    font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    color: var(--cl-text);
+}
+.rhc-docs-group-count {
+    font-size: .68rem; color: var(--cl-text-muted);
+    background: #fff; border: 1px solid var(--cl-border-light, #F0EDE8);
+    padding: 1px 8px; border-radius: 20px; font-weight: 600;
+}
+.rhc-docs-list { display: flex; flex-direction: column; }
+.rhc-doc-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; cursor: pointer; transition: background .12s;
+    border-bottom: 1px solid var(--cl-border-light, #F4F1EC);
+}
+.rhc-doc-item:last-child { border-bottom: none; }
+.rhc-doc-item:hover { background: var(--cl-bg, #FAFAF7); }
 .rhc-doc-icon {
-    width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; flex-shrink: 0;
 }
-.rhc-doc-icon-pdf { background: #FECACA; color: #991B1B; }
-.rhc-doc-icon-word { background: #DBEAFE; color: #1E40AF; }
-.rhc-doc-icon-img { background: #D1FAE5; color: #065F46; }
+.rhc-doc-icon-pdf   { background: #FECACA; color: #991B1B; }
+.rhc-doc-icon-word  { background: #DBEAFE; color: #1E40AF; }
+.rhc-doc-icon-img   { background: #D1FAE5; color: #065F46; }
 .rhc-doc-icon-other { background: #E5E7EB; color: #374151; }
 .rhc-doc-info { flex: 1; min-width: 0; }
-.rhc-doc-name { font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rhc-doc-meta { font-size: .68rem; color: var(--cl-text-muted); }
+.rhc-doc-name {
+    font-size: .85rem; font-weight: 600; color: var(--cl-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rhc-doc-meta { font-size: .7rem; color: var(--cl-text-muted); margin-top: 2px; }
+.rhc-doc-type-pill {
+    font-size: .65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+    background: var(--cl-bg, #F0EDE8); color: var(--cl-text-secondary);
+    text-transform: uppercase; letter-spacing: .3px;
+}
+.rhc-doc-actions {
+    display: flex; align-items: center; gap: 4px; color: var(--cl-text-muted);
+}
+.rhc-doc-actions i { font-size: .95rem; }
 
 /* ── Lightbox ── */
 .rhc-lightbox {
@@ -305,23 +342,47 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             if (c.experience) html += `<div class="col-12">${field('Expérience', '<div class="rhc-detail-box">'+escapeHtml(c.experience)+'</div>')}</div>`;
 
             if (c.documents && c.documents.length) {
-                html += '<div class="col-12"><div class="rhc-detail-label">Documents</div><div class="rhc-docs-grid">';
+                const typeLabels = { cv:'CV', lettre_motivation:'Lettre de motivation', diplome:'Diplôme', certificat:'Certificat', autre:'Autre' };
+                const groups = {
+                    pdf:   { title: 'Documents PDF',   icon: 'bi-file-earmark-pdf',   cls: 'rhc-doc-icon-pdf',   items: [] },
+                    word:  { title: 'Documents Word',  icon: 'bi-file-earmark-word',  cls: 'rhc-doc-icon-word',  items: [] },
+                    image: { title: 'Images',          icon: 'bi-file-earmark-image', cls: 'rhc-doc-icon-img',   items: [] },
+                    other: { title: 'Autres fichiers', icon: 'bi-file-earmark',       cls: 'rhc-doc-icon-other', items: [] },
+                };
                 c.documents.forEach(d => {
-                    const sizeKb = d.size ? Math.round(d.size / 1024) : '?';
                     const ext = (d.original_name || '').split('.').pop().toLowerCase();
-                    const url = 'admin/api.php?action=admin_download_candidature_doc&id=' + encodeURIComponent(d.id);
-                    let iconCls = 'rhc-doc-icon-other', icon = 'bi-file-earmark';
-                    if (ext === 'pdf') { iconCls = 'rhc-doc-icon-pdf'; icon = 'bi-file-earmark-pdf'; }
-                    else if (['doc','docx'].includes(ext)) { iconCls = 'rhc-doc-icon-word'; icon = 'bi-file-earmark-word'; }
-                    else if (['jpg','jpeg','png','gif','webp'].includes(ext)) { iconCls = 'rhc-doc-icon-img'; icon = 'bi-file-earmark-image'; }
-                    const typeLabel = { cv:'CV', lettre_motivation:'Lettre', diplome:'Diplôme', certificat:'Certificat', autre:'Autre' }[d.type_document] || d.type_document;
-                    html += `<div class="rhc-doc-card" data-doc-url="${escapeHtml(url)}" data-doc-ext="${ext}" data-doc-name="${escapeHtml(d.original_name)}">
-                        <div class="rhc-doc-icon ${iconCls}"><i class="bi ${icon}"></i></div>
-                        <div class="rhc-doc-info">
-                            <div class="rhc-doc-name" title="${escapeHtml(d.original_name)}">${escapeHtml(d.original_name)}</div>
-                            <div class="rhc-doc-meta">${escapeHtml(typeLabel)} — ${sizeKb} Ko</div>
+                    let cat = 'other';
+                    if (ext === 'pdf') cat = 'pdf';
+                    else if (['doc','docx','odt','rtf'].includes(ext)) cat = 'word';
+                    else if (['jpg','jpeg','png','gif','webp','bmp','heic'].includes(ext)) cat = 'image';
+                    groups[cat].items.push({ ...d, ext });
+                });
+
+                html += '<div class="col-12"><div class="rhc-detail-label">Documents</div><div class="rhc-docs-wrap">';
+                Object.values(groups).forEach(g => {
+                    if (!g.items.length) return;
+                    html += `<div class="rhc-docs-group">
+                        <div class="rhc-docs-group-head">
+                            <div class="rhc-docs-group-icon ${g.cls}"><i class="bi ${g.icon}"></i></div>
+                            <div class="rhc-docs-group-title">${g.title}</div>
+                            <div class="rhc-docs-group-count">${g.items.length}</div>
                         </div>
-                    </div>`;
+                        <div class="rhc-docs-list">`;
+                    g.items.forEach(d => {
+                        const sizeKb = d.size ? Math.round(d.size / 1024) : '?';
+                        const url = '/spocspace/admin/api.php?action=admin_download_candidature_doc&id=' + encodeURIComponent(d.id);
+                        const typeLabel = typeLabels[d.type_document] || d.type_document || '';
+                        html += `<div class="rhc-doc-item" data-doc-url="${escapeHtml(url)}" data-doc-ext="${d.ext}" data-doc-name="${escapeHtml(d.original_name)}">
+                            <div class="rhc-doc-icon ${g.cls}"><i class="bi ${g.icon}"></i></div>
+                            <div class="rhc-doc-info">
+                                <div class="rhc-doc-name" title="${escapeHtml(d.original_name)}">${escapeHtml(d.original_name)}</div>
+                                <div class="rhc-doc-meta">${sizeKb} Ko · ${formatDate(d.created_at)}</div>
+                            </div>
+                            ${typeLabel ? `<span class="rhc-doc-type-pill">${escapeHtml(typeLabel)}</span>` : ''}
+                            <div class="rhc-doc-actions"><i class="bi bi-eye"></i><i class="bi bi-download"></i></div>
+                        </div>`;
+                    });
+                    html += '</div></div>';
                 });
                 html += '</div></div>';
             }
@@ -341,8 +402,8 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             html += '</div>';
             document.getElementById('rhcDetailBody').innerHTML = html;
 
-            // Bind doc card clicks
-            document.querySelectorAll('.rhc-doc-card').forEach(card => {
+            // Bind doc item clicks
+            document.querySelectorAll('.rhc-doc-item').forEach(card => {
                 card.addEventListener('click', () => {
                     const url = card.dataset.docUrl;
                     const ext = card.dataset.docExt;
