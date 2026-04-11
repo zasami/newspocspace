@@ -103,7 +103,7 @@ $catCssMap = [
 .rm-modal-overlay.rm-modal-open { display:flex; }
 .rm-modal-overlay.show { opacity:1; }
 .rm-modal { background:#fff;border-radius:16px;max-width:780px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px) scale(.97);transition:transform .25s ease; }
-.rm-modal.rm-modal-preview { max-width:680px; }
+.rm-modal.rm-modal-preview { max-width:880px; }
 .rm-modal-overlay.show .rm-modal { transform:translateY(0) scale(1); }
 .rm-modal-header { padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:.75rem; }
 .rm-modal-body { padding:1.5rem; max-height:65vh; overflow-y:auto; }
@@ -187,26 +187,28 @@ $catCssMap = [
 .rm-filter-dot-difficile { background:#7B3B2C; }
 
 /* Preview modal */
-.rm-prev-hero { display:flex;align-items:flex-start;gap:1rem;padding:1.25rem 1.5rem;border-bottom:1px solid #f0ede8;background:linear-gradient(135deg,#f7f9f7 0%,#fff 100%); }
-.rm-prev-icon { width:52px;height:52px;border-radius:14px;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0; }
-.rm-prev-hero-body { flex:1;min-width:0; }
-.rm-prev-title { margin:0 0 .35rem 0;font-size:1.15rem;font-weight:700;color:#1a1a1a;line-height:1.3; }
-.rm-prev-meta { display:flex;flex-wrap:wrap;gap:.4rem;align-items:center; }
-.rm-prev-body { padding:1.25rem 1.5rem; }
-.rm-prev-label { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:.5rem; }
+.rm-prev-body { padding:1.5rem; }
+.rm-prev-label { font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#9ca3af;margin-bottom:.4rem; }
+.rm-prev-info-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-bottom:1.25rem; }
+@media (max-width:640px) { .rm-prev-info-grid { grid-template-columns:1fr; } }
+.rm-prev-info-card {
+    border-radius:14px;padding:1rem 1.1rem;
+    border:1.5px solid transparent;
+    display:flex;flex-direction:column;gap:.4rem;
+    transition:transform .15s;
+}
+.rm-prev-info-card:hover { transform:translateY(-1px); }
+.rm-prev-info-card .rm-prev-label { color:inherit;opacity:.7;margin-bottom:0; }
+.rm-prev-info-val { font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.5rem; }
+.rm-prev-info-val i { font-size:1.1rem; }
+.rm-prev-desc-wrap { margin-top:.5rem; }
 .rm-prev-desc {
     background:#faf8f5;border:1px solid #f0ede8;border-radius:12px;
-    padding:1rem 1.15rem;font-size:.92rem;line-height:1.6;color:#374151;
+    padding:1.1rem 1.25rem;font-size:.92rem;line-height:1.65;color:#374151;
     white-space:pre-wrap;word-wrap:break-word;
 }
-.rm-prev-info-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-top:1rem; }
-.rm-prev-info-card { background:#faf8f5;border:1px solid #f0ede8;border-radius:10px;padding:.7rem .9rem; }
-.rm-prev-info-card .rm-prev-label { margin-bottom:.3rem; }
-.rm-prev-info-val { font-size:.85rem;font-weight:600;color:#1a1a1a; }
 .rm-btn-edit { background:#2d4a43;color:#fff;border-radius:8px;font-weight:500;padding:.45rem 1.1rem;border:none; }
 .rm-btn-edit:hover { background:#1f3530;color:#fff; }
-.rm-btn-view { background:#fff;color:#2d4a43;border:1.5px solid #2d4a43;border-radius:8px;font-weight:500;padding:.4rem .9rem; }
-.rm-btn-view:hover { background:#2d4a43;color:#fff; }
 
 /* Action buttons */
 .rm-btn-add { background:#2d4a43;color:#fff;font-weight:500;border-radius:10px;padding:.45rem 1rem; }
@@ -341,30 +343,29 @@ $catCssMap = [
 <!-- Modal Prévisualisation -->
 <div class="rm-modal-overlay" id="rmPreviewModal">
     <div class="rm-modal rm-modal-preview">
-        <div class="rm-prev-hero">
-            <div class="rm-prev-icon" id="rmPrevIcon"><i class="bi bi-eye"></i></div>
-            <div class="rm-prev-hero-body">
-                <h5 class="rm-prev-title" id="rmPrevTitle">—</h5>
-                <div class="rm-prev-meta" id="rmPrevMeta"></div>
-            </div>
+        <div class="rm-modal-header">
+            <div class="rm-modal-icon-wrap"><i class="bi bi-eye"></i></div>
+            <h6 class="rm-modal-title" id="rmPrevTitle">Détail de la tâche</h6>
             <button class="rm-modal-close-btn" id="rmPrevClose"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="rm-modal-body rm-prev-body">
-            <div class="rm-prev-label">Description</div>
-            <div class="rm-prev-desc" id="rmPrevDesc">—</div>
             <div class="rm-prev-info-grid">
-                <div class="rm-prev-info-card">
-                    <div class="rm-prev-label">Catégorie</div>
-                    <div class="rm-prev-info-val" id="rmPrevCategory">—</div>
-                </div>
-                <div class="rm-prev-info-card">
-                    <div class="rm-prev-label">Difficulté</div>
-                    <div class="rm-prev-info-val" id="rmPrevDifficulty">—</div>
-                </div>
-                <div class="rm-prev-info-card">
+                <div class="rm-prev-info-card" id="rmPrevCardStatus">
                     <div class="rm-prev-label">Statut</div>
                     <div class="rm-prev-info-val" id="rmPrevStatus">—</div>
                 </div>
+                <div class="rm-prev-info-card" id="rmPrevCardDifficulty">
+                    <div class="rm-prev-label">Difficulté</div>
+                    <div class="rm-prev-info-val" id="rmPrevDifficulty">—</div>
+                </div>
+                <div class="rm-prev-info-card" id="rmPrevCardCategory">
+                    <div class="rm-prev-label">Catégorie</div>
+                    <div class="rm-prev-info-val" id="rmPrevCategory">—</div>
+                </div>
+            </div>
+            <div class="rm-prev-desc-wrap">
+                <div class="rm-prev-label">Description</div>
+                <div class="rm-prev-desc" id="rmPrevDesc">—</div>
             </div>
         </div>
         <div class="rm-modal-footer">
@@ -504,26 +505,38 @@ $catCssMap = [
     const prevModal = document.getElementById('rmPreviewModal');
     let currentPreviewData = null;
 
+    const diffColorMap = {
+        facile:    { bg: '#e6efe9', border: '#bcd2cb', color: '#2d4a43', icon: 'bi-star-fill', label: 'Facile' },
+        moyen:     { bg: '#f4ecdd', border: '#D4C4A8', color: '#6B5B3E', icon: 'bi-star-half', label: 'Moyen' },
+        difficile: { bg: '#f4dcd5', border: '#E2B8AE', color: '#7B3B2C', icon: 'bi-fire',      label: 'Difficile' },
+    };
+    const catColorMap = <?= json_encode($catColors) ?>;
+
     function openPreview(data) {
         currentPreviewData = data;
-        document.getElementById('rmPrevTitle').textContent = data.title || '—';
+        document.getElementById('rmPrevTitle').textContent = data.title || 'Détail de la tâche';
         document.getElementById('rmPrevDesc').textContent = data.desc || '—';
-        document.getElementById('rmPrevCategory').textContent = data.category || '—';
-
-        const diffLabels = { facile: '★ Facile', moyen: '★★ Moyen', difficile: '★★★ Difficile' };
-        document.getElementById('rmPrevDifficulty').textContent = diffLabels[data.difficulty] || data.difficulty;
 
         const isDone = data.done === '1' || data.done === true;
-        document.getElementById('rmPrevStatus').innerHTML = isDone
-            ? '<span class="badge rounded-pill rm-badge-done"><i class="bi bi-check-lg"></i> Fait</span>'
-            : '<span class="badge rounded-pill rm-badge-pending">En attente</span>';
+        const statusCard = document.getElementById('rmPrevCardStatus');
+        const statusVal = document.getElementById('rmPrevStatus');
+        if (isDone) {
+            statusCard.style.cssText = 'background:#e6efe9;border-color:#bcd2cb;color:#2d4a43';
+            statusVal.innerHTML = '<i class="bi bi-check-circle-fill"></i> Terminée';
+        } else {
+            statusCard.style.cssText = 'background:#f3f4f6;border-color:#e5e7eb;color:#4b5563';
+            statusVal.innerHTML = '<i class="bi bi-hourglass-split"></i> En attente';
+        }
 
-        // Build meta pills (category + difficulty) in hero
-        const catCssMap = <?= json_encode($catCssMap) ?>;
-        const catCls = catCssMap[data.category] || 'rm-cat-general';
-        document.getElementById('rmPrevMeta').innerHTML =
-            `<span class="badge rounded-pill rm-badge ${catCls}">${escapeHtmlJs(data.category || '')}</span>` +
-            `<span class="badge rounded-pill rm-badge rm-diff-${data.difficulty}">${diffLabels[data.difficulty] || data.difficulty}</span>`;
+        const dc = diffColorMap[data.difficulty] || diffColorMap.moyen;
+        const diffCard = document.getElementById('rmPrevCardDifficulty');
+        diffCard.style.cssText = `background:${dc.bg};border-color:${dc.border};color:${dc.color}`;
+        document.getElementById('rmPrevDifficulty').innerHTML = `<i class="bi ${dc.icon}"></i> ${dc.label}`;
+
+        const cc = catColorMap[data.category] || { bg: '#D4D0C8', color: '#4A4840' };
+        const catCard = document.getElementById('rmPrevCardCategory');
+        catCard.style.cssText = `background:${cc.bg};border-color:${cc.bg};color:${cc.color}`;
+        document.getElementById('rmPrevCategory').innerHTML = `<i class="bi bi-tag-fill"></i> ${escapeHtmlJs(data.category || '—')}`;
 
         prevModal.classList.add('rm-modal-open');
         requestAnimationFrame(() => prevModal.classList.add('show'));
