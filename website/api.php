@@ -581,6 +581,13 @@ case 'submit_candidature':
                 throw new RuntimeException("Fichier {$vf['field']} rejeté : $sanitizeErr");
             }
 
+            // Couche 2 : VirusTotal hash-only. Ne bloque que sur "malicious".
+            // Quota dépassé / réseau indisponible → fallback silencieux sur couche 1.
+            $vt = VirusTotal::checkFile($destPath);
+            if ($vt['status'] === VirusTotal::STATUS_MALICIOUS) {
+                throw new RuntimeException("Fichier {$vf['field']} rejeté (antivirus) : {$vt['message']}");
+            }
+
             $finalSize = filesize($destPath) ?: $vf['file']['size'];
 
             Db::exec(

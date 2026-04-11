@@ -317,6 +317,48 @@ body {
   font-family: monospace; font-size: 1.4rem; font-weight: 700; padding: 12px 24px;
   border-radius: var(--rec-radius-xs); margin: 16px 0; letter-spacing: 2px;
 }
+.rec-success-actions {
+  margin-top: 24px; display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.rec-success-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: transparent; color: var(--rec-green);
+  border: 1.5px solid var(--rec-green); border-radius: 8px;
+  padding: 8px 16px; font-size: .88rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: all .18s ease;
+}
+.rec-success-btn:hover { background: var(--rec-green); color: #fff; }
+.rec-success-btn:hover .rec-success-sep { background: rgba(255,255,255,.35); }
+.rec-success-btn i { font-size: .95rem; line-height: 1; }
+.rec-success-sep {
+  display: inline-block; width: 1px; height: 16px;
+  background: rgba(46,125,50,.35); transition: background .18s ease;
+}
+
+/* Tracking: form slide-down & reopen button */
+.rec-track-collapse {
+  overflow: hidden;
+  max-height: 600px;
+  opacity: 1;
+  transition: max-height .45s cubic-bezier(.4,0,.2,1), opacity .3s ease, margin-bottom .3s ease;
+  margin-bottom: 32px;
+}
+.rec-track-collapse.rec-collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+.rec-track-reopen-wrap {
+  text-align: center;
+  margin-bottom: 24px;
+  animation: recFadeIn .4s ease both;
+}
+@keyframes recFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#recTrackResult:not(:empty) { margin-top: 8px; }
 
 /* ── Tracking ── */
 /* ── Timeline ── */
@@ -609,29 +651,46 @@ body {
       <p>Votre code de suivi :</p>
       <div class="rec-code-suivi" id="recCodeSuivi"></div>
       <p style="font-size:0.85rem;color:var(--rec-text-muted)">Conservez ce code pour suivre l'etat de votre candidature.</p>
-      <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="rec-btn rec-btn-outline" id="recBackAfterSuccess"><i class="bi bi-arrow-left"></i> Voir les offres</button>
-        <button class="rec-btn rec-btn-primary" id="recGoTrack"><i class="bi bi-search"></i> Suivre ma candidature</button>
+      <div class="rec-success-actions">
+        <button class="rec-success-btn" id="recBackAfterSuccess">
+          <span>Voir les offres</span>
+          <span class="rec-success-sep"></span>
+          <i class="bi bi-briefcase-fill"></i>
+        </button>
+        <button class="rec-success-btn" id="recGoTrack">
+          <span>Suivre ma candidature</span>
+          <span class="rec-success-sep"></span>
+          <i class="bi bi-file-earmark-person-fill"></i>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- ═══ VIEW 4: TRACKING ═══ -->
   <div id="recTrackView" style="display:none">
-    <div class="rec-track-form">
-      <h3><i class="bi bi-search" style="color:var(--rec-green)"></i> Suivi de candidature</h3>
-      <div class="rec-form-group" style="margin-bottom:12px">
-        <label>Votre email</label>
-        <input type="email" class="rec-input" id="recTrackEmail" placeholder="votre.email@exemple.com">
+    <div class="rec-track-collapse" id="recTrackCollapse">
+      <div class="rec-track-form">
+        <h3><i class="bi bi-search" style="color:var(--rec-green)"></i> Suivi de candidature</h3>
+        <div class="rec-form-group" style="margin-bottom:12px">
+          <label>Votre email</label>
+          <input type="email" class="rec-input" id="recTrackEmail" placeholder="votre.email@exemple.com">
+        </div>
+        <div class="rec-form-group" style="margin-bottom:16px">
+          <label>Code de suivi</label>
+          <input type="text" class="rec-input" id="recTrackCode" placeholder="Ex: A1B2C3D4" style="text-transform:uppercase">
+        </div>
+        <button class="rec-btn rec-btn-primary" style="width:100%" id="recTrackBtn">
+          <i class="bi bi-search"></i> Verifier
+        </button>
+        <div class="rec-error" id="recTrackError"></div>
       </div>
-      <div class="rec-form-group" style="margin-bottom:16px">
-        <label>Code de suivi</label>
-        <input type="text" class="rec-input" id="recTrackCode" placeholder="Ex: A1B2C3D4" style="text-transform:uppercase">
-      </div>
-      <button class="rec-btn rec-btn-primary" style="width:100%" id="recTrackBtn">
-        <i class="bi bi-search"></i> Verifier
+    </div>
+    <div class="rec-track-reopen-wrap" id="recTrackReopenWrap" style="display:none">
+      <button class="rec-success-btn" id="recTrackReopenBtn" type="button">
+        <span>Vérifier une autre candidature</span>
+        <span class="rec-success-sep"></span>
+        <i class="bi bi-arrow-repeat"></i>
       </button>
-      <div class="rec-error" id="recTrackError"></div>
     </div>
     <div id="recTrackResult"></div>
   </div>
@@ -777,6 +836,10 @@ body {
     document.getElementById('recFormTitle').textContent = 'Postuler : ' + offre.titre;
     document.getElementById('recFormSubtitle').textContent = [offre.departement, offre.type_contrat, offre.taux_activite].filter(Boolean).join(' — ');
 
+    // Remonter AVANT de masquer les offres : sinon la page rétrécit et le navigateur
+    // clampe la position courante à la nouvelle hauteur max → footer visible.
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     document.getElementById('recOffresView').style.display = 'none';
     document.getElementById('recFormView').style.display = '';
     document.getElementById('recFormError').textContent = '';
@@ -788,13 +851,16 @@ body {
       z.querySelector('.rec-file-zone-name').textContent = '';
     });
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Re-scroll tout en haut après changement de vue, au cas où la hauteur aurait changé
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   }
 
   // ── Back to list ──
   document.getElementById('recBackToList').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('recFormView').style.display = 'none';
     document.getElementById('recOffresView').style.display = '';
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   });
 
   document.getElementById('recBackAfterSuccess').addEventListener('click', () => {
@@ -807,6 +873,9 @@ body {
   document.getElementById('recGoTrack').addEventListener('click', () => {
     document.getElementById('recSuccessView').style.display = 'none';
     document.getElementById('recTrackView').style.display = '';
+    document.getElementById('recTrackCollapse').classList.remove('rec-collapsed');
+    document.getElementById('recTrackReopenWrap').style.display = 'none';
+    document.getElementById('recTrackResult').innerHTML = '';
     tabs[0].classList.remove('active');
     tabs[1].classList.add('active');
   });
@@ -952,9 +1021,25 @@ body {
 
       html += '</div>';
       resultEl.innerHTML = html;
+
+      // Succès : on replie le formulaire et on affiche le bouton "Vérifier une autre candidature"
+      document.getElementById('recTrackCollapse').classList.add('rec-collapsed');
+      document.getElementById('recTrackReopenWrap').style.display = '';
     } catch (err) {
       errEl.textContent = 'Erreur de connexion. Veuillez reessayer.';
     }
+  });
+
+  // Bouton "Vérifier une autre candidature" : rouvre le formulaire (slide-down) et reset
+  document.getElementById('recTrackReopenBtn').addEventListener('click', () => {
+    const collapse = document.getElementById('recTrackCollapse');
+    document.getElementById('recTrackReopenWrap').style.display = 'none';
+    document.getElementById('recTrackResult').innerHTML = '';
+    document.getElementById('recTrackEmail').value = '';
+    document.getElementById('recTrackCode').value = '';
+    document.getElementById('recTrackError').textContent = '';
+    collapse.classList.remove('rec-collapsed');
+    setTimeout(() => document.getElementById('recTrackEmail').focus(), 300);
   });
 
   // Enter key on tracking fields

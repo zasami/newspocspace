@@ -182,6 +182,88 @@ body {
   grid-template-columns: 1fr;
 }
 
+/* ═══ Carte TEXTE : style journal / magazine ═══ */
+.ac-card.ac-card-texte {
+  grid-template-columns: 1fr;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    radial-gradient(circle at top left, #f3f8ef 0%, #fff 60%) border-box;
+  border: 1px solid var(--ac-border);
+  position: relative;
+  overflow: hidden;
+}
+.ac-card.ac-card-texte::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--ac-green) 0%, #9bc18a 50%, transparent 100%);
+}
+.ac-card.ac-card-texte::after {
+  content: '\201C';
+  position: absolute;
+  top: -40px; right: 20px;
+  font-family: 'Playfair Display', serif;
+  font-size: 12rem;
+  line-height: 1;
+  color: var(--ac-green);
+  opacity: .05;
+  pointer-events: none;
+  user-select: none;
+}
+.ac-card.ac-card-texte .ac-card-body {
+  padding: 36px 48px 40px;
+  max-width: 780px;
+  margin: 0 auto;
+  width: 100%;
+}
+.ac-card.ac-card-texte .ac-card-title {
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: -.01em;
+  margin: 8px 0 14px;
+  text-align: left;
+}
+.ac-card.ac-card-texte .ac-card-title::after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 3px;
+  background: var(--ac-green);
+  margin-top: 14px;
+  border-radius: 2px;
+}
+.ac-card.ac-card-texte .ac-card-extrait {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: #3a3a3a;
+  -webkit-line-clamp: 5;
+  text-align: justify;
+  hyphens: auto;
+  margin-bottom: 20px;
+}
+.ac-card.ac-card-texte .ac-card-extrait::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.4rem;
+  font-weight: 700;
+  float: left;
+  line-height: .9;
+  padding: 4px 10px 0 0;
+  color: var(--ac-green);
+}
+.ac-card.ac-card-texte .ac-read-more {
+  align-self: center;
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .ac-card.ac-card-texte .ac-card-body { padding: 26px 22px 28px; }
+  .ac-card.ac-card-texte .ac-card-title { font-size: 1.5rem; }
+  .ac-card.ac-card-texte .ac-card-extrait { font-size: .98rem; }
+  .ac-card.ac-card-texte .ac-card-extrait::first-letter { font-size: 2.6rem; }
+  .ac-card.ac-card-texte::after { font-size: 7rem; top: -20px; right: 10px; }
+}
+
 /* ── Media (colonne gauche ou pleine largeur) ── */
 .ac-card-media {
   position: relative;
@@ -1183,8 +1265,11 @@ body {
       </div>
     `;
 
+    const noMedia = !mediaHtml;
+    const textClass = noMedia ? 'ac-card-texte' : '';
+
     return `
-      <article class="ac-card ${isPinned ? 'ac-pinned' : ''}" data-id="${a.id}">
+      <article class="ac-card ${isPinned ? 'ac-pinned' : ''} ${textClass}" data-id="${a.id}">
         ${mediaHtml}
         ${bodyHtml}
       </article>
