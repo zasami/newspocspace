@@ -532,63 +532,74 @@ case 'submit_candidature':
         respond(['success' => false, 'message' => 'Cette offre n\'est plus disponible.'], 400);
     }
 
-    $code_suivi = strtoupper(bin2hex(random_bytes(4)));
-    $candidature_id = Uuid::v4();
-
-    Db::exec(
-        "INSERT INTO candidatures (id, offre_id, nom, prenom, email, telephone, date_naissance, adresse, nationalite, permis_travail, disponibilite, motivation, experience, code_suivi, statut)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'recue')",
-        [$candidature_id, $offre_id, $nom, $prenom, $email, $telephone, $date_naissance ?: null, $adresse, $nationalite, $permis_travail, $disponibilite, $motivation, $experience, $code_suivi]
-    );
-
-    // Handle file uploads
+    // Pre-validate all uploaded files BEFORE inserting anything,
+    // so a bad file never leaves an orphan candidature row in DB.
     $allowedExt = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+    $allowedMimes = [
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+    ];
     $maxSize = 10 * 1024 * 1024; // 10MB
     $uploadDir = __DIR__ . '/../storage/candidatures/';
 
+    $validatedFiles = [];
     foreach (['cv', 'lettre_motivation', 'diplome', 'certificat', 'autre'] as $fieldName) {
         if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) continue;
-
         $file = $_FILES[$fieldName];
         if ($file['error'] !== UPLOAD_ERR_OK) continue;
 
         if ($file['size'] > $maxSize) {
             respond(['success' => false, 'message' => "Le fichier $fieldName dépasse la taille maximale de 10 Mo."], 400);
         }
-
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-        // Validate MIME type (not just extension)
-        $allowedMimes = [
-            'pdf' => 'application/pdf',
-            'doc' => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-        ];
+        if (!in_array($ext, $allowedExt)) {
+            respond(['success' => false, 'message' => "Type de fichier non autorisé pour $fieldName. Formats acceptés : " . implode(', ', $allowedExt)], 400);
+        }
         $realMime = mime_content_type($file['tmp_name']);
         if (isset($allowedMimes[$ext]) && $realMime !== $allowedMimes[$ext]) {
-            // Allow some flexibility (e.g., docx detected as application/zip)
             if (!in_array($realMime, ['application/zip', 'application/octet-stream'])) {
                 respond(['success' => false, 'message' => "Le contenu du fichier $fieldName ne correspond pas à son extension."], 400);
             }
         }
-        if (!in_array($ext, $allowedExt)) {
-            respond(['success' => false, 'message' => "Type de fichier non autorisé pour $fieldName. Formats acceptés : " . implode(', ', $allowedExt)], 400);
-        }
+        $validatedFiles[] = ['field' => $fieldName, 'file' => $file, 'ext' => $ext];
+    }
 
-        $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
-        $destPath = $uploadDir . $storedName;
+    $code_suivi = strtoupper(bin2hex(random_bytes(4)));
+    $candidature_id = Uuid::v4();
 
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-            respond(['success' => false, 'message' => "Erreur lors de l'upload du fichier $fieldName."], 500);
-        }
-
+    $pdo = Db::connect();
+    $pdo->beginTransaction();
+    $movedFiles = [];
+    try {
         Db::exec(
-            "INSERT INTO candidature_documents (id, candidature_id, type_document, original_name, filename, size, mime_type)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [Uuid::v4(), $candidature_id, $fieldName, $file['name'], $storedName, $file['size'], $file['type']]
+            "INSERT INTO candidatures (id, offre_id, nom, prenom, email, telephone, date_naissance, adresse, nationalite, permis_travail, disponibilite, motivation, experience, code_suivi, statut)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'recue')",
+            [$candidature_id, $offre_id, $nom, $prenom, $email, $telephone, $date_naissance ?: null, $adresse, $nationalite, $permis_travail, $disponibilite, $motivation, $experience, $code_suivi]
         );
+
+        foreach ($validatedFiles as $vf) {
+            $storedName = bin2hex(random_bytes(16)) . '.' . $vf['ext'];
+            $destPath = $uploadDir . $storedName;
+            if (!move_uploaded_file($vf['file']['tmp_name'], $destPath)) {
+                throw new RuntimeException("Erreur lors de l'upload du fichier {$vf['field']}.");
+            }
+            $movedFiles[] = $destPath;
+
+            Db::exec(
+                "INSERT INTO candidature_documents (id, candidature_id, type_document, original_name, filename, size, mime_type)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [Uuid::v4(), $candidature_id, $vf['field'], $vf['file']['name'], $storedName, $vf['file']['size'], $vf['file']['type']]
+            );
+        }
+
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        foreach ($movedFiles as $mf) { if (file_exists($mf)) @unlink($mf); }
+        respond(['success' => false, 'message' => "Erreur lors de l'enregistrement de la candidature."], 500);
     }
 
     respond(['success' => true, 'code_suivi' => $code_suivi, 'message' => 'Votre candidature a été soumise avec succès.']);
