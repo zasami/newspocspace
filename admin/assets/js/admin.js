@@ -137,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const q = raw.replace(/^@/, '').trim();
             // Appelle le handler spécifique à la page si dispo
             if (typeof window.__pageLocalSearch === 'function') {
-                try { window.__pageLocalSearch(q); } catch(e) { console.error(e); }
+                try { window.__pageLocalSearch(q); }
+                catch(e) { console.error('[localSearch] handler error:', e); }
+            } else {
+                console.debug('[localSearch] no __pageLocalSearch handler on this page');
             }
             // Panneau d'info
             if (q.length === 0) {
@@ -186,7 +189,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { closePanel(); searchInput.blur(); }
-            if (e.key === 'Enter' && searchInput.value.trim().length >= 2) { addHist(searchInput.value.trim()); doSearch(searchInput.value.trim()); }
+            if (e.key === 'Enter') {
+                const val = searchInput.value;
+                if (isLocalMode(val)) { e.preventDefault(); applyLocalSearch(val); openPanel(); return; }
+                if (val.trim().length >= 2) { addHist(val.trim()); doSearch(val.trim()); }
+            }
         });
 
         searchInput.addEventListener('blur', () => {
@@ -208,7 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const del = e.target.closest('.admin-hist-del');
             if (del) { e.preventDefault(); e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(searchInput.value); return; }
             const hist = e.target.closest('[data-hist-q]');
-            if (hist && !e.target.closest('.admin-hist-del')) { searchInput.value = hist.dataset.histQ; updateClear(); doSearch(hist.dataset.histQ); return; }
+            if (hist && !e.target.closest('.admin-hist-del')) {
+                const hq = hist.dataset.histQ;
+                searchInput.value = hq;
+                updateClear();
+                refreshPlaceholder();
+                if (isLocalMode(hq)) { applyLocalSearch(hq); openPanel(); }
+                else { doSearch(hq); }
+                return;
+            }
         });
 
         document.addEventListener('click', (e) => { if (!e.target.closest('#topbarSearch')) closePanel(); });
