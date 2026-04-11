@@ -102,7 +102,8 @@ $catCssMap = [
 .rm-modal-overlay { position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);opacity:0;transition:opacity .2s ease; }
 .rm-modal-overlay.rm-modal-open { display:flex; }
 .rm-modal-overlay.show { opacity:1; }
-.rm-modal { background:#fff;border-radius:16px;max-width:540px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px) scale(.97);transition:transform .25s ease; }
+.rm-modal { background:#fff;border-radius:16px;max-width:780px;width:94%;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px) scale(.97);transition:transform .25s ease; }
+.rm-modal.rm-modal-preview { max-width:680px; }
 .rm-modal-overlay.show .rm-modal { transform:translateY(0) scale(1); }
 .rm-modal-header { padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:.75rem; }
 .rm-modal-body { padding:1.5rem; max-height:65vh; overflow-y:auto; }
@@ -184,6 +185,28 @@ $catCssMap = [
 .rm-filter-dot-facile { background:#2d4a43; }
 .rm-filter-dot-moyen { background:#6B5B3E; }
 .rm-filter-dot-difficile { background:#7B3B2C; }
+
+/* Preview modal */
+.rm-prev-hero { display:flex;align-items:flex-start;gap:1rem;padding:1.25rem 1.5rem;border-bottom:1px solid #f0ede8;background:linear-gradient(135deg,#f7f9f7 0%,#fff 100%); }
+.rm-prev-icon { width:52px;height:52px;border-radius:14px;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0; }
+.rm-prev-hero-body { flex:1;min-width:0; }
+.rm-prev-title { margin:0 0 .35rem 0;font-size:1.15rem;font-weight:700;color:#1a1a1a;line-height:1.3; }
+.rm-prev-meta { display:flex;flex-wrap:wrap;gap:.4rem;align-items:center; }
+.rm-prev-body { padding:1.25rem 1.5rem; }
+.rm-prev-label { font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:.5rem; }
+.rm-prev-desc {
+    background:#faf8f5;border:1px solid #f0ede8;border-radius:12px;
+    padding:1rem 1.15rem;font-size:.92rem;line-height:1.6;color:#374151;
+    white-space:pre-wrap;word-wrap:break-word;
+}
+.rm-prev-info-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-top:1rem; }
+.rm-prev-info-card { background:#faf8f5;border:1px solid #f0ede8;border-radius:10px;padding:.7rem .9rem; }
+.rm-prev-info-card .rm-prev-label { margin-bottom:.3rem; }
+.rm-prev-info-val { font-size:.85rem;font-weight:600;color:#1a1a1a; }
+.rm-btn-edit { background:#2d4a43;color:#fff;border-radius:8px;font-weight:500;padding:.45rem 1.1rem;border:none; }
+.rm-btn-edit:hover { background:#1f3530;color:#fff; }
+.rm-btn-view { background:#fff;color:#2d4a43;border:1.5px solid #2d4a43;border-radius:8px;font-weight:500;padding:.4rem .9rem; }
+.rm-btn-view:hover { background:#2d4a43;color:#fff; }
 
 /* Action buttons */
 .rm-btn-add { background:#2d4a43;color:#fff;font-weight:500;border-radius:10px;padding:.45rem 1rem; }
@@ -315,6 +338,44 @@ $catCssMap = [
     </div>
 </div>
 
+<!-- Modal Prévisualisation -->
+<div class="rm-modal-overlay" id="rmPreviewModal">
+    <div class="rm-modal rm-modal-preview">
+        <div class="rm-prev-hero">
+            <div class="rm-prev-icon" id="rmPrevIcon"><i class="bi bi-eye"></i></div>
+            <div class="rm-prev-hero-body">
+                <h5 class="rm-prev-title" id="rmPrevTitle">—</h5>
+                <div class="rm-prev-meta" id="rmPrevMeta"></div>
+            </div>
+            <button class="rm-modal-close-btn" id="rmPrevClose"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="rm-modal-body rm-prev-body">
+            <div class="rm-prev-label">Description</div>
+            <div class="rm-prev-desc" id="rmPrevDesc">—</div>
+            <div class="rm-prev-info-grid">
+                <div class="rm-prev-info-card">
+                    <div class="rm-prev-label">Catégorie</div>
+                    <div class="rm-prev-info-val" id="rmPrevCategory">—</div>
+                </div>
+                <div class="rm-prev-info-card">
+                    <div class="rm-prev-label">Difficulté</div>
+                    <div class="rm-prev-info-val" id="rmPrevDifficulty">—</div>
+                </div>
+                <div class="rm-prev-info-card">
+                    <div class="rm-prev-label">Statut</div>
+                    <div class="rm-prev-info-val" id="rmPrevStatus">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="rm-modal-footer">
+            <button class="btn btn-sm btn-light rm-btn-cancel" id="rmPrevCancelBtn">Fermer</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm rm-btn-edit" id="rmPrevEditBtn"><i class="bi bi-pencil"></i> Modifier</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Ajouter / Modifier -->
 <div class="rm-modal-overlay" id="rmModal">
     <div class="rm-modal">
@@ -439,18 +500,64 @@ $catCssMap = [
     // Open modal: add
     document.getElementById('btnAddTask').addEventListener('click', () => openModal('add'));
 
-    // Open modal: edit (click on row but not checkbox)
+    // Open preview modal on row click (not checkbox)
+    const prevModal = document.getElementById('rmPreviewModal');
+    let currentPreviewData = null;
+
+    function openPreview(data) {
+        currentPreviewData = data;
+        document.getElementById('rmPrevTitle').textContent = data.title || '—';
+        document.getElementById('rmPrevDesc').textContent = data.desc || '—';
+        document.getElementById('rmPrevCategory').textContent = data.category || '—';
+
+        const diffLabels = { facile: '★ Facile', moyen: '★★ Moyen', difficile: '★★★ Difficile' };
+        document.getElementById('rmPrevDifficulty').textContent = diffLabels[data.difficulty] || data.difficulty;
+
+        const isDone = data.done === '1' || data.done === true;
+        document.getElementById('rmPrevStatus').innerHTML = isDone
+            ? '<span class="badge rounded-pill rm-badge-done"><i class="bi bi-check-lg"></i> Fait</span>'
+            : '<span class="badge rounded-pill rm-badge-pending">En attente</span>';
+
+        // Build meta pills (category + difficulty) in hero
+        const catCssMap = <?= json_encode($catCssMap) ?>;
+        const catCls = catCssMap[data.category] || 'rm-cat-general';
+        document.getElementById('rmPrevMeta').innerHTML =
+            `<span class="badge rounded-pill rm-badge ${catCls}">${escapeHtmlJs(data.category || '')}</span>` +
+            `<span class="badge rounded-pill rm-badge rm-diff-${data.difficulty}">${diffLabels[data.difficulty] || data.difficulty}</span>`;
+
+        prevModal.classList.add('rm-modal-open');
+        requestAnimationFrame(() => prevModal.classList.add('show'));
+    }
+
+    function closePreview() {
+        prevModal.classList.remove('show');
+        setTimeout(() => prevModal.classList.remove('rm-modal-open'), 200);
+    }
+
+    function escapeHtmlJs(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
     document.getElementById('roadmapBody').addEventListener('click', (e) => {
         if (e.target.closest('.td-check')) return;
         const row = e.target.closest('.roadmap-row');
         if (!row) return;
-        openModal('edit', {
+        openPreview({
             id: row.dataset.id,
             title: row.dataset.title,
             desc: row.dataset.desc,
             category: row.dataset.category,
             difficulty: row.dataset.difficulty,
+            done: row.dataset.done,
         });
+    });
+
+    document.getElementById('rmPrevClose').addEventListener('click', closePreview);
+    document.getElementById('rmPrevCancelBtn').addEventListener('click', closePreview);
+    prevModal.addEventListener('click', (e) => { if (e.target === prevModal) closePreview(); });
+
+    document.getElementById('rmPrevEditBtn').addEventListener('click', () => {
+        if (!currentPreviewData) return;
+        closePreview();
+        setTimeout(() => openModal('edit', currentPreviewData), 220);
     });
 
     // Close
@@ -604,11 +711,15 @@ $catCssMap = [
         onSelect: (val) => { selectedCategory = val; applyFilters(); }
     });
 
-    // Keyboard: Escape to close modal, Enter to save
+    // Keyboard: Escape to close modals, Enter to save in edit modal
     document.addEventListener('keydown', (e) => {
-        if (!modal.classList.contains('rm-modal-open')) return;
-        if (e.key === 'Escape') closeModal();
-        if (e.key === 'Enter' && !e.target.matches('textarea')) document.getElementById('rmSaveBtn').click();
+        if (e.key === 'Escape') {
+            if (prevModal.classList.contains('rm-modal-open')) { closePreview(); return; }
+            if (modal.classList.contains('rm-modal-open')) { closeModal(); return; }
+        }
+        if (e.key === 'Enter' && modal.classList.contains('rm-modal-open') && !e.target.matches('textarea')) {
+            document.getElementById('rmSaveBtn').click();
+        }
     });
 })();
 </script>
