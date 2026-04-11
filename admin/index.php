@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -153,6 +153,7 @@ $pageLabels = [
     'wiki'             => 'Base de connaissances',
     'annonces'         => 'Annonces officielles',
     'wiki-analytics'   => 'Analytics Wiki',
+    'securite'         => 'Sécurité & Antivirus',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -236,6 +237,7 @@ $sidebarCategories = [
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
             'connexions'   => ['label' => 'Connexions',        'icon' => 'person-check'],
+            'securite'     => ['label' => 'Sécurité',           'icon' => 'shield-check'],
         ],
     ],
 ];

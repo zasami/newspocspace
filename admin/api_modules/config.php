@@ -93,6 +93,8 @@ function admin_save_config()
         'css_mode',
         // Pinned section (website)
         'pinned_visible', 'pinned_title', 'pinned_text', 'pinned_signature', 'pinned_image',
+        // Sécurité / Antivirus
+        'virustotal_api_key', 'virustotal_enabled', 'security_local_scan',
     ];
 
     $userId = $_SESSION['ss_user']['id'];
@@ -775,3 +777,55 @@ function admin_toggle_ia_rule()
 
     respond(['success' => true, 'message' => 'Statut mis à jour', 'actif' => $newStatus]);
 }
+
+/**
+ * Test VirusTotal API key (lightweight call: hash lookup on EICAR test hash).
+ */
+function admin_test_virustotal()
+{
+    require_admin();
+
+    $key = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'virustotal_api_key'");
+    if (!$key) {
+        respond(['success' => false, 'message' => 'Aucune clé enregistrée.']);
+    }
+
+    // EICAR standard test file hash — always recognized as malware signature.
+    $eicarSha256 = '275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f';
+    $url = 'https://www.virustotal.com/api/v3/files/' . $eicarSha256;
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => ['x-apikey: ' . $key, 'Accept: application/json'],
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
+
+    if ($resp === false) {
+        respond(['success' => false, 'message' => 'Erreur réseau : ' . $err]);
+    }
+    if ($code === 401 || $code === 403) {
+        respond(['success' => false, 'message' => 'Clé invalide (HTTP ' . $code . ').']);
+    }
+    if ($code === 429) {
+        respond(['success' => false, 'message' => 'Quota dépassé (HTTP 429).']);
+    }
+    if ($code !== 200) {
+        respond(['success' => false, 'message' => 'Réponse inattendue (HTTP ' . $code . ').']);
+    }
+
+    $json = json_decode($resp, true);
+    $stats = $json['data']['attributes']['last_analysis_stats'] ?? null;
+    $malicious = $stats['malicious'] ?? 0;
+    respond([
+        'success' => true,
+        'message' => 'Clé valide',
+        'quota'   => 'OK',
+        'eicar_detected_by' => $malicious,
+    ]);
+}
+
