@@ -532,17 +532,8 @@ case 'submit_candidature':
         respond(['success' => false, 'message' => 'Cette offre n\'est plus disponible.'], 400);
     }
 
-    // Pre-validate all uploaded files BEFORE inserting anything,
-    // so a bad file never leaves an orphan candidature row in DB.
-    $allowedExt = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
-    $allowedMimes = [
-        'pdf' => 'application/pdf',
-        'doc' => 'application/msword',
-        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-        'png' => 'image/png',
-    ];
-    $maxSize = 10 * 1024 * 1024; // 10MB
+    // Pre-validate all uploaded files BEFORE inserting anything (couche 1 antivirus local).
+    $maxSize = 10 * 1024 * 1024; // 10 Mo
     $uploadDir = __DIR__ . '/../storage/candidatures/';
 
     $validatedFiles = [];
@@ -554,16 +545,12 @@ case 'submit_candidature':
         if ($file['size'] > $maxSize) {
             respond(['success' => false, 'message' => "Le fichier $fieldName dépasse la taille maximale de 10 Mo."], 400);
         }
+
+        // Magic bytes + PDF JS detection + double-extension + null bytes
+        $err = FileSecurity::validateUpload($file, $fieldName);
+        if ($err) respond(['success' => false, 'message' => $err], 400);
+
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowedExt)) {
-            respond(['success' => false, 'message' => "Type de fichier non autorisé pour $fieldName. Formats acceptés : " . implode(', ', $allowedExt)], 400);
-        }
-        $realMime = mime_content_type($file['tmp_name']);
-        if (isset($allowedMimes[$ext]) && $realMime !== $allowedMimes[$ext]) {
-            if (!in_array($realMime, ['application/zip', 'application/octet-stream'])) {
-                respond(['success' => false, 'message' => "Le contenu du fichier $fieldName ne correspond pas à son extension."], 400);
-            }
-        }
         $validatedFiles[] = ['field' => $fieldName, 'file' => $file, 'ext' => $ext];
     }
 
@@ -588,10 +575,18 @@ case 'submit_candidature':
             }
             $movedFiles[] = $destPath;
 
+            // Post-upload sanitize : re-encode images, valide fin PDF
+            $sanitizeErr = FileSecurity::sanitizeInPlace($destPath, $vf['ext']);
+            if ($sanitizeErr) {
+                throw new RuntimeException("Fichier {$vf['field']} rejeté : $sanitizeErr");
+            }
+
+            $finalSize = filesize($destPath) ?: $vf['file']['size'];
+
             Db::exec(
                 "INSERT INTO candidature_documents (id, candidature_id, type_document, original_name, filename, size, mime_type)
                  VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [Uuid::v4(), $candidature_id, $vf['field'], $vf['file']['name'], $storedName, $vf['file']['size'], $vf['file']['type']]
+                [Uuid::v4(), $candidature_id, $vf['field'], $vf['file']['name'], $storedName, $finalSize, $vf['file']['type']]
             );
         }
 
