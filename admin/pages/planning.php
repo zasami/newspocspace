@@ -293,16 +293,33 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 .pm-nav-year { font-weight: 700; font-size: .95rem; }
 .pm-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .pm-month-btn {
+  position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 8px 4px; border: 1.5px solid transparent; border-radius: 10px;
   background: var(--cl-bg); cursor: pointer; transition: all .15s; font-family: inherit;
 }
 .pm-month-btn:hover { border-color: var(--cl-border-hover); background: var(--cl-surface); }
-.pm-month-btn.active { border-color: var(--cl-accent); background: var(--cl-surface); box-shadow: 0 0 0 1px var(--cl-accent); }
-.pm-month-btn.today { position: relative; }
-.pm-month-btn.today::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--cl-accent); }
+.pm-month-btn.active {
+  border-color: #1a1a1a;
+  background: var(--cl-surface);
+  animation: pmHaloPulse 2.4s ease-in-out infinite;
+}
+@keyframes pmHaloPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46,125,50,.45), 0 0 0 1px #1a1a1a; }
+  50%      { box-shadow: 0 0 0 6px rgba(46,125,50,0),   0 0 0 1px #1a1a1a; }
+}
+.pm-month-btn.today::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--cl-accent); }
 .pm-month-icon { font-size: .9rem; }
 .pm-month-label { font-size: .72rem; font-weight: 600; color: var(--cl-text-secondary); }
+.pm-month-num {
+  position: absolute; top: 4px; right: 5px;
+  font-size: .62rem; font-weight: 700; line-height: 1;
+  color: var(--cl-text-secondary); opacity: .55;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 4px; border-radius: 5px;
+  background: rgba(0,0,0,.04);
+}
+.pm-month-btn.active .pm-month-num { color: var(--cl-accent); opacity: 1; background: rgba(46,125,50,.1); }
 
 /* IA Rule cards */
 .gs-rule-card {
@@ -820,7 +837,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'pm-month-btn' + (key === curVal ? ' active' : '') + (key === todayKey ? ' today' : '');
-            btn.innerHTML = '<span class="pm-month-icon" style="background:' + pmMonthColors[m-1] + ';color:' + pmMonthTextColors[m-1] + ';width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem">' + pmMonthIcons[m-1] + '</span>'
+            btn.innerHTML = '<span class="pm-month-num">' + String(m).padStart(2,'0') + '</span>'
+                + '<span class="pm-month-icon" style="background:' + pmMonthColors[m-1] + ';color:' + pmMonthTextColors[m-1] + ';width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem">' + pmMonthIcons[m-1] + '</span>'
                 + '<span class="pm-month-label">' + pmMonthNames[m-1].substring(0,3) + '</span>';
             btn.addEventListener('click', () => {
                 pmSetValue(pmYear, m);

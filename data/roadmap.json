@@ -439,5 +439,14 @@
         "category": "Admin",
         "done": false,
         "order": 49
+    },
+    {
+        "id": "personnalisation-du-tableau-du-board",
+        "title": "Personnalisation du tableau du board",
+        "desc": "Chaque personne aura la possiblité de mettre les widgets qu'elle veut sur son tableau du bord cad:\nRuv 1 : sur le tableau de board  A :\n - liste de désir en cours, liste de tache de la semainte, et liste de collaborteur\nRuv 2: sur son tableau de bor \n_ liste des foramtion en cours\n_liste de candidat\n_ bouton ajouter formation\n_Liste dé collaborateur formateur\nInfermière Cheffe\n_ Statistiques des abscence\n_recrutement en cours\n_ dernière Pv\n_Ajoute annonces officiel.\nEtc ez",
+        "difficulty": "difficile",
+        "category": "General",
+        "done": false,
+        "order": 50
     }
 ]
