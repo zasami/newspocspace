@@ -101,6 +101,10 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
           <span>Communication</span>
           <span class="fam-sb-count" id="famSbMsg">0</span>
         </button>
+        <button class="fam-sb-card" data-pane="achats">
+          <i class="bi bi-bag-check"></i>
+          <span>Achats</span>
+        </button>
       </nav>
 
       <!-- Logout en bas -->
@@ -152,6 +156,36 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
       <div class="fam-pane" id="paneGalerie">
         <div id="famGalFolders"></div>
         <div id="famGalAlbum" style="display:none"></div>
+      </div>
+
+      <!-- Achats -->
+      <div class="fam-pane" id="paneAchats">
+        <div style="max-width:540px;margin:40px auto;text-align:center;padding:0 20px">
+          <div style="width:80px;height:80px;border-radius:20px;background:var(--fam-green-light,#e8f0e4);color:var(--fam-green,#6B8F5E);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 20px">
+            <i class="bi bi-bag-check"></i>
+          </div>
+          <h3 style="font-size:1.3rem;font-weight:700;margin:0 0 8px">Commandes & Achats</h3>
+          <p style="color:var(--fam-text-muted,#999);font-size:.92rem;line-height:1.6;margin:0 0 24px">
+            Cette fonctionnalité sera bientôt disponible. Vous pourrez consulter et commander les produits nécessaires pour votre proche :
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;text-align:left;max-width:380px;margin:0 auto 28px">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fam-bg,#F7F5F2);border-radius:10px;border:1px solid var(--fam-border,#E8E5E0)">
+              <i class="bi bi-droplet" style="font-size:1.1rem;color:var(--fam-green,#6B8F5E)"></i>
+              <div><strong style="font-size:.88rem">Produits d'hygiène</strong><br><span style="font-size:.78rem;color:var(--fam-text-muted,#999)">Savon, shampoing, crème, dentifrice...</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fam-bg,#F7F5F2);border-radius:10px;border:1px solid var(--fam-border,#E8E5E0)">
+              <i class="bi bi-shirt" style="font-size:1.1rem;color:#3B4F6B"></i>
+              <div><strong style="font-size:.88rem">Vêtements & linge</strong><br><span style="font-size:.78rem;color:var(--fam-text-muted,#999)">Sous-vêtements, chaussettes, pyjamas...</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--fam-bg,#F7F5F2);border-radius:10px;border:1px solid var(--fam-border,#E8E5E0)">
+              <i class="bi bi-box-seam" style="font-size:1.1rem;color:#6B5B3E"></i>
+              <div><strong style="font-size:.88rem">Fournitures diverses</strong><br><span style="font-size:.78rem;color:var(--fam-text-muted,#999)">Mouchoirs, protections, accessoires...</span></div>
+            </div>
+          </div>
+          <div style="padding:14px 20px;background:#fff8e1;border:1px solid #f4d03f;border-radius:10px;font-size:.85rem;color:#7d5d0e">
+            <i class="bi bi-clock-history"></i> <strong>Bientôt disponible</strong> — L'équipe soignante pourra vous notifier directement les besoins de votre proche.
+          </div>
+        </div>
       </div>
 
       <!-- Communication -->
@@ -405,7 +439,7 @@ async function loadDashboard() {
 
 let tabsLoaded = { dashboard: true, activites: false, medical: false, galerie: false, communication: false };
 
-const paneLabels = { dashboard: 'Accueil', activites: 'Activités', medical: 'Suivi médical', galerie: 'Galerie photos', communication: 'Communication' };
+const paneLabels = { dashboard: 'Accueil', activites: 'Activités', medical: 'Suivi médical', galerie: 'Galerie photos', achats: 'Achats', communication: 'Communication' };
 
 document.querySelectorAll('.fam-sb-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -472,19 +506,37 @@ async function loadActiviteDetail(id) {
     const a = res.activite;
     const photos = res.photos || [];
 
+    const typeIcons = { sortie: 'bi-geo-alt', atelier: 'bi-palette', anniversaire: 'bi-cake2', fete: 'bi-balloon', musique: 'bi-music-note-beamed', repas: 'bi-cup-hot' };
+    const typeLabel = (a.type || a.titre || '').toLowerCase();
+    let icon = 'bi-calendar-event';
+    for (const [k, v] of Object.entries(typeIcons)) { if (typeLabel.includes(k)) { icon = v; break; } }
+
     let html = '<button class="fam-detail-back" id="famActBack"><i class="bi bi-arrow-left"></i> Retour</button>';
-    html += '<div class="fam-detail-header"><h3>' + esc(a.titre) + '</h3><div class="fam-act-date">' + fmtDate(a.date_activite) + '</div>';
-    if (a.description) html += '<p class="fam-act-desc" style="margin-top:8px">' + esc(a.description) + '</p>';
-    html += '</div>';
+
+    html += '<div class="fam-act-detail-card">';
+    html += '<div class="fam-act-detail-top">';
+    html += '<div class="fam-act-detail-icon"><i class="bi ' + icon + '"></i></div>';
+    html += '<div>';
+    html += '<h3 style="margin:0;font-size:1.2rem;font-weight:700">' + esc(a.titre) + '</h3>';
+    html += '<div style="font-size:.82rem;color:var(--fam-text-muted,#999);margin-top:4px;display:flex;align-items:center;gap:8px">';
+    html += '<span><i class="bi bi-calendar3"></i> ' + fmtDate(a.date_activite) + '</span>';
+    if (photos.length) html += '<span><i class="bi bi-images"></i> ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + '</span>';
+    html += '</div></div></div>';
+
+    if (a.description) {
+        html += '<div class="fam-act-detail-desc">' + esc(a.description) + '</div>';
+    }
 
     if (photos.length) {
-        html += '<div class="fam-detail-grid">';
+        html += '<div class="fam-act-detail-photos">';
         photos.forEach((p, idx) => {
             html += '<div class="fam-detail-thumb" data-file-id="' + esc(p.id) + '" data-iv="' + esc(p.encrypted_iv) + '" data-name="' + esc(p.file_name) + '" data-idx="' + idx + '">'
                 + '<div class="fam-thumb-loading"><span class="fam-spinner"></span></div></div>';
         });
         html += '</div>';
     }
+
+    html += '</div>';
 
     detail.innerHTML = html;
 
@@ -846,30 +898,71 @@ function renderComm() {
         return;
     }
 
+    // Group messages into threads: question (famille) + responses (soignant), or vice versa
+    const threads = [];
+    let current = null;
+    commMessages.forEach(m => {
+        if (!current || m.sender_type === current[0].sender_type) {
+            // New thread or same sender continues
+            if (!current || m.sender_type !== current[0].sender_type) {
+                current = [m];
+                threads.push(current);
+            } else {
+                current.push(m);
+            }
+        } else {
+            // Different sender = reply in same thread
+            current.push(m);
+        }
+    });
+
+    // Simpler: pair consecutive messages into threads (question + answer)
+    const pairs = [];
+    for (let i = 0; i < commMessages.length; i++) {
+        const m = commMessages[i];
+        const next = commMessages[i + 1];
+        if (next && next.sender_type !== m.sender_type) {
+            pairs.push([m, next]);
+            i++; // skip next
+        } else {
+            pairs.push([m]);
+        }
+    }
+
     let html = '';
     let lastDate = '';
 
-    commMessages.forEach(m => {
-        const d = new Date(m.created_at);
+    pairs.forEach(pair => {
+        const d = new Date(pair[0].created_at);
         const dateStr = d.toLocaleDateString('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
-        const timeStr = d.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
 
         if (dateStr !== lastDate) {
             html += '<div class="fam-comm-date">' + dateStr + '</div>';
             lastDate = dateStr;
         }
 
-        const isFamille = m.sender_type === 'famille';
-        const cls = isFamille ? 'fam-msg-famille' : 'fam-msg-soignant';
-        const icon = isFamille ? 'bi-person' : 'bi-heart-pulse';
+        html += '<div class="fam-comm-thread">';
+        pair.forEach((m, idx) => {
+            const isFamille = m.sender_type === 'famille';
+            const cls = isFamille ? 'fam-msg-famille' : 'fam-msg-soignant';
+            const icon = isFamille ? 'bi-person' : 'bi-heart-pulse';
+            const roleLabel = isFamille ? 'Famille' : 'Équipe soignante';
+            const timeStr = new Date(m.created_at).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+            const initials = m.sender_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            const isReply = idx > 0;
 
-        html += '<div class="fam-comm-msg ' + cls + '">'
-            + '<div class="fam-comm-bubble">' + escHtml(m.message) + '</div>'
-            + '<div class="fam-comm-meta">'
-            + '<i class="bi ' + icon + '"></i>'
-            + '<span class="fam-comm-sender">' + escHtml(m.sender_name) + '</span>'
-            + '<span>' + timeStr + '</span>'
-            + '</div></div>';
+            html += '<div class="fam-comm-msg ' + cls + (isReply ? ' fam-msg-reply' : '') + '">'
+                + '<div class="fam-comm-avatar"><i class="bi ' + icon + '"></i></div>'
+                + '<div class="fam-comm-content">'
+                + '<div class="fam-comm-header">'
+                + '<span class="fam-comm-sender">' + escHtml(m.sender_name) + '</span>'
+                + '<span class="fam-comm-role">' + roleLabel + '</span>'
+                + '<span class="fam-comm-time"><i class="bi bi-clock"></i> ' + timeStr + '</span>'
+                + '</div>'
+                + '<div class="fam-comm-body">' + escHtml(m.message) + '</div>'
+                + '</div></div>';
+        });
+        html += '</div>';
     });
 
     timeline.innerHTML = html;

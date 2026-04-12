@@ -183,6 +183,16 @@ function admin_famille_delete_photo()
     if (file_exists($path)) unlink($path);
 
     Db::exec("DELETE FROM $table WHERE id = ?", [$id]);
+
+    // If this was a gallery cover photo, replace with the next available photo
+    if ($type === 'galerie_photo') {
+        $album = Db::fetch("SELECT id FROM famille_galerie WHERE cover_photo_id = ?", [$id]);
+        if ($album) {
+            $next = Db::getOne("SELECT id FROM famille_galerie_photos WHERE galerie_id = ? ORDER BY ordre ASC LIMIT 1", [$album['id']]);
+            Db::exec("UPDATE famille_galerie SET cover_photo_id = ? WHERE id = ?", [$next, $album['id']]);
+        }
+    }
+
     respond(['success' => true, 'message' => 'Fichier supprimé']);
 }
 

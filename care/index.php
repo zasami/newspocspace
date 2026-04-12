@@ -299,12 +299,15 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   window.adminConfirm = function(opts = {}) {
       return new Promise(resolve => {
           const m = document.getElementById('ztConfirmModal');
-          document.getElementById('ztConfirmIcon').innerHTML = '<i class="bi ' + (opts.icon||'bi-question-circle') + '"></i>';
+          const iconEl = document.getElementById('ztConfirmIcon');
+          iconEl.innerHTML = '<i class="bi ' + (opts.icon||'bi-question-circle') + '"></i>';
+          if (opts.type === 'danger') { iconEl.style.background = '#f8dfda'; iconEl.style.color = '#7B3B2C'; }
+          else { iconEl.style.background = '#e6efe9'; iconEl.style.color = '#2d4a43'; }
           document.getElementById('ztConfirmTitle').textContent = opts.title || 'Confirmer';
           document.getElementById('ztConfirmText').innerHTML = opts.text || '';
           const okBtn = document.getElementById('ztConfirmOk');
-          okBtn.className = 'btn btn-sm btn-' + (opts.type === 'danger' ? 'danger' : 'primary');
-          okBtn.textContent = opts.okText || 'Confirmer';
+          okBtn.className = 'btn btn-sm ' + (opts.type === 'danger' ? 'btn-danger' : 'btn-primary');
+          okBtn.innerHTML = '<i class="bi ' + (opts.icon||'bi-check-lg') + '"></i> ' + (opts.okText || 'Confirmer');
           const modal = new bootstrap.Modal(m);
           const cleanup = () => { okBtn.removeEventListener('click', onOk); m.removeEventListener('hidden.bs.modal', onHide); };
           const onOk = () => { cleanup(); modal.hide(); resolve(true); };
@@ -324,16 +327,21 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 
 <!-- Confirm modal -->
 <div class="modal fade" id="ztConfirmModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content">
-      <div class="modal-body text-center py-4">
-        <div id="ztConfirmIcon" class="mb-3" style="font-size:2rem"></div>
-        <h6 id="ztConfirmTitle" class="fw-bold"></h6>
-        <p id="ztConfirmText" class="text-muted small mt-2"></p>
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+      <div class="modal-header" style="border-bottom:1px solid #f0ede8;padding:1rem 1.25rem">
+        <div class="d-flex align-items-center gap-3">
+          <div id="ztConfirmIcon" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;background:#f8dfda;color:#7B3B2C"></div>
+          <h6 id="ztConfirmTitle" class="fw-bold mb-0" style="font-size:.95rem"></h6>
+        </div>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e7eb" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:.8rem"></i></button>
       </div>
-      <div class="modal-footer justify-content-center border-0 pt-0">
-        <button class="btn btn-light btn-sm" id="ztConfirmCancel" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-sm" id="ztConfirmOk">Confirmer</button>
+      <div class="modal-body" style="padding:1.25rem">
+        <p id="ztConfirmText" class="text-muted mb-0" style="font-size:.9rem;line-height:1.5"></p>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #f0ede8;padding:.85rem 1.25rem;display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-sm btn-light" id="ztConfirmCancel" data-bs-dismiss="modal" style="border-radius:8px;padding:6px 18px">Annuler</button>
+        <button class="btn btn-sm" id="ztConfirmOk" style="border-radius:8px;padding:6px 18px;display:inline-flex;align-items:center;gap:6px"></button>
       </div>
     </div>
   </div>

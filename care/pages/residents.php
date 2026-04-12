@@ -321,7 +321,7 @@ $initResidents = Db::fetchAll(
         e.stopPropagation();
         const resId = document.getElementById('resEditId').value;
         if (!resId) return;
-        if (!confirm('Supprimer la photo ?')) return;
+        if (!await adminConfirm({ title: 'Supprimer la photo ?', text: 'Cette action est irréversible.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
 
         const res = await adminApiPost('admin_delete_resident_photo', { id: resId });
         if (res.success) {

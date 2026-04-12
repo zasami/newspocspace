@@ -467,14 +467,17 @@ body {
                     placeholder="Partagez votre expérience : la prise en charge, l'écoute, les soins, la vie au quotidien…"></textarea>
         </div>
 
-        <div style="text-align:center;margin-top:24px">
+        <div style="text-align:center;margin-top:24px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
           <button type="submit" class="lo-btn" id="loSubmitBtn">
             <i class="bi bi-send"></i> Publier mon témoignage
           </button>
-          <p style="font-size:.78rem;color:var(--lo-text-muted);margin-top:14px">
-            Votre témoignage sera publié après validation par notre équipe.
-          </p>
+          <button type="button" class="lo-btn" id="loDemoBtn" style="background:#7E57C2">
+            <i class="bi bi-magic"></i> Remplir pour la demo
+          </button>
         </div>
+        <p style="font-size:.78rem;color:var(--lo-text-muted);margin-top:14px;text-align:center">
+          Votre témoignage sera publié après validation par notre équipe.
+        </p>
       </form>
     </div>
   </div>
@@ -604,6 +607,80 @@ body {
       BTN.disabled = false;
       BTN.innerHTML = '<i class="bi bi-send"></i> Publier mon témoignage';
     }
+  });
+
+  // ── Demo auto-fill ──────────────────────────────
+  const DEMOS = [
+    {
+      nom: 'Marie-Claire D.', email: 'marie.d@exemple.ch', lien: 'Fille de Mme Dupont',
+      cible: 'personnel', note: 5, titre: 'Un personnel exceptionnel',
+      message: "Je tiens à remercier du fond du cœur toute l'équipe soignante pour la bienveillance dont ils font preuve chaque jour envers ma mère. Depuis son entrée à La Terrassière, je constate une réelle amélioration de son moral. Les infirmières prennent le temps d'écouter, de rassurer et de sourire. Ma mère parle souvent de « ses anges ». Merci infiniment."
+    },
+    {
+      nom: 'Jean-Pierre M.', email: 'jp.m@exemple.ch', lien: 'Fils de M. Martin',
+      cible: 'prise_en_charge', note: 5, titre: 'Prise en charge remarquable',
+      message: "Mon père souffre de la maladie d'Alzheimer depuis 4 ans. Quand nous avons dû nous résoudre au placement, c'était un déchirement. Aujourd'hui, je suis serein : l'équipe de La Terrassière adapte les soins à son rythme, respecte ses habitudes, et surtout, lui parle avec dignité. Les activités proposées le stimulent et il a retrouvé le sourire. Un grand merci."
+    },
+    {
+      nom: 'Isabelle R.', email: '', lien: 'Fille de Mme Rochat',
+      cible: 'ems', note: 4, titre: 'Un lieu de vie chaleureux',
+      message: "L'EMS La Terrassière est bien plus qu'un établissement de soins, c'est un vrai lieu de vie. Les espaces communs sont lumineux et agréables, le jardin est magnifique au printemps, et les animations du mercredi sont toujours attendues avec impatience par les résidents. Ma mère s'y sent chez elle. Nous sommes reconnaissants."
+    },
+    {
+      nom: 'Catherine B.', email: 'catherine.b@exemple.ch', lien: 'Épouse de M. Bernard',
+      cible: 'vie', note: 5, titre: 'Les animations redonnent le sourire',
+      message: "Mon mari a toujours été un homme actif et sociable. J'avais peur que le placement le coupe du monde. Quelle belle surprise de voir les activités proposées : musique le mardi, atelier peinture, sorties au parc, goûters avec les familles. Il me raconte ses journées avec enthousiasme. Merci à l'équipe d'animation pour leur créativité et leur énergie !"
+    },
+    {
+      nom: 'Philippe L.', email: '', lien: 'Fils de Mme Laurent',
+      cible: 'personnel', note: 5, titre: 'Merci pour votre humanité',
+      message: "Ma mère est entrée dans un état de grande fragilité. L'équipe a su l'accueillir avec une douceur extraordinaire. Chaque soignant connaît son prénom, ses goûts, ses petites habitudes. Ce n'est pas un détail, c'est ce qui fait toute la différence. Quand je viens la voir, elle est souriante et apaisée. Je ne pourrai jamais assez vous remercier."
+    },
+    {
+      nom: 'Anne-Sophie T.', email: 'as.t@exemple.ch', lien: 'Petite-fille de M. Terrier',
+      cible: 'prise_en_charge', note: 4, titre: 'Des soins adaptés et respectueux',
+      message: "Mon grand-père a des besoins médicaux complexes. L'infirmière cheffe a pris le temps de nous expliquer le plan de soins en détail. Chaque semaine, nous recevons un résumé de son état via l'espace famille. Cette transparence nous rassure énormément. Les médecins sont accessibles et à l'écoute. Un accompagnement exemplaire."
+    },
+    {
+      nom: 'Françoise G.', email: '', lien: 'Sœur de Mme Girard',
+      cible: 'ems', note: 5, titre: 'Comme à la maison',
+      message: "Quand on pousse la porte de La Terrassière, on sent tout de suite que c'est différent. L'ambiance est familiale, pas hospitalière. Les chambres sont personnalisées, la cuisine est faite maison (ma sœur adore le gratin du jeudi !), et le personnel connaît chaque résident par son nom. C'est rare et précieux."
+    },
+    {
+      nom: 'Patrick V.', email: 'p.v@exemple.ch', lien: 'Fils de M. Vaucher',
+      cible: 'personnel', note: 5, titre: 'Disponibilité et professionnalisme',
+      message: "J'habite en France et je ne peux pas venir souvent. Chaque fois que j'appelle, quelqu'un prend le temps de me donner des nouvelles détaillées de mon père. La dernière fois, une aide-soignante m'a même envoyé une photo de lui au jardin. Ces petites attentions comptent énormément pour les familles éloignées. Merci de tout cœur."
+    },
+    {
+      nom: 'Nicole K.', email: '', lien: 'Fille de Mme Keller',
+      cible: 'vie', note: 4, titre: 'Des activités pour tous les goûts',
+      message: "Ma mère est en fauteuil roulant et j'avais peur qu'elle soit exclue des animations. Au contraire, l'équipe adapte chaque activité : peinture avec chevalet incliné, jeux de mémoire en petit groupe, et même une sortie au marché de Noël avec un mini-bus adapté ! Elle se sent intégrée et valorisée."
+    },
+    {
+      nom: 'Alain S.', email: 'alain.s@exemple.ch', lien: 'Frère de M. Schneider',
+      cible: 'prise_en_charge', note: 5, titre: 'Un accompagnement de fin de vie digne',
+      message: "Mon frère nous a quittés le mois dernier à La Terrassière. Je voulais témoigner de la manière dont l'équipe l'a accompagné dans ses derniers jours : présence constante, douleur maîtrisée, respect de sa dignité et de nos souhaits familiaux. L'aumônier est également venu. Un immense merci pour avoir rendu ce moment aussi doux que possible."
+    },
+  ];
+
+  document.getElementById('loDemoBtn').addEventListener('click', () => {
+    const d = DEMOS[Math.floor(Math.random() * DEMOS.length)];
+    const f = FORM;
+    f.nom.value = d.nom;
+    f.email.value = d.email;
+    f.lien_resident.value = d.lien;
+    f.cible.value = d.cible;
+    f.titre.value = d.titre;
+    f.message.value = d.message;
+    const radio = document.getElementById('lo-star' + d.note);
+    if (radio) radio.checked = true;
+
+    // Scroll to form + highlight
+    f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const wrap = document.querySelector('.lo-form-wrap');
+    wrap.style.transition = 'box-shadow .3s';
+    wrap.style.boxShadow = '0 0 0 3px rgba(126,87,194,.35), 0 4px 14px rgba(126,87,194,.15)';
+    setTimeout(() => { wrap.style.boxShadow = ''; }, 1500);
   });
 
   loadTemoignages();

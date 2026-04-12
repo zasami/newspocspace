@@ -104,7 +104,7 @@ case 'famille_login':
 
     $resident = Db::fetch(
         "SELECT id, nom, prenom, chambre, etage, date_naissance, code_acces,
-                correspondant_nom, correspondant_prenom, correspondant_email, photo_url
+                correspondant_nom, correspondant_prenom, correspondant_email, photo_url, photo_path
          FROM residents
          WHERE correspondant_email = ? AND is_active = 1",
         [$email]
@@ -157,7 +157,9 @@ case 'famille_login':
             'etage' => $resident['etage'],
             'correspondant_nom' => $resident['correspondant_nom'],
             'correspondant_prenom' => $resident['correspondant_prenom'],
-            'photo_url' => $resident['photo_url'] ?? null,
+            'photo_url' => $resident['photo_path']
+                ? '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' . urlencode($resident['id'])
+                : ($resident['photo_url'] ?? null),
         ],
         'encryption_key' => $encKey ?: null,
         'key_password' => $encKey ? $keyPassword : null,
@@ -189,7 +191,7 @@ case 'famille_check_session':
             'prenom' => $session['resident_prenom'],
             'chambre' => $session['chambre'],
             'etage' => $session['etage'],
-            'photo_url' => $session['resident_photo'] ?? null,
+            'photo_url' => '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' . urlencode($session['resident_id']),
         ],
         'encryption_key' => $encKey ?: null,
         'key_password' => $encKey ? $csKeyPwd : null,
@@ -587,11 +589,16 @@ case 'submit_candidature':
                 throw new RuntimeException("Fichier {$vf['field']} rejeté : $sanitizeErr");
             }
 
-            // Couche 2 : VirusTotal hash-only. Ne bloque que sur "malicious".
-            // Quota dépassé / réseau indisponible → fallback silencieux sur couche 1.
-            $vt = VirusTotal::checkFile($destPath);
-            if ($vt['status'] === VirusTotal::STATUS_MALICIOUS) {
-                throw new RuntimeException("Fichier {$vf['field']} rejeté (antivirus) : {$vt['message']}");
+            // Couche 2 : VirusTotal hash-only (skip si quota dépassé ou timeout)
+            try {
+                $vt = VirusTotal::checkFile($destPath);
+                if ($vt['status'] === VirusTotal::STATUS_MALICIOUS) {
+                    throw new RuntimeException("Fichier {$vf['field']} rejeté (antivirus) : {$vt['message']}");
+                }
+            } catch (RuntimeException $e) {
+                throw $e; // re-throw malicious detection
+            } catch (Throwable $e) {
+                // VT timeout/network error → skip silently, couche 1 suffit
             }
 
             $finalSize = filesize($destPath) ?: $vf['file']['size'];

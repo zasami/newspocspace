@@ -466,7 +466,7 @@ $famResidents = Db::fetchAll(
     }
 
     async function doDeleteAct(id) {
-        if (!confirm('Supprimer cette activité et ses photos ?')) return;
+        if (!await adminConfirm({ title: 'Supprimer cette activité ?', text: 'L\'activité et toutes ses photos seront supprimées.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
         const res = await adminApiPost('admin_famille_delete_activite', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadActivites(); }
     }
@@ -576,7 +576,7 @@ $famResidents = Db::fetchAll(
     }
 
     async function doDeleteMed(id) {
-        if (!confirm('Supprimer cet avis médical et ses fichiers ?')) return;
+        if (!await adminConfirm({ title: 'Supprimer cet avis médical ?', text: 'L\'avis et tous ses fichiers joints seront supprimés.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
         const res = await adminApiPost('admin_famille_delete_medical', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadMedical(); }
     }
@@ -672,7 +672,7 @@ $famResidents = Db::fetchAll(
     }
 
     async function doDeleteAlb(id) {
-        if (!confirm('Supprimer cet album et toutes ses photos ?')) return;
+        if (!await adminConfirm({ title: 'Supprimer cet album ?', text: 'L\'album et toutes ses photos seront définitivement supprimés.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
         const res = await adminApiPost('admin_famille_delete_album', { id });
         if (res.success) { showToast('Supprimé', 'success'); loadGalerie(); }
     }
@@ -820,7 +820,7 @@ $famResidents = Db::fetchAll(
         body.querySelectorAll('[data-gal-del]').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (!confirm('Supprimer cette photo ?')) return;
+                if (!await adminConfirm({ title: 'Supprimer cette photo ?', text: 'Cette action est irréversible.', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' })) return;
                 const r = await adminApiPost('admin_famille_delete_photo', { id: btn.dataset.galDel, type: 'galerie_photo' });
                 if (r.success) {
                     showToast('Photo supprimée', 'success');
