@@ -115,14 +115,19 @@ function admin_upload_resident_photo()
     require_responsable();
 
     $residentId = $_POST['resident_id'] ?? '';
-    $encryptedIv = $_POST['encrypted_iv'] ?? '';
-
-    if (!$residentId || !$encryptedIv) bad_request('Paramètres manquants');
+    if (!$residentId) bad_request('ID résident requis');
 
     $resident = Db::fetch("SELECT id, photo_path FROM residents WHERE id = ?", [$residentId]);
     if (!$resident) not_found('Résident introuvable');
 
     if (empty($_FILES['file'])) bad_request('Aucun fichier');
+
+    // Validate image
+    $tmp = $_FILES['file']['tmp_name'];
+    $mime = mime_content_type($tmp);
+    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) {
+        bad_request('Format image non supporté');
+    }
 
     // Delete old photo if exists
     if ($resident['photo_path']) {
@@ -130,18 +135,29 @@ function admin_upload_resident_photo()
         if (file_exists($oldPath)) unlink($oldPath);
     }
 
-    $dir = 'uploads/famille/' . $residentId;
+    $dir = 'uploads/residents/' . $residentId;
     $absDir = __DIR__ . '/../../' . $dir;
     if (!is_dir($absDir)) mkdir($absDir, 0755, true);
 
-    $storedName = 'photo_' . Uuid::v4() . '.enc';
+    // Convert to webp server-side for consistency
+    $storedName = 'photo_' . Uuid::v4() . '.webp';
     $destPath = $dir . '/' . $storedName;
+    $absDest = $absDir . '/' . $storedName;
 
-    move_uploaded_file($_FILES['file']['tmp_name'], $absDir . '/' . $storedName);
+    $img = @imagecreatefromstring(file_get_contents($tmp));
+    if (!$img) {
+        // Fallback: save raw file
+        $storedName = 'photo_' . Uuid::v4() . '.' . pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
+        $destPath = $dir . '/' . $storedName;
+        move_uploaded_file($tmp, $absDir . '/' . $storedName);
+    } else {
+        imagewebp($img, $absDest, 85);
+        imagedestroy($img);
+    }
 
     Db::exec(
-        "UPDATE residents SET photo_path = ?, photo_iv = ?, updated_at = NOW() WHERE id = ?",
-        [$destPath, $encryptedIv, $residentId]
+        "UPDATE residents SET photo_path = ?, photo_iv = NULL, updated_at = NOW() WHERE id = ?",
+        [$destPath, $residentId]
     );
 
     respond(['success' => true, 'message' => 'Photo enregistrée']);
@@ -159,9 +175,10 @@ function admin_serve_resident_photo()
     $absPath = __DIR__ . '/../../' . $resident['photo_path'];
     if (!file_exists($absPath)) not_found('Fichier introuvable');
 
-    header('Content-Type: application/octet-stream');
+    $mime = mime_content_type($absPath) ?: 'image/webp';
+    header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($absPath));
-    header('Cache-Control: no-store');
+    header('Cache-Control: private, max-age=3600');
     readfile($absPath);
     exit;
 }

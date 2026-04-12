@@ -47,7 +47,7 @@ function renderNotifications(notifs) {
     container.innerHTML = notifs.map(n => {
         const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.general;
         const timeAgo = formatTimeAgo(n.created_at);
-        return `<div class="notif-item ${n.is_read == 0 ? 'unread' : ''}" data-id="${n.id}" data-link="${escapeHtml(n.link || '')}" data-type="${escapeHtml(n.type || '')}" data-title="${escapeHtml(n.title || '')}" data-message="${escapeHtml(n.message || '')}">
+        return `<div class="notif-item ${n.is_read == 0 ? 'unread' : ''}" data-id="${n.id}" data-notif-link="${escapeHtml(n.link || '')}" data-type="${escapeHtml(n.type || '')}" data-title="${escapeHtml(n.title || '')}" data-message="${escapeHtml(n.message || '')}">
             <div class="notif-icon" style="background:${cfg.bg};color:${cfg.color}"><i class="bi ${cfg.icon}"></i></div>
             <div style="flex:1;min-width:0">
                 <div class="notif-title">${escapeHtml(n.title)}</div>
@@ -58,9 +58,10 @@ function renderNotifications(notifs) {
     }).join('');
 
     container.querySelectorAll('.notif-item').forEach(el => {
-        el.addEventListener('click', async () => {
+        el.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Empêcher setupLinks de capter data-link
             const id = el.dataset.id;
-            const link = el.dataset.link;
+            const link = el.dataset.notifLink;
             const type = el.dataset.type;
             if (el.classList.contains('unread')) {
                 await apiPost('mark_notification_read', { id });
@@ -73,8 +74,22 @@ function renderNotifications(notifs) {
                 return;
             }
             if (link) {
-                const { loadPage } = await import('../app.js');
-                loadPage(link);
+                const { navigateTo } = await import('../app.js');
+                // Parse link: "documents?highlight=id" → pageId + query params
+                const [pageId, qs] = link.split('?');
+                if (qs) {
+                    const params = new URLSearchParams(qs);
+                    const slug = params.get('slug') || '';
+                    // Push all params into the URL so loadPage can read them
+                    const url = '/spocspace/' + pageId + (qs ? '?' + qs : '');
+                    history.pushState({}, '', url);
+                    const { loadPage } = await import('../app.js');
+                    const p = {};
+                    for (const [k, v] of params) p[k] = v;
+                    loadPage(pageId, p);
+                } else {
+                    navigateTo(pageId);
+                }
             }
         });
     });
@@ -116,41 +131,48 @@ function showAlertNotifModal(el) {
     const title = el.dataset.title || 'Alerte';
     const message = el.dataset.message || '';
     const isRead = !el.classList.contains('unread');
+    const time = el.querySelector('.notif-time')?.textContent || '';
 
     // Remove existing modal if any
     document.getElementById('notifAlertModal')?.remove();
 
-    const modal = document.createElement('div');
-    modal.id = 'notifAlertModal';
-    modal.innerHTML = `
-        <div style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);">
-            <div style="background:#fff;border-radius:16px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;">
-                <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:.75rem;">
-                    <div style="width:40px;height:40px;border-radius:50%;background:#E2B8AE;color:#7B3B2C;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
-                        <i class="bi bi-megaphone"></i>
-                    </div>
-                    <h6 style="margin:0;font-weight:600;flex:1;">${escapeHtml(title)}</h6>
-                    <button id="notifAlertClose" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-x-lg" style="font-size:.8rem;"></i>
-                    </button>
+    const overlay = document.createElement('div');
+    overlay.id = 'notifAlertModal';
+    overlay.className = 'ss-alert-overlay';
+    overlay.innerHTML = `
+        <div class="ss-alert-modal">
+            <div class="ss-alert-header">
+                <div class="ss-alert-header-icon ss-alert-header-icon--danger">
+                    <i class="bi bi-megaphone-fill"></i>
                 </div>
-                <div style="padding:1.5rem;">
-                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:1rem;font-size:.9rem;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>
-                    ${isRead ? '<div style="margin-top:1rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#2d4a43;"><i class="bi bi-check-circle-fill"></i> Vous avez déjà pris connaissance de cette alerte</div>' : ''}
+                <div>
+                    <h5 class="ss-alert-title">${escapeHtml(title)}</h5>
+                    <span class="ss-alert-meta">${escapeHtml(time)}</span>
                 </div>
-                <div style="padding:.75rem 1.5rem;border-top:1px solid #e5e7eb;text-align:right;">
-                    <button id="notifAlertOk" style="padding:.4rem 1.25rem;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:.85rem;font-weight:500;cursor:pointer;">Fermer</button>
+            </div>
+            <div class="ss-alert-content">
+                <div class="ss-alert-message">
+                    <i class="bi bi-info-circle ss-alert-message-icon"></i>
+                    <div class="ss-alert-message-text">${escapeHtml(message)}</div>
                 </div>
+                ${isRead ? '<div style="margin-top:1rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#2d4a43;"><i class="bi bi-check-circle-fill"></i> Vous avez déjà pris connaissance de cette alerte</div>' : ''}
+            </div>
+            <div class="ss-alert-footer">
+                <button class="ss-alert-btn" id="notifAlertOk"><i class="bi bi-check-lg"></i> Fermer</button>
             </div>
         </div>`;
 
-    document.body.appendChild(modal);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
 
-    const close = () => modal.remove();
-    modal.querySelector('#notifAlertClose').addEventListener('click', close);
-    modal.querySelector('#notifAlertOk').addEventListener('click', close);
-    modal.querySelector('div').addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) close();
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+    }
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#notifAlertOk').addEventListener('click', close);
+    document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
     });
 }
 

@@ -311,7 +311,7 @@ function setupSearch() {
         for (const [type, items] of Object.entries(groups)) {
             html += `<div style="font-size:.7rem;color:#999;padding:4px 10px;font-weight:600">${typeLabels[type]||type}</div>`;
             items.forEach(r => {
-                html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
+                html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
             });
         }
         panel.innerHTML = html;
@@ -364,14 +364,72 @@ function setupSearch() {
             closePanel();
             const page = result.dataset.page;
             const id = result.dataset.id;
-            if (page && typeof window.loadPage === 'function') window.loadPage(page, id ? { id } : undefined);
+            const type = result.dataset.type || '';
+            if (!page) return;
+
+            // Annonces: pas de page SPA dédiée → ouvrir en modal
+            if (type === 'annonce' && id) {
+                openAnnonceModal(id);
+                return;
+            }
+            // Documents: passer l'id en highlight pour scroll + surbrillance
+            if (page === 'documents' && id) {
+                loadPage('documents', { highlight: id });
+                return;
+            }
+            if (typeof window.loadPage === 'function') window.loadPage(page, id ? { id } : undefined);
         }
     });
 
     document.addEventListener('click', (e) => { if (!e.target.closest('.fe-topbar-search')) closePanel(); });
 }
 
-// Old runSearch and getColleagues removed — replaced by global_search API in setupSearch()
+// ── Annonce modal from global search ──
+async function openAnnonceModal(id) {
+    const { apiPost } = await import('./helpers.js');
+    const res = await apiPost('get_annonce_detail', { id });
+    if (!res.success || !res.annonce) return;
+    const a = res.annonce;
+
+    document.getElementById('ssAnnonceModal')?.remove();
+    const catIcons = {direction:'building',rh:'person-badge',vie_sociale:'balloon-heart',cuisine:'egg-fried',protocoles:'heart-pulse',securite:'shield-check',divers:'info-circle'};
+    const icon = catIcons[a.categorie] || 'megaphone';
+    const auteur = [a.auteur_prenom, a.auteur_nom].filter(Boolean).join(' ') || 'Administration';
+    const date = new Date(a.created_at).toLocaleDateString('fr-CH', { day:'numeric', month:'long', year:'numeric' });
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ssAnnonceModal';
+    overlay.className = 'ss-alert-overlay';
+    overlay.innerHTML = `
+        <div class="ss-alert-modal" style="max-width:640px">
+            <div class="ss-alert-header">
+                <div class="ss-alert-header-icon"><i class="bi bi-${escapeHtml(icon)}"></i></div>
+                <div style="flex:1;min-width:0">
+                    <h5 class="ss-alert-title">${escapeHtml(a.titre)}</h5>
+                    <span class="ss-alert-meta">${escapeHtml(auteur)} · ${date}</span>
+                </div>
+            </div>
+            <div class="ss-alert-content" style="max-height:60vh;overflow-y:auto">
+                ${a.description ? '<div style="font-size:.9rem;line-height:1.65;color:#374151">' + a.description + '</div>' : ''}
+            </div>
+            <div class="ss-alert-footer">
+                <button class="ss-alert-btn" id="ssAnnonceClose"><i class="bi bi-check-lg"></i> Fermer</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 300);
+    }
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#ssAnnonceClose').addEventListener('click', close);
+    document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+    });
+}
 
 function escapeHtml(str) {
     const d = document.createElement('div');

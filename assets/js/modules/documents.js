@@ -288,7 +288,7 @@ function viewDoc(url, mime, titre) {
     }, sig);
 }
 
-export async function init() {
+export async function init(pageId, params = {}) {
     // Use global topbar search
     document.getElementById('feSearchInput')?.addEventListener('input', () => {
         clearTimeout(searchTimeout);
@@ -303,6 +303,19 @@ export async function init() {
         await loadServices();
     }
     await loadDocuments();
+
+    // Highlight a specific document (from notification click)
+    const highlightId = params.highlight || new URLSearchParams(window.location.search).get('highlight');
+    if (highlightId) {
+        const card = document.querySelector(`.doc-card[data-id="${CSS.escape(highlightId)}"]`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.style.outline = '2px solid var(--ss-teal, #2a9d8f)';
+            card.style.outlineOffset = '3px';
+            card.style.transition = 'outline-color 2s ease';
+            setTimeout(() => { card.style.outlineColor = 'transparent'; }, 3000);
+        }
+    }
 }
 
 export function destroy() {

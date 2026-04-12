@@ -40,6 +40,7 @@ $sidebarNav = [
         'label' => 'Navigation',
         'items' => [
             'home'        => ['label' => 'Accueil',        'icon' => 'house'],
+            'profile'     => ['label' => 'Mon profil',    'icon' => 'person-circle'],
             'planning'    => ['label' => 'Planning',       'icon' => 'calendar3'],
             'repartition' => ['label' => 'Répartition',    'icon' => 'grid-3x3-gap'],
             'desirs'      => ['label' => 'Mes Désirs',     'icon' => 'star'],

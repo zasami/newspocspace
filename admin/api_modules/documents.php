@@ -163,7 +163,7 @@ function admin_upload_document()
         foreach ($activeUsers as $u) {
             if ($u['id'] !== $admin['id']) {
                 Notification::create($u['id'], 'document_ajoute', 'Nouveau document',
-                    "Le document « $titre » a été ajouté.", 'documents');
+                    "Le document « $titre » a été ajouté.", 'documents?highlight=' . $id);
             }
         }
     }

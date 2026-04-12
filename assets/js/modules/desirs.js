@@ -340,14 +340,14 @@ function showDesirDetails(date = null) {
         panel.style.display = 'none';
         return;
     }
-    panel.style.display = 'block';
-    panel.innerHTML = `
+    panel.style.display = '';
+    const body = panel;
+    body.innerHTML = `
         <strong>Détails pour ${selectedDate}</strong>
         <ul style="padding-left:.9rem; margin: .3rem 0 0;">
             ${items.map(d => `<li>${d.type.replace('_', ' ')} ${d.horaire_code ? `(${escapeHtml(d.horaire_code)})` : ''} — ${statusBadge(d.statut)}</li>`).join('')}
         </ul>
     `;
-    // Scroll to detail panel and briefly highlight it
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     panel.classList.remove('desir-detail-pulse');
     // Force reflow to restart animation

@@ -573,9 +573,13 @@ $desirsPermanents = array_map(function($p) use ($_desirsPendingIds) {
   </div>
 
   <!-- Right panel: liste du mois + permanents -->
-  <div class="card" style="flex:1; min-width:300px;">
+  <div style="flex:1; min-width:300px; display:flex; flex-direction:column; gap:0;">
+    <div class="card">
     <div class="card-header">
       <h3 id="desirsListTitle">Désirs du mois</h3>
+    </div>
+    <!-- Détail du désir sélectionné -->
+    <div id="desirDetailPanel" style="display:none;padding:.85rem 1.1rem;font-size:.9rem;color:#2c2c2c;background:#faf7f0;border-bottom:1px solid var(--ss-border-light,#e8e4da);border-left:3px solid var(--ss-teal,#2a9d8f);">
     </div>
     <div class="card-body" style="padding:0;">
       <div class="table-wrap">
@@ -619,10 +623,8 @@ $desirsPermanents = array_map(function($p) use ($_desirsPendingIds) {
         </table>
       </div>
     </div>
-    <div class="card-footer" style="background:#f7f5f2;border-top:1px solid #e8e5e0;">
-      <div id="desirDetailPanel" style="display:none; font-size:0.9rem; color:#2c2c2c;"></div>
-    </div>
-  </div>
+    </div><!-- /.card -->
+  </div><!-- /flex wrapper -->
 </div>
 
 <!-- ═══ Modal confirmation suppression ═══ -->

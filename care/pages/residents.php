@@ -140,70 +140,25 @@ $initResidents = Db::fetchAll(
   </div>
 </div>
 
-<script<?= nonce() ?> src="/spocspace/website/assets/js/famille-crypto.js"></script>
 <script<?= nonce() ?>>
 (function() {
     const ssrResidents = <?= json_encode(array_values($initResidents), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
     let allResidents = ssrResidents;
     let modal = null;
-    let aesKey = null;
     let currentEditResident = null;
     const modalEl = document.getElementById('resModal');
     if (modalEl) modal = new bootstrap.Modal(modalEl);
 
     const tbody = document.getElementById('resTableBody');
 
-    // Photo blob URL cache: { residentId: blobUrl }
-    const photoCache = {};
-
     document.getElementById('resVip')?.addEventListener('change', (e) => {
         document.getElementById('resMenuSpecialWrap').style.display = e.target.checked ? 'block' : 'none';
     });
 
-    // ── Get AES key for a resident ──
-    async function getAesKeyForResident(r) {
-        let pwd = r.code_acces;
-        if (!pwd && r.date_naissance) {
-            const dt = new Date(r.date_naissance + 'T00:00:00');
-            pwd = String(dt.getDate()).padStart(2,'0') + String(dt.getMonth()+1).padStart(2,'0') + dt.getFullYear();
-        }
-        if (!pwd) return null;
-
-        const res = await adminApiPost('admin_famille_get_key', { resident_id: r.id });
-        if (!res.key) return null;
-
-        try {
-            return await FamilleCrypto.unwrapKey(res.key.encrypted_key, res.key.salt, res.key.iv, pwd);
-        } catch(e) {
-            return null;
-        }
-    }
-
-    // ── Decrypt and display a resident photo ──
-    async function decryptPhoto(r, imgEl) {
-        if (!r.photo_path || !r.photo_iv) return;
-
-        // Check cache
-        if (photoCache[r.id]) {
-            imgEl.src = photoCache[r.id];
-            return;
-        }
-
-        try {
-            const key = await getAesKeyForResident(r);
-            if (!key) return;
-
-            const url = '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id);
-            const resp = await fetch(url, { credentials: 'same-origin' });
-            if (!resp.ok) return;
-            const encrypted = await resp.arrayBuffer();
-            const decrypted = await FamilleCrypto.decryptFile(key, encrypted, r.photo_iv);
-            const blobUrl = FamilleCrypto.createBlobUrl(decrypted, 'image/webp');
-            photoCache[r.id] = blobUrl;
-            imgEl.src = blobUrl;
-        } catch(e) {
-            // silently fail — show initials
-        }
+    // ── Photo URL helper (plain, no encryption) ──
+    function photoUrl(r) {
+        if (!r.photo_path) return null;
+        return '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id) + '&t=' + (r.updated_at || Date.now());
     }
 
     // ── Render table ──
@@ -222,15 +177,12 @@ $initResidents = Db::fetchAll(
 
             const initials = ((r.prenom?.[0] || '') + (r.nom?.[0] || '')).toUpperCase();
             const corrName = [r.correspondant_prenom, r.correspondant_nom].filter(Boolean).join(' ');
-
-            const photoSrc = r.photo_url || null;
-            const hasEncPhoto = r.photo_path && r.photo_iv;
-            const avatarId = 'av_' + r.id.replace(/-/g, '');
+            const pUrl = photoUrl(r);
 
             tr.innerHTML =
-                '<td>' + (photoSrc
-                    ? '<img class="res-avatar" src="' + escapeHtml(photoSrc) + '" alt="">'
-                    : '<div class="' + (hasEncPhoto ? 'res-avatar' : 'res-avatar-initials') + '" id="' + avatarId + '">' + (hasEncPhoto ? '' : escapeHtml(initials)) + '</div>') + '</td>' +
+                '<td>' + (pUrl
+                    ? '<img class="res-avatar" src="' + escapeHtml(pUrl) + '" alt="" onerror="this.style.display=\'none\'">'
+                    : '<div class="res-avatar-initials">' + escapeHtml(initials) + '</div>') + '</td>' +
                 '<td><strong>' + escapeHtml(r.nom) + '</strong></td>' +
                 '<td>' + escapeHtml(r.prenom) + '</td>' +
                 '<td>' + escapeHtml(r.chambre || '-') + '</td>' +
@@ -260,21 +212,6 @@ $initResidents = Db::fetchAll(
             actionTd.appendChild(toggleBtn);
 
             tbody.appendChild(tr);
-
-            // Lazy decrypt E2EE photo (only if no direct photo_url)
-            if (hasEncPhoto && !photoSrc) {
-                const avatarEl = document.getElementById(avatarId);
-                if (avatarEl) {
-                    const img = document.createElement('img');
-                    img.className = 'res-avatar';
-                    img.alt = '';
-                    decryptPhoto(r, img).then(() => {
-                        if (img.src) {
-                            avatarEl.replaceWith(img);
-                        }
-                    });
-                }
-            }
         });
     }
 
@@ -309,31 +246,18 @@ $initResidents = Db::fetchAll(
         const zone = document.getElementById('resPhotoZone');
         const placeholder = document.getElementById('resPhotoPlaceholder');
         const delBtn = document.getElementById('resPhotoDel');
-        // Reset
         zone.querySelectorAll('img').forEach(i => i.remove());
         placeholder.style.display = '';
         delBtn.style.display = 'none';
 
-        if (r && r.photo_url) {
+        const pUrl = photoUrl(r);
+        if (r && pUrl) {
             const img = document.createElement('img');
-            img.src = r.photo_url;
+            img.src = pUrl;
+            img.onerror = () => img.remove();
             zone.insertBefore(img, zone.firstChild);
             placeholder.style.display = 'none';
             delBtn.style.display = '';
-        } else if (r && r.photo_path && photoCache[r.id]) {
-            const img = document.createElement('img');
-            img.src = photoCache[r.id];
-            zone.insertBefore(img, zone.firstChild);
-            placeholder.style.display = 'none';
-            delBtn.style.display = '';
-        } else if (r && r.photo_path && r.photo_iv) {
-            // Decrypt for modal
-            const img = document.createElement('img');
-            zone.insertBefore(img, zone.firstChild);
-            placeholder.style.display = 'none';
-            decryptPhoto(r, img).then(() => {
-                if (img.src) delBtn.style.display = '';
-            });
         }
 
         modal?.show();
@@ -341,7 +265,7 @@ $initResidents = Db::fetchAll(
 
     document.getElementById('resAddBtn')?.addEventListener('click', () => openEdit(null));
 
-    // ── Photo upload (click zone) ──
+    // ── Photo upload (click zone) — plain upload, no E2EE ──
     document.getElementById('resPhotoZone')?.addEventListener('click', (e) => {
         if (e.target.closest('.res-photo-del')) return;
         const resId = document.getElementById('resEditId').value;
@@ -357,22 +281,9 @@ $initResidents = Db::fetchAll(
             const r = currentEditResident;
             if (!r) return;
 
-            const key = await getAesKeyForResident(r);
-            if (!key) {
-                showToast('Clé E2EE non disponible. Générez-la dans Espace Famille.', 'error');
-                return;
-            }
-
-            // Convert to webp
-            const webpFile = await convertToWebp(file);
-            const buf = await webpFile.arrayBuffer();
-            const encrypted = await FamilleCrypto.encryptFile(key, buf);
-
-            const blob = new Blob([encrypted.data]);
             const fd = new FormData();
             fd.append('action', 'admin_upload_resident_photo');
-            fd.append('file', blob, 'photo.enc');
-            fd.append('encrypted_iv', encrypted.iv);
+            fd.append('file', file);
             fd.append('resident_id', resId);
 
             const csrfToken = (window.__SS_ADMIN__?.csrfToken || '');
@@ -384,24 +295,20 @@ $initResidents = Db::fetchAll(
             const res = await resp.json();
 
             if (res.success) {
-                // Update cache
-                delete photoCache[r.id];
                 r.photo_path = 'set';
-                r.photo_iv = encrypted.iv;
-                const blobUrl = FamilleCrypto.createBlobUrl(buf, 'image/webp');
-                photoCache[r.id] = blobUrl;
+                r.photo_iv = null;
 
                 // Update modal preview
                 const zone = document.getElementById('resPhotoZone');
                 zone.querySelectorAll('img').forEach(i => i.remove());
                 const img = document.createElement('img');
-                img.src = blobUrl;
+                img.src = photoUrl(r);
                 zone.insertBefore(img, zone.firstChild);
                 document.getElementById('resPhotoPlaceholder').style.display = 'none';
                 document.getElementById('resPhotoDel').style.display = '';
 
                 showToast('Photo enregistrée', 'success');
-                load(); // refresh list
+                load();
             } else {
                 showToast(res.message || 'Erreur', 'error');
             }
@@ -418,7 +325,6 @@ $initResidents = Db::fetchAll(
 
         const res = await adminApiPost('admin_delete_resident_photo', { id: resId });
         if (res.success) {
-            delete photoCache[resId];
             const zone = document.getElementById('resPhotoZone');
             zone.querySelectorAll('img').forEach(i => i.remove());
             document.getElementById('resPhotoPlaceholder').style.display = '';
@@ -431,28 +337,6 @@ $initResidents = Db::fetchAll(
             load();
         }
     });
-
-    // ── WebP conversion ──
-    function convertToWebp(file) {
-        return new Promise((resolve) => {
-            if (file.type === 'image/webp' || !file.type.startsWith('image/')) { resolve(file); return; }
-            const img = new Image();
-            const url = URL.createObjectURL(file);
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                canvas.getContext('2d').drawImage(img, 0, 0);
-                canvas.toBlob((blob) => {
-                    URL.revokeObjectURL(url);
-                    if (!blob) { resolve(file); return; }
-                    resolve(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' }));
-                }, 'image/webp', 0.85);
-            };
-            img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-            img.src = url;
-        });
-    }
 
     // ── Save ──
     document.getElementById('resSaveBtn')?.addEventListener('click', async () => {
