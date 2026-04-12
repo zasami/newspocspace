@@ -32,6 +32,12 @@ $etabResponsables = Db::fetchAll(
 
 $etabGeoPays    = Db::fetchAll("SELECT code, nom FROM geo_pays ORDER BY sort_order");
 $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions ORDER BY pays_code, sort_order");
+
+// Users par rôle pour les sections Direction / Infirmière chef
+$directionUsers = Db::fetchAll("SELECT id, prenom, nom, email, telephone, photo FROM users WHERE is_active = 1 AND role = 'direction' ORDER BY nom, prenom");
+$responsableUsers = Db::fetchAll("SELECT id, prenom, nom, email, telephone, photo FROM users WHERE is_active = 1 AND role = 'responsable' ORDER BY nom, prenom");
+$infChefId = $etabConfig['infirmiere_chef_user_id'] ?? '';
+$infChefUser = $infChefId ? Db::fetch("SELECT id, prenom, nom, email, telephone FROM users WHERE id = ? AND is_active = 1", [$infChefId]) : null;
 ?>
 <style>
 .feature-toggle-card{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;border:1px solid var(--ss-border-light,#e5e7eb);border-radius:8px;background:var(--ss-bg-card,#fff);transition:border-color .2s,box-shadow .2s}
@@ -155,25 +161,36 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
     </div>
   </div>
 
-  <!-- Direction -->
+  <!-- Direction (auto depuis les users avec rôle direction) -->
   <div class="form-section">
     <div class="form-section-title"><i class="bi bi-person-badge"></i> Direction</div>
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label">Directeur/trice — Prénom</label>
-        <input type="text" class="form-control cfg" data-key="directeur_prenom">
+    <?php if (empty($directionUsers)): ?>
+      <p class="text-muted small">Aucun collaborateur avec le rôle « direction ». Attribuez ce rôle dans la page <a href="<?= admin_url('users') ?>">Collaborateurs</a>.</p>
+    <?php else: ?>
+      <div class="d-flex flex-wrap gap-3">
+        <?php foreach ($directionUsers as $du): ?>
+        <div class="d-flex align-items-center gap-3 p-3" style="background:var(--cl-bg,#f9fafb);border:1px solid var(--cl-border-light,#f0ede8);border-radius:12px;min-width:280px;flex:1;max-width:400px">
+          <div style="width:48px;height:48px;border-radius:12px;background:#bcd2cb;color:#2d4a43;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0">
+            <?= h(mb_substr($du['prenom'],0,1) . mb_substr($du['nom'],0,1)) ?>
+          </div>
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:.95rem"><?= h($du['prenom'] . ' ' . $du['nom']) ?></div>
+            <div style="font-size:.78rem;color:var(--cl-text-muted,#999)">Directeur/trice</div>
+            <?php if ($du['email']): ?><div style="font-size:.78rem;color:var(--cl-text-muted,#999)"><i class="bi bi-envelope"></i> <?= h($du['email']) ?></div><?php endif; ?>
+            <?php if ($du['telephone']): ?><div style="font-size:.78rem;color:var(--cl-text-muted,#999)"><i class="bi bi-telephone"></i> <?= h($du['telephone']) ?></div><?php endif; ?>
+          </div>
+        </div>
+        <?php endforeach; ?>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Nom</label>
-        <input type="text" class="form-control cfg" data-key="directeur_nom">
+    <?php endif; ?>
+    <div class="row g-3 mt-2">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Email de fonction (optionnel)</label>
+        <input type="email" class="form-control form-control-sm cfg" data-key="directeur_email" placeholder="direction@laterrassiere.ch">
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-control cfg" data-key="directeur_email">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Téléphone</label>
-        <input type="tel" class="form-control cfg" data-key="directeur_telephone">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Téléphone de fonction (optionnel)</label>
+        <input type="tel" class="form-control form-control-sm cfg" data-key="directeur_telephone" placeholder="+41 22 ...">
       </div>
     </div>
   </div>
@@ -181,22 +198,40 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
   <!-- Infirmière chef -->
   <div class="form-section">
     <div class="form-section-title"><i class="bi bi-heart-pulse"></i> Infirmier/ère chef</div>
+    <?php if ($infChefUser): ?>
+      <div class="d-flex flex-wrap gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3 p-3" style="background:var(--cl-bg,#f9fafb);border:1px solid var(--cl-border-light,#f0ede8);border-radius:12px;min-width:280px;flex:1;max-width:400px">
+          <div style="width:48px;height:48px;border-radius:12px;background:#B8C9D4;color:#3B4F6B;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0">
+            <?= h(mb_substr($infChefUser['prenom'],0,1) . mb_substr($infChefUser['nom'],0,1)) ?>
+          </div>
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:.95rem"><?= h($infChefUser['prenom'] . ' ' . $infChefUser['nom']) ?></div>
+            <div style="font-size:.78rem;color:var(--cl-text-muted,#999)">Infirmier/ère chef</div>
+            <?php if ($infChefUser['email']): ?><div style="font-size:.78rem;color:var(--cl-text-muted,#999)"><i class="bi bi-envelope"></i> <?= h($infChefUser['email']) ?></div><?php endif; ?>
+            <?php if ($infChefUser['telephone']): ?><div style="font-size:.78rem;color:var(--cl-text-muted,#999)"><i class="bi bi-telephone"></i> <?= h($infChefUser['telephone']) ?></div><?php endif; ?>
+          </div>
+        </div>
+      </div>
+    <?php endif; ?>
     <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label">Prénom</label>
-        <input type="text" class="form-control cfg" data-key="infirmiere_chef_prenom">
+      <div class="col-md-6">
+        <label class="form-label">Désigner l'infirmier/ère chef</label>
+        <select class="form-control cfg" data-key="infirmiere_chef_user_id">
+          <option value="">— Non désigné(e) —</option>
+          <?php foreach ($responsableUsers as $ru): ?>
+          <option value="<?= h($ru['id']) ?>"><?= h($ru['prenom'] . ' ' . $ru['nom']) ?></option>
+          <?php endforeach; ?>
+        </select>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Nom</label>
-        <input type="text" class="form-control cfg" data-key="infirmiere_chef_nom">
+    </div>
+    <div class="row g-3 mt-2">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Email de fonction (optionnel)</label>
+        <input type="email" class="form-control form-control-sm cfg" data-key="infirmiere_chef_email">
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-control cfg" data-key="infirmiere_chef_email">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Téléphone</label>
-        <input type="tel" class="form-control cfg" data-key="infirmiere_chef_telephone">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Téléphone de fonction (optionnel)</label>
+        <input type="tel" class="form-control form-control-sm cfg" data-key="infirmiere_chef_telephone">
       </div>
     </div>
   </div>
@@ -205,17 +240,13 @@ $etabGeoRegions = Db::fetchAll("SELECT id, pays_code, code, nom FROM geo_regions
   <div class="form-section">
     <div class="form-section-title"><i class="bi bi-briefcase"></i> Responsable RH</div>
     <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label">Prénom</label>
-        <input type="text" class="form-control cfg" data-key="responsable_rh_prenom">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Email de fonction (optionnel)</label>
+        <input type="email" class="form-control form-control-sm cfg" data-key="responsable_rh_email">
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Nom</label>
-        <input type="text" class="form-control cfg" data-key="responsable_rh_nom">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-control cfg" data-key="responsable_rh_email">
+      <div class="col-md-6">
+        <label class="form-label small text-muted">Téléphone de fonction (optionnel)</label>
+        <input type="tel" class="form-control form-control-sm cfg" data-key="responsable_rh_telephone">
       </div>
     </div>
   </div>

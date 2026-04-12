@@ -58,6 +58,12 @@ function famille_rate_reset(): void {
 
 switch ($action) {
 
+// ── Demo unlock (rate limit reset) ─────────────────────────────────────────
+case 'famille_demo_unlock':
+    famille_rate_reset();
+    respond(['success' => true, 'message' => 'Rate limit réinitialisé']);
+    break;
+
 // ── Menus publics ───────────────────────────────────────────────────────────
 
 case 'get_menus_semaine':

@@ -3,6 +3,7 @@ return [
     'auth' => [
         'login', 'logout', 'me', 'request_reset', 'reset_password',
         'update_profile', 'update_password', 'upload_avatar',
+        'demo_unlock_rate_limit',
     ],
     'sync' => [
         'sync_delta',
@@ -47,6 +48,7 @@ return [
     'notifications' => [
         'get_notifications', 'get_notifications_count',
         'mark_notification_read', 'mark_all_notifications_read',
+        'get_poll_data',
     ],
     'changements' => [
         'get_collegues', 'get_mes_changements', 'get_collegues_planning', 'submit_changement',
@@ -76,7 +78,7 @@ return [
     'wiki' => [
         'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
         'toggle_wiki_favori', 'log_wiki_search',
-        'get_annonces_list', 'get_annonce_detail', 'ack_annonce',
+        'get_annonces_list', 'get_annonce_detail', 'ack_annonce', 'get_annonces_pending_ack_count',
     ],
     'mur' => [
         'get_mur_config', 'get_mur_feed', 'create_mur_post', 'update_mur_post', 'delete_mur_post',

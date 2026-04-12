@@ -234,10 +234,18 @@ async function doLogin() {
     const res = await api('famille_login', { email, password: pwd });
 
     if (!res.success) {
-        errEl.textContent = res.message || 'Erreur de connexion';
+        const msg = res.message || 'Erreur de connexion';
+        const isRateLimit = msg.includes('Trop de tentatives');
+        errEl.innerHTML = isRateLimit
+            ? msg + ' <button type="button" id="famDemoUnlock" style="margin-left:8px;background:#bcd2cb;color:#2d4a43;border:none;border-radius:6px;padding:4px 12px;font-size:.82rem;font-weight:600;cursor:pointer"><i class="bi bi-unlock"></i> Déverrouiller (démo)</button>'
+            : msg;
         errEl.style.display = 'block';
         loginBtn.disabled = false;
         loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
+        document.getElementById('famDemoUnlock')?.addEventListener('click', async () => {
+            const r = await api('famille_demo_unlock');
+            if (r.success) errEl.innerHTML = '<span style="color:#2d4a43"><i class="bi bi-check-circle"></i> Déverrouillé ! Réessayez.</span>';
+        });
         return;
     }
 

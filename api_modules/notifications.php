@@ -45,3 +45,57 @@ function mark_all_notifications_read()
     Notification::markAllRead($user['id']);
     respond(['success' => true, 'message' => 'Toutes les notifications marquées comme lues']);
 }
+
+/**
+ * Single poll endpoint — returns all badge counts + new alerts in one request
+ */
+function get_poll_data()
+{
+    $user = require_auth();
+    $uid = $user['id'];
+
+    // Notification unread count
+    $unreadNotifs = Notification::unreadCount($uid);
+
+    // Messages unread count
+    $unreadMessages = (int) Db::getOne(
+        "SELECT COUNT(*) FROM message_recipients er
+         JOIN messages e ON e.id = er.email_id
+         WHERE er.user_id = ? AND er.lu = 0 AND er.deleted = 0 AND e.is_draft = 0",
+        [$uid]
+    );
+
+    // Annonces pending ack count
+    $pendingAck = (int) Db::getOne(
+        "SELECT COUNT(*) FROM annonces a
+         WHERE a.requires_ack = 1 AND a.visible = 1 AND a.archived_at IS NULL
+           AND NOT EXISTS (SELECT 1 FROM annonce_acks ak WHERE ak.annonce_id = a.id AND ak.user_id = ?)",
+        [$uid]
+    );
+
+    // Pending alerts (for live toasts)
+    $alerts = Db::fetchAll(
+        "SELECT a.id, a.title, a.message, a.priority, a.created_at,
+                u.prenom AS creator_prenom, u.nom AS creator_nom
+         FROM alerts a
+         JOIN users u ON u.id = a.created_by
+         WHERE a.is_active = 1
+           AND (a.expires_at IS NULL OR a.expires_at > NOW())
+           AND NOT EXISTS (SELECT 1 FROM alert_reads ar WHERE ar.alert_id = a.id AND ar.user_id = ?)
+           AND (
+               a.target = 'all'
+               OR (a.target = 'module' AND a.target_value IN (SELECT module_id FROM user_modules WHERE user_id = ?))
+               OR (a.target = 'role' AND a.target_value = ?)
+           )
+         ORDER BY a.priority = 'haute' DESC, a.created_at DESC",
+        [$uid, $uid, $user['role'] ?? 'collaborateur']
+    );
+
+    respond([
+        'success' => true,
+        'unread_notifs' => $unreadNotifs,
+        'unread_messages' => $unreadMessages,
+        'pending_ack' => $pendingAck,
+        'alerts' => $alerts,
+    ]);
+}

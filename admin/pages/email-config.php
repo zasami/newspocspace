@@ -84,8 +84,19 @@ $existingConfig = Db::fetch(
 
 <div class="emc-card">
   <h6><i class="bi bi-pen"></i> Signature email</h6>
-  <textarea class="form-control" id="emcSignature" rows="3" placeholder="<p>Cordialement,<br>Prénom Nom</p>"></textarea>
-  <small class="text-muted">HTML autorisé. Ajoutée automatiquement à chaque email envoyé.</small>
+  <div id="emcSignatureEditor" style="min-height:80px;border:1px solid #dee2e6;border-radius:8px;padding:10px;background:#fff;font-size:.9rem" contenteditable="true"></div>
+  <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+    <button type="button" class="btn btn-light btn-sm sig-fmt" data-cmd="bold" title="Gras"><i class="bi bi-type-bold"></i></button>
+    <button type="button" class="btn btn-light btn-sm sig-fmt" data-cmd="italic" title="Italique"><i class="bi bi-type-italic"></i></button>
+    <button type="button" class="btn btn-light btn-sm sig-fmt" data-cmd="underline" title="Souligné"><i class="bi bi-type-underline"></i></button>
+    <span style="border-left:1px solid #dee2e6;margin:0 4px"></span>
+    <button type="button" class="btn btn-light btn-sm sig-fmt" data-cmd="insertUnorderedList" title="Liste"><i class="bi bi-list-ul"></i></button>
+    <button type="button" class="btn btn-light btn-sm" id="sigInsertLink" title="Lien"><i class="bi bi-link-45deg"></i></button>
+    <span style="border-left:1px solid #dee2e6;margin:0 4px"></span>
+    <button type="button" class="btn btn-light btn-sm" id="sigInsertBreak" title="Saut de ligne"><i class="bi bi-text-wrap"></i></button>
+  </div>
+  <small class="text-muted">Ajoutée automatiquement à chaque email envoyé.</small>
+  <textarea id="emcSignature" style="display:none"></textarea>
 </div>
 
 <div class="d-flex gap-2 mt-3">
@@ -142,6 +153,7 @@ $existingConfig = Db::fetch(
         document.getElementById('emcSmtpPort').value = existing.smtp_port || 587;
         document.getElementById('emcSmtpEnc').value = existing.smtp_encryption || 'tls';
         document.getElementById('emcSignature').value = existing.signature || '';
+        document.getElementById('emcSignatureEditor').innerHTML = existing.signature || '';
     } else {
         // Default: infomaniak
         selectProvider('infomaniak');
@@ -160,9 +172,25 @@ $existingConfig = Db::fetch(
             smtp_host: document.getElementById('emcSmtpHost').value.trim(),
             smtp_port: parseInt(document.getElementById('emcSmtpPort').value) || 587,
             smtp_encryption: document.getElementById('emcSmtpEnc').value,
-            signature: document.getElementById('emcSignature').value,
+            signature: document.getElementById('emcSignatureEditor').innerHTML.trim(),
         };
     }
+
+    // Signature editor — formatting buttons
+    document.querySelectorAll('.sig-fmt').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('emcSignatureEditor').focus();
+            document.execCommand(btn.dataset.cmd, false, null);
+        });
+    });
+    document.getElementById('sigInsertLink')?.addEventListener('click', () => {
+        const url = prompt('URL du lien :', 'https://');
+        if (url) { document.getElementById('emcSignatureEditor').focus(); document.execCommand('createLink', false, url); }
+    });
+    document.getElementById('sigInsertBreak')?.addEventListener('click', () => {
+        document.getElementById('emcSignatureEditor').focus();
+        document.execCommand('insertHTML', false, '<br>');
+    });
 
     // Save
     const previousEmail = existing?.email_address || '';

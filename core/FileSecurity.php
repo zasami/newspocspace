@@ -48,14 +48,15 @@ class FileSecurity
 
         $name = $file['name'] ?? '';
         $tmp  = $file['tmp_name'] ?? '';
+        $fn   = $name ? ' « ' . basename($name) . ' »' : '';
 
         if ($name === '' || $tmp === '' || !is_uploaded_file($tmp)) {
-            return "Upload $label : fichier invalide.";
+            return "$label$fn : fichier invalide.";
         }
 
         // Rejet null bytes
         if (strpos($name, "\0") !== false) {
-            return "Upload $label : nom de fichier invalide.";
+            return "$label$fn : nom de fichier invalide.";
         }
 
         // Rejet double extension (ex: cv.pdf.exe, photo.jpg.php)
@@ -65,19 +66,19 @@ class FileSecurity
             $dangerous = ['php','phtml','phar','exe','bat','cmd','sh','js','html','htm','svg','jsp','asp','aspx'];
             foreach (array_slice($parts, 1, -1) as $middle) {
                 if (in_array(strtolower($middle), $dangerous, true)) {
-                    return "Upload $label : double extension suspecte rejetée.";
+                    return "$label$fn : double extension suspecte rejetée.";
                 }
             }
         }
 
         $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
         if (!isset(self::MAGIC[$ext])) {
-            return "Upload $label : extension non autorisée.";
+            return "$label$fn : extension non autorisée.";
         }
 
         // Vérif magic bytes
         $fp = fopen($tmp, 'rb');
-        if (!$fp) return "Upload $label : lecture impossible.";
+        if (!$fp) return "$label$fn : lecture impossible.";
         $head = fread($fp, 16);
         fclose($fp);
 
@@ -86,16 +87,16 @@ class FileSecurity
             if (strncmp($head, $sig, strlen($sig)) === 0) { $matched = true; break; }
         }
         if (!$matched) {
-            return "Upload $label : le contenu réel du fichier ne correspond pas à son extension.";
+            return "$label$fn : le contenu du fichier ne correspond pas à son extension.";
         }
 
         // Scan PDF : bloquer JS / actions dangereuses
         if ($ext === 'pdf') {
             $raw = file_get_contents($tmp);
-            if ($raw === false) return "Upload $label : lecture impossible.";
+            if ($raw === false) return "$label$fn : lecture impossible.";
             foreach (self::PDF_SUSPICIOUS_PATTERNS as $pat) {
                 if (preg_match($pat, $raw)) {
-                    return "Upload $label : PDF contenant du code actif (JavaScript / action automatique) rejeté.";
+                    return "$label$fn : PDF contenant du code actif (JavaScript) rejeté.";
                 }
             }
         }

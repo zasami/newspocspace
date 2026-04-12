@@ -34,6 +34,7 @@ const moduleMap = {
     'cuisine-vip':          () => import('./modules/cuisine-vip.js'),
     'mur':          () => import('./modules/mur.js'),
     'wiki':         () => import('./modules/wiki.js'),
+    'annonces':     () => import('./modules/annonces.js'),
 };
 
 let currentModule = null;
@@ -367,17 +368,17 @@ function setupSearch() {
             const type = result.dataset.type || '';
             if (!page) return;
 
-            // Annonces: pas de page SPA dédiée → ouvrir en modal
-            if (type === 'annonce' && id) {
-                openAnnonceModal(id);
-                return;
-            }
             // Documents: passer l'id en highlight pour scroll + surbrillance
             if (page === 'documents' && id) {
                 loadPage('documents', { highlight: id });
                 return;
             }
-            if (typeof window.loadPage === 'function') window.loadPage(page, id ? { id } : undefined);
+            // Pages avec id (annonces, wiki, etc.)
+            if (id) {
+                loadPage(page, { id });
+                return;
+            }
+            navigateTo(page);
         }
     });
 
@@ -496,7 +497,12 @@ function init() {
     // Poll notification badge + check alerts + offline support
     if (window.__SS__?.user) {
         pollNotifBadge();
-        setInterval(pollNotifBadge, 60000); // every 60s
+        setInterval(() => {
+            if (document.visibilityState === 'visible') pollNotifBadge();
+        }, 60000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') pollNotifBadge();
+        });
         checkPendingAlerts();
         import('./modules/offline.js').then(m => m.initOffline()).catch(() => {});
 
@@ -581,29 +587,38 @@ function initFullscreen() {
 async function pollNotifBadge() {
     try {
         const { apiPost } = await import('./helpers.js');
-        const res = await apiPost('get_notifications_count');
-        const badge = document.querySelector('.fe-topbar-notif');
-        if (badge) {
-            if (res.unread > 0) {
-                badge.textContent = res.unread;
-                badge.style.display = '';
-            } else {
-                badge.style.display = 'none';
-            }
+        const res = await apiPost('get_poll_data');
+        if (!res.success) return;
+
+        // Notification badge
+        const notifBadge = document.querySelector('.fe-topbar-notif');
+        if (notifBadge) {
+            if (res.unread_notifs > 0) { notifBadge.textContent = res.unread_notifs; notifBadge.style.display = ''; }
+            else { notifBadge.style.display = 'none'; }
         }
-    } catch (e) { /* silent */ }
-    // Messages unread count
-    try {
-        const { apiPost } = await import('./helpers.js');
-        const res = await apiPost('get_unread_count');
-        const count = res.count || 0;
-        const setBadge = (el) => {
+
+        // Messages badge
+        const setBadge = (el, count) => {
             if (!el) return;
             if (count > 0) { el.textContent = count; el.style.display = ''; }
             else { el.style.display = 'none'; }
         };
-        setBadge(document.getElementById('msgBadge'));
-        setBadge(document.getElementById('msgBadgeSidebar'));
+        setBadge(document.getElementById('msgBadge'), res.unread_messages);
+        setBadge(document.getElementById('msgBadgeSidebar'), res.unread_messages);
+
+        // Annonces badge (dot only, no number)
+        const annBadge = document.getElementById('annBadgeSidebar');
+        if (annBadge) annBadge.style.display = res.pending_ack > 0 ? '' : 'none';
+
+        // Live alert toasts
+        if (res.alerts?.length) {
+            for (const alert of res.alerts) {
+                if (_seenAlertIds.has(alert.id)) continue;
+                _seenAlertIds.add(alert.id);
+                const type = alert.priority === 'haute' ? 'danger' : 'info';
+                showAlertToast(alert.title, alert.message, type, 8000);
+            }
+        }
     } catch (e) { /* silent */ }
 }
 
@@ -680,6 +695,66 @@ function showAlertModal(alert) {
             setTimeout(() => { overlay.remove(); resolve(); }, 300);
         });
     });
+}
+
+/* ── Live alert toasts ── */
+let _seenAlertIds = new Set();
+
+function showAlertToast(title, message, type = 'info', duration = 6000) {
+    // Ensure container exists
+    let wrap = document.getElementById('ssAlertToastWrap');
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'ssAlertToastWrap';
+        wrap.className = 'ss-alert-toast-wrap';
+        document.body.appendChild(wrap);
+    }
+
+    const icons = { danger: 'bi-exclamation-triangle-fill', info: 'bi-megaphone-fill', warn: 'bi-info-circle-fill' };
+    const toast = document.createElement('div');
+    toast.className = `ss-alert-toast ss-alert-toast--${type}`;
+    // Strip HTML tags for clean text display
+    const cleanMsg = message.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+
+    toast.innerHTML = `
+        <div class="ss-alert-toast-icon"><i class="bi ${icons[type] || icons.info}"></i></div>
+        <div class="ss-alert-toast-body">
+            <div class="ss-alert-toast-title">${escapeHtml(title)}</div>
+            <div class="ss-alert-toast-msg">${escapeHtml(cleanMsg)}</div>
+        </div>
+        <button class="ss-alert-toast-close" title="Fermer"><i class="bi bi-x-lg"></i></button>
+        <div class="ss-alert-toast-progress" style="width:100%"></div>
+    `;
+
+    wrap.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    const progress = toast.querySelector('.ss-alert-toast-progress');
+    if (progress) {
+        progress.style.transitionDuration = duration + 'ms';
+        requestAnimationFrame(() => { progress.style.width = '0%'; });
+    }
+
+    let timer = setTimeout(() => removeToast(toast), duration);
+
+    toast.querySelector('.ss-alert-toast-close').addEventListener('click', () => {
+        clearTimeout(timer);
+        removeToast(toast);
+    });
+
+    // Pause on hover
+    toast.addEventListener('mouseenter', () => { clearTimeout(timer); if (progress) progress.style.transitionPlayState = 'paused'; });
+    toast.addEventListener('mouseleave', () => {
+        const remaining = progress ? (parseFloat(getComputedStyle(progress).width) / progress.parentElement.offsetWidth) * duration : 2000;
+        if (progress) progress.style.transitionPlayState = 'running';
+        timer = setTimeout(() => removeToast(toast), Math.max(remaining, 1000));
+    });
+}
+
+function removeToast(toast) {
+    toast.classList.add('removing');
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
 }
 
 export { loadPage, navigateTo, BASE };

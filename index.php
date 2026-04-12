@@ -11,7 +11,7 @@ $v = APP_VERSION;
 
 // CSP nonce
 $cspNonce = base64_encode(random_bytes(16));
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; worker-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; worker-src 'self' blob:;");
 
 // Load EMS config for logo + name
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -70,6 +70,7 @@ $sidebarNav = [
     'info' => [
         'label' => 'Informations',
         'items' => [
+            'annonces'  => ['label' => 'Annonces officielles', 'icon' => 'megaphone'],
             'votes'     => ['label' => 'Votes',           'icon' => 'hand-thumbs-up'],
             'pv'        => ['label' => 'Procès-Verbaux',  'icon' => 'file-earmark-text'],
             'sondages'  => ['label' => 'Sondages',        'icon' => 'clipboard2-check'],
@@ -145,7 +146,7 @@ if ($user && !empty($deniedPerms)) {
 <link rel="manifest" href="/spocspace/manifest.json">
 <link rel="apple-touch-icon" href="/spocspace/assets/icons/icon-192x192.png">
 <link rel="icon" href="/spocspace/assets/icons/icon-96x96.png" type="image/png">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/spocspace.css?v=<?= $v ?>">
@@ -199,6 +200,9 @@ if ($user && !empty($deniedPerms)) {
         <span class="fe-nav-label"><?= h($item['label']) ?></span>
         <?php if ($key === 'emails'): ?>
         <span class="fe-sidebar-badge" id="msgBadgeSidebar" style="display:none"></span>
+        <?php endif; ?>
+        <?php if ($key === 'annonces'): ?>
+        <span class="fe-sidebar-badge" id="annBadgeSidebar" style="display:none"></span>
         <?php endif; ?>
       </a>
       <?php endforeach; ?>

@@ -17,7 +17,7 @@ if (empty($action)) {
 }
 
 // CSRF validation (skip read-only + auth flow)
-$csrfExempt = ['login', 'request_reset', 'reset_password', 'me'];
+$csrfExempt = ['login', 'request_reset', 'reset_password', 'me', 'demo_unlock_rate_limit'];
 $isReadOnly = str_starts_with($action, 'get_') || str_starts_with($action, 'serve_') || in_array($action, $csrfExempt, true);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isReadOnly) {
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';

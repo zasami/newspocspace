@@ -294,6 +294,14 @@ body {
 .rec-file-zone-label { font-size: 0.85rem; color: var(--rec-text-muted); pointer-events: none; }
 .rec-file-zone-label i { font-size: 1.3rem; display: block; margin-bottom: 4px; color: var(--rec-green-pale); }
 .rec-file-zone-name { font-size: 0.82rem; color: var(--rec-green); font-weight: 500; margin-top: 4px; pointer-events: none; }
+.rec-file-zone-del {
+  position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 1px solid #e5e7eb; color: #dc2626; font-size: .78rem;
+  display: none; align-items: center; justify-content: center; cursor: pointer;
+  z-index: 2; transition: all .15s; box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+.rec-file-zone-del:hover { background: #fee2e2; border-color: #fecaca; }
+.rec-file-zone.rec-file-has .rec-file-zone-del { display: flex; }
 
 /* ── Back to offers link ── */
 .rec-form-back {
@@ -492,6 +500,13 @@ body {
       <p style="color:var(--rec-text-muted);font-size:0.9rem" id="recFormSubtitle"></p>
     </div>
 
+    <!-- Demo auto-fill button -->
+    <div style="margin-bottom:16px;text-align:right">
+      <button type="button" class="rec-btn" id="recDemoFillBtn" style="background:#f4ecdd;color:#6B5B3E;border:1px solid #e8dcc8;font-size:.82rem;padding:6px 14px;border-radius:8px">
+        <i class="bi bi-magic"></i> Remplir pour la démo
+      </button>
+    </div>
+
     <form id="recCandidatureForm" enctype="multipart/form-data">
       <input type="hidden" id="recOffreId" name="offre_id">
 
@@ -566,17 +581,17 @@ body {
 
       <!-- Section: Motivation & Experience -->
       <div class="rec-form-section">
-        <div class="rec-form-section-title"><i class="bi bi-chat-left-text"></i> Motivation et experience</div>
+        <div class="rec-form-section-title"><i class="bi bi-chat-left-text"></i> Motivation et valeur ajoutée</div>
         <div class="rec-form-row rec-full">
           <div class="rec-form-group">
-            <label>Lettre de motivation</label>
-            <textarea class="rec-textarea" name="motivation" rows="5" placeholder="Decrivez votre motivation pour ce poste..."></textarea>
+            <label>En quelques mots, dites-nous pourquoi vous avez choisi ce poste</label>
+            <textarea class="rec-textarea" name="motivation" rows="5" placeholder="Qu'est-ce qui vous motive dans ce poste ? Pourquoi notre établissement ?"></textarea>
           </div>
         </div>
         <div class="rec-form-row rec-full">
           <div class="rec-form-group">
-            <label>Experience professionnelle</label>
-            <textarea class="rec-textarea" name="experience" rows="5" placeholder="Resumez votre parcours professionnel..."></textarea>
+            <label>Si on vous choisit, qu'est-ce que vous apporteriez de plus à notre équipe ?</label>
+            <textarea class="rec-textarea" name="experience" rows="5" placeholder="Vos compétences, votre expérience, vos qualités humaines..."></textarea>
           </div>
         </div>
       </div>
@@ -590,6 +605,7 @@ body {
             <label>CV <span class="rec-req">*</span></label>
             <div class="rec-file-zone" data-field="cv">
               <input type="file" name="cv" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+              <button type="button" class="rec-file-zone-del" title="Supprimer"><i class="bi bi-trash"></i></button>
               <div class="rec-file-zone-label"><i class="bi bi-cloud-arrow-up"></i> Glissez ou cliquez</div>
               <div class="rec-file-zone-name"></div>
             </div>
@@ -598,6 +614,7 @@ body {
             <label>Lettre de motivation</label>
             <div class="rec-file-zone" data-field="lettre_motivation">
               <input type="file" name="lettre_motivation" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button type="button" class="rec-file-zone-del" title="Supprimer"><i class="bi bi-trash"></i></button>
               <div class="rec-file-zone-label"><i class="bi bi-cloud-arrow-up"></i> Glissez ou cliquez</div>
               <div class="rec-file-zone-name"></div>
             </div>
@@ -608,6 +625,7 @@ body {
             <label>Diplomes</label>
             <div class="rec-file-zone" data-field="diplome">
               <input type="file" name="diplome" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button type="button" class="rec-file-zone-del" title="Supprimer"><i class="bi bi-trash"></i></button>
               <div class="rec-file-zone-label"><i class="bi bi-cloud-arrow-up"></i> Glissez ou cliquez</div>
               <div class="rec-file-zone-name"></div>
             </div>
@@ -616,6 +634,7 @@ body {
             <label>Certificats</label>
             <div class="rec-file-zone" data-field="certificat">
               <input type="file" name="certificat" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button type="button" class="rec-file-zone-del" title="Supprimer"><i class="bi bi-trash"></i></button>
               <div class="rec-file-zone-label"><i class="bi bi-cloud-arrow-up"></i> Glissez ou cliquez</div>
               <div class="rec-file-zone-name"></div>
             </div>
@@ -626,6 +645,7 @@ body {
             <label>Autre document</label>
             <div class="rec-file-zone" data-field="autre">
               <input type="file" name="autre" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              <button type="button" class="rec-file-zone-del" title="Supprimer"><i class="bi bi-trash"></i></button>
               <div class="rec-file-zone-label"><i class="bi bi-cloud-arrow-up"></i> Glissez ou cliquez</div>
               <div class="rec-file-zone-name"></div>
             </div>
@@ -748,6 +768,13 @@ body {
         document.getElementById('recOffresView').style.display = '';
       } else if (view === 'suivi') {
         document.getElementById('recTrackView').style.display = '';
+        // Pre-fill email and code from last submission
+        if (window.__recLastEmail) {
+          document.getElementById('recTrackEmail').value = window.__recLastEmail;
+        }
+        if (window.__recLastCode) {
+          document.getElementById('recTrackCode').value = window.__recLastCode;
+        }
       }
     });
   });
@@ -878,13 +905,18 @@ body {
     document.getElementById('recTrackResult').innerHTML = '';
     tabs[0].classList.remove('active');
     tabs[1].classList.add('active');
+    // Pre-fill email and code from submission
+    if (window.__recLastEmail) document.getElementById('recTrackEmail').value = window.__recLastEmail;
+    if (window.__recLastCode) document.getElementById('recTrackCode').value = window.__recLastCode;
   });
 
-  // ── File upload display ──
-  document.querySelectorAll('.rec-file-zone input[type="file"]').forEach(input => {
-    input.addEventListener('change', () => {
-      const zone = input.closest('.rec-file-zone');
-      const nameEl = zone.querySelector('.rec-file-zone-name');
+  // ── File upload display + delete ──
+  document.querySelectorAll('.rec-file-zone').forEach(zone => {
+    const input = zone.querySelector('input[type="file"]');
+    const nameEl = zone.querySelector('.rec-file-zone-name');
+    const delBtn = zone.querySelector('.rec-file-zone-del');
+
+    input?.addEventListener('change', () => {
       if (input.files.length > 0) {
         zone.classList.add('rec-file-has');
         nameEl.textContent = input.files[0].name;
@@ -893,6 +925,38 @@ body {
         nameEl.textContent = '';
       }
     });
+
+    delBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = '';
+      zone.classList.remove('rec-file-has');
+      nameEl.textContent = '';
+    });
+  });
+
+  // ── Demo auto-fill ──
+  document.getElementById('recDemoFillBtn')?.addEventListener('click', () => {
+    const f = document.getElementById('recCandidatureForm');
+    if (!f) return;
+    const set = (name, val) => { const el = f.querySelector(`[name="${name}"]`); if (el) el.value = val; };
+    set('nom', 'Galaderille');
+    set('prenom', 'Camille');
+    set('email', 'camille.galaderille@gmail.com');
+    set('telephone', '+41 79 456 78 90');
+    set('date_naissance', '1992-06-15');
+    set('nationalite', 'Suisse');
+    set('adresse', '12 Rue du Lac, 1207 Genève');
+    set('permis_travail', 'Suisse');
+    set('disponibilite', 'Dans 1 mois');
+    set('motivation', 'J\'ai choisi ce poste car je suis convaincue que La Terrassière partage mes valeurs : le respect, la bienveillance et l\'attention portée à chaque résident. Après 8 ans en EMS, je cherche un environnement où je peux m\'épanouir professionnellement tout en faisant une vraie différence au quotidien.');
+    set('experience', 'Je suis quelqu\'un de très à l\'écoute et patiente. Mon expérience en gériatrie m\'a appris à anticiper les besoins des résidents et à travailler en équipe soudée. J\'apporterais aussi mes compétences en soins palliatifs et ma formation en animation d\'activités thérapeutiques, ce qui pourrait enrichir la vie sociale de vos résidents.');
+    // Visual feedback
+    const btn = document.getElementById('recDemoFillBtn');
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> Formulaire rempli';
+    btn.style.background = '#bcd2cb';
+    btn.style.color = '#2d4a43';
+    setTimeout(() => { btn.innerHTML = '<i class="bi bi-magic"></i> Remplir pour la démo'; btn.style.background = '#f4ecdd'; btn.style.color = '#6B5B3E'; }, 2000);
   });
 
   // ── Submit candidature ──
@@ -913,19 +977,32 @@ body {
       const data = await res.json();
 
       if (!data.success) {
-        errEl.textContent = data.message || 'Erreur lors de l\'envoi.';
+        const msg = data.message || 'Erreur lors de l\'envoi.';
+        const isRateLimit = msg.includes('Trop de tentatives');
+        errEl.innerHTML = isRateLimit
+            ? msg + ' <button type="button" id="recDemoUnlock" style="margin-left:8px;background:#bcd2cb;color:#2d4a43;border:none;border-radius:6px;padding:4px 12px;font-size:.82rem;font-weight:600;cursor:pointer"><i class="bi bi-unlock"></i> Déverrouiller (démo)</button>'
+            : msg;
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-send"></i> Envoyer ma candidature';
+        document.getElementById('recDemoUnlock')?.addEventListener('click', async () => {
+            const r = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'famille_demo_unlock'}) });
+            const j = await r.json();
+            if (j.success) errEl.innerHTML = '<span style="color:#2d4a43"><i class="bi bi-check-circle"></i> Déverrouillé ! Réessayez.</span>';
+        });
         return;
       }
 
-      // Show success
+      // Show success + save email/code for tracking pre-fill
+      const submittedEmail = formData.get('email') || '';
+      window.__recLastEmail = submittedEmail;
+      window.__recLastCode = data.code_suivi || '';
       document.getElementById('recFormView').style.display = 'none';
       document.getElementById('recSuccessView').style.display = '';
       document.getElementById('recCodeSuivi').textContent = data.code_suivi;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      errEl.textContent = 'Erreur de connexion. Veuillez reessayer.';
+      console.error('Candidature error:', err);
+      errEl.textContent = 'Erreur : ' + (err.message || 'Veuillez réessayer.');
     }
 
     btn.disabled = false;

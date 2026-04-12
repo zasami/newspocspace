@@ -59,10 +59,20 @@ export async function init() {
                 }
             }
         } else {
-            errorEl.textContent = res.message || 'Erreur de connexion';
+            const msg = res.message || 'Erreur de connexion';
+            const isRateLimit = msg.includes('Trop de tentatives');
+            errorEl.innerHTML = isRateLimit
+                ? msg + ' <button type="button" id="demoUnlockBtn" style="margin-left:8px;background:#bcd2cb;color:#2d4a43;border:none;border-radius:6px;padding:4px 12px;font-size:.82rem;font-weight:600;cursor:pointer"><i class="bi bi-unlock"></i> Déverrouiller (démo)</button>'
+                : msg;
             errorEl.style.display = 'block';
             btn.disabled = false;
             btn.textContent = 'Se connecter';
+            document.getElementById('demoUnlockBtn')?.addEventListener('click', async () => {
+                const r = await apiPost('demo_unlock_rate_limit');
+                if (r.success) {
+                    errorEl.innerHTML = '<span style="color:#2d4a43"><i class="bi bi-check-circle"></i> Déverrouillé ! Réessayez.</span>';
+                }
+            });
         }
     });
 }

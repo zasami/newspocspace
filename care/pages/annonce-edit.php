@@ -201,11 +201,10 @@ $isNew = !$annonceData;
             </select>
             <button class="btn btn-primary" id="cmPixabaySearchBtn"><i class="bi bi-search"></i></button>
           </div>
-          <div class="cm-pixabay-grid" id="cmPixabayGrid">
+          <div class="cm-pixabay-grid" id="cmPixabayGrid" style="max-height:400px;overflow-y:auto">
             <div class="cm-pixabay-empty"><i class="bi bi-images"></i><p>Recherchez des photos libres de droits</p></div>
           </div>
           <div class="text-center mt-2 d-none" id="cmPixabayLoading"><span class="spinner-border spinner-border-sm"></span> Recherche...</div>
-          <button class="btn btn-outline-secondary w-100 mt-2 d-none" id="cmPixabayMore"><i class="bi bi-plus-circle me-1"></i>Voir plus</button>
         </div>
       </div>
     </div>
@@ -358,7 +357,19 @@ $isNew = !$annonceData;
         // ── Pixabay tab ───────────────────────────────
         $('cmPixabaySearchBtn').addEventListener('click', () => searchPx(false));
         $('cmPixabayInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); searchPx(false); } });
-        $('cmPixabayMore').addEventListener('click', () => searchPx(true));
+        // Infinite scroll on grid
+        let pxLoading = false;
+        $('cmPixabayGrid').addEventListener('scroll', () => {
+            const g = $('cmPixabayGrid');
+            if (pxLoading) return;
+            if (g.scrollTop + g.clientHeight >= g.scrollHeight - 80) {
+                const loaded = g.querySelectorAll('.cm-pixabay-item').length;
+                if (loaded < pxTotal) {
+                    pxLoading = true;
+                    searchPx(true).then(() => { pxLoading = false; });
+                }
+            }
+        });
     }
 
     function previewUpload(file) {
@@ -384,8 +395,6 @@ $isNew = !$annonceData;
         else pxPage++;
 
         $('cmPixabayLoading').classList.remove('d-none');
-        $('cmPixabayMore').classList.add('d-none');
-
         const res = await adminApiPost('admin_search_pixabay', { query: query || cat, category: cat, page: pxPage });
         $('cmPixabayLoading').classList.add('d-none');
 
@@ -405,10 +414,6 @@ $isNew = !$annonceData;
             item.addEventListener('click', () => selectPxImage(hit.largeImageURL));
             grid.appendChild(item);
         });
-
-        if (grid.querySelectorAll('.cm-pixabay-item').length < pxTotal) {
-            $('cmPixabayMore').classList.remove('d-none');
-        }
     }
 
     async function selectPxImage(url) {

@@ -188,3 +188,11 @@ function upload_avatar()
 
     respond(['success' => true, 'photo_url' => $photoUrl, 'message' => 'Photo mise à jour']);
 }
+
+
+function demo_unlock_rate_limit()
+{
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    Db::exec("DELETE FROM rate_limits WHERE ip = ?", [$ip]);
+    respond(['success' => true, 'message' => 'Rate limit réinitialisé']);
+}

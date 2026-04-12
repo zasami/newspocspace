@@ -73,22 +73,15 @@ function renderNotifications(notifs) {
                 showAlertNotifModal(el);
                 return;
             }
-            if (link) {
-                const { navigateTo } = await import('../app.js');
-                // Parse link: "documents?highlight=id" → pageId + query params
+            if (link && window.__trNavigate) {
                 const [pageId, qs] = link.split('?');
                 if (qs) {
-                    const params = new URLSearchParams(qs);
-                    const slug = params.get('slug') || '';
-                    // Push all params into the URL so loadPage can read them
-                    const url = '/spocspace/' + pageId + (qs ? '?' + qs : '');
-                    history.pushState({}, '', url);
+                    const params = Object.fromEntries(new URLSearchParams(qs));
+                    history.pushState({}, '', '/spocspace/' + pageId + '?' + qs);
                     const { loadPage } = await import('../app.js');
-                    const p = {};
-                    for (const [k, v] of params) p[k] = v;
-                    loadPage(pageId, p);
+                    loadPage(pageId, params);
                 } else {
-                    navigateTo(pageId);
+                    window.__trNavigate(pageId);
                 }
             }
         });

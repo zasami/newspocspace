@@ -338,8 +338,8 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             if (c.adresse) html += `<div class="col-12">${field('Adresse', escapeHtml(c.adresse))}</div>`;
 
             html += '<div class="col-12"><hr class="my-1"></div>';
-            if (c.motivation) html += `<div class="col-12">${field('Motivation', '<div class="rhc-detail-box">'+escapeHtml(c.motivation)+'</div>')}</div>`;
-            if (c.experience) html += `<div class="col-12">${field('Expérience', '<div class="rhc-detail-box">'+escapeHtml(c.experience)+'</div>')}</div>`;
+            if (c.motivation) html += `<div class="col-12">${field('Pourquoi ce poste ?', '<div class="rhc-detail-box">'+escapeHtml(c.motivation)+'</div>')}</div>`;
+            if (c.experience) html += `<div class="col-12">${field('Valeur ajoutée à l\'équipe', '<div class="rhc-detail-box">'+escapeHtml(c.experience)+'</div>')}</div>`;
 
             if (c.documents && c.documents.length) {
                 const typeLabels = { cv:'CV', lettre_motivation:'Lettre de motivation', diplome:'Diplôme', certificat:'Certificat', autre:'Autre' };

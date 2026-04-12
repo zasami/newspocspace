@@ -239,3 +239,15 @@ function ack_annonce()
     Db::exec("INSERT IGNORE INTO annonce_acks (annonce_id, user_id) VALUES (?, ?)", [$id, $user['id']]);
     respond(['success' => true, 'message' => 'Lecture confirmée']);
 }
+
+function get_annonces_pending_ack_count()
+{
+    $user = require_auth();
+    $count = (int) Db::getOne(
+        "SELECT COUNT(*) FROM annonces a
+         WHERE a.requires_ack = 1 AND a.visible = 1 AND a.archived_at IS NULL
+           AND NOT EXISTS (SELECT 1 FROM annonce_acks ak WHERE ak.annonce_id = a.id AND ak.user_id = ?)",
+        [$user['id']]
+    );
+    respond(['success' => true, 'count' => $count]);
+}
