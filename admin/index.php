@@ -176,7 +176,6 @@ $sidebarCategories = [
         'label' => 'Général',
         'items' => [
             'dashboard'     => ['label' => 'Tableau de bord',  'icon' => 'speedometer2'],
-            'etablissement' => ['label' => 'Établissement',    'icon' => 'hospital'],
         ],
     ],
     'planning' => [
@@ -189,8 +188,6 @@ $sidebarCategories = [
             'changements' => ['label' => 'Changements',        'icon' => 'arrow-left-right'],
             'besoins'    => ['label' => 'Besoins couverture',  'icon' => 'grid-3x3'],
             'repartition' => ['label' => 'Répartition',           'icon' => 'grid-3x3-gap'],
-            'affichage-planning' => ['label' => 'Affichage',     'icon' => 'sliders'],
-            'config-ia'  => ['label' => 'Config IA',             'icon' => 'cpu'],
         ],
     ],
     'config' => [
@@ -230,14 +227,22 @@ $sidebarCategories = [
             'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
             'messages' => ['label' => 'Messagerie',            'icon' => 'chat-dots'],
             'email-externe' => ['label' => 'Email',              'icon' => 'envelope'],
-            'email-config'  => ['label' => 'Config Email',       'icon' => 'gear'],
             'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
             'connexions'   => ['label' => 'Connexions',        'icon' => 'person-check'],
-            'securite'     => ['label' => 'Sécurité',           'icon' => 'shield-check'],
+        ],
+    ],
+    'parametres' => [
+        'label' => 'Paramètres',
+        'items' => [
+            'etablissement'      => ['label' => 'Établissement',       'icon' => 'hospital'],
+            'affichage-planning' => ['label' => 'Affichage planning',  'icon' => 'sliders'],
+            'config-ia'          => ['label' => 'Config IA',           'icon' => 'cpu'],
+            'email-config'       => ['label' => 'Config Email',        'icon' => 'envelope-at'],
+            'securite'           => ['label' => 'Sécurité',            'icon' => 'shield-check'],
         ],
     ],
 ];
