@@ -895,146 +895,7 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         </div>
       </div>
     </div>
-    <!-- Rubrique épinglée -->
-    <?php if (ws_visible($cms, 'pinned')):
-        $pinned = ws_content($cms, 'pinned');
-        $pinnedTitle = $pinned['title'] ?? '';
-        $pinnedText  = $pinned['text'] ?? '';
-        $pinnedSig   = $pinned['signature'] ?? '';
-        $pinnedImg   = $pinned['image'] ?? '';
-    ?>
-    <div class="ws-pinned-wrap" data-reveal="fade-up">
-      <img src="/spocspace/website/assets/img/curved-shape.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-curve" aria-hidden="true">
-      <img src="/spocspace/website/assets/img/pointer-up.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-pointer" aria-hidden="true">
-    <div class="ws-team-cta ws-cta-pinned">
-      <div class="row align-items-center g-4">
-        <?php if ($pinnedImg): ?>
-        <div class="col-lg-5 text-center">
-          <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img" loading="lazy">
-          <p class="ws-pinned-copyright">© Tous droits réservés — Reproduction interdite</p>
-        </div>
-        <div class="col-lg-7">
-        <?php else: ?>
-        <div class="col-12">
-        <?php endif; ?>
-          <h4><?= h($pinnedTitle) ?></h4>
-          <div class="ws-pinned-text"><?= ws_safe($pinnedText) ?></div>
-          <?php if ($pinnedSig):
-            $sigParts = array_map('trim', explode(',', $pinnedSig, 2));
-          ?>
-          <div class="ws-pinned-signature">
-            <span class="ws-pinned-sig-name"><?= h($sigParts[0]) ?></span>
-            <?php if (!empty($sigParts[1])): ?>
-            <span class="ws-pinned-sig-role"><?= h($sigParts[1]) ?></span>
-            <?php endif; ?>
-          </div>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Formation continue (CMS) -->
-    <?php if (ws_visible($cms, 'formation')):
-        $form = ws_content($cms, 'formation');
-        $formImg = $form['image'] ?? '';
-        $formLead = $form['lead'] ?? '';
-        $formText = $form['text'] ?? '';
-        $formItems = $form['items'] ?? [];
-    ?>
-    <div class="ws-form-banner" data-reveal="fade">
-      <div class="row g-0 align-items-center">
-        <div class="col-lg-7" data-reveal="slide-left" data-reveal-delay="100">
-          <div class="ws-form-content">
-            <span class="ws-form-cap">Formation</span>
-            <h3><i class="bi bi-mortarboard" style="color:var(--ws-green)"></i> <?= h($cms['formation']['title'] ?? 'Formation continue') ?></h3>
-            <?php if ($formLead): ?><p class="ws-form-lead"><?= h($formLead) ?></p><?php endif; ?>
-            <?php if ($formText): ?><p class="ws-form-text"><?= h($formText) ?></p><?php endif; ?>
-            <?php if ($formItems): ?>
-            <div class="ws-form-items">
-              <?php foreach ($formItems as $item): ?>
-              <div class="ws-form-item"><div class="ws-form-item-icon"><i class="bi bi-check-circle-fill"></i></div><div><?= h($item) ?></div></div>
-              <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-          </div>
-        </div>
-        <div class="col-lg-5 ws-form-img-col" data-reveal="slide-right" data-reveal-delay="200">
-          <?php if ($formImg): ?>
-            <img src="<?= h($formImg) ?>" alt="Formation" class="ws-form-img" loading="lazy">
-          <?php else: ?>
-            <div class="ws-form-img-placeholder"><i class="bi bi-camera"></i><span>Image formation</span></div>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Bénévoles (CMS) -->
-    <?php if (ws_visible($cms, 'benevoles')):
-        $ben = ws_content($cms, 'benevoles');
-        $benImg = $ben['image'] ?? '';
-        $benLead = $ben['lead'] ?? '';
-        $benText = $ben['text'] ?? '';
-        $benMissions = $ben['missions'] ?? [];
-        $benOffres = $ben['offres'] ?? [];
-        $benPhone = $ben['phone'] ?? '';
-        $benEmail = $ben['email'] ?? '';
-        $benClosing = $ben['closing'] ?? '';
-    ?>
-    <div class="ws-ben-banner" data-reveal="fade">
-      <div class="row g-0 align-items-center flex-lg-row-reverse">
-        <div class="col-lg-7" data-reveal="slide-right" data-reveal-delay="100">
-          <div class="ws-ben-content">
-            <span class="ws-ben-cap">Rejoignez-nous</span>
-            <h3><i class="bi bi-heart-fill ws-ben-heart"></i> <?= h($cms['benevoles']['title'] ?? 'Bénévoles recherchés') ?></h3>
-            <?php if ($benLead): ?><p class="ws-ben-lead"><?= h($benLead) ?></p><?php endif; ?>
-            <?php if ($benText): ?><p class="ws-ben-text"><?= h($benText) ?></p><?php endif; ?>
-
-            <?php if ($benMissions): ?>
-            <div class="ws-ben-section-title"><i class="bi bi-check-circle-fill"></i> Vos missions</div>
-            <div class="ws-ben-items">
-              <?php foreach ($benMissions as $m): ?>
-              <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-check-lg"></i></div><div><?= h($m) ?></div></div>
-              <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($benOffres): ?>
-            <div class="ws-ben-section-title"><i class="bi bi-gift-fill"></i> Nous offrons</div>
-            <div class="ws-ben-items">
-              <?php foreach ($benOffres as $o): ?>
-              <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-star-fill"></i></div><div><?= h($o) ?></div></div>
-              <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($benPhone || $benEmail): ?>
-            <div class="ws-ben-tip">
-              <i class="bi bi-telephone-fill"></i>
-              <div>
-                <strong>Comment nous rejoindre ?</strong>
-                <div class="ws-ben-contact-links">
-                  <?php if ($benPhone): ?><a href="tel:<?= h(preg_replace('/\s/', '', $benPhone)) ?>"><i class="bi bi-telephone-fill"></i> <?= h($benPhone) ?></a><?php endif; ?>
-                  <?php if ($benEmail): ?><a href="mailto:<?= h($benEmail) ?>"><i class="bi bi-envelope-fill"></i> <?= h($benEmail) ?></a><?php endif; ?>
-                </div>
-              </div>
-            </div>
-            <?php endif; ?>
-
-          </div>
-        </div>
-        <div class="col-lg-5 ws-ben-img-col" data-reveal="slide-left" data-reveal-delay="200">
-          <?php if ($benImg): ?>
-            <img src="<?= h($benImg) ?>" alt="Bénévoles" class="ws-ben-img" loading="lazy">
-          <?php else: ?>
-            <div class="ws-ben-img-placeholder"><i class="bi bi-camera"></i><span>Image bénévoles</span></div>
-          <?php endif; ?>
-        </div>
-      </div>
-    </div>
-    <?php endif; ?>
+    <!-- Sections épinglée, formation et bénévoles déplacées vers recrutement.php -->
   </div>
 </section>
 
@@ -1043,8 +904,9 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 
 <!-- ═══ CLOSING HERO (full width, bg image) ═══ -->
 <?php
-  $closingBg = $ben['closing_bg'] ?? '';
-  $closingText = $ben['closing'] ?? '';
+  $benClosing = ws_content($cms, 'benevoles');
+  $closingBg = $benClosing['closing_bg'] ?? '';
+  $closingText = $benClosing['closing'] ?? '';
 ?>
 <section class="ws-closing-hero" data-reveal="fade-up" <?php if ($closingBg): ?>style="background-image:url('<?= h($closingBg) ?>')"<?php endif; ?>>
   <div class="ws-closing-overlay"></div>
@@ -1163,7 +1025,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
 <?php if (ws_visible($cms, 'contact')):
     $contact = ws_content($cms, 'contact');
 ?>
-<section class="ws-section" id="contact" data-reveal="fade-up">
+<section class="ws-section" id="contact" data-reveal="fade-up" style="position:relative">
+  <img src="/spocspace/assets/img/background-image-pattern-plus.spoc-space-grid-grey.svg" alt="" aria-hidden="true" style="position:absolute;bottom:6px;right:51%;width:164px;opacity:.4;pointer-events:none;z-index:0">
   <div class="container">
     <div class="ws-section-header">
       <div class="ws-section-badge"><i class="bi <?= h(ws_get($cms, 'contact', 'badge_icon')) ?>"></i> <?= h(ws_get($cms, 'contact', 'badge_text')) ?></div>

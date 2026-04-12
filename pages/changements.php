@@ -150,7 +150,7 @@ $chgChangements = Db::fetchAll(
 
 <!-- ── Modal confirmation (Bootstrap 5 — style admin absences) ── -->
 <div class="modal fade" id="chgConfirmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered chg-modal-dialog">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable chg-modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <div class="d-flex align-items-center gap-3" id="chgConfirmHeader">

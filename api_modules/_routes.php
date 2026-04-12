@@ -25,7 +25,7 @@ return [
         'get_absences_collegues',
     ],
     'messages' => [
-        'get_mes_messages', 'send_message', 'mark_message_read',
+        'get_mes_messages', 'mark_message_read',
     ],
     'messages_internes' => [
         'get_inbox', 'get_sent', 'get_message_detail', 'send_message',

@@ -798,8 +798,10 @@ function renderChangements(items) {
             </div>`;
         }
 
-        const refusInfo = ch.raison_refus ? `<div class="chg-info refus"><i class="bi bi-chat-left-text"></i><span>${escapeHtml(ch.raison_refus)}</span></div>` : '';
-        const motifInfo = ch.motif ? `<div class="chg-info"><i class="bi bi-chat-dots"></i><span>${escapeHtml(ch.motif)}</span></div>` : '';
+        const createdDate = ch.created_at ? formatDateTime(ch.created_at) : '';
+        const updatedDate = ch.updated_at ? formatDateTime(ch.updated_at) : '';
+        const refusInfo = ch.raison_refus ? `<div class="chg-info refus"><i class="bi bi-chat-left-text"></i><span>${escapeHtml(ch.raison_refus)}</span>${updatedDate ? `<span class="chg-info-date">${updatedDate}</span>` : ''}</div>` : '';
+        const motifInfo = ch.motif ? `<div class="chg-info"><i class="bi bi-chat-dots"></i><span>${escapeHtml(ch.motif)}</span>${createdDate ? `<span class="chg-info-date">${createdDate}</span>` : ''}</div>` : '';
 
         const roleTag = iAmDemandeur
             ? '<span class="chg-role-tag demand">Demandé</span>'
@@ -807,6 +809,8 @@ function renderChangements(items) {
 
         const dateDem = ch.date_demandeur || ch.date_jour;
         const dateDest = ch.date_destinataire || ch.date_jour;
+
+        const hasDetails = ch.motif || ch.raison_refus;
 
         return `
         <div class="chg-item">
@@ -818,7 +822,7 @@ function renderChangements(items) {
                 ${roleTag}
                 ${statutHtml}
             </div>
-            <div class="chg-exchange">
+            <div class="chg-exchange" ${hasDetails ? 'style="position:relative"' : ''}>
                 <div class="chg-person">
                     <div class="chg-person-name">${demandeurName}${iAmDemandeur ? ' <span class="chg-person-you">(vous)</span>' : ''}</div>
                     <div class="chg-person-shift"><span class="chg-person-shift-label">Cède :</span> ${horDem}</div>
@@ -828,15 +832,27 @@ function renderChangements(items) {
                     <div class="chg-person-name">${destinataireName}${iAmDestinataire ? ' <span class="chg-person-you">(vous)</span>' : ''}</div>
                     <div class="chg-person-shift"><span class="chg-person-shift-label">Cède :</span> ${horDest}</div>
                 </div>
+                ${hasDetails ? `<button class="chg-details-toggle" data-toggle-details="${escapeHtml(ch.id)}" title="Voir les détails"><i class="bi bi-plus-lg"></i></button>` : ''}
             </div>
-            ${motifInfo}
-            ${refusInfo}
             ${actionsHtml}
+            ${hasDetails ? `<div class="chg-details" id="chgDetails-${escapeHtml(ch.id)}">${motifInfo}${refusInfo}</div>` : ''}
         </div>`;
     }).join('');
 }
 
 function onListClick(e) {
+    const toggleBtn = e.target.closest('[data-toggle-details]');
+    if (toggleBtn) {
+        const id = toggleBtn.dataset.toggleDetails;
+        const details = document.getElementById('chgDetails-' + id);
+        if (details) {
+            const isOpen = details.classList.toggle('open');
+            toggleBtn.classList.toggle('open', isOpen);
+            toggleBtn.innerHTML = isOpen ? '<i class="bi bi-dash-lg"></i>' : '<i class="bi bi-plus-lg"></i>';
+        }
+        return;
+    }
+
     const confirmBtn = e.target.closest('[data-confirm]');
     if (confirmBtn) {
         confirmBtn.disabled = true;
@@ -903,6 +919,12 @@ function formatDateFr(dateStr) {
 function formatDateShort(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' });
+}
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T'));
+    return d.toLocaleDateString('fr-CH', { day: 'numeric', month: 'short' }) + ' à ' + d.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
 }
 
 function buildBadgeHtml(code, couleur, moduleName) {

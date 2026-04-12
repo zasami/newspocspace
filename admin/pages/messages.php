@@ -1,7 +1,7 @@
 <?php
 // ─── Données serveur ──────────────────────────────────────────────────────────
 $emailContacts = Db::fetchAll(
-    "SELECT u.id, u.prenom, u.nom, u.email, f.nom AS fonction_nom,
+    "SELECT u.id, u.prenom, u.nom, u.email, u.photo, f.nom AS fonction_nom,
             COALESCE(m.nom, 'Sans module') AS module_nom,
             COALESCE(m.ordre, 999) AS module_ordre
      FROM users u
@@ -16,7 +16,12 @@ $emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
 $emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
 $emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['ss_user']['id'] ?? '']);
 $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
-$emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND sender_deleted = 1");
+$emailStatsTrash       = (int) Db::getOne(
+    "SELECT COUNT(*) FROM messages e WHERE e.is_draft = 0 AND (
+        (e.sender_deleted = 1 AND e.from_user_id = ?)
+        OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 1)
+    )", [$_SESSION['ss_user']['id'] ?? '', $_SESSION['ss_user']['id'] ?? '']
+);
 ?>
 <!-- Admin Emails Page — Split-view email client -->
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
@@ -55,6 +60,21 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
 /* Compose panel visibility */
 .compose-panel--visible { display:flex; }
 .compose-panel--hidden { display:none; }
+
+/* Compose search dropdown */
+.compose-search-wrap { flex:1;min-width:0;position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:4px }
+.compose-search-input { border:none;outline:none;font-size:.88rem;padding:2px 0;flex:1;min-width:80px;background:transparent;color:var(--cl-text);font-family:inherit }
+.compose-search-input::placeholder { color:#aaa }
+.compose-search-dropdown { position:absolute;top:calc(100% + 4px);left:-14px;right:-14px;z-index:999;background:#fff;border:1px solid var(--cl-border);border-radius:10px;max-height:260px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.14) }
+.compose-search-dropdown.open { display:block }
+.compose-search-dropdown .csd-group { padding:6px 12px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-muted);background:#fafaf8 }
+.compose-search-dropdown .csd-group:first-child { border-radius:10px 10px 0 0 }
+.compose-search-dropdown .csd-item { padding:7px 12px;font-size:.87rem;cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:10px }
+.compose-search-dropdown .csd-item:hover,.compose-search-dropdown .csd-item.active { background:rgba(25,25,24,.05) }
+.compose-search-dropdown .csd-item small { color:var(--cl-muted) }
+.compose-search-dropdown .csd-empty { padding:12px;font-size:.84rem;color:var(--cl-muted);text-align:center }
+.compose-search-dropdown .csd-avatar { width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0 }
+.compose-search-dropdown .csd-initials { width:28px;height:28px;border-radius:50%;background:#E8E5E0;color:#6B6B6B;font-size:.7rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0 }
 </style>
 
 <!-- Grand titre stats + bouton nouveau -->
@@ -109,22 +129,30 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
     <span class="compose-panel-title" id="adminComposePanelTitle">Nouveau message</span>
     <div class="compose-panel-header-actions">
       <button type="button" class="compose-panel-header-btn" id="adminComposeMinimize" title="Réduire"><i class="bi bi-dash-lg"></i></button>
+      <button type="button" class="compose-panel-header-btn" id="adminComposeExpand" title="Agrandir"><i class="bi bi-arrows-fullscreen"></i></button>
       <button type="button" class="compose-panel-header-btn" id="adminComposeClose" title="Fermer"><i class="bi bi-x-lg"></i></button>
     </div>
   </div>
   <div class="compose-panel-body">
     <div class="compose-field">
       <label>À</label>
-      <div class="zs-select" id="adminComposeTo" data-placeholder="— Choisir un destinataire —"></div>
-      <div id="adminToTags" class="email-tags mt-1"></div>
+      <div class="compose-search-wrap">
+        <div id="adminToTags" class="email-tags"></div>
+        <input type="text" class="compose-search-input" id="adminComposeToSearch" placeholder="Destinataires" autocomplete="off">
+        <div class="compose-search-dropdown" id="adminComposeToDropdown"></div>
+      </div>
     </div>
     <div class="compose-field">
       <label>Cc</label>
-      <div class="zs-select" id="adminComposeCc" data-placeholder="— Choisir un destinataire —"></div>
-      <div id="adminCcTags" class="email-tags mt-1"></div>
+      <div class="compose-search-wrap">
+        <div id="adminCcTags" class="email-tags"></div>
+        <input type="text" class="compose-search-input" id="adminComposeCcSearch" placeholder="Copie" autocomplete="off">
+        <div class="compose-search-dropdown" id="adminComposeCcDropdown"></div>
+      </div>
     </div>
     <div class="compose-field">
-      <input type="text" class="form-control form-control-sm" id="adminComposeSubject" placeholder="Sujet" maxlength="255">
+      <label style="visibility:hidden">Ob</label>
+      <input type="text" class="form-control" id="adminComposeSubject" placeholder="Objet" maxlength="255">
     </div>
     <div id="adminComposeEditorWrap" class="zs-editor-wrap compose-editor-wrap"></div>
     <input type="hidden" id="adminComposeParentId" value="">
@@ -195,6 +223,15 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
         document.getElementById('adminComposeMinimize')?.addEventListener('click', (e) => {
             e.stopPropagation();
             document.getElementById('adminComposePanel')?.classList.toggle('minimized');
+        });
+        document.getElementById('adminComposeExpand')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = document.getElementById('adminComposePanel');
+            const btn = document.getElementById('adminComposeExpand');
+            panel?.classList.toggle('expanded');
+            const isExpanded = panel?.classList.contains('expanded');
+            btn.innerHTML = isExpanded ? '<i class="bi bi-fullscreen-exit"></i>' : '<i class="bi bi-arrows-fullscreen"></i>';
+            btn.title = isExpanded ? 'Réduire' : 'Agrandir';
         });
         document.getElementById('adminComposePanelHeader')?.addEventListener('click', () => {
             const panel = document.getElementById('adminComposePanel');
@@ -303,10 +340,10 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
         // Trash toolbar
         let toolbarHtml = '';
         if (currentTab === 'trash') {
-            toolbarHtml = `<div class="d-flex align-items-center gap-2 px-3 py-2" style="border-bottom:1px solid var(--cl-border-light);font-size:.78rem">
-                <label class="d-flex align-items-center gap-1 mb-0" style="cursor:pointer"><input type="checkbox" id="trashSelectAll"> <span class="text-muted">Tout</span></label>
-                <button class="adm-email-btn-delete" id="trashDeleteSel" style="font-size:.72rem;padding:4px 10px" disabled><i class="bi bi-trash3"></i> Supprimer sélection</button>
-                <button class="adm-email-btn-delete" id="trashEmptyAll" style="font-size:.72rem;padding:4px 10px;margin-left:auto"><i class="bi bi-trash3-fill"></i> Vider la corbeille</button>
+            toolbarHtml = `<div class="d-flex align-items-center gap-1 px-2 py-1" style="border-bottom:1px solid var(--cl-border-light);font-size:.7rem">
+                <label class="mb-0" style="cursor:pointer;padding:2px 4px"><input type="checkbox" id="trashSelectAll"></label>
+                <button class="adm-email-btn-delete" id="trashDeleteSel" style="font-size:.68rem;padding:2px 6px" disabled><i class="bi bi-trash3"></i> Supprimer</button>
+                <button class="adm-email-btn-delete" id="trashEmptyAll" style="font-size:.68rem;padding:2px 6px;margin-left:auto"><i class="bi bi-trash3-fill"></i> Vider</button>
             </div>`;
         }
 
@@ -315,9 +352,10 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
             const hasUnread = parseInt(e.my_read) === 0;
             const fromName = (e.from_prenom || '') + ' ' + (e.from_nom || '');
             const toName = e.to_names || '—';
-            const checkbox = currentTab === 'trash' ? `<input type="checkbox" class="trash-cb" data-id="${e.id}" style="margin-right:6px;flex-shrink:0">` : '';
+            const isTrash = currentTab === 'trash';
+            const checkbox = isTrash ? `<input type="checkbox" class="trash-cb" data-id="${e.id}">` : '';
             return `
-                <div class="adm-email-item ${e.id === selectedId ? 'selected' : ''} ${hasUnread ? 'unread' : ''}" data-id="${e.id}">
+                <div class="adm-email-item ${e.id === selectedId ? 'selected' : ''} ${hasUnread ? 'unread' : ''}" data-id="${e.id}" ${!isTrash ? 'style="grid-template-columns:34px 1fr"' : ''}>
                     ${checkbox}
                     <div class="adm-email-item-avatar">${e.from_photo ? `<img src="${escapeHtml(e.from_photo)}" alt="">` : escapeHtml(initials(fromName))}</div>
                     <div class="adm-email-item-content">
@@ -543,8 +581,13 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
         pendingFiles = [];
         renderPendingFiles();
 
-        populateSelect('adminComposeTo');
-        populateSelect('adminComposeCc');
+        setupComposeSearch('adminComposeToSearch', 'adminComposeToDropdown', toSelected, 'adminToTags');
+        setupComposeSearch('adminComposeCcSearch', 'adminComposeCcDropdown', ccSelected, 'adminCcTags');
+        // Clear search inputs
+        const toInput = document.getElementById('adminComposeToSearch');
+        const ccInput = document.getElementById('adminComposeCcSearch');
+        if (toInput) toInput.value = '';
+        if (ccInput) ccInput.value = '';
         renderTags(toSelected, 'adminToTags');
         renderTags(ccSelected, 'adminCcTags');
 
@@ -644,26 +687,79 @@ $emailStatsTrash       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE i
         }
     }
 
-    // --- Contact helpers ---
-    function populateSelect(selectId) {
-        const el = document.getElementById(selectId);
-        if (!el) return;
-        const opts = contacts.map(c => ({
-            value: c.id,
-            label: `${c.prenom} ${c.nom}${c.fonction_nom ? ' — ' + c.fonction_nom : ''}`
-        }));
-        const arr = selectId === 'adminComposeTo' ? toSelected : ccSelected;
-        const containerId = selectId === 'adminComposeTo' ? 'adminToTags' : 'adminCcTags';
-        zerdaSelect.destroy(el);
-        zerdaSelect.init(el, opts, {
-            value: '',
-            search: true,
-            onSelect: (val) => {
-                if (!val || arr.includes(val)) { zerdaSelect.setValue('#' + selectId, ''); return; }
-                arr.push(val);
-                zerdaSelect.setValue('#' + selectId, '');
-                renderTags(arr, containerId);
-            }
+    // --- Contact search helpers ---
+    function setupComposeSearch(inputId, dropdownId, arr, tagsId) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+        let activeIdx = -1;
+
+        input.addEventListener('input', () => {
+            activeIdx = -1;
+            const q = input.value.trim();
+            if (q.length < 2) { dropdown.classList.remove('open'); return; }
+            renderSearchDropdown(q, dropdown, arr, tagsId, input);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.csd-item');
+            if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('active', i === activeIdx)); if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' }); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('active', i === activeIdx)); if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' }); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (items[activeIdx]) items[activeIdx].click(); }
+            else if (e.key === 'Escape') { dropdown.classList.remove('open'); }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.compose-search-wrap')) dropdown.classList.remove('open');
+        });
+    }
+
+    function renderSearchDropdown(query, dropdown, arr, tagsId, input) {
+        const q = query.toLowerCase();
+        const filtered = contacts.filter(c =>
+            !arr.includes(c.id) &&
+            `${c.prenom} ${c.nom} ${c.fonction_nom || ''} ${c.module_nom || ''}`.toLowerCase().includes(q)
+        );
+
+        if (!filtered.length) {
+            dropdown.innerHTML = '<div class="csd-empty">Aucun collègue trouvé</div>';
+            dropdown.classList.add('open');
+            return;
+        }
+
+        const groups = {};
+        filtered.forEach(c => {
+            const mod = c.module_nom || 'Sans module';
+            if (!groups[mod]) groups[mod] = [];
+            groups[mod].push(c);
+        });
+
+        let html = '';
+        function avatarHtml(c) {
+            if (c.photo) return `<img class="csd-avatar" src="${escapeHtml(c.photo)}" alt="">`;
+            const ini = (c.prenom?.[0] || '') + (c.nom?.[0] || '');
+            return `<span class="csd-initials">${escapeHtml(ini.toUpperCase())}</span>`;
+        }
+        for (const [mod, members] of Object.entries(groups)) {
+            html += `<div class="csd-group">${escapeHtml(mod)}</div>`;
+            members.forEach(c => {
+                html += `<div class="csd-item" data-id="${c.id}">${avatarHtml(c)}<span>${escapeHtml(c.prenom + ' ' + c.nom)}${c.fonction_nom ? ` <small>— ${escapeHtml(c.fonction_nom)}</small>` : ''}</span></div>`;
+            });
+        }
+        dropdown.innerHTML = html;
+        dropdown.classList.add('open');
+
+        dropdown.querySelectorAll('.csd-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const uid = item.dataset.id;
+                if (!arr.includes(uid)) {
+                    arr.push(uid);
+                    renderTags(arr, tagsId);
+                }
+                input.value = '';
+                dropdown.classList.remove('open');
+                input.focus();
+            });
         });
     }
 

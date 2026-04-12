@@ -162,6 +162,9 @@ function send_message()
     $parentId = $params['parent_id'] ?? null;
     $draftId = $params['draft_id'] ?? null;
 
+    // Debug: log received recipients
+    error_log('[MSG_DEBUG] send_message from=' . $user['id'] . ' to=' . json_encode($toIds) . ' cc=' . json_encode($ccIds) . ' sujet=' . $sujet);
+
     if (!$sujet) bad_request('Sujet requis');
     if (!$contenu) bad_request('Contenu requis');
     if (empty($toIds) || !is_array($toIds)) bad_request('Au moins un destinataire requis');

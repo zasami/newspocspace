@@ -4,6 +4,71 @@
 import { apiPost, toast, escapeHtml } from '../helpers.js';
 import { createEditor, getHTML, setContent, destroyEditor } from '../rich-editor.js';
 
+/** Styled confirm modal — matches SpocSpace design */
+function emailConfirm({ title = 'Confirmation', text = 'Êtes-vous sûr ?', icon = 'bi-question-circle', okText = 'Confirmer', cancelText = 'Annuler', type = 'warning' } = {}) {
+    return new Promise(resolve => {
+        // Remove any existing modal
+        document.getElementById('ssEmailConfirmOverlay')?.remove();
+
+        const colors = {
+            danger:  { bg: '#FEE2E2', color: '#DC2626', btn: '#DC2626', btnHover: '#B91C1C' },
+            warning: { bg: '#FEF3C7', color: '#D97706', btn: '#D97706', btnHover: '#B45309' },
+            info:    { bg: '#DBEAFE', color: '#2563EB', btn: '#2563EB', btnHover: '#1D4ED8' },
+        };
+        const c = colors[type] || colors.warning;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'ssEmailConfirmOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);animation:ssEcFadeIn .15s ease';
+        overlay.innerHTML = `
+            <style>
+                @keyframes ssEcFadeIn { from{opacity:0} to{opacity:1} }
+                @keyframes ssEcSlide { from{opacity:0;transform:translateY(-12px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+                .ss-ec-modal { background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);width:380px;max-width:92vw;animation:ssEcSlide .2s ease;overflow:hidden }
+                .ss-ec-header { display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid #E8E5E0 }
+                .ss-ec-icon { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;background:${c.bg};color:${c.color};flex-shrink:0 }
+                .ss-ec-title { font-size:1rem;font-weight:700;color:#1A1A1A;margin:0 }
+                .ss-ec-close { margin-left:auto;background:none;border:none;color:#9B9B9B;font-size:1.1rem;cursor:pointer;padding:4px;border-radius:6px;transition:all .15s }
+                .ss-ec-close:hover { background:#F0EDE8;color:#1A1A1A }
+                .ss-ec-body { padding:16px 20px;font-size:.92rem;color:#6B6B6B;line-height:1.5 }
+                .ss-ec-footer { display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 16px;border-top:1px solid #E8E5E0 }
+                .ss-ec-btn { padding:8px 18px;border-radius:8px;font-size:.87rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:inherit }
+                .ss-ec-cancel { background:#F0EDE8;color:#6B6B6B }
+                .ss-ec-cancel:hover { background:#E8E5E0;color:#1A1A1A }
+                .ss-ec-ok { background:${c.btn};color:#fff }
+                .ss-ec-ok:hover { background:${c.btnHover} }
+            </style>
+            <div class="ss-ec-modal">
+                <div class="ss-ec-header">
+                    <div class="ss-ec-icon"><i class="bi ${icon}"></i></div>
+                    <h6 class="ss-ec-title">${escapeHtml(title)}</h6>
+                    <button class="ss-ec-close" data-action="cancel"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="ss-ec-body">${text}</div>
+                <div class="ss-ec-footer">
+                    <button class="ss-ec-btn ss-ec-cancel" data-action="cancel">${escapeHtml(cancelText)}</button>
+                    <button class="ss-ec-btn ss-ec-ok" data-action="ok"><i class="bi ${icon}" style="margin-right:5px"></i>${escapeHtml(okText)}</button>
+                </div>
+            </div>`;
+
+        let resolved = false;
+        function done(val) {
+            if (resolved) return;
+            resolved = true;
+            overlay.remove();
+            resolve(val);
+        }
+
+        overlay.querySelector('[data-action="ok"]').addEventListener('click', () => done(true));
+        overlay.querySelectorAll('[data-action="cancel"]').forEach(el => el.addEventListener('click', () => done(false)));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+        document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { done(false); document.removeEventListener('keydown', esc); } });
+
+        document.body.appendChild(overlay);
+        overlay.querySelector('.ss-ec-ok').focus();
+    });
+}
+
 let currentTab = 'inbox';
 let selectedId = null;
 let contacts = [];
@@ -367,7 +432,8 @@ async function loadDetail(id) {
         openForward(e);
     });
     panel.querySelector('#btnDelete')?.addEventListener('click', async () => {
-        if (!confirm('Supprimer cet email ?')) return;
+        const ok = await emailConfirm({ title: 'Supprimer', text: 'Supprimer cet email ?', icon: 'bi-trash3', type: 'danger', okText: 'Supprimer' });
+        if (!ok) return;
         const r = await apiPost('delete_message', { id: e.id });
         if (r.success) {
             toast('Email supprimé');

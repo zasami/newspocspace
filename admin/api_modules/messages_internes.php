@@ -18,15 +18,20 @@ function admin_get_all_messages()
     $binds = [];
 
     if ($tab === 'trash') {
-        $where .= " AND e.sender_deleted = 1";
+        $where .= " AND ((e.sender_deleted = 1 AND e.from_user_id = ?) OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 1))";
+        $binds[] = $adminId;
+        $binds[] = $adminId;
     } elseif ($tab === 'inbox') {
-        $where .= " AND e.sender_deleted = 0 AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
+        $where .= " AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
         $binds[] = $adminId;
     } elseif ($tab === 'sent') {
         $where .= " AND e.from_user_id = ? AND e.sender_deleted = 0";
         $binds[] = $adminId;
     } else {
-        $where .= " AND e.sender_deleted = 0";
+        // All: messages sent by me (not deleted) + messages received by me (not deleted)
+        $where .= " AND ((e.from_user_id = ? AND e.sender_deleted = 0) OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0))";
+        $binds[] = $adminId;
+        $binds[] = $adminId;
     }
 
     if ($search) {
@@ -123,7 +128,7 @@ function admin_get_message_contacts()
     require_responsable();
 
     $contacts = Db::fetchAll(
-        "SELECT u.id, u.prenom, u.nom, u.email, u.fonction_nom,
+        "SELECT u.id, u.prenom, u.nom, u.email, u.photo, u.fonction_nom,
                 COALESCE(m.nom, 'Sans module') AS module_nom,
                 COALESCE(m.ordre, 999) AS module_ordre
          FROM users u
@@ -147,6 +152,9 @@ function admin_send_message()
     $toIds = $params['to'] ?? [];
     $ccIds = $params['cc'] ?? [];
     $parentId = $params['parent_id'] ?? null;
+
+    // Debug: log received recipients
+    error_log('[MSG_DEBUG_ADMIN] admin_send_message from=' . $admin['id'] . ' to=' . json_encode($toIds) . ' cc=' . json_encode($ccIds) . ' sujet=' . $sujet);
 
     if (!$sujet) bad_request('Sujet requis');
     if (!$contenu) bad_request('Contenu requis');
@@ -202,15 +210,20 @@ function admin_send_message()
 function admin_delete_message()
 {
     global $params;
-    require_responsable();
+    $admin = require_responsable();
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $email = Db::fetch("SELECT id FROM messages WHERE id = ?", [$id]);
+    $email = Db::fetch("SELECT id, from_user_id FROM messages WHERE id = ?", [$id]);
     if (!$email) not_found('Message non trouvé');
 
-    // Soft delete → move to trash
-    Db::exec("UPDATE messages SET sender_deleted = 1 WHERE id = ?", [$id]);
+    // If I'm the sender → mark sender_deleted
+    if ($email['from_user_id'] === $admin['id']) {
+        Db::exec("UPDATE messages SET sender_deleted = 1 WHERE id = ?", [$id]);
+    }
+
+    // If I'm a recipient → mark deleted in recipients
+    Db::exec("UPDATE message_recipients SET deleted = 1 WHERE email_id = ? AND user_id = ?", [$id, $admin['id']]);
 
     respond(['success' => true]);
 }
@@ -218,11 +231,17 @@ function admin_delete_message()
 function admin_restore_message()
 {
     global $params;
-    require_responsable();
+    $admin = require_responsable();
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    Db::exec("UPDATE messages SET sender_deleted = 0 WHERE id = ?", [$id]);
+    $email = Db::fetch("SELECT id, from_user_id FROM messages WHERE id = ?", [$id]);
+    if (!$email) not_found('Message non trouvé');
+
+    if ($email['from_user_id'] === $admin['id']) {
+        Db::exec("UPDATE messages SET sender_deleted = 0 WHERE id = ?", [$id]);
+    }
+    Db::exec("UPDATE message_recipients SET deleted = 0 WHERE email_id = ? AND user_id = ?", [$id, $admin['id']]);
 
     respond(['success' => true]);
 }
@@ -260,13 +279,18 @@ function admin_get_message_stats()
 {
     require_responsable();
 
+    $userId = $_SESSION['ss_user']['id'] ?? '';
     $total = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
     $today = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
     $week = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-    $userId = $_SESSION['ss_user']['id'] ?? '';
     $unread = (int)Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
     $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
-    $trash = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND sender_deleted = 1");
+    $trash = (int)Db::getOne(
+        "SELECT COUNT(*) FROM messages e WHERE e.is_draft = 0 AND (
+            (e.sender_deleted = 1 AND e.from_user_id = ?)
+            OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 1)
+        )", [$userId, $userId]
+    );
 
     respond(['success' => true, 'stats' => compact('total', 'today', 'week', 'unread', 'attachments', 'trash')]);
 }

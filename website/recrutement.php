@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/includes/cms.php';
 $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'E.M.S. La Terrassière SA';
+$cms = ws_load_sections('index');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -10,7 +12,7 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 <title>Offres d'emploi — <?= h($emsNom) ?></title>
 <meta name="description" content="Offres d'emploi de l'EMS La Terrassière SA. Rejoignez notre équipe de soins à Genève.">
 <meta name="robots" content="index, follow">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Pacifico&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="/spocspace/assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="/spocspace/website/assets/css/website.css">
@@ -189,18 +191,55 @@ body {
 }
 .rec-empty i { font-size: 3rem; display: block; margin-bottom: 12px; opacity: 0.5; }
 
-/* ── Offre Card ── */
+/* ── Offre Card (accordion) ── */
 .rec-offre-card {
   background: var(--rec-surface); border: 1px solid var(--rec-border);
-  border-radius: var(--rec-radius); padding: 24px; margin-bottom: 16px;
+  border-radius: var(--rec-radius); margin-bottom: 12px;
   box-shadow: var(--rec-shadow); transition: all 0.2s;
+  overflow: hidden;
 }
 .rec-offre-card:hover { border-color: var(--rec-border-hover); box-shadow: var(--rec-shadow-md); }
+.rec-offre-card.rec-offre-open { border-color: var(--rec-green-pale); }
 
-.rec-offre-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-.rec-offre-title { font-size: 1.25rem; font-weight: 600; color: var(--rec-text); margin: 0; }
+/* ── Summary row (always visible) ── */
+.rec-offre-summary {
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.rec-offre-summary:hover { background: var(--rec-green-bg); }
+.rec-offre-summary-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--rec-green-bg-mid); color: var(--rec-green); font-size: 1.1rem;
+}
+.rec-offre-summary-info { flex: 1; min-width: 0; }
+.rec-offre-summary-title {
+  font-size: 1.05rem; font-weight: 600; color: var(--rec-text); margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rec-offre-summary-meta {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+}
+.rec-offre-summary-toggle {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; color: var(--rec-text-muted); background: var(--rec-green-bg);
+  transition: all .3s ease;
+}
+.rec-offre-summary-toggle i { transition: transform .3s ease; }
+.rec-offre-open .rec-offre-summary-toggle i { transform: rotate(135deg); }
+.rec-offre-open .rec-offre-summary-toggle { background: var(--rec-green); color: #fff; }
 
-.rec-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ── Detail body (collapsible) ── */
+.rec-offre-body {
+  max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease;
+  opacity: 0;
+}
+.rec-offre-open .rec-offre-body { max-height: 2000px; opacity: 1; }
+.rec-offre-body-inner { padding: 0 20px 20px; border-top: 1px solid var(--rec-border); }
+.rec-offre-body-inner > :first-child { margin-top: 16px; }
+
+.rec-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .rec-badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 12px; border-radius: 100px; font-size: 0.78rem; font-weight: 500;
@@ -211,9 +250,8 @@ body {
 
 .rec-offre-desc {
   color: var(--rec-text-secondary); font-size: 0.92rem; margin-bottom: 16px;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  white-space: pre-line;
 }
-.rec-offre-desc.rec-expanded { -webkit-line-clamp: unset; overflow: visible; }
 
 .rec-offre-meta {
   display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
@@ -453,6 +491,17 @@ body {
   .rec-offre-footer .rec-btn { text-align: center; justify-content: center; }
   .rec-form-section { padding: 16px; }
 }
+
+/* ── Bénévoles contact button ── */
+.rec-ben-contact-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-radius: 6px; font-size: .85rem; font-weight: 500;
+  text-decoration: none; color: #E6C220; background: transparent;
+  border: 1.5px solid rgba(230,194,32,.4); transition: all .2s;
+}
+.rec-ben-contact-btn:hover {
+  background: rgba(230,194,32,.1); border-color: #E6C220; color: #C8A800;
+}
 </style>
 </head>
 <body>
@@ -490,6 +539,151 @@ body {
     <div id="recOffresList">
       <div class="rec-loading"><i class="bi bi-arrow-repeat"></i> Chargement des offres...</div>
     </div>
+  </div>
+
+  <div id="recExtraSections">
+  <!-- ══��� RUBRIQUE ÉPINGLÉE ═══ -->
+  <?php if (ws_visible($cms, 'pinned')):
+      $pinned = ws_content($cms, 'pinned');
+      $pinnedTitle = $pinned['title'] ?? '';
+      $pinnedText  = $pinned['text'] ?? '';
+      $pinnedSig   = $pinned['signature'] ?? '';
+      $pinnedImg   = $pinned['image'] ?? '';
+  ?>
+  <div class="ws-pinned-wrap" style="margin-top:40px">
+    <img src="/spocspace/website/assets/img/curved-shape.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-curve" aria-hidden="true">
+    <img src="/spocspace/website/assets/img/pointer-up.svg?v=2" alt="" class="ws-pinned-decor ws-pinned-decor-pointer" aria-hidden="true">
+    <div class="ws-team-cta ws-cta-pinned">
+      <div class="row align-items-center g-4">
+        <?php if ($pinnedImg): ?>
+        <div class="col-lg-5 text-center">
+          <img src="<?= h($pinnedImg) ?>" alt="" class="ws-pinned-img" loading="lazy">
+          <p class="ws-pinned-copyright">© Tous droits réservés — Reproduction interdite</p>
+        </div>
+        <div class="col-lg-7">
+        <?php else: ?>
+        <div class="col-12">
+        <?php endif; ?>
+          <h4><?= h($pinnedTitle) ?></h4>
+          <div class="ws-pinned-text"><?= ws_safe($pinnedText) ?></div>
+          <?php if ($pinnedSig):
+            $sigParts = array_map('trim', explode(',', $pinnedSig, 2));
+          ?>
+          <div class="ws-pinned-signature">
+            <span class="ws-pinned-sig-name"><?= h($sigParts[0]) ?></span>
+            <?php if (!empty($sigParts[1])): ?>
+            <span class="ws-pinned-sig-role"><?= h($sigParts[1]) ?></span>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- ═══ FORMATION CONTINUE ═══ -->
+  <?php if (ws_visible($cms, 'formation')):
+      $form = ws_content($cms, 'formation');
+      $formImg = $form['image'] ?? '';
+      $formLead = $form['lead'] ?? '';
+      $formText = $form['text'] ?? '';
+      $formItems = $form['items'] ?? [];
+  ?>
+  <div class="ws-form-banner" style="margin-top:32px">
+    <div class="row g-0 align-items-center">
+      <div class="col-lg-7">
+        <div class="ws-form-content">
+          <span class="ws-form-cap">Formation</span>
+          <h3><i class="bi bi-mortarboard" style="color:var(--ws-green)"></i> <?= h($cms['formation']['title'] ?? 'Formation continue') ?></h3>
+          <?php if ($formLead): ?><p class="ws-form-lead"><?= h($formLead) ?></p><?php endif; ?>
+          <?php if ($formText): ?><p class="ws-form-text"><?= h($formText) ?></p><?php endif; ?>
+          <?php if ($formItems): ?>
+          <div class="ws-form-items">
+            <?php foreach ($formItems as $item): ?>
+            <div class="ws-form-item"><div class="ws-form-item-icon"><i class="bi bi-check-circle-fill"></i></div><div><?= h($item) ?></div></div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <div class="col-lg-5 ws-form-img-col">
+        <?php if ($formImg): ?>
+          <img src="<?= h($formImg) ?>" alt="Formation" class="ws-form-img" loading="lazy">
+        <?php else: ?>
+          <div class="ws-form-img-placeholder"><i class="bi bi-camera"></i><span>Image formation</span></div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- ���══ BÉNÉVOLES ═══ -->
+  <?php if (ws_visible($cms, 'benevoles')):
+      $ben = ws_content($cms, 'benevoles');
+      $benImg = $ben['image'] ?? '';
+      $benLead = $ben['lead'] ?? '';
+      $benText = $ben['text'] ?? '';
+      $benMissions = $ben['missions'] ?? [];
+      $benOffres = $ben['offres'] ?? [];
+      $benPhone = $ben['phone'] ?? '';
+      $benEmail = $ben['email'] ?? '';
+  ?>
+  <div class="ws-ben-banner" style="margin-top:32px">
+    <div class="row g-0 align-items-center flex-lg-row-reverse">
+      <div class="col-lg-7">
+        <div class="ws-ben-content">
+          <span class="ws-ben-cap">Rejoignez-nous</span>
+          <h3><i class="bi bi-heart-fill ws-ben-heart"></i> <?= h($cms['benevoles']['title'] ?? 'Bénévoles recherchés') ?></h3>
+          <?php if ($benLead): ?><p class="ws-ben-lead"><?= h($benLead) ?></p><?php endif; ?>
+          <?php if ($benText): ?><p class="ws-ben-text"><?= h($benText) ?></p><?php endif; ?>
+          <?php if ($benMissions): ?>
+          <div class="ws-ben-section-title"><i class="bi bi-check-circle-fill"></i> Vos missions</div>
+          <div class="ws-ben-items">
+            <?php foreach ($benMissions as $m): ?>
+            <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-check-lg"></i></div><div><?= h($m) ?></div></div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+          <?php if ($benOffres): ?>
+          <div class="ws-ben-section-title"><i class="bi bi-gift-fill"></i> Nous offrons</div>
+          <div class="ws-ben-items">
+            <?php foreach ($benOffres as $o): ?>
+            <div class="ws-ben-item"><div class="ws-ben-item-icon"><i class="bi bi-star-fill"></i></div><div><?= h($o) ?></div></div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+          <?php if ($benPhone || $benEmail): ?>
+          <div class="ws-ben-tip">
+            <i class="bi bi-telephone-fill"></i>
+            <div>
+              <strong>Comment nous rejoindre ?</strong>
+              <div class="ws-ben-contact-links">
+                <?php if ($benPhone): ?><a href="tel:<?= h(preg_replace('/\s/', '', $benPhone)) ?>"><i class="bi bi-telephone-fill"></i> <?= h($benPhone) ?></a><?php endif; ?>
+                <?php if ($benEmail): ?><a href="mailto:<?= h($benEmail) ?>"><i class="bi bi-envelope-fill"></i> <?= h($benEmail) ?></a><?php endif; ?>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <div class="col-lg-5 ws-ben-img-col">
+
+        <?php if ($benImg): ?>
+          <img src="<?= h($benImg) ?>" alt="Bénévoles" class="ws-ben-img" loading="lazy">
+        <?php else: ?>
+          <div class="ws-ben-img-placeholder"><i class="bi bi-camera"></i><span>Image bénévoles</span></div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <div style="text-align:right;padding:12px 20px 16px">
+      <a href="/spocspace/website/#contact" class="rec-ben-contact-btn">
+        <i class="bi bi-send"></i> Nous contacter
+      </a>
+    </div>
+  </div>
+  <?php endif; ?>
+
   </div>
 
   <!-- ═══ VIEW 2: APPLICATION FORM ═══ -->
@@ -766,7 +960,9 @@ body {
 
       if (view === 'offres') {
         document.getElementById('recOffresView').style.display = '';
+        document.getElementById('recExtraSections').style.display = '';
       } else if (view === 'suivi') {
+        document.getElementById('recExtraSections').style.display = 'none';
         document.getElementById('recTrackView').style.display = '';
         // Pre-fill email and code from last submission
         if (window.__recLastEmail) {
@@ -796,35 +992,42 @@ body {
 
       list.innerHTML = offresData.map(o => renderOffreCard(o)).join('');
 
-      // Bind postuler buttons
-      list.querySelectorAll('[data-postuler]').forEach(btn => {
-        btn.addEventListener('click', () => showForm(btn.dataset.postuler));
-      });
-
-      // Bind "voir plus" toggles
-      list.querySelectorAll('[data-toggle-desc]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const desc = document.getElementById('desc-' + btn.dataset.toggleDesc);
-          if (desc) {
-            desc.classList.toggle('rec-expanded');
-            btn.textContent = desc.classList.contains('rec-expanded') ? 'Voir moins' : 'Voir plus';
-          }
+      // Bind accordion toggles
+      list.querySelectorAll('.rec-offre-summary').forEach(summary => {
+        summary.addEventListener('click', () => {
+          const card = summary.closest('.rec-offre-card');
+          card.classList.toggle('rec-offre-open');
         });
       });
+
+      // Bind postuler buttons
+      list.querySelectorAll('[data-postuler]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showForm(btn.dataset.postuler);
+        });
+      });
+
+      // Auto-open if only one offre
+      if (offresData.length === 1) {
+        list.querySelector('.rec-offre-card')?.classList.add('rec-offre-open');
+      }
     } catch (e) {
       list.innerHTML = '<div class="rec-empty"><i class="bi bi-exclamation-triangle"></i>Erreur lors du chargement des offres.</div>';
     }
   }
 
   function renderOffreCard(o) {
-    let badges = '';
-    if (o.departement) badges += '<span class="rec-badge rec-badge-dept"><i class="bi bi-building"></i> ' + escHtml(o.departement) + '</span>';
-    if (o.type_contrat) badges += '<span class="rec-badge rec-badge-contrat">' + escHtml(o.type_contrat) + '</span>';
-    if (o.taux_activite) badges += '<span class="rec-badge rec-badge-taux">' + escHtml(o.taux_activite) + '</span>';
+    // Summary badges (shown in the collapsed row)
+    let summaryBadges = '';
+    if (o.taux_activite) summaryBadges += '<span class="rec-badge rec-badge-taux">' + escHtml(o.taux_activite) + '</span>';
+    if (o.type_contrat) summaryBadges += '<span class="rec-badge rec-badge-contrat">' + escHtml(o.type_contrat) + '</span>';
+    if (o.departement) summaryBadges += '<span class="rec-badge rec-badge-dept"><i class="bi bi-building"></i> ' + escHtml(o.departement) + '</span>';
 
+    // Detail content
     let meta = '';
     if (o.lieu) meta += '<span><i class="bi bi-geo-alt"></i> ' + escHtml(o.lieu) + '</span>';
-    if (o.date_debut) meta += '<span><i class="bi bi-calendar"></i> Debut : ' + formatDate(o.date_debut) + '</span>';
+    if (o.date_debut) meta += '<span><i class="bi bi-calendar"></i> Début : ' + formatDate(o.date_debut) + '</span>';
     if (o.salaire_indication) meta += '<span><i class="bi bi-cash-stack"></i> ' + escHtml(o.salaire_indication) + '</span>';
 
     let sections = '';
@@ -837,20 +1040,28 @@ body {
 
     let deadline = '';
     if (o.date_limite) {
-      deadline = '<span class="rec-offre-deadline"><i class="bi bi-clock"></i> Delai : ' + formatDate(o.date_limite) + '</span>';
+      deadline = '<span class="rec-offre-deadline"><i class="bi bi-clock"></i> Délai : ' + formatDate(o.date_limite) + '</span>';
     }
 
-    const descLong = o.description && o.description.length > 200;
-
     return '<div class="rec-offre-card">' +
-      '<div class="rec-offre-header"><h3 class="rec-offre-title">' + escHtml(o.titre) + '</h3><div class="rec-badges">' + badges + '</div></div>' +
-      (o.description ? '<div class="rec-offre-desc" id="desc-' + o.id + '">' + escHtml(o.description) + '</div>' : '') +
-      (descLong ? '<a href="javascript:void(0)" data-toggle-desc="' + o.id + '" style="font-size:0.82rem;color:var(--rec-green);cursor:pointer">Voir plus</a>' : '') +
-      (meta ? '<div class="rec-offre-meta">' + meta + '</div>' : '') +
-      sections +
-      '<div class="rec-offre-footer">' + deadline +
-        '<button class="rec-btn rec-btn-primary" data-postuler="' + o.id + '"><i class="bi bi-send"></i> Postuler</button>' +
+      // ── Summary row (always visible) ──
+      '<div class="rec-offre-summary">' +
+        '<div class="rec-offre-summary-icon"><i class="bi bi-briefcase-fill"></i></div>' +
+        '<div class="rec-offre-summary-info">' +
+          '<h3 class="rec-offre-summary-title">' + escHtml(o.titre) + '</h3>' +
+          '<div class="rec-offre-summary-meta">' + summaryBadges + '</div>' +
+        '</div>' +
+        '<div class="rec-offre-summary-toggle"><i class="bi bi-plus-lg"></i></div>' +
       '</div>' +
+      // ── Detail body (collapsible) ──
+      '<div class="rec-offre-body"><div class="rec-offre-body-inner">' +
+        (o.description ? '<div class="rec-offre-desc">' + escHtml(o.description) + '</div>' : '') +
+        (meta ? '<div class="rec-offre-meta">' + meta + '</div>' : '') +
+        sections +
+        '<div class="rec-offre-footer">' + deadline +
+          '<button class="rec-btn rec-btn-primary" data-postuler="' + o.id + '"><i class="bi bi-send"></i> Postuler</button>' +
+        '</div>' +
+      '</div></div>' +
     '</div>';
   }
 
@@ -868,6 +1079,7 @@ body {
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     document.getElementById('recOffresView').style.display = 'none';
+    document.getElementById('recExtraSections').style.display = 'none';
     document.getElementById('recFormView').style.display = '';
     document.getElementById('recFormError').textContent = '';
     document.getElementById('recCandidatureForm').reset();
@@ -887,12 +1099,14 @@ body {
     window.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('recFormView').style.display = 'none';
     document.getElementById('recOffresView').style.display = '';
+    document.getElementById('recExtraSections').style.display = '';
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   });
 
   document.getElementById('recBackAfterSuccess').addEventListener('click', () => {
     document.getElementById('recSuccessView').style.display = 'none';
     document.getElementById('recOffresView').style.display = '';
+    document.getElementById('recExtraSections').style.display = '';
     tabs[0].classList.add('active');
     tabs[1].classList.remove('active');
   });

@@ -48,8 +48,10 @@ $wsPartenaires = [
   </div>
 </section>
 
-<footer class="ws-footer">
-  <div style="max-width:1200px;margin:0 auto;padding:0 20px">
+<footer class="ws-footer" style="position:relative;overflow:hidden">
+  <img src="/spocspace/website/assets/img/shape-2-soft-light.svg" alt="" aria-hidden="true" style="position:absolute;bottom:0;left:0;width:420px;opacity:.6;pointer-events:none">
+  <img src="/spocspace/website/assets/img/shape-1-soft-light.svg" alt="" aria-hidden="true" style="position:absolute;top:20px;right:0;width:200px;opacity:.8;pointer-events:none">
+  <div style="max-width:1200px;margin:0 auto;padding:0 20px;position:relative;z-index:1">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px">
       <div>
         <div class="ws-footer-brand">
