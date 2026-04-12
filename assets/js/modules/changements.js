@@ -23,6 +23,10 @@ let state = {
     colAssignOnDate: null,
     dualOffset: 0,
     refusId: null,
+    // Cas 3: jour OFF compensation
+    isOffSwap: false,
+    dateCompensation: null,
+    compensationAssign: null,
 };
 
 let confirmModal = null;
@@ -170,6 +174,10 @@ function closeSlidedown() {
     state.collegue = null;
     state.dateDestinataire = null;
     state.colAssignOnDate = null;
+    state.isOffSwap = false;
+    state.dateCompensation = null;
+    state.compensationAssign = null;
+    el('chgCompensationPanel')?.remove();
     renderCalendar('chgMyCal', state.myMonth, state.myPlanning, onMyDayClick, null);
 }
 
@@ -305,7 +313,120 @@ function onColDayClick(date, assign) {
     state.dateDestinataire = date;
     state.colAssignOnDate = assign;
     renderCalendar('chgColCal', state.colMonth, state.colPlanning, onColDayClick, state.dateDestinataire);
-    openConfirmModal();
+
+    // Cas 3: X est en jour OFF → demander jour de compensation
+    const myHasShift = state.myAssignOnDate && state.myAssignOnDate.horaire_type_id;
+    const colHasShift = assign && assign.horaire_type_id;
+
+    if (!myHasShift && colHasShift) {
+        // X est OFF, Y travaille → besoin de compensation
+        state.isOffSwap = true;
+        state.dateCompensation = null;
+        state.compensationAssign = null;
+        showCompensationPicker();
+    } else {
+        state.isOffSwap = false;
+        state.dateCompensation = null;
+        state.compensationAssign = null;
+        openConfirmModal();
+    }
+}
+
+/* ═══ Compensation picker (cas 3: jour OFF) ═══ */
+function showCompensationPicker() {
+    const slide = el('chgSlidedown');
+    if (!slide) return;
+
+    // Remove existing compensation panel
+    el('chgCompensationPanel')?.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'chgCompensationPanel';
+    panel.className = 'chg-compensation-panel';
+    panel.innerHTML = `
+        <div class="chg-comp-header">
+            <div class="chg-comp-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <div>
+                <div class="chg-comp-title">Jour de compensation requis</div>
+                <div class="chg-comp-desc">Vous êtes en repos le <strong>${formatDateFr(state.dateDemandeur)}</strong>.
+                Pour prendre le shift de ${escapeHtml(state.collegue.prenom)}, vous devez céder un de vos jours de travail en échange.</div>
+            </div>
+        </div>
+        <div class="chg-comp-subtitle"><i class="bi bi-calendar-check"></i> Choisissez un jour de travail à céder :</div>
+        <div id="chgCompCal" class="chg-comp-cal"></div>
+    `;
+    slide.appendChild(panel);
+
+    // Render my calendar with only work days clickable
+    renderCompensationCalendar();
+
+    setTimeout(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function renderCompensationCalendar() {
+    const container = el('chgCompCal');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const today = new Date().toISOString().slice(0, 10);
+    const [year, month] = state.myMonth.split('-').map(Number);
+    const lastDay = new Date(year, month, 0).getDate();
+
+    const byDate = {};
+    state.myPlanning.forEach(a => { byDate[a.date_jour] = a; });
+    const colByDate = {};
+    state.colPlanning.forEach(a => { colByDate[a.date_jour] = a; });
+
+    // Only show days where: X works AND Y is OFF
+    for (let d = 1; d <= lastDay; d++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (dateStr <= today) continue;
+        if (dateStr === state.dateDemandeur) continue;
+        if (dateStr === state.dateDestinataire) continue;
+
+        const assign = byDate[dateStr];
+        if (!assign || !assign.horaire_type_id) continue; // X must be working
+
+        const colAssign = colByDate[dateStr];
+        if (colAssign && colAssign.horaire_type_id) continue; // Y must be OFF (no shift)
+
+        const item = document.createElement('div');
+        item.className = 'chg-comp-day';
+        if (dateStr === state.dateCompensation) item.classList.add('chg-comp-day-selected');
+
+        const dt = new Date(dateStr + 'T00:00:00');
+        const dayName = JOURS[dt.getDay() === 0 ? 6 : dt.getDay() - 1];
+
+        const badge = document.createElement('span');
+        badge.className = 'chg-dual-badge';
+        badge.style.background = assign.couleur || '#6c757d';
+        badge.textContent = assign.horaire_code;
+
+        item.innerHTML = `<span class="chg-comp-day-name">${dayName} ${d}</span>`;
+        item.appendChild(badge);
+        if (assign.module_code) {
+            const mod = document.createElement('span');
+            mod.className = 'chg-comp-day-module';
+            mod.textContent = assign.module_code;
+            item.appendChild(mod);
+        }
+
+        item.addEventListener('click', () => {
+            state.dateCompensation = dateStr;
+            state.compensationAssign = assign;
+            renderCompensationCalendar();
+            // Open confirm modal after short delay
+            setTimeout(() => openConfirmModal(), 200);
+        });
+
+        container.appendChild(item);
+    }
+
+    if (!container.children.length) {
+        container.innerHTML = '<div class="text-muted text-center py-3" style="font-size:.85rem">Aucun jour compatible ce mois (vous devez travailler et ' + escapeHtml(state.collegue.prenom) + ' doit être en repos)</div>';
+    }
 }
 
 /* ═══ Confirmation modal ═══ */
@@ -321,45 +442,87 @@ function openConfirmModal() {
     const block = document.createElement('div');
     block.className = 'chg-confirm-block';
 
-    // Row: give / arrow / take
-    const row = document.createElement('div');
-    row.className = 'chg-confirm-row';
+    if (state.isOffSwap && state.dateCompensation) {
+        // ═══ CAS 3: Double échange ═══
+        // Échange 1 : X prend le shift de Y
+        const label1 = document.createElement('div');
+        label1.className = 'chg-confirm-step-label';
+        label1.innerHTML = '<span class="chg-step-num">1</span> Vous prenez le shift de ' + escapeHtml(c.prenom);
+        block.appendChild(label1);
 
-    // Give side
-    const giveSide = document.createElement('div');
-    giveSide.className = 'chg-confirm-side chg-confirm-give';
-    const giveLabel = document.createElement('div');
-    giveLabel.className = 'chg-confirm-label';
-    giveLabel.innerHTML = '<i class="bi bi-box-arrow-up-right"></i> Vous cédez';
-    const giveDate = document.createElement('div');
-    giveDate.className = 'chg-confirm-date';
-    giveDate.textContent = formatDateFr(state.dateDemandeur);
-    giveSide.appendChild(giveLabel);
-    giveSide.appendChild(giveDate);
-    giveSide.appendChild(buildBadgeEl(a));
-    row.appendChild(giveSide);
+        const row1 = document.createElement('div');
+        row1.className = 'chg-confirm-row';
+        const give1 = document.createElement('div');
+        give1.className = 'chg-confirm-side chg-confirm-give';
+        give1.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-moon"></i> Votre jour OFF</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateDemandeur)}</div>`;
+        give1.appendChild(buildBadgeEl(a));
+        row1.appendChild(give1);
+        const arrow1 = document.createElement('div');
+        arrow1.className = 'chg-confirm-arrow';
+        arrow1.innerHTML = '<i class="bi bi-arrow-right"></i>';
+        row1.appendChild(arrow1);
+        const take1 = document.createElement('div');
+        take1.className = 'chg-confirm-side chg-confirm-take';
+        take1.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-in-down-left"></i> Vous travaillez</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateDestinataire)}</div>`;
+        take1.appendChild(buildBadgeEl(b));
+        row1.appendChild(take1);
+        block.appendChild(row1);
 
-    // Arrow
-    const arrowDiv = document.createElement('div');
-    arrowDiv.className = 'chg-confirm-arrow';
-    arrowDiv.innerHTML = '<i class="bi bi-arrow-left-right"></i>';
-    row.appendChild(arrowDiv);
+        // Échange 2 : X cède un jour de travail à Y
+        const label2 = document.createElement('div');
+        label2.className = 'chg-confirm-step-label';
+        label2.style.marginTop = '16px';
+        label2.innerHTML = '<span class="chg-step-num">2</span> Compensation — vous cédez un jour à ' + escapeHtml(c.prenom);
+        block.appendChild(label2);
 
-    // Take side
-    const takeSide = document.createElement('div');
-    takeSide.className = 'chg-confirm-side chg-confirm-take';
-    const takeLabel = document.createElement('div');
-    takeLabel.className = 'chg-confirm-label';
-    takeLabel.innerHTML = '<i class="bi bi-box-arrow-in-down-left"></i> Vous prenez';
-    const takeDate = document.createElement('div');
-    takeDate.className = 'chg-confirm-date';
-    takeDate.textContent = formatDateFr(state.dateDestinataire);
-    takeSide.appendChild(takeLabel);
-    takeSide.appendChild(takeDate);
-    takeSide.appendChild(buildBadgeEl(b));
-    row.appendChild(takeSide);
+        const row2 = document.createElement('div');
+        row2.className = 'chg-confirm-row';
+        const give2 = document.createElement('div');
+        give2.className = 'chg-confirm-side chg-confirm-give';
+        give2.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-up-right"></i> Vous cédez</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateCompensation)}</div>`;
+        give2.appendChild(buildBadgeEl(state.compensationAssign));
+        row2.appendChild(give2);
+        const arrow2 = document.createElement('div');
+        arrow2.className = 'chg-confirm-arrow';
+        arrow2.innerHTML = '<i class="bi bi-arrow-right"></i>';
+        row2.appendChild(arrow2);
+        const take2 = document.createElement('div');
+        take2.className = 'chg-confirm-side chg-confirm-take';
+        take2.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-person"></i> ${escapeHtml(c.prenom)} travaille</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateCompensation)}</div>`;
+        take2.appendChild(buildBadgeEl(state.compensationAssign));
+        row2.appendChild(take2);
+        block.appendChild(row2);
 
-    block.appendChild(row);
+    } else {
+        // ═══ CAS 1 & 2: Échange simple ═══
+        const row = document.createElement('div');
+        row.className = 'chg-confirm-row';
+
+        const giveSide = document.createElement('div');
+        giveSide.className = 'chg-confirm-side chg-confirm-give';
+        giveSide.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-up-right"></i> Vous cédez</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateDemandeur)}</div>`;
+        giveSide.appendChild(buildBadgeEl(a));
+        row.appendChild(giveSide);
+
+        const arrowDiv = document.createElement('div');
+        arrowDiv.className = 'chg-confirm-arrow';
+        arrowDiv.innerHTML = '<i class="bi bi-arrow-left-right"></i>';
+        row.appendChild(arrowDiv);
+
+        const takeSide = document.createElement('div');
+        takeSide.className = 'chg-confirm-side chg-confirm-take';
+        takeSide.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-in-down-left"></i> Vous prenez</div>
+            <div class="chg-confirm-date">${formatDateFr(state.dateDestinataire)}</div>`;
+        takeSide.appendChild(buildBadgeEl(b));
+        row.appendChild(takeSide);
+
+        block.appendChild(row);
+    }
 
     // "Échange avec" line
     const withDiv = document.createElement('div');
@@ -378,22 +541,54 @@ function openConfirmModal() {
     const dualSection = document.createElement('div');
     dualSection.className = 'chg-dual-section';
 
+    const dualHeader = document.createElement('div');
+    dualHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+
     const dualTitle = document.createElement('h4');
     dualTitle.className = 'chg-dual-title';
+    dualTitle.style.margin = '0';
     dualTitle.innerHTML = '<i class="bi bi-layout-split"></i> Comparaison';
-    dualSection.appendChild(dualTitle);
+    dualHeader.appendChild(dualTitle);
+
+    const infoBtn = document.createElement('button');
+    infoBtn.type = 'button';
+    infoBtn.className = 'chg-legend-btn';
+    infoBtn.innerHTML = '<i class="bi bi-info-circle"></i>';
+    infoBtn.title = 'Légende';
+    infoBtn.addEventListener('click', () => {
+        const legend = document.getElementById('chgLegendPanel');
+        if (legend) legend.classList.toggle('open');
+    });
+    dualHeader.appendChild(infoBtn);
+    dualSection.appendChild(dualHeader);
+
+    const legendPanel = document.createElement('div');
+    legendPanel.id = 'chgLegendPanel';
+    legendPanel.className = 'chg-legend-panel';
+    legendPanel.innerHTML = `
+        <div class="chg-legend-item">
+            <span class="chg-legend-color" style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.2)"></span>
+            <span><i class="bi bi-arrow-up-right" style="color:#c0392b"></i> Jour que vous <strong>cédez</strong> — le badge montre ce que vous aurez à la place</span>
+        </div>
+        <div class="chg-legend-item">
+            <span class="chg-legend-color" style="background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.2)"></span>
+            <span><i class="bi bi-arrow-down-left" style="color:#27ae60"></i> Jour que vous <strong>recevez</strong> — le badge montre le nouvel horaire</span>
+        </div>
+        <div class="chg-legend-item">
+            <span class="chg-legend-off">OFF</span>
+            <span>Jour de repos (pas d'horaire assigné)</span>
+        </div>
+    `;
+    dualSection.appendChild(legendPanel);
 
     const dualNav = document.createElement('div');
     dualNav.className = 'chg-dual-nav';
+    dualNav.style.justifyContent = 'flex-end';
 
     const prevBtn = document.createElement('button');
     prevBtn.className = 'btn btn-sm btn-outline-secondary';
     prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
     prevBtn.addEventListener('click', () => { state.dualOffset -= 7; renderDualGridModal(); });
-
-    const rangeSpan = document.createElement('span');
-    rangeSpan.className = 'chg-dual-range';
-    rangeSpan.id = 'chgDualRangeM';
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'btn btn-sm btn-outline-secondary';
@@ -401,7 +596,6 @@ function openConfirmModal() {
     nextBtn.addEventListener('click', () => { state.dualOffset += 7; renderDualGridModal(); });
 
     dualNav.appendChild(prevBtn);
-    dualNav.appendChild(rangeSpan);
     dualNav.appendChild(nextBtn);
     dualSection.appendChild(dualNav);
 
@@ -439,6 +633,39 @@ function openConfirmModal() {
 /* ═══ Dual planning grid ═══ */
 function renderDualGridModal() {
     buildDualGridHtml('chgDualTableM', 'chgDualRangeM');
+    setupDragScroll();
+    // Auto-scroll to first swap day
+    setTimeout(() => {
+        const wrap = document.querySelector('.chg-dual-grid-wrap');
+        const swapCell = wrap?.querySelector('.chg-dual-cell-give, .chg-dual-cell-take');
+        if (wrap && swapCell) {
+            const offset = swapCell.offsetLeft - wrap.offsetLeft - 140;
+            wrap.scrollLeft = Math.max(0, offset);
+        }
+    }, 50);
+}
+
+function setupDragScroll() {
+    document.querySelectorAll('.chg-dual-grid-wrap').forEach(wrap => {
+        if (wrap._dragScrollInit) return;
+        wrap._dragScrollInit = true;
+        let isDown = false, startX, scrollLeft;
+        wrap.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button, a, input')) return;
+            isDown = true;
+            wrap.classList.add('chg-grabbing');
+            startX = e.pageX - wrap.offsetLeft;
+            scrollLeft = wrap.scrollLeft;
+        });
+        wrap.addEventListener('mouseleave', () => { isDown = false; wrap.classList.remove('chg-grabbing'); });
+        wrap.addEventListener('mouseup', () => { isDown = false; wrap.classList.remove('chg-grabbing'); });
+        wrap.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - wrap.offsetLeft;
+            wrap.scrollLeft = scrollLeft - (x - startX);
+        });
+    });
 }
 
 function buildDualGridHtml(tableId, rangeId) {
@@ -446,7 +673,11 @@ function buildDualGridHtml(tableId, rangeId) {
 
     const dateDem = new Date(state.dateDemandeur + 'T00:00:00');
     const dateDest = new Date(state.dateDestinataire + 'T00:00:00');
-    const earliest = dateDem < dateDest ? dateDem : dateDest;
+    let earliest = dateDem < dateDest ? dateDem : dateDest;
+    if (state.dateCompensation) {
+        const dateComp = new Date(state.dateCompensation + 'T00:00:00');
+        if (dateComp < earliest) earliest = dateComp;
+    }
 
     const start = new Date(earliest);
     const dow = start.getDay() || 7;
@@ -510,7 +741,7 @@ function buildDualGridHtml(tableId, rangeId) {
     myTd.className = 'chg-dual-user-col';
     myTd.innerHTML = '<i class="bi bi-person-fill"></i> Vous';
     myRow.appendChild(myTd);
-    buildDualRowDOM(myRow, days, myByDate, colByDate, state.dateDemandeur, state.dateDestinataire);
+    buildDualRowDOM(myRow, days, myByDate, colByDate, state.dateDemandeur, state.dateDestinataire, state.dateCompensation, 'me');
     tbody.appendChild(myRow);
 
     // Col row
@@ -519,48 +750,80 @@ function buildDualGridHtml(tableId, rangeId) {
     colTd.className = 'chg-dual-user-col';
     colTd.innerHTML = `<i class="bi bi-person"></i> ${escapeHtml(c.prenom)}`;
     colRow.appendChild(colTd);
-    buildDualRowDOM(colRow, days, colByDate, myByDate, state.dateDestinataire, state.dateDemandeur);
+    buildDualRowDOM(colRow, days, colByDate, myByDate, state.dateDestinataire, state.dateDemandeur, state.dateCompensation, 'col');
     tbody.appendChild(colRow);
 
     tableEl.appendChild(tbody);
 }
 
-function buildDualRowDOM(row, days, byDate, otherByDate, giveDate, takeDate) {
+function buildDualRowDOM(row, days, byDate, otherByDate, giveDate, takeDate, compDate, who) {
     days.forEach(d => {
         const a = byDate[d];
         const isGive = d === giveDate;
         const isTake = d === takeDate;
+        // Compensation: for "me" I give my shift, for "col" they receive it
+        const isComp = compDate && d === compDate;
         const td = document.createElement('td');
         td.className = 'chg-dual-day-col';
-        if (isGive) td.classList.add('chg-dual-cell-give');
-        if (isTake) td.classList.add('chg-dual-cell-take');
 
-        td.appendChild(cellBadgeDOM(a));
-
-        if (isGive) {
-            const sim = document.createElement('div');
-            sim.className = 'chg-sim-out';
-            const arrow = document.createElement('i');
-            arrow.className = 'bi bi-arrow-up-right chg-sim-arrow-out';
-            sim.appendChild(arrow);
-            const dashed = document.createElement('span');
-            dashed.className = 'chg-sim-dashed chg-sim-dashed-out';
-            dashed.appendChild(cellBadgeDOM(a));
-            sim.appendChild(dashed);
-            td.appendChild(sim);
-        }
-        if (isTake) {
-            const other = otherByDate[giveDate];
-            const sim = document.createElement('div');
-            sim.className = 'chg-sim-in';
-            const arrow = document.createElement('i');
-            arrow.className = 'bi bi-arrow-down-left chg-sim-arrow-in';
-            sim.appendChild(arrow);
-            const dashed = document.createElement('span');
-            dashed.className = 'chg-sim-dashed chg-sim-dashed-in';
-            dashed.appendChild(cellBadgeDOM(other));
-            sim.appendChild(dashed);
-            td.appendChild(sim);
+        if (isComp) {
+            if (who === 'me') {
+                // I give my shift on comp day → OFF
+                td.classList.add('chg-dual-cell-give');
+                const wrap = document.createElement('div');
+                wrap.className = 'chg-swap-result chg-swap-lose';
+                wrap.innerHTML = '<div class="chg-swap-label"><i class="bi bi-arrow-up-right"></i></div>';
+                const off = document.createElement('span');
+                off.className = 'chg-swap-off';
+                off.textContent = 'OFF';
+                wrap.appendChild(off);
+                td.appendChild(wrap);
+            } else {
+                // Colleague receives my shift on comp day
+                td.classList.add('chg-dual-cell-take');
+                const myShift = otherByDate[compDate];
+                const wrap = document.createElement('div');
+                wrap.className = 'chg-swap-result chg-swap-gain';
+                wrap.innerHTML = '<div class="chg-swap-label"><i class="bi bi-arrow-down-left"></i></div>';
+                if (myShift && myShift.horaire_type_id) {
+                    wrap.appendChild(cellBadgeDOM(myShift));
+                } else {
+                    const off = document.createElement('span');
+                    off.className = 'chg-swap-off';
+                    off.textContent = 'OFF';
+                    wrap.appendChild(off);
+                }
+                td.appendChild(wrap);
+            }
+        } else if (isGive) {
+            // Ce jour : on CÈDE notre horaire → on passe en repos
+            td.classList.add('chg-dual-cell-give');
+            const wrap = document.createElement('div');
+            wrap.className = 'chg-swap-result chg-swap-lose';
+            wrap.innerHTML = '<div class="chg-swap-label"><i class="bi bi-arrow-up-right"></i></div>';
+            const off = document.createElement('span');
+            off.className = 'chg-swap-off';
+            off.textContent = 'OFF';
+            wrap.appendChild(off);
+            td.appendChild(wrap);
+        } else if (isTake) {
+            // Ce jour : on REÇOIT le shift de l'autre
+            td.classList.add('chg-dual-cell-take');
+            const newAssign = otherByDate[takeDate];
+            const wrap = document.createElement('div');
+            wrap.className = 'chg-swap-result chg-swap-gain';
+            wrap.innerHTML = '<div class="chg-swap-label"><i class="bi bi-arrow-down-left"></i></div>';
+            if (newAssign && newAssign.horaire_type_id) {
+                wrap.appendChild(cellBadgeDOM(newAssign));
+            } else {
+                const off = document.createElement('span');
+                off.className = 'chg-swap-off';
+                off.textContent = 'OFF';
+                wrap.appendChild(off);
+            }
+            td.appendChild(wrap);
+        } else {
+            td.appendChild(cellBadgeDOM(a));
         }
 
         row.appendChild(td);
@@ -616,12 +879,17 @@ async function submitChangement() {
     const btn = el('chgSubmitBtn');
     btn.disabled = true;
 
-    const res = await apiPost('submit_changement', {
+    const payload = {
         date_demandeur: state.dateDemandeur,
         date_destinataire: state.dateDestinataire,
         destinataire_id: state.collegueId,
         motif: el('chgMotif')?.value || ''
-    });
+    };
+    // Cas 3: double échange avec compensation
+    if (state.isOffSwap && state.dateCompensation) {
+        payload.date_compensation = state.dateCompensation;
+    }
+    const res = await apiPost('submit_changement', payload);
 
     btn.disabled = false;
     if (res.success) {
@@ -694,7 +962,7 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
             const cell = document.createElement('div');
             cell.className = 'chg-cal-cell';
             if (hasShift) cell.classList.add('chg-cal-has-shift');
-            else if (hasAssign) cell.classList.add('chg-cal-clickable');
+            else cell.classList.add('chg-cal-clickable');
             if (isSelected) cell.classList.add('chg-cal-selected');
             if (isPast) cell.classList.add('chg-cal-past');
             if (isWeekend) cell.classList.add('chg-cal-weekend');
@@ -729,11 +997,17 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
                     ab.textContent = 'A';
                     cell.appendChild(ab);
                 }
+            } else {
+                // Jour off (pas d'assignation)
+                const off = document.createElement('div');
+                off.className = 'chg-cal-repos';
+                off.textContent = '—';
+                cell.appendChild(off);
             }
 
-            const clickable = !isPast && hasAssign;
+            const clickable = !isPast;
             if (clickable) {
-                cell.addEventListener('click', () => onDayClick(dateStr, byDate[dateStr]));
+                cell.addEventListener('click', () => onDayClick(dateStr, byDate[dateStr] || { date_jour: dateStr, horaire_type_id: null, assign_statut: 'repos' }));
             }
 
             weekDiv.appendChild(cell);

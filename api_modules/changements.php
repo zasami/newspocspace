@@ -258,21 +258,39 @@ function submit_changement()
     if (!$planningDest) bad_request("Aucun planning pour le mois $moisDest");
     if ($planningDest['statut'] === 'brouillon') bad_request("Le planning de $moisDest n'est pas encore publié");
 
-    // Get demandeur's assignation on date_demandeur (the shift A gives away, or repos/congé)
+    // Get demandeur's assignation on date_demandeur (the shift A gives away, or jour off)
     $assignDem = Db::fetch(
         "SELECT id, horaire_type_id FROM planning_assignations
          WHERE planning_id = ? AND date_jour = ? AND user_id = ?",
         [$planningDem['id'], $dateDemandeur, $user['id']]
     );
-    if (!$assignDem) bad_request("Vous n'avez pas d'assignation le $dateDemandeur");
+    // If no assignation (jour off), create a repos entry
+    if (!$assignDem) {
+        $offId = Uuid::v4();
+        Db::exec(
+            "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, statut)
+             VALUES (?, ?, ?, ?, NULL, NULL, 'repos')",
+            [$offId, $planningDem['id'], $user['id'], $dateDemandeur]
+        );
+        $assignDem = ['id' => $offId, 'horaire_type_id' => null];
+    }
 
-    // Get destinataire's assignation on date_destinataire (the shift A wants to take, or repos/congé)
+    // Get destinataire's assignation on date_destinataire (the shift A wants to take, or jour off)
     $assignDest = Db::fetch(
         "SELECT id, horaire_type_id FROM planning_assignations
          WHERE planning_id = ? AND date_jour = ? AND user_id = ?",
         [$planningDest['id'], $dateDestinataire, $destinataireId]
     );
-    if (!$assignDest) bad_request("Le collègue n'a pas d'assignation le $dateDestinataire");
+    // If no assignation (jour off), create a repos entry
+    if (!$assignDest) {
+        $offId = Uuid::v4();
+        Db::exec(
+            "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, statut)
+             VALUES (?, ?, ?, ?, NULL, NULL, 'repos')",
+            [$offId, $planningDest['id'], $destinataireId, $dateDestinataire]
+        );
+        $assignDest = ['id' => $offId, 'horaire_type_id' => null];
+    }
 
     // At least one side must have a horaire (no point swapping two repos)
     if (!$assignDem['horaire_type_id'] && !$assignDest['horaire_type_id']) {
@@ -303,16 +321,66 @@ function submit_changement()
          $motif ?: null]
     );
 
+    // Cas 3: jour OFF avec compensation → créer le 2e changement
+    $dateCompensation = Sanitize::date($params['date_compensation'] ?? '');
+    if ($dateCompensation) {
+        $moisComp = substr($dateCompensation, 0, 7);
+        $planningComp = Db::fetch("SELECT id FROM plannings WHERE mois_annee = ?", [$moisComp]);
+
+        // Assignation du demandeur le jour de compensation (il cède ce jour)
+        $assignComp = Db::fetch(
+            "SELECT id, horaire_type_id FROM planning_assignations
+             WHERE planning_id = ? AND date_jour = ? AND user_id = ?",
+            [$planningComp['id'] ?? $planningDem['id'], $dateCompensation, $user['id']]
+        );
+
+        // Assignation du destinataire le jour de compensation (il reçoit)
+        $assignDestComp = Db::fetch(
+            "SELECT id FROM planning_assignations
+             WHERE planning_id = ? AND date_jour = ? AND user_id = ?",
+            [$planningComp['id'] ?? $planningDem['id'], $dateCompensation, $destinataireId]
+        );
+        if (!$assignDestComp) {
+            $compDestId = Uuid::v4();
+            Db::exec(
+                "INSERT INTO planning_assignations (id, planning_id, user_id, date_jour, horaire_type_id, module_id, statut)
+                 VALUES (?, ?, ?, ?, NULL, NULL, 'repos')",
+                [$compDestId, $planningComp['id'] ?? $planningDem['id'], $destinataireId, $dateCompensation]
+            );
+            $assignDestComp = ['id' => $compDestId];
+        }
+
+        if ($assignComp) {
+            $id2 = Uuid::v4();
+            Db::exec(
+                "INSERT INTO changements_horaire
+                    (id, demandeur_id, destinataire_id, planning_demandeur_id, planning_destinataire_id,
+                     date_demandeur, date_destinataire, assignation_demandeur_id, assignation_destinataire_id, motif)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [$id2, $user['id'], $destinataireId,
+                 $planningComp['id'] ?? $planningDem['id'], $planningComp['id'] ?? $planningDem['id'],
+                 $dateCompensation, $dateCompensation,
+                 $assignComp['id'], $assignDestComp['id'],
+                 ($motif ? $motif . ' (compensation)' : 'Compensation jour OFF')]
+            );
+        }
+    }
+
     // Notify destinataire
     $demPrenom = $user['prenom'] ?? '';
     $demNom = $user['nom'] ?? '';
     $dateDemFr = date('d.m.Y', strtotime($dateDemandeur));
     $dateDestFr = date('d.m.Y', strtotime($dateDestinataire));
+    $notifMsg = "$demPrenom $demNom vous propose un échange : céder votre horaire du $dateDestFr contre le sien du $dateDemFr.";
+    if ($dateCompensation) {
+        $dateCompFr = date('d.m.Y', strtotime($dateCompensation));
+        $notifMsg .= " Compensation : $demPrenom cède aussi son horaire du $dateCompFr.";
+    }
     Notification::create(
         $destinataireId,
         'changement_demande',
         'Demande de changement',
-        "$demPrenom $demNom vous propose un échange : céder votre horaire du $dateDestFr contre le sien du $dateDemFr.",
+        $notifMsg,
         'changements'
     );
 
