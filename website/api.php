@@ -827,6 +827,69 @@ case 'contact_submit':
     respond(['success' => true, 'message' => 'Votre message a été envoyé.']);
     break;
 
+// ── Communication famille ↔ soignants ──────────────────────────────────────
+
+case 'famille_get_messages':
+    $session = require_famille_auth();
+    $residentId = $session['resident_id'];
+
+    $messages = Db::fetchAll(
+        "SELECT id, sender_type, sender_name, message, is_read, created_at
+         FROM famille_messages
+         WHERE resident_id = ?
+         ORDER BY created_at ASC",
+        [$residentId]
+    );
+
+    // Mark soignant messages as read
+    Db::exec(
+        "UPDATE famille_messages SET is_read = 1 WHERE resident_id = ? AND sender_type = 'soignant' AND is_read = 0",
+        [$residentId]
+    );
+
+    respond(['success' => true, 'messages' => $messages]);
+    break;
+
+case 'famille_send_message':
+    $session = require_famille_auth();
+    $residentId = $session['resident_id'];
+    $message = trim($input['message'] ?? '');
+
+    if (!$message || mb_strlen($message) > 2000) {
+        respond(['success' => false, 'message' => 'Message vide ou trop long (max 2000 caractères).'], 400);
+    }
+
+    $resident = Db::fetch("SELECT correspondant_prenom, correspondant_nom FROM residents WHERE id = ?", [$residentId]);
+    $senderName = trim(($resident['correspondant_prenom'] ?? '') . ' ' . ($resident['correspondant_nom'] ?? '')) ?: $session['correspondant_email'];
+    $id = Uuid::v4();
+
+    Db::exec(
+        "INSERT INTO famille_messages (id, resident_id, sender_type, sender_name, message, created_at) VALUES (?, ?, 'famille', ?, ?, NOW())",
+        [$id, $residentId, $senderName, $message]
+    );
+
+    respond([
+        'success' => true,
+        'message_obj' => [
+            'id' => $id,
+            'sender_type' => 'famille',
+            'sender_name' => $senderName,
+            'message' => $message,
+            'is_read' => 0,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]
+    ]);
+    break;
+
+case 'famille_get_unread_count':
+    $session = require_famille_auth();
+    $count = (int) Db::getOne(
+        "SELECT COUNT(*) FROM famille_messages WHERE resident_id = ? AND sender_type = 'soignant' AND is_read = 0",
+        [$session['resident_id']]
+    );
+    respond(['success' => true, 'count' => $count]);
+    break;
+
 default:
     respond(['success' => false, 'message' => 'Action inconnue'], 400);
 }

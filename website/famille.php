@@ -96,6 +96,11 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
           <span>Galerie</span>
           <span class="fam-sb-count" id="famSbAlb">0</span>
         </button>
+        <button class="fam-sb-card" data-pane="communication">
+          <i class="bi bi-chat-dots"></i>
+          <span>Communication</span>
+          <span class="fam-sb-count" id="famSbMsg">0</span>
+        </button>
       </nav>
 
       <!-- Logout en bas -->
@@ -147,6 +152,22 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
       <div class="fam-pane" id="paneGalerie">
         <div id="famGalFolders"></div>
         <div id="famGalAlbum" style="display:none"></div>
+      </div>
+
+      <!-- Communication -->
+      <div class="fam-pane" id="paneCommunication">
+        <div class="fam-comm-wrap">
+          <div class="fam-comm-timeline" id="famCommTimeline">
+            <div class="fam-comm-empty">
+              <i class="bi bi-chat-dots" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px"></i>
+              Aucun message pour le moment.<br>Écrivez à l'équipe soignante ci-dessous.
+            </div>
+          </div>
+          <div class="fam-comm-input">
+            <textarea class="fam-comm-textarea" id="famCommMsg" placeholder="Écrire un message à l'équipe soignante..." rows="2"></textarea>
+            <button class="fam-comm-send" id="famCommSendBtn" title="Envoyer"><i class="bi bi-send-fill"></i></button>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -382,9 +403,9 @@ async function loadDashboard() {
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 
-let tabsLoaded = { dashboard: true, activites: false, medical: false, galerie: false };
+let tabsLoaded = { dashboard: true, activites: false, medical: false, galerie: false, communication: false };
 
-const paneLabels = { dashboard: 'Accueil', activites: 'Activités', medical: 'Suivi médical', galerie: 'Galerie photos' };
+const paneLabels = { dashboard: 'Accueil', activites: 'Activités', medical: 'Suivi médical', galerie: 'Galerie photos', communication: 'Communication' };
 
 document.querySelectorAll('.fam-sb-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -400,6 +421,7 @@ document.querySelectorAll('.fam-sb-card').forEach(card => {
         if (pane === 'activites' && !tabsLoaded.activites) { tabsLoaded.activites = true; }
         if (pane === 'medical' && !tabsLoaded.medical) { tabsLoaded.medical = true; loadMedical(); }
         if (pane === 'galerie' && !tabsLoaded.galerie) { tabsLoaded.galerie = true; loadGalerie(); }
+        if (pane === 'communication' && !tabsLoaded.communication) { tabsLoaded.communication = true; loadComm(); }
 
         // Close mobile sidebar
         document.getElementById('famSidebar').classList.remove('open');
@@ -797,6 +819,108 @@ document.querySelectorAll('.fam-demo-use').forEach(btn => {
         document.getElementById('famPassword').value = btn.dataset.pwd;
     });
 });
+
+// ── Communication timeline ────────────────────────────────────────────────
+
+let commMessages = [];
+
+async function loadComm() {
+    const timeline = document.getElementById('famCommTimeline');
+    timeline.innerHTML = '<div class="fam-comm-empty"><span class="fam-spinner"></span> Chargement...</div>';
+
+    const res = await api('famille_get_messages');
+    if (!res.success) { timeline.innerHTML = '<div class="fam-comm-empty">Erreur de chargement</div>'; return; }
+
+    commMessages = res.messages || [];
+    renderComm();
+
+    // Update badge
+    document.getElementById('famSbMsg').textContent = '0';
+}
+
+function renderComm() {
+    const timeline = document.getElementById('famCommTimeline');
+
+    if (!commMessages.length) {
+        timeline.innerHTML = '<div class="fam-comm-empty"><i class="bi bi-chat-dots" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px"></i>Aucun message pour le moment.<br>Écrivez à l\'équipe soignante ci-dessous.</div>';
+        return;
+    }
+
+    let html = '';
+    let lastDate = '';
+
+    commMessages.forEach(m => {
+        const d = new Date(m.created_at);
+        const dateStr = d.toLocaleDateString('fr-CH', { weekday: 'long', day: 'numeric', month: 'long' });
+        const timeStr = d.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+
+        if (dateStr !== lastDate) {
+            html += '<div class="fam-comm-date">' + dateStr + '</div>';
+            lastDate = dateStr;
+        }
+
+        const isFamille = m.sender_type === 'famille';
+        const cls = isFamille ? 'fam-msg-famille' : 'fam-msg-soignant';
+        const icon = isFamille ? 'bi-person' : 'bi-heart-pulse';
+
+        html += '<div class="fam-comm-msg ' + cls + '">'
+            + '<div class="fam-comm-bubble">' + escHtml(m.message) + '</div>'
+            + '<div class="fam-comm-meta">'
+            + '<i class="bi ' + icon + '"></i>'
+            + '<span class="fam-comm-sender">' + escHtml(m.sender_name) + '</span>'
+            + '<span>' + timeStr + '</span>'
+            + '</div></div>';
+    });
+
+    timeline.innerHTML = html;
+    timeline.scrollTop = timeline.scrollHeight;
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// Send message
+document.getElementById('famCommSendBtn')?.addEventListener('click', sendComm);
+document.getElementById('famCommMsg')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComm(); }
+});
+
+async function sendComm() {
+    const textarea = document.getElementById('famCommMsg');
+    const btn = document.getElementById('famCommSendBtn');
+    const msg = textarea.value.trim();
+    if (!msg) return;
+
+    btn.disabled = true;
+    const res = await api('famille_send_message', { message: msg });
+    btn.disabled = false;
+
+    if (res.success && res.message_obj) {
+        commMessages.push(res.message_obj);
+        renderComm();
+        textarea.value = '';
+    }
+}
+
+// Poll unread messages for badge
+async function pollCommBadge() {
+    if (!token) return;
+    try {
+        const res = await api('famille_get_unread_count');
+        const badge = document.getElementById('famSbMsg');
+        if (badge && res.count > 0) {
+            badge.textContent = res.count;
+            badge.style.display = '';
+        } else if (badge) {
+            badge.style.display = res.count > 0 ? '' : 'none';
+        }
+    } catch(e) {}
+}
+setInterval(pollCommBadge, 60000);
 
 checkSession();
 
