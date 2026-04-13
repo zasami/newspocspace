@@ -190,6 +190,17 @@ async function getShellData() {
     return getMeta('shell_data');
 }
 
+// ── Activity tracking for auto-lock ──
+const AUTO_LOCK_KEY = 'last_activity';
+
+async function touchActivity() {
+    await setMeta(AUTO_LOCK_KEY, Date.now());
+}
+
+async function getLastActivity() {
+    return (await getMeta(AUTO_LOCK_KEY)) || 0;
+}
+
 // ── Cleanup — remove data older than 30 days ──
 async function cleanup() {
     const cutoff = new Date();
@@ -211,5 +222,6 @@ export {
     saveAuthToken, getAuthToken, clearAuthToken,
     savePasswordHash, verifyPasswordOffline,
     saveShellData, getShellData,
+    touchActivity, getLastActivity,
     cleanup,
 };

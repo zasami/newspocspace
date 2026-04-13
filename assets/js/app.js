@@ -577,6 +577,9 @@ async function init() {
         }, 10000);
         initFullscreen();
         if (window.__SS__.mustChangePassword) showTempPasswordBanner();
+
+        // Auto-lock screen after 15 min inactivity
+        import('./lockscreen.js').then(m => m.initLockScreen()).catch(() => {});
     }
 }
 

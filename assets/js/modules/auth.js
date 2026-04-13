@@ -4,14 +4,19 @@
 import { apiPost, toast } from '../helpers.js';
 import * as db from '../ss-db.js';
 
+const AUTO_LOGIN_WINDOW = 15 * 60 * 1000; // 15 min — auto-login sans mot de passe
+
 export async function init() {
-    // ── Auto-login: if offline and valid token < 72h, skip login form ──
+    // ── Auto-login: if offline + valid token + recent activity (< 15 min) ──
     if (!navigator.onLine) {
         const token = await db.getAuthToken();
         if (token) {
             const shellData = await db.getShellData();
-            if (shellData) {
-                // Restore __SS__ and redirect to home
+            const lastActivity = await db.getLastActivity();
+            const recentActivity = lastActivity && (Date.now() - lastActivity < AUTO_LOGIN_WINDOW);
+
+            if (shellData && recentActivity) {
+                // Recent activity — auto-login direct, pas de mot de passe
                 window.__SS__ = {
                     ...window.__SS__,
                     user: {
@@ -24,9 +29,11 @@ export async function init() {
                     deniedPerms: shellData.deniedPerms || [],
                     pageLabels: shellData.pageLabels || {},
                 };
+                await db.touchActivity();
                 window.location.href = '/spocspace/home';
                 return;
             }
+            // Token valid but inactive > 15 min — show login form (offline validation)
         }
     }
 

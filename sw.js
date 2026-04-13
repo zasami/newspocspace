@@ -22,6 +22,7 @@ const PRECACHE_URLS = [
   '/spocspace/assets/js/app.js',
   '/spocspace/assets/js/helpers.js',
   '/spocspace/assets/js/ss-db.js',
+  '/spocspace/assets/js/lockscreen.js',
   '/spocspace/assets/js/zerda-select.js',
   '/spocspace/assets/icons/icon-192x192.png',
 ];
