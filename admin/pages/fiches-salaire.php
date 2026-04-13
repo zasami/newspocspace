@@ -160,36 +160,59 @@ $fsUsers = Db::fetchAll(
 
 <!-- Bulk upload modal  -->
 <div class="modal fade" id="fsBulkModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-cloud-arrow-up"></i> Import en lot</h5>
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
-        <div class="alert alert-info small mb-3">
-          <i class="bi bi-info-circle"></i>
-          Nommez les fichiers <strong>NOM_Prenom.pdf</strong> ou <strong>ID_employé.pdf</strong> pour une détection automatique.
-          Tous les fichiers seront associés à l'année/mois sélectionnés.
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <label class="form-label">Année</label>
-            <input type="number" class="form-control" id="fsBulkAnnee" min="2000" max="2100">
+        <!-- Step 1: Dropzone -->
+        <div id="fsBulkStep1">
+          <div class="fs-bulk-info">
+            <i class="bi bi-magic"></i>
+            <div>
+              <strong>Détection automatique</strong> depuis le nom du fichier<br>
+              <span class="text-muted">Format attendu : <code>NOM_Prenom_YYYY_M.pdf</code> ou <code>NOM_Prenom_YYYY_M_V1.pdf</code></span>
+            </div>
           </div>
-          <div class="col-6">
-            <label class="form-label">Mois</label>
-            <div class="zs-select" id="fsBulkMois" data-placeholder="Mois"></div>
+          <div class="fs-dropzone fs-bulk-dropzone" id="fsBulkDropzone">
+            <input type="file" id="fsBulkFiles" accept="application/pdf" multiple class="d-none">
+            <i class="bi bi-cloud-arrow-up fs-bulk-drop-icon"></i>
+            <p class="mb-1 fw-semibold">Glissez vos fichiers PDF ici</p>
+            <p class="text-muted small mb-0">ou <span class="text-primary fs-browse-link">parcourir</span></p>
           </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Fichiers PDF</label>
-          <input type="file" class="form-control" id="fsBulkFiles" accept="application/pdf" multiple>
-          <div class="form-text" id="fsBulkCount"></div>
         </div>
 
-        <!-- Progress area (hidden until import starts) -->
-        <div id="fsBulkProgress" style="display:none">
+        <!-- Step 2: Preview table (after files selected) -->
+        <div id="fsBulkStep2" style="display:none">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold" id="fsBulkPreviewTitle"></span>
+            <button class="btn btn-sm btn-outline-secondary" id="fsBulkReselect"><i class="bi bi-arrow-counterclockwise"></i> Changer les fichiers</button>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="fs-bulk-stats" id="fsBulkSummary"></div>
+
+          <!-- Preview table -->
+          <div class="fs-bulk-preview-wrap">
+            <table class="table table-sm mb-0 fs-bulk-table">
+              <thead>
+                <tr>
+                  <th style="width:28px"></th>
+                  <th>Fichier</th>
+                  <th>Collaborateur</th>
+                  <th>Période</th>
+                  <th style="width:60px">Statut</th>
+                </tr>
+              </thead>
+              <tbody id="fsBulkPreviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Step 3: Progress (during import) -->
+        <div id="fsBulkStep3" style="display:none">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="small fw-semibold" id="fsBulkProgressLabel">Importation en cours...</span>
             <span class="small text-muted" id="fsBulkProgressCounter">0 / 0</span>
@@ -198,12 +221,12 @@ $fsUsers = Db::fetchAll(
             <div class="progress-bar bg-success" id="fsBulkProgressBar" style="width:0%;transition:width .3s"></div>
           </div>
           <div class="fs-bulk-current" id="fsBulkCurrentFile"></div>
-          <div class="fs-bulk-log" id="fsBulkLog" style="max-height:200px;overflow-y:auto"></div>
+          <div class="fs-bulk-log" id="fsBulkLog" style="max-height:250px;overflow-y:auto"></div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal" id="fsBulkCloseBtn">Fermer</button>
-        <button class="btn btn-primary" id="fsBulkSubmit"><i class="bi bi-upload"></i> Importer</button>
+        <button class="btn btn-primary" id="fsBulkSubmit" style="display:none"><i class="bi bi-upload"></i> Importer <span id="fsBulkSubmitCount"></span></button>
       </div>
     </div>
   </div>
@@ -359,6 +382,18 @@ function initFichesSalairePage() {
             items.push(`<div class="fs-detect-item fs-detect-ok"><span class="fs-detect-label">Mois</span><span class="fs-detect-value">${MOIS_NOMS[detectedMois] || detectedMois}</span></div>`);
         }
 
+        // Check duplicate
+        let isDup = false;
+        if (matchedUser && detectedAnnee && detectedMois) {
+            const byPeriod = fsFiches.find(ex => ex.user_id === matchedUser.id && ex.annee == detectedAnnee && ex.mois == detectedMois);
+            const byName = fsFiches.find(ex => ex.user_id === matchedUser.id && ex.original_name === filename);
+            if (byPeriod || byName) {
+                isDup = true;
+                const reason = byPeriod ? `${MOIS_NOMS[detectedMois]} ${detectedAnnee}` : 'Fichier identique';
+                items.push(`<div class="fs-detect-item fs-detect-warn" style="grid-column:1/-1"><span class="fs-detect-label">Attention</span><span class="fs-detect-value" style="color:#e65100"><i class="bi bi-exclamation-triangle"></i> Fiche deja existante (${reason})</span></div>`);
+            }
+        }
+
         // Auto-fill form fields
         if (matchedUser) zerdaSelect.setValue('#fsUploadUser', matchedUser.id);
         if (detectedAnnee) document.getElementById('fsUploadAnnee').value = detectedAnnee;
@@ -384,19 +419,43 @@ function initFichesSalairePage() {
     }
 
     document.getElementById('fsBulkUploadBtn')?.addEventListener('click', () => {
-        document.getElementById('fsBulkAnnee').value = fsYear;
-        zerdaSelect.setValue('#fsBulkMois', String(new Date().getMonth() + 1));
+        document.getElementById('fsBulkStep1').style.display = '';
+        document.getElementById('fsBulkStep2').style.display = 'none';
+        document.getElementById('fsBulkStep3').style.display = 'none';
+        document.getElementById('fsBulkSubmit').style.display = 'none';
         document.getElementById('fsBulkFiles').value = '';
-        document.getElementById('fsBulkCount').textContent = '';
-        document.getElementById('fsBulkProgress').style.display = 'none';
-        document.getElementById('fsBulkLog').innerHTML = '';
-        document.getElementById('fsBulkSubmit').style.display = '';
+        bulkParsedFiles = [];
         new bootstrap.Modal('#fsBulkModal').show();
     });
 
-    document.getElementById('fsBulkFiles')?.addEventListener('change', e => {
-        const n = e.target.files.length;
-        document.getElementById('fsBulkCount').textContent = n ? `${n} fichier(s) sélectionné(s)` : '';
+    // Bulk dropzone
+    const bulkDZ = document.getElementById('fsBulkDropzone');
+    const bulkFileInput = document.getElementById('fsBulkFiles');
+    if (bulkDZ) {
+        bulkDZ.addEventListener('click', () => bulkFileInput.click());
+        bulkDZ.addEventListener('dragover', e => { e.preventDefault(); bulkDZ.classList.add('fs-dropzone-active'); });
+        bulkDZ.addEventListener('dragleave', () => bulkDZ.classList.remove('fs-dropzone-active'));
+        bulkDZ.addEventListener('drop', e => {
+            e.preventDefault();
+            bulkDZ.classList.remove('fs-dropzone-active');
+            const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+            if (!files.length) { showToast('Seuls les fichiers PDF sont acceptés', 'error'); return; }
+            // Transfer to input (can't set .files for multi, store separately)
+            bulkDroppedFiles = files;
+            parseBulkFiles(files);
+        });
+        bulkFileInput.addEventListener('change', () => {
+            bulkDroppedFiles = null;
+            if (bulkFileInput.files.length) parseBulkFiles([...bulkFileInput.files]);
+        });
+    }
+
+    document.getElementById('fsBulkReselect')?.addEventListener('click', () => {
+        document.getElementById('fsBulkStep1').style.display = '';
+        document.getElementById('fsBulkStep2').style.display = 'none';
+        document.getElementById('fsBulkSubmit').style.display = 'none';
+        document.getElementById('fsBulkFiles').value = '';
+        bulkParsedFiles = [];
     });
 
     document.getElementById('fsUploadSubmit')?.addEventListener('click', uploadSingle);
@@ -536,16 +595,119 @@ async function uploadSingle() {
     }
 }
 
+let bulkParsedFiles = [];
+let bulkDroppedFiles = null;
+
+function parseBulkFiles(files) {
+    bulkParsedFiles = files.map(file => {
+        const base = file.name.replace(/\.pdf$/i, '').replace(/[_\s]+V\d+$/i, '');
+        const parts = base.split(/[_\-\s]+/).filter(Boolean);
+        let nom = null, prenom = null, annee = null, mois = null, user = null;
+        const remaining = [];
+        for (const p of parts) {
+            const n = parseInt(p);
+            if (/^\d{6}$/.test(p)) { annee = parseInt(p.substring(0, 4)); mois = parseInt(p.substring(4, 6)); }
+            else if (/^\d{4}$/.test(p) && n >= 2000 && n <= 2100) { annee = n; }
+            else if (/^\d{1,2}$/.test(p) && n >= 1 && n <= 12 && annee) { mois = n; }
+            else { remaining.push(p); }
+        }
+        if (remaining.length >= 2) { nom = remaining[0]; prenom = remaining[1]; }
+        else if (remaining.length === 1) { nom = remaining[0]; }
+
+        if (nom) {
+            const nL = nom.toLowerCase(), pL = (prenom || '').toLowerCase();
+            user = fsUsers.find(u => {
+                const uN = u.nom.toLowerCase(), uP = u.prenom.toLowerCase();
+                if (uN === nL && pL && uP === pL) return true;
+                if (u.employee_id && u.employee_id.toLowerCase() === nL) return true;
+                if (!pL && nL.length >= 3 && uN === nL) return true;
+                return false;
+            });
+        }
+        // Check duplicate: same user+period OR same original filename
+        let duplicate = false;
+        let dupReason = '';
+        if (user && annee && mois) {
+            const byPeriod = fsFiches.find(ex => ex.user_id === user.id && ex.annee == annee && ex.mois == mois);
+            if (byPeriod) { duplicate = true; dupReason = `${MOIS_NOMS[mois]} ${annee} existe`; }
+        }
+        if (!duplicate && user) {
+            const byName = fsFiches.find(ex => ex.user_id === user.id && ex.original_name === file.name);
+            if (byName) { duplicate = true; dupReason = 'Fichier identique'; }
+        }
+        return { file, nom, prenom, annee, mois, user, duplicate, dupReason, ok: !!(user && annee && mois && !duplicate) };
+    });
+
+    // Render preview
+    const body = document.getElementById('fsBulkPreviewBody');
+    const okCount = bulkParsedFiles.filter(f => f.ok).length;
+    const dupCount = bulkParsedFiles.filter(f => f.duplicate).length;
+    const warnCount = bulkParsedFiles.length - okCount;
+
+    body.innerHTML = bulkParsedFiles.map((f, i) => {
+        let icon, rowClass, statusBadge;
+        if (f.duplicate) {
+            icon = '<i class="bi bi-arrow-repeat text-secondary"></i>';
+            rowClass = 'table-light';
+            statusBadge = `<span class="fb-badge" style="background:#e9ecef;color:#6c757d" title="${esc(f.dupReason)}"><i class="bi bi-dash"></i> Existe</span>`;
+        } else if (f.ok) {
+            icon = '<i class="bi bi-check-circle-fill text-success"></i>';
+            rowClass = '';
+            statusBadge = '<span class="fb-badge fb-badge-ok"><i class="bi bi-check"></i> OK</span>';
+        } else {
+            icon = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
+            rowClass = 'table-warning';
+            statusBadge = '<span class="fb-badge fb-badge-warn"><i class="bi bi-dash"></i> Incomplet</span>';
+        }
+        return `<tr class="${rowClass}" style="${f.duplicate ? 'opacity:.6;text-decoration:line-through' : ''}">
+            <td class="text-center">${icon}</td>
+            <td><div class="fb-file"><i class="bi bi-file-earmark-pdf"></i><span title="${esc(f.file.name)}">${esc(f.file.name)}</span></div></td>
+            <td>${f.user
+                ? `<span class="fb-user-ok">${esc(f.user.nom)} ${esc(f.user.prenom)}</span>`
+                : `<span class="fb-user-warn">${esc(f.nom || '?')} ${esc(f.prenom || '?')} - non trouve</span>`}</td>
+            <td>${f.annee && f.mois ? `${MOIS_NOMS[f.mois]} ${f.annee}` : '<span class="text-muted">?</span>'}</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('fsBulkPreviewTitle').innerHTML =
+        `<i class="bi bi-files"></i> ${bulkParsedFiles.length} fichier${bulkParsedFiles.length > 1 ? 's' : ''} analysé${bulkParsedFiles.length > 1 ? 's' : ''}`;
+
+    const incompleteCount = bulkParsedFiles.filter(f => !f.ok && !f.duplicate).length;
+    let statsHtml = `
+        <div class="fs-bulk-stat stat-total">
+            <div class="fs-bulk-stat-value">${bulkParsedFiles.length}</div>
+            <div class="fs-bulk-stat-label"><i class="bi bi-files"></i> Fichiers</div>
+        </div>
+        <div class="fs-bulk-stat stat-ok">
+            <div class="fs-bulk-stat-value">${okCount}</div>
+            <div class="fs-bulk-stat-label"><i class="bi bi-check-circle"></i> A importer</div>
+        </div>`;
+    if (dupCount) statsHtml += `
+        <div class="fs-bulk-stat stat-dup">
+            <div class="fs-bulk-stat-value">${dupCount}</div>
+            <div class="fs-bulk-stat-label"><i class="bi bi-arrow-repeat"></i> Deja importes</div>
+        </div>`;
+    if (incompleteCount) statsHtml += `
+        <div class="fs-bulk-stat stat-warn">
+            <div class="fs-bulk-stat-value">${incompleteCount}</div>
+            <div class="fs-bulk-stat-label"><i class="bi bi-exclamation-triangle"></i> Incomplets</div>
+        </div>`;
+    document.getElementById('fsBulkSummary').innerHTML = statsHtml;
+
+    document.getElementById('fsBulkStep1').style.display = 'none';
+    document.getElementById('fsBulkStep2').style.display = '';
+    document.getElementById('fsBulkSubmitCount').textContent = `(${okCount})`;
+    document.getElementById('fsBulkSubmit').style.display = okCount > 0 ? '' : 'none';
+}
+
 async function uploadBulk() {
-    const annee = document.getElementById('fsBulkAnnee').value;
-    const mois = zerdaSelect.getValue('#fsBulkMois');
-    const fileList = document.getElementById('fsBulkFiles').files;
+    const readyFiles = bulkParsedFiles.filter(f => f.ok);
+    const fileList = readyFiles;
 
-    if (!fileList.length) { alert('Sélectionnez des fichiers'); return; }
-    if (!annee || !mois) { alert('Sélectionnez année et mois'); return; }
+    if (!readyFiles.length) return;
 
-    const files = Array.from(fileList);
-    const total = files.length;
+    const total = readyFiles.length;
     let uploaded = 0, skipped = 0, errors = 0;
 
     const btn = document.getElementById('fsBulkSubmit');
@@ -554,68 +716,36 @@ async function uploadBulk() {
     btn.style.display = 'none';
     closeBtn.disabled = true;
 
-    const progressArea = document.getElementById('fsBulkProgress');
+    // Switch to step 3
+    document.getElementById('fsBulkStep2').style.display = 'none';
+    const step3 = document.getElementById('fsBulkStep3');
+    step3.style.display = '';
+
     const progressBar = document.getElementById('fsBulkProgressBar');
     const progressLabel = document.getElementById('fsBulkProgressLabel');
     const progressCounter = document.getElementById('fsBulkProgressCounter');
     const currentFile = document.getElementById('fsBulkCurrentFile');
     const log = document.getElementById('fsBulkLog');
 
-    progressArea.style.display = '';
     progressBar.style.width = '0%';
     progressCounter.textContent = `0 / ${total}`;
     log.innerHTML = '';
 
-    /**
-     * Detect user from filename (reuse same logic as single upload)
-     */
-    function detectUserFromName(filename) {
-        const base = filename.replace(/\.pdf$/i, '').replace(/[_\s]+V\d+$/i, '');
-        const parts = base.split(/[_\-\s]+/).filter(Boolean);
-        const remaining = [];
-        for (const p of parts) {
-            const n = parseInt(p);
-            if (/^\d{4,6}$/.test(p) || (/^\d{1,2}$/.test(p) && n >= 1 && n <= 12)) continue;
-            remaining.push(p);
-        }
-        if (remaining.length < 1) return null;
-        const nomLower = remaining[0].toLowerCase();
-        const prenomLower = (remaining[1] || '').toLowerCase();
-        return fsUsers.find(u => {
-            const uN = u.nom.toLowerCase(), uP = u.prenom.toLowerCase();
-            if (uN === nomLower && prenomLower && uP === prenomLower) return true;
-            if (u.employee_id && u.employee_id.toLowerCase() === nomLower) return true;
-            if (!prenomLower && nomLower.length >= 3 && uN === nomLower) return true;
-            return false;
-        });
-    }
-
     for (let i = 0; i < total; i++) {
-        const file = files[i];
-        const pct = Math.round(((i) / total) * 100);
+        const f = readyFiles[i];
+        const pct = Math.round((i / total) * 100);
         progressBar.style.width = pct + '%';
         progressCounter.textContent = `${i + 1} / ${total}`;
         progressLabel.textContent = `Importation en cours... (${i + 1}/${total})`;
 
-        // Show current file
-        currentFile.innerHTML = `<span class="spinner-border"></span><i class="bi bi-file-earmark-pdf"></i><span class="fs-bc-name">${esc(file.name)}</span>`;
+        currentFile.innerHTML = `<span class="spinner-border"></span><i class="bi bi-file-earmark-pdf"></i><span class="fs-bc-name">${esc(f.file.name)}</span>`;
 
-        const matchedUser = detectUserFromName(file.name);
-
-        if (!matchedUser) {
-            skipped++;
-            log.innerHTML += `<div class="fs-bulk-log-item log-skip"><i class="bi bi-exclamation-triangle"></i><span>${esc(file.name)}</span><small>Collaborateur non trouvé</small></div>`;
-            log.scrollTop = log.scrollHeight;
-            continue;
-        }
-
-        // Upload one file via existing single upload API
         const fd = new FormData();
         fd.append('action', 'admin_upload_fiche_salaire');
-        fd.append('user_id', matchedUser.id);
-        fd.append('annee', annee);
-        fd.append('mois', mois);
-        fd.append('file', file);
+        fd.append('user_id', f.user.id);
+        fd.append('annee', f.annee);
+        fd.append('mois', f.mois);
+        fd.append('file', f.file);
 
         try {
             const resp = await fetch('/spocspace/admin/api.php', {
@@ -626,14 +756,14 @@ async function uploadBulk() {
             const res = await resp.json();
             if (res.success) {
                 uploaded++;
-                log.innerHTML += `<div class="fs-bulk-log-item log-ok"><i class="bi bi-check-circle-fill"></i><span>${esc(file.name)}</span><small>${esc(matchedUser.nom)} ${esc(matchedUser.prenom)}</small></div>`;
+                log.innerHTML += `<div class="fs-bulk-log-item log-ok"><i class="bi bi-check-circle-fill"></i><span>${esc(f.file.name)}</span><small>${esc(f.user.nom)} ${esc(f.user.prenom)} - ${MOIS_NOMS[f.mois]} ${f.annee}</small></div>`;
             } else {
                 skipped++;
-                log.innerHTML += `<div class="fs-bulk-log-item log-skip"><i class="bi bi-dash-circle"></i><span>${esc(file.name)}</span><small>${esc(res.message || 'Erreur')}</small></div>`;
+                log.innerHTML += `<div class="fs-bulk-log-item log-skip"><i class="bi bi-dash-circle"></i><span>${esc(f.file.name)}</span><small>${esc(res.message || 'Erreur')}</small></div>`;
             }
         } catch (e) {
             errors++;
-            log.innerHTML += `<div class="fs-bulk-log-item log-err"><i class="bi bi-x-circle-fill"></i><span>${esc(file.name)}</span><small>Erreur réseau</small></div>`;
+            log.innerHTML += `<div class="fs-bulk-log-item log-err"><i class="bi bi-x-circle-fill"></i><span>${esc(f.file.name)}</span><small>Erreur réseau</small></div>`;
         }
         log.scrollTop = log.scrollHeight;
     }
@@ -645,10 +775,12 @@ async function uploadBulk() {
         (skipped ? `, <strong>${skipped}</strong> ignoré${skipped > 1 ? 's' : ''}` : '') +
         (errors ? `, <strong class="text-danger">${errors}</strong> erreur${errors > 1 ? 's' : ''}` : '');
 
-    btn.disabled = false;
-    btn.style.display = '';
-    btn.innerHTML = '<i class="bi bi-upload"></i> Importer';
     closeBtn.disabled = false;
+
+    // Toast summary
+    if (uploaded > 0) showToast(`${uploaded} fiche${uploaded > 1 ? 's' : ''} importee${uploaded > 1 ? 's' : ''}`, 'success');
+    else if (skipped > 0) showToast(`Aucune fiche importee (${skipped} ignoree${skipped > 1 ? 's' : ''})`, 'warning');
+
     await loadFiches();
 }
 
@@ -657,7 +789,45 @@ function viewFiche(id) {
 }
 
 async function deleteFiche(id) {
-    if (!confirm('Supprimer cette fiche de salaire ?')) return;
+    // Find fiche details for confirmation
+    const fiche = fsFiches.find(f => f.id === id);
+    const label = fiche ? `${esc(fiche.prenom)} ${esc(fiche.nom)} - ${MOIS_NOMS[fiche.mois]} ${fiche.annee}` : '';
+
+    const confirmed = await new Promise(resolve => {
+        const existing = document.getElementById('fsDeleteConfirmModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'fsDeleteConfirmModal';
+        modal.className = 'modal fade';
+        modal.tabIndex = -1;
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-trash3 text-danger me-2"></i>Supprimer la fiche de salaire</h5>
+                        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">Voulez-vous vraiment supprimer cette fiche de salaire ?</p>
+                        ${label ? `<div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:10px 14px;font-size:.88rem"><i class="bi bi-file-earmark-pdf text-danger me-2"></i><strong>${label}</strong></div>` : ''}
+                        <p class="text-muted small mt-2 mb-0">Cette action est irr\u00e9versible. Le fichier sera d\u00e9finitivement supprim\u00e9.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button class="btn btn-danger" id="fsDeleteConfirmOk"><i class="bi bi-trash3"></i> Supprimer</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+
+        const bsModal = new bootstrap.Modal(modal);
+        modal.querySelector('#fsDeleteConfirmOk').addEventListener('click', () => { bsModal.hide(); resolve(true); });
+        modal.addEventListener('hidden.bs.modal', () => { modal.remove(); resolve(false); });
+        bsModal.show();
+    });
+
+    if (!confirmed) return;
     const res = await adminApiPost('admin_delete_fiche_salaire', { id });
     if (res.success) {
         showToast(res.message, 'success');
@@ -685,19 +855,19 @@ function esc(s) {
 initFichesSalairePage();
 </script>
 <style>
-.fs-dropzone{border:2px dashed #ccc;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:#fafafa}
-.fs-dropzone:hover,.fs-dropzone-active{border-color:#0d6efd;background:rgba(13,110,253,.04)}
+.fs-dropzone{border:2px dashed #ccc;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s;background:#fafafa}
+.fs-dropzone:hover,.fs-dropzone-active{border-color:#C4A882;background:rgba(196,168,130,.06);box-shadow:0 0 0 3px rgba(196,168,130,.12)}
 .fs-filter-auto{width:auto}
 .fs-pdf-icon{font-size:2.5rem;color:#c62828}
 .fs-browse-link{cursor:pointer;text-decoration:underline}
-.fs-detect-banner{background:#f0faf0;border:1px solid #c8e6c9;border-radius:10px;padding:12px;margin-bottom:14px;animation:fsDetectIn .3s ease}
+.fs-detect-banner{background:#f4f9f6;border:1px solid #bcd2cb;border-radius:10px;padding:12px;margin-bottom:14px;animation:fsDetectIn .3s ease}
 @keyframes fsDetectIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.fs-detect-header{font-size:.82rem;font-weight:600;color:#2e7d32;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.fs-detect-header{font-size:.82rem;font-weight:600;color:#2d4a43;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .fs-detect-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .fs-detect-item{background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:6px 10px;font-size:.8rem}
 .fs-detect-item .fs-detect-label{font-size:.68rem;text-transform:uppercase;color:#999;letter-spacing:.3px;display:block}
 .fs-detect-item .fs-detect-value{font-weight:600;color:#212529}
-.fs-detect-item.fs-detect-ok{border-color:#a5d6a7;background:#f1f8e9}
+.fs-detect-item.fs-detect-ok{border-color:#bcd2cb;background:#f4f9f6}
 .fs-detect-item.fs-detect-warn{border-color:#ffe082;background:#fffde7}
 .fs-manual-toggle{background:none;border:none;color:#999;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;transition:color .15s}
 .fs-manual-toggle:hover{color:#2e7d32;text-decoration:underline}
@@ -707,9 +877,38 @@ initFichesSalairePage();
 .fs-bulk-current .spinner-border{width:16px;height:16px;border-width:2px;color:#2d4a43}
 .fs-bulk-log{display:flex;flex-direction:column;gap:3px}
 .fs-bulk-log-item{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:4px;font-size:.78rem}
-.fs-bulk-log-item.log-ok{background:#f1f8e9;color:#2e7d32}
+.fs-bulk-log-item.log-ok{background:#f4f9f6;color:#2d4a43}
 .fs-bulk-log-item.log-skip{background:#fff8e1;color:#e65100}
 .fs-bulk-log-item.log-err{background:#fde2e0;color:#c62828}
 .fs-bulk-log-item .bi{font-size:.85rem;flex-shrink:0}
 .fs-bulk-log-item span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-bulk-info{display:flex;gap:10px;align-items:flex-start;background:#f4f9f6;border:1px solid #bcd2cb;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.82rem;color:#2d4a43}
+.fs-bulk-info code{background:rgba(45,74,67,.08);padding:1px 5px;border-radius:3px;font-size:.78rem;color:#2d4a43}
+.fs-bulk-info .bi{font-size:1.2rem;margin-top:2px;flex-shrink:0;color:#2d4a43}
+.fs-bulk-dropzone{padding:2.5rem 2rem;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.fs-bulk-drop-icon{font-size:2.8rem;color:#C4A882;opacity:.6;margin-bottom:8px}
+.fs-bulk-preview-wrap{max-height:300px;overflow-y:auto;border:1px solid #e9ecef;border-radius:8px;margin-bottom:10px}
+.fs-bulk-table{font-size:.82rem}
+.fs-bulk-table th{background:#f8f9fa;position:sticky;top:0;z-index:1;font-weight:600;font-size:.72rem;text-transform:uppercase;color:#6c757d;letter-spacing:.3px}
+.fs-bulk-table td{vertical-align:middle}
+.fs-bulk-table .fb-file{display:flex;align-items:center;gap:6px;font-size:.8rem}
+.fs-bulk-table .fb-file i{color:#c62828;font-size:1rem}
+.fs-bulk-table .fb-file span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.fb-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:600}
+.fb-badge-ok{background:#e8f2ee;color:#2d4a43}
+.fb-badge-warn{background:#fff3e0;color:#e65100}
+.fb-user-ok{color:#212529;font-weight:500}
+.fb-user-warn{color:#e65100;font-style:italic}
+.fs-bulk-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.fs-bulk-stat{text-align:center;padding:12px 8px;border-radius:10px;border:1px solid #e9ecef;background:#fff}
+.fs-bulk-stat-value{font-size:1.5rem;font-weight:700;line-height:1.1}
+.fs-bulk-stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;color:#6c757d;margin-top:3px;font-weight:500}
+.fs-bulk-stat.stat-ok{border-color:#bcd2cb;background:#f4f9f6}
+.fs-bulk-stat.stat-ok .fs-bulk-stat-value{color:#2d4a43}
+.fs-bulk-stat.stat-dup{border-color:#e0e0e0;background:#f5f5f5}
+.fs-bulk-stat.stat-dup .fs-bulk-stat-value{color:#757575}
+.fs-bulk-stat.stat-warn{border-color:#ffe0b2;background:#fff8e1}
+.fs-bulk-stat.stat-warn .fs-bulk-stat-value{color:#e65100}
+.fs-bulk-stat.stat-total{border-color:#d6cfc4;background:#F7F5F2}
+.fs-bulk-stat.stat-total .fs-bulk-stat-value{color:#1A1A1A}
 </style>
