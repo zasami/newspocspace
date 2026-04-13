@@ -3,14 +3,29 @@
  * Cache temporaire de travail — la source de verite est le serveur
  */
 const DB_NAME = 'ss_local';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
-    planning:   { keyPath: 'id', indexes: ['date_jour', 'user_id'] },
-    messages:   { keyPath: 'id', indexes: ['created_at'] },
-    users:      { keyPath: 'id', indexes: ['nom'] },
-    sync_queue: { keyPath: 'id', autoIncrement: true },
-    meta:       { keyPath: 'key' },
+    planning:      { keyPath: 'id', indexes: ['date_jour', 'user_id'] },
+    messages:      { keyPath: 'id', indexes: ['created_at'] },
+    users:         { keyPath: 'id', indexes: ['nom'] },
+    desirs:        { keyPath: 'id', indexes: ['mois'] },
+    absences:      { keyPath: 'id', indexes: ['date_debut'] },
+    vacances:      { keyPath: 'id', indexes: ['annee'] },
+    notifications: { keyPath: 'id', indexes: ['created_at'] },
+    changements:   { keyPath: 'id', indexes: ['created_at'] },
+    annonces:      { keyPath: 'id', indexes: ['created_at'] },
+    documents:     { keyPath: 'id', indexes: ['service_id'] },
+    votes:         { keyPath: 'id', indexes: ['created_at'] },
+    sondages:      { keyPath: 'id', indexes: ['created_at'] },
+    pv:            { keyPath: 'id', indexes: ['date_reunion'] },
+    wiki_pages:    { keyPath: 'id', indexes: ['category_id'] },
+    mur:           { keyPath: 'id', indexes: ['created_at'] },
+    collegues:     { keyPath: 'id', indexes: ['nom'] },
+    covoiturage:   { keyPath: 'id', indexes: ['user_id'] },
+    cuisine_menus: { keyPath: 'id', indexes: ['date_menu'] },
+    sync_queue:    { keyPath: 'id', autoIncrement: true },
+    meta:          { keyPath: 'key' },
 };
 
 let _db = null;
@@ -104,6 +119,7 @@ async function getQueueCount() {
 }
 
 // ── Auth token helpers ──
+// ── Auth token — 72h for offline access ──
 async function saveAuthToken(userId, tokenData) {
     const secret = crypto.getRandomValues(new Uint8Array(16));
     const secretHex = Array.from(secret).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -116,8 +132,13 @@ async function saveAuthToken(userId, tokenData) {
         role: tokenData.role,
         prenom: tokenData.prenom,
         nom: tokenData.nom,
+        taux: tokenData.taux,
+        fonction_id: tokenData.fonction_id,
+        type_employe: tokenData.type_employe,
+        photo: tokenData.photo,
         hash,
-        expiresAt: Date.now() + 8 * 3600 * 1000,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 72 * 3600 * 1000, // 72h offline access
     });
 }
 
@@ -130,6 +151,43 @@ async function getAuthToken() {
 
 async function clearAuthToken() {
     return remove('meta', 'auth_token');
+}
+
+// ── Offline login — PBKDF2 600k iterations (OWASP 2024 recommendation) ──
+const PBKDF2_ITERATIONS = 600000;
+
+async function _deriveKey(password, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: enc.encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+        keyMaterial, 256
+    );
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function savePasswordHash(email, password) {
+    // Random salt per user — stored alongside the hash
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const hash = await _deriveKey(password, salt + ':' + email.toLowerCase().trim());
+    await setMeta('offline_pwd', { email: email.toLowerCase().trim(), salt, hash });
+}
+
+async function verifyPasswordOffline(email, password) {
+    const stored = await getMeta('offline_pwd');
+    if (!stored || stored.email !== email.toLowerCase().trim()) return false;
+    const hash = await _deriveKey(password, stored.salt + ':' + email.toLowerCase().trim());
+    return hash === stored.hash;
+}
+
+// ── Save full shell data (__SS__) for offline boot ──
+async function saveShellData(ssData) {
+    await setMeta('shell_data', { ...ssData, savedAt: Date.now() });
+}
+
+async function getShellData() {
+    return getMeta('shell_data');
 }
 
 // ── Cleanup — remove data older than 30 days ──
@@ -151,5 +209,7 @@ export {
     getMeta, setMeta,
     enqueue, getQueue, dequeue, getQueueCount,
     saveAuthToken, getAuthToken, clearAuthToken,
+    savePasswordHash, verifyPasswordOffline,
+    saveShellData, getShellData,
     cleanup,
 };

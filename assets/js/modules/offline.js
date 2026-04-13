@@ -1,6 +1,7 @@
 /**
- * SpocSpace — Offline-first module
+ * SpocSpace — Offline-first module (complete)
  * Uses IndexedDB (ss-db) for local cache, delta sync with server.
+ * All data types supported for full offline experience.
  */
 import * as db from '../ss-db.js';
 
@@ -8,25 +9,97 @@ const SYNC_INTERVAL = 5 * 60 * 1000; // 5 min
 let _syncTimer = null;
 let _online = navigator.onLine;
 
+// ══════════════════════════════════════════════════════════════
 // Actions that can be served from IndexedDB when offline
+// ══════════════════════════════════════════════════════════════
 const OFFLINE_GET_ACTIONS = [
-    'get_planning_hebdo', 'get_planning_mois', 'get_mon_planning',
-    'get_mes_desirs', 'get_mes_absences', 'get_mes_messages',
-    'get_inbox', 'get_sent', 'get_unread_count', 'get_horaires_types',
-    'me', 'get_notifications_count',
+    // Planning
+    'get_planning_hebdo', 'get_planning_mois', 'get_mon_planning', 'get_modules_list',
+    // Desirs, absences, vacances
+    'get_mes_desirs', 'get_mes_absences', 'get_vacances_annee', 'get_absences_collegues',
+    'get_desirs_permanents', 'get_mois_disponibles',
+    // Messages
+    'get_inbox', 'get_sent', 'get_unread_count', 'get_message_contacts',
+    // Notifications
+    'get_notifications', 'get_notifications_count', 'get_poll_data', 'get_pending_alerts',
+    // Collaboration
+    'get_collegues', 'get_changements', 'get_mes_changements',
+    'get_covoiturage_matches', 'get_covoiturage_buddies',
+    // Info
+    'get_proposals_ouvertes', 'get_proposal_planning',
+    'get_pv_list', 'get_pv',
+    'get_sondages_ouverts', 'get_sondage_detail',
+    'get_documents', 'get_document_services',
+    'get_mes_fiches_salaire',
+    'get_annonces', 'get_annonce_detail',
+    // Wiki
+    'get_wiki_categories', 'get_wiki_pages', 'get_wiki_page', 'get_wiki_favoris',
+    // Mur social
+    'get_mur_feed', 'get_mur_comments',
+    // Cuisine
+    'get_menus_semaine', 'cuisine_get_menus_semaine', 'cuisine_get_dashboard',
+    // Repartition
+    'get_repartition',
+    // Auth & misc
+    'me', 'get_horaires_types',
 ];
 
-// Actions that can be queued when offline
-const QUEUEABLE_ACTIONS = [
-    'submit_desir', 'update_desir', 'delete_desir',
-    'submit_desir_permanent', 'submit_absence',
-    'send_message', 'mark_message_read',
-    'submit_vacances', 'annuler_vacances',
-    'mark_notification_read', 'mark_all_notifications_read',
-    'mark_alert_read',
-];
+// ══════════════════════════════════════════════════════════════
+// Actions that can be queued when offline (with basic validation)
+// ══════════════════════════════════════════════════════════════
+const QUEUEABLE_ACTIONS = {
+    // Desirs
+    'submit_desir':            { required: ['date_souhaitee', 'horaire_type_id'] },
+    'update_desir':            { required: ['id'] },
+    'delete_desir':            { required: ['id'] },
+    'submit_desir_permanent':  { required: ['jour_semaine', 'horaire_type_id'] },
+    // Absences & vacances
+    'submit_absence':          { required: ['date_debut', 'date_fin', 'type'] },
+    'submit_vacances':         { required: ['date_debut', 'date_fin'] },
+    'annuler_vacances':        { required: ['id'] },
+    'modifier_vacances':       { required: ['id'] },
+    // Messages
+    'send_message':            { required: ['sujet', 'contenu'] },
+    'mark_message_read':       { required: ['id'] },
+    'mark_all_messages_read':  {},
+    // Notifications
+    'mark_notification_read':       { required: ['id'] },
+    'mark_all_notifications_read':  {},
+    'mark_alert_read':              { required: ['alert_id'] },
+    // Changements
+    'submit_changement':    { required: ['destinataire_id', 'date_origine'] },
+    'confirmer_changement': { required: ['id'] },
+    'refuser_changement':   { required: ['id'] },
+    'annuler_changement':   { required: ['id'] },
+    // Votes & sondages
+    'submit_vote':              { required: ['proposal_id', 'choix'] },
+    'submit_sondage_reponses':  { required: ['sondage_id'] },
+    // Covoiturage
+    'add_covoiturage_buddy':    { required: ['buddy_id'] },
+    'remove_covoiturage_buddy': { required: ['buddy_id'] },
+    'update_covoiturage_profile': {},
+    // Mur social
+    'create_mur_post':   { required: ['contenu'] },
+    'toggle_mur_like':   { required: ['post_id'] },
+    'add_mur_comment':   { required: ['post_id', 'contenu'] },
+    'delete_mur_post':   { required: ['post_id'] },
+    'delete_mur_comment': { required: ['comment_id'] },
+    // Wiki
+    'toggle_wiki_favori': { required: ['page_id'] },
+    // Cuisine
+    'reserver_menu':             { required: ['menu_id'] },
+    'annuler_reservation_menu':  { required: ['reservation_id'] },
+    // PV
+    'rate_pv':    { required: ['pv_id', 'note'] },
+    'comment_pv': { required: ['pv_id', 'contenu'] },
+    // Profile
+    'update_profile':  {},
+    'update_password': { required: ['current_password', 'new_password'] },
+};
 
-// ── Offline bar UI ──
+// ══════════════════════════════════════════════════════════════
+// Offline bar UI
+// ══════════════════════════════════════════════════════════════
 let offlineBar = null;
 
 function showOfflineBar() {
@@ -44,7 +117,9 @@ function hideOfflineBar() {
     setTimeout(() => { offlineBar?.remove(); offlineBar = null; }, 300);
 }
 
-// ── Sync bar UI ──
+// ══════════════════════════════════════════════════════════════
+// Sync bar UI
+// ══════════════════════════════════════════════════════════════
 function showSyncBar(total) {
     const bar = document.createElement('div');
     bar.className = 'ss-sync-bar show';
@@ -57,10 +132,13 @@ function showSyncBar(total) {
             const fill = bar.querySelector('#ztSyncFill');
             if (fill) fill.style.width = Math.round((current / total) * 100) + '%';
         },
-        done(success, failed) {
+        done(success, failed, conflicts) {
             const text = bar.querySelector('.ss-sync-text');
             if (text) {
-                if (failed > 0) {
+                if (conflicts > 0) {
+                    text.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${success} OK, ${conflicts} conflit(s) resolus`;
+                    bar.classList.add('ss-sync-warning');
+                } else if (failed > 0) {
                     text.innerHTML = `<i class="bi bi-exclamation-circle"></i> ${success} OK, ${failed} erreur(s)`;
                     bar.classList.add('ss-sync-warning');
                 } else {
@@ -75,7 +153,9 @@ function showSyncBar(total) {
     };
 }
 
-// ── Delta sync ──
+// ══════════════════════════════════════════════════════════════
+// Delta sync — pull all data from server into IndexedDB
+// ══════════════════════════════════════════════════════════════
 async function deltaSync() {
     if (!navigator.onLine) return;
     try {
@@ -84,14 +164,47 @@ async function deltaSync() {
         const res = await apiPost('sync_delta', { last_sync: lastSync });
         if (!res.success) return;
 
-        if (res.planning?.length) await db.put('planning', res.planning);
-        if (res.messages?.length) await db.put('messages', res.messages);
-        if (res.users?.length)    await db.put('users', res.users);
-        // Horaires: full replace (small dataset)
+        // Store each data type in its IndexedDB store
+        const syncMap = {
+            planning:        'planning',
+            messages:        'messages',
+            users:           'users',
+            desirs:          'desirs',
+            absences:        'absences',
+            vacances:        'vacances',
+            notifications:   'notifications',
+            changements:     'changements',
+            annonces:        'annonces',
+            documents:       'documents',
+            votes:           'votes',
+            sondages:        'sondages',
+            pv:              'pv',
+            wiki_pages:      'wiki_pages',
+            mur:             'mur',
+            collegues:       'collegues',
+            covoiturage:     'covoiturage',
+            cuisine_menus:   'cuisine_menus',
+        };
+
+        for (const [key, store] of Object.entries(syncMap)) {
+            if (res[key]?.length) {
+                await db.put(store, res[key]);
+            }
+        }
+
+        // Special: wiki categories go to meta
+        if (res.wiki_categories?.length) {
+            await db.setMeta('wiki_categories', res.wiki_categories);
+        }
+        // Horaires: full replace
         if (res.horaires?.length) {
-            await db.clear('meta'); // clear old horaires meta only
             await db.setMeta('horaires', res.horaires);
         }
+        // Fiches salaire metadata
+        if (res.fiches_salaire?.length) {
+            await db.setMeta('fiches_salaire', res.fiches_salaire);
+        }
+
         if (res.timestamp) await db.setMeta('last_sync', res.timestamp);
         await db.cleanup();
     } catch (e) {
@@ -99,77 +212,260 @@ async function deltaSync() {
     }
 }
 
-// ── Sync queue ──
+// ══════════════════════════════════════════════════════════════
+// Sync queue — push queued offline actions to server
+// ══════════════════════════════════════════════════════════════
 async function syncQueue() {
     const queue = await db.getQueue();
     if (!queue.length) return;
 
     const { apiPost } = await import('../helpers.js');
     const syncBar = showSyncBar(queue.length);
-    let success = 0, failed = 0;
+    let success = 0, failed = 0, conflicts = 0;
 
     for (let i = 0; i < queue.length; i++) {
         const item = queue[i];
         try {
             const res = await apiPost(item.action, item.data);
-            if (res.success) { success++; await db.dequeue(item.id); }
-            else failed++;
+            if (res.success) {
+                success++;
+                await db.dequeue(item.id);
+            } else if (res.conflict) {
+                // LWW conflict: server version wins, notify user
+                conflicts++;
+                await db.dequeue(item.id);
+                _showConflictToast(item.action, res.message || 'Conflit resolu par le serveur');
+            } else {
+                failed++;
+                // Mark the item with error info for retry UI
+                await db.put('sync_queue', { ...item, _error: res.message, _errorAt: Date.now() });
+            }
         } catch (e) {
             failed++;
             break; // still offline, stop
         }
         syncBar.update(i + 1);
     }
-    syncBar.done(success, failed);
+    syncBar.done(success, failed, conflicts);
+
+    // Re-sync data after pushing changes
+    if (success > 0) deltaSync();
 }
 
-// ── Offline GET handler ──
+function _showConflictToast(action, message) {
+    const actionLabels = {
+        'submit_desir': 'Desir', 'update_desir': 'Desir', 'submit_absence': 'Absence',
+        'submit_changement': 'Changement', 'send_message': 'Message',
+    };
+    const label = actionLabels[action] || action;
+    try {
+        import('../helpers.js').then(({ toast }) => {
+            toast(`${label}: ${message}`, 4000);
+        });
+    } catch (e) { /* silent */ }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Offline GET handler — serve data from IndexedDB
+// ══════════════════════════════════════════════════════════════
 export function handleOfflineGet(action, params) {
     if (!OFFLINE_GET_ACTIONS.includes(action)) return null;
-    // Return a promise — caller must await
     return _resolveOfflineGet(action, params);
 }
 
 async function _resolveOfflineGet(action, params) {
     try {
-        if (action.includes('planning')) {
+        // Planning
+        if (action.includes('planning') || action === 'get_repartition') {
             const all = await db.getAll('planning');
             return all.length ? { success: true, data: all, _fromCache: true } : null;
         }
+        // Messages
         if (action.includes('message') || action === 'get_inbox' || action === 'get_sent') {
             const all = await db.getAll('messages');
+            if (action === 'get_unread_count') {
+                return { success: true, count: 0, _fromCache: true };
+            }
             return all.length ? { success: true, data: all, _fromCache: true } : null;
         }
+        // Desirs
+        if (action.includes('desir')) {
+            const all = await db.getAll('desirs');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Absences
+        if (action.includes('absence')) {
+            const all = await db.getAll('absences');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Vacances
+        if (action.includes('vacance')) {
+            const all = await db.getAll('vacances');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Notifications
+        if (action.includes('notification') || action === 'get_poll_data' || action === 'get_pending_alerts') {
+            if (action === 'get_notifications_count' || action === 'get_poll_data') {
+                const notifs = await db.getAll('notifications');
+                const unread = notifs.filter(n => !n.read_at).length;
+                return { success: true, unread_notifs: unread, unread_messages: 0, pending_ack: 0, alerts: [], _fromCache: true };
+            }
+            if (action === 'get_pending_alerts') {
+                return { success: true, alerts: [], _fromCache: true };
+            }
+            const all = await db.getAll('notifications');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Changements
+        if (action.includes('changement')) {
+            const all = await db.getAll('changements');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Collegues
+        if (action === 'get_collegues') {
+            const all = await db.getAll('collegues');
+            if (all.length) return { success: true, data: all, _fromCache: true };
+            // Fallback to users store
+            const users = await db.getAll('users');
+            return { success: true, data: users || [], _fromCache: true };
+        }
+        // Covoiturage
+        if (action.includes('covoiturage')) {
+            const all = await db.getAll('covoiturage');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Votes
+        if (action.includes('proposal') || action.includes('vote')) {
+            const all = await db.getAll('votes');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // PV
+        if (action.includes('pv')) {
+            const all = await db.getAll('pv');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Sondages
+        if (action.includes('sondage')) {
+            const all = await db.getAll('sondages');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Documents
+        if (action.includes('document')) {
+            const all = await db.getAll('documents');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Fiches salaire
+        if (action.includes('fiche')) {
+            const fiches = await db.getMeta('fiches_salaire');
+            return { success: true, data: fiches || [], _fromCache: true };
+        }
+        // Annonces
+        if (action.includes('annonce')) {
+            const all = await db.getAll('annonces');
+            if (action === 'get_annonce_detail' && params?.id) {
+                const detail = all.find(a => a.id === params.id);
+                return detail ? { success: true, annonce: detail, _fromCache: true } : null;
+            }
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Wiki
+        if (action.includes('wiki')) {
+            if (action === 'get_wiki_categories') {
+                const cats = await db.getMeta('wiki_categories');
+                return { success: true, data: cats || [], _fromCache: true };
+            }
+            if (action === 'get_wiki_page' && params?.id) {
+                const pages = await db.getAll('wiki_pages');
+                const page = pages.find(p => p.id === params.id || p.slug === params.slug);
+                return page ? { success: true, page, _fromCache: true } : null;
+            }
+            const all = await db.getAll('wiki_pages');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Mur social
+        if (action.includes('mur')) {
+            const all = await db.getAll('mur');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Cuisine menus
+        if (action.includes('menu') || action.includes('cuisine')) {
+            const all = await db.getAll('cuisine_menus');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Horaires
         if (action === 'get_horaires_types') {
             const h = await db.getMeta('horaires');
             return h ? { success: true, data: h, _fromCache: true } : null;
         }
+        // Me
         if (action === 'me') {
             const token = await db.getAuthToken();
-            if (token) return { success: true, user: { id: token.userId, prenom: token.prenom, nom: token.nom, email: token.email, role: token.role }, _fromCache: true };
+            if (token) return {
+                success: true,
+                user: { id: token.userId, prenom: token.prenom, nom: token.nom, email: token.email, role: token.role, taux: token.taux, fonction_id: token.fonction_id, type_employe: token.type_employe },
+                _fromCache: true,
+            };
         }
     } catch (e) { /* ignore */ }
     return null;
 }
 
-// ── Online response handler — store in IndexedDB ──
+// ══════════════════════════════════════════════════════════════
+// Online response handler — store in IndexedDB for offline use
+// ══════════════════════════════════════════════════════════════
 export function handleOnlineResponse(action, params, response) {
     if (!response.success) return;
     try {
-        if (action.includes('planning') && response.data?.length) {
-            db.put('planning', response.data).catch(() => {});
-        }
-        if ((action.includes('message') || action === 'get_inbox' || action === 'get_sent') && response.data?.length) {
-            db.put('messages', response.data).catch(() => {});
+        // Map action patterns to stores
+        const storeMap = [
+            [/planning|repartition/, 'planning'],
+            [/message|inbox|sent/, 'messages'],
+            [/desir/, 'desirs'],
+            [/absence/, 'absences'],
+            [/vacance/, 'vacances'],
+            [/notification/, 'notifications'],
+            [/changement/, 'changements'],
+            [/annonce/, 'annonces'],
+            [/document/, 'documents'],
+            [/proposal|vote/, 'votes'],
+            [/sondage/, 'sondages'],
+            [/^get_pv/, 'pv'],
+            [/wiki_page/, 'wiki_pages'],
+            [/mur/, 'mur'],
+            [/collegue/, 'collegues'],
+            [/covoiturage/, 'covoiturage'],
+            [/menu|cuisine/, 'cuisine_menus'],
+        ];
+
+        const data = response.data || response.items || response.results;
+        if (!Array.isArray(data) || !data.length) return;
+
+        for (const [pattern, store] of storeMap) {
+            if (pattern.test(action)) {
+                db.put(store, data).catch(() => {});
+                return;
+            }
         }
     } catch (e) { /* ignore */ }
 }
 
+// ══════════════════════════════════════════════════════════════
+// Queue management with validation
+// ══════════════════════════════════════════════════════════════
 export function canQueue(action) {
-    return QUEUEABLE_ACTIONS.includes(action);
+    return action in QUEUEABLE_ACTIONS;
 }
 
 export function enqueue(action, data) {
+    // Basic validation before queueing
+    const rules = QUEUEABLE_ACTIONS[action];
+    if (rules?.required) {
+        for (const field of rules.required) {
+            if (!data[field] && data[field] !== 0 && data[field] !== false) {
+                return Promise.reject(new Error(`Champ requis manquant: ${field}`));
+            }
+        }
+    }
     return db.enqueue(action, data);
 }
 
@@ -181,7 +477,9 @@ export async function getQueueCount() {
     try { return await db.getQueueCount(); } catch { return 0; }
 }
 
-// ── Connection indicator update ──
+// ══════════════════════════════════════════════════════════════
+// Connection indicator update
+// ══════════════════════════════════════════════════════════════
 function updateConnDot() {
     const dot = document.querySelector('#feConnStatus .fe-conn-dot');
     const status = document.getElementById('feConnStatus');
@@ -195,7 +493,9 @@ function updateConnDot() {
     }
 }
 
-// ── Init ──
+// ══════════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════════
 export async function initOffline() {
     await db.open();
     _online = navigator.onLine;
@@ -206,6 +506,21 @@ export async function initOffline() {
         _online = true;
         hideOfflineBar();
         updateConnDot();
+        // Re-validate session with server silently
+        try {
+            const { apiPost } = await import('../helpers.js');
+            const res = await apiPost('me');
+            if (res.success && res.user) {
+                // Refresh auth token on reconnect
+                await db.saveAuthToken(res.user.id, {
+                    email: res.user.email, role: res.user.role,
+                    prenom: res.user.prenom, nom: res.user.nom,
+                    taux: res.user.taux, fonction_id: res.user.fonction_id,
+                    type_employe: res.user.type_employe, photo: res.user.photo,
+                });
+            }
+        } catch (e) { /* silent */ }
+        // Sync queued actions
         const queueLen = await db.getQueueCount();
         if (queueLen > 0) await syncQueue();
         deltaSync();

@@ -485,7 +485,28 @@ function showTempPasswordBanner() {
     setInterval(updateCountdown, 30000);
 }
 
-function init() {
+async function init() {
+    // ── Offline boot: restore user session from IndexedDB if shell came empty ──
+    if (!window.__SS__?.user && !navigator.onLine) {
+        try {
+            const { getAuthToken, getShellData } = await import('./ss-db.js');
+            const token = await getAuthToken();
+            const shell = await getShellData();
+            if (token && shell) {
+                window.__SS__ = window.__SS__ || {};
+                window.__SS__.user = {
+                    id: token.userId, prenom: token.prenom, nom: token.nom,
+                    email: token.email, role: token.role, taux: token.taux,
+                    fonction_id: token.fonction_id, type_employe: token.type_employe,
+                };
+                window.__SS__.csrfToken = shell.csrfToken || '';
+                window.__SS__.canChangement = shell.canChangement || false;
+                window.__SS__.deniedPerms = shell.deniedPerms || [];
+                window.__SS__.pageLabels = shell.pageLabels || {};
+            }
+        } catch (e) { /* IndexedDB not available */ }
+    }
+
     setupLinks();
     setupSidebar();
     setupLogout();
@@ -505,6 +526,25 @@ function init() {
         });
         checkPendingAlerts();
         import('./modules/offline.js').then(m => m.initOffline()).catch(() => {});
+
+        // Persist shell data + auth token for offline boot (refresh on every load)
+        if (navigator.onLine) {
+            import('./ss-db.js').then(async (db) => {
+                try {
+                    const u = window.__SS__.user;
+                    await db.saveAuthToken(u.id, {
+                        email: u.email, role: u.role, prenom: u.prenom, nom: u.nom,
+                        taux: u.taux, fonction_id: u.fonction_id, type_employe: u.type_employe, photo: u.photo,
+                    });
+                    await db.saveShellData({
+                        csrfToken: window.__SS__.csrfToken,
+                        canChangement: window.__SS__.canChangement,
+                        deniedPerms: window.__SS__.deniedPerms,
+                        pageLabels: window.__SS__.pageLabels,
+                    });
+                } catch (e) { /* silent */ }
+            }).catch(() => {});
+        }
 
         // Connection indicator updates
         function updateConnIndicator() {

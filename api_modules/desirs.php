@@ -113,6 +113,12 @@ function update_desir()
     $user = require_auth();
 
     $id = $params['id'] ?? '';
+
+    // Offline conflict detection
+    if (!empty($params['_offline']) && check_offline_conflict('desirs', $id, $params['_queued_at'] ?? null)) {
+        conflict_response('Ce désir a été modifié entre-temps — la version actuelle a été conservée');
+    }
+
     $dateSouhaitee = Sanitize::date($params['date_souhaitee'] ?? '');
     $type = $params['type'] ?? '';
     $detail = Sanitize::text($params['detail'] ?? '', 500);

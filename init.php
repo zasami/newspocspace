@@ -75,6 +75,33 @@ function unauthorized(string $msg = 'Non autorisé'): void { error_response($msg
 function forbidden(string $msg = 'Accès interdit'): void { error_response($msg, 403); }
 function not_found(string $msg = 'Non trouvé'): void { error_response($msg, 404); }
 
+/**
+ * Offline conflict response — LWW: server version wins, client is notified
+ */
+function conflict_response(string $msg = 'Conflit — la version du serveur a été conservée'): void
+{
+    http_response_code(200); // 200 so the SW dequeues the item
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'conflict' => true, 'message' => $msg], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * Check for offline conflict: if the queued action is older than the server record, it's a conflict.
+ * Returns true if there IS a conflict (server version is newer).
+ */
+function check_offline_conflict(string $table, string $id, ?string $queuedAt): bool
+{
+    global $params;
+    $queuedAt = $queuedAt ?? ($params['_queued_at'] ?? null);
+    if (!$queuedAt) return false; // Not an offline action, no conflict possible
+
+    $serverUpdatedAt = Db::getOne("SELECT updated_at FROM {$table} WHERE id = ?", [$id]);
+    if (!$serverUpdatedAt) return false; // Record doesn't exist yet, no conflict
+
+    return strtotime($serverUpdatedAt) > strtotime($queuedAt);
+}
+
 function h(?string $val): string
 {
     return htmlspecialchars($val ?? '', ENT_QUOTES, 'UTF-8');

@@ -1,9 +1,35 @@
 /**
- * Auth module - Login
+ * Auth module - Login (with offline support)
  */
 import { apiPost, toast } from '../helpers.js';
+import * as db from '../ss-db.js';
 
 export async function init() {
+    // ── Auto-login: if offline and valid token < 72h, skip login form ──
+    if (!navigator.onLine) {
+        const token = await db.getAuthToken();
+        if (token) {
+            const shellData = await db.getShellData();
+            if (shellData) {
+                // Restore __SS__ and redirect to home
+                window.__SS__ = {
+                    ...window.__SS__,
+                    user: {
+                        id: token.userId, prenom: token.prenom, nom: token.nom,
+                        email: token.email, role: token.role, taux: token.taux,
+                        fonction_id: token.fonction_id, type_employe: token.type_employe,
+                    },
+                    csrfToken: shellData.csrfToken || '',
+                    canChangement: shellData.canChangement || false,
+                    deniedPerms: shellData.deniedPerms || [],
+                    pageLabels: shellData.pageLabels || {},
+                };
+                window.location.href = '/spocspace/home';
+                return;
+            }
+        }
+    }
+
     // Eye toggle for password field
     document.querySelectorAll('.pwd-eye').forEach(el => {
         el.addEventListener('click', () => {
@@ -22,7 +48,6 @@ export async function init() {
     if (autoEmail) document.getElementById('loginEmail').value = autoEmail;
     if (autoPwd) document.getElementById('loginPassword').value = autoPwd;
     if (autoEmail && autoPwd) {
-        // Auto-submit after short delay
         setTimeout(() => document.getElementById('loginForm')?.dispatchEvent(new Event('submit', { cancelable: true })), 500);
     }
 
@@ -40,12 +65,68 @@ export async function init() {
         btn.innerHTML = '<span class="spinner"></span> Connexion...';
         errorEl.style.display = 'none';
 
+        // ── OFFLINE: validate locally ──
+        if (!navigator.onLine) {
+            const pwdOk = await db.verifyPasswordOffline(email, password);
+            const token = await db.getAuthToken();
+
+            if (pwdOk && token && token.email === email.toLowerCase().trim()) {
+                const shellData = await db.getShellData();
+                window.__SS__ = {
+                    ...window.__SS__,
+                    user: {
+                        id: token.userId, prenom: token.prenom, nom: token.nom,
+                        email: token.email, role: token.role, taux: token.taux,
+                        fonction_id: token.fonction_id, type_employe: token.type_employe,
+                    },
+                    csrfToken: shellData?.csrfToken || '',
+                    canChangement: shellData?.canChangement || false,
+                    deniedPerms: shellData?.deniedPerms || [],
+                    pageLabels: shellData?.pageLabels || {},
+                };
+                toast('Connexion hors-ligne');
+                window.location.href = '/spocspace/home';
+                return;
+            } else if (!pwdOk && token) {
+                errorEl.textContent = 'Mot de passe incorrect (vérification hors-ligne)';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Se connecter';
+                return;
+            } else {
+                errorEl.textContent = 'Première connexion requise en ligne';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Se connecter';
+                return;
+            }
+        }
+
+        // ── ONLINE: normal login ──
         const res = await apiPost('login', { email, password });
 
         if (res.success) {
             window.__SS__.user = res.user;
             if (res.csrf) window.__SS__.csrfToken = res.csrf;
-            // Check for redirect param
+
+            // Save credentials for offline login
+            try {
+                await db.savePasswordHash(email, password);
+                await db.saveAuthToken(res.user.id, {
+                    email: res.user.email, role: res.user.role,
+                    prenom: res.user.prenom, nom: res.user.nom,
+                    taux: res.user.taux, fonction_id: res.user.fonction_id,
+                    type_employe: res.user.type_employe, photo: res.user.photo,
+                });
+                await db.saveShellData({
+                    csrfToken: window.__SS__.csrfToken,
+                    canChangement: window.__SS__.canChangement,
+                    deniedPerms: window.__SS__.deniedPerms,
+                    pageLabels: window.__SS__.pageLabels,
+                });
+            } catch (e) { /* IndexedDB save failed — not critical */ }
+
+            // Redirect
             const urlParams = new URLSearchParams(window.location.search);
             const redirect = urlParams.get('redirect');
             if (redirect && redirect.startsWith('/')) {

@@ -418,6 +418,11 @@ function confirmer_changement()
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
+    // Offline conflict detection
+    if (!empty($params['_offline']) && check_offline_conflict('changements_horaire', $id, $params['_queued_at'] ?? null)) {
+        conflict_response('Ce changement a été modifié entre-temps — la version actuelle a été conservée');
+    }
+
     $ch = Db::fetch(
         "SELECT * FROM changements_horaire WHERE id = ? AND destinataire_id = ? AND statut = 'en_attente_collegue'",
         [$id, $user['id']]

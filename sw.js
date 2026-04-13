@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v4';
+const CACHE_VERSION = 'ss-v5';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -26,38 +26,95 @@ const PRECACHE_URLS = [
   '/spocspace/assets/icons/icon-192x192.png',
 ];
 
+// All SPA page fragments — pre-cached for full offline support
+const PAGE_URLS = [
+  'home', 'login', 'planning', 'desirs', 'absences', 'vacances',
+  'collegues', 'emails', 'votes', 'pv', 'sondages', 'documents',
+  'changements', 'profile', 'notifications', 'fiches-salaire',
+  'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
+  'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
+  'cuisine-vip', 'mur', 'wiki', 'annonces',
+].map(p => '/spocspace/pages/' + p + '.php');
+
+// JS modules to pre-cache for full offline support
+const MODULE_URLS = [
+  'home', 'auth', 'planning', 'desirs', 'absences', 'vacances',
+  'collegues', 'emails', 'votes', 'pv', 'sondages', 'documents',
+  'changements', 'profile', 'notifications', 'fiches-salaire',
+  'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
+  'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
+  'cuisine-vip', 'mur', 'wiki', 'annonces', 'offline',
+].map(m => '/spocspace/assets/js/modules/' + m + '.js');
+
 // API actions that can be cached for offline reading
 const CACHEABLE_GET_ACTIONS = [
-  'admin_get_dashboard_stats',
-  'admin_get_all_messages',
-  'admin_get_message_contacts',
-  'admin_get_planning',
-  'admin_get_planning_refs',
-  'admin_get_users',
-  'admin_get_absences',
-  'admin_get_desirs',
-  'admin_get_horaires',
-  'admin_get_config',
-  'admin_get_unread_counts',
-  'admin_get_message_stats',
-  'get_planning_hebdo',
-  'get_my_desirs',
-  'get_my_absences',
-  'get_inbox',
-  'get_sent',
-  'get_unread_count',
-  'sync_delta',
+  // Admin
+  'admin_get_dashboard_stats', 'admin_get_all_messages', 'admin_get_message_contacts',
+  'admin_get_planning', 'admin_get_planning_refs', 'admin_get_users',
+  'admin_get_absences', 'admin_get_desirs', 'admin_get_horaires',
+  'admin_get_config', 'admin_get_unread_counts', 'admin_get_message_stats',
+  // Employee — planning & scheduling
+  'get_planning_hebdo', 'get_planning_mois', 'get_mon_planning', 'get_modules_list',
+  // Desirs, absences, vacances
+  'get_mes_desirs', 'get_mes_absences', 'get_vacances_annee', 'get_absences_collegues',
+  'get_desirs_permanents', 'get_mois_disponibles',
+  // Messages
+  'get_inbox', 'get_sent', 'get_unread_count', 'get_message_contacts',
+  // Notifications
+  'get_notifications', 'get_notifications_count', 'get_poll_data', 'get_pending_alerts',
+  // Collaboration
+  'get_collegues', 'get_changements', 'get_mes_changements',
+  'get_covoiturage_matches', 'get_covoiturage_buddies',
+  // Info
+  'get_proposals_ouvertes', 'get_proposal_planning',
+  'get_pv_list', 'get_pv',
+  'get_sondages_ouverts', 'get_sondage_detail',
+  'get_documents', 'get_document_services',
+  'get_mes_fiches_salaire',
+  'get_annonces', 'get_annonce_detail',
+  // Wiki
+  'get_wiki_categories', 'get_wiki_pages', 'get_wiki_page', 'get_wiki_favoris',
+  // Mur social
+  'get_mur_feed', 'get_mur_comments',
+  // Cuisine
+  'get_menus_semaine', 'cuisine_get_menus_semaine', 'cuisine_get_dashboard',
+  'cuisine_get_reservations', 'cuisine_get_famille_reservations', 'cuisine_get_vip_residents',
+  // Repartition
+  'get_repartition',
+  // Auth & sync
+  'me', 'sync_delta', 'get_horaires_types',
 ];
 
 // API actions that should be queued for sync when offline
 const SYNCABLE_ACTIONS = [
-  'admin_send_message',
-  'admin_save_assignation',
-  'admin_validate_absence',
-  'admin_validate_desir',
-  'admin_reply_message',
-  'send_message',
-  'submit_desir',
+  // Admin
+  'admin_send_message', 'admin_save_assignation', 'admin_validate_absence',
+  'admin_validate_desir', 'admin_reply_message',
+  // Desirs
+  'submit_desir', 'update_desir', 'delete_desir', 'submit_desir_permanent',
+  // Absences & vacances
+  'submit_absence', 'submit_vacances', 'annuler_vacances', 'modifier_vacances',
+  // Messages
+  'send_message', 'mark_message_read', 'mark_all_messages_read',
+  // Notifications
+  'mark_notification_read', 'mark_all_notifications_read', 'mark_alert_read',
+  // Changements
+  'submit_changement', 'confirmer_changement', 'refuser_changement', 'annuler_changement',
+  // Votes & sondages
+  'submit_vote', 'submit_sondage_reponses',
+  // Covoiturage
+  'add_covoiturage_buddy', 'remove_covoiturage_buddy', 'update_covoiturage_profile',
+  // Mur social
+  'create_mur_post', 'toggle_mur_like', 'add_mur_comment', 'delete_mur_post', 'delete_mur_comment',
+  // Wiki
+  'toggle_wiki_favori',
+  // Cuisine
+  'reserver_menu', 'annuler_reservation_menu',
+  'cuisine_save_menu', 'cuisine_save_reservation_famille', 'cuisine_save_vip_order',
+  // PV
+  'rate_pv', 'comment_pv',
+  // Profile
+  'update_profile', 'update_password',
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -65,19 +122,41 @@ const SYNCABLE_ACTIONS = [
 // ══════════════════════════════════════════════════════════════
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(async cache => {
-      // Cache each URL individually — don't fail if one is unavailable
-      for (const url of PRECACHE_URLS) {
-        try {
-          const response = await fetch(url, { credentials: 'same-origin' });
-          if (response.ok) await cache.put(url, response);
-        } catch (e) {
-          console.warn('[SW] Could not cache:', url);
+    Promise.all([
+      // Cache static assets
+      caches.open(STATIC_CACHE).then(async cache => {
+        for (const url of PRECACHE_URLS) {
+          try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (response.ok) await cache.put(url, response);
+          } catch (e) {
+            console.warn('[SW] Could not cache:', url);
+          }
         }
-      }
-    })
-    // Don't call skipWaiting() here — let the update modal handle it
-    // so users see the update prompt before the new SW activates
+      }),
+      // Cache all page fragments for full offline support
+      caches.open(DYNAMIC_CACHE).then(async cache => {
+        for (const url of PAGE_URLS) {
+          try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (response.ok) await cache.put(url, response);
+          } catch (e) {
+            console.warn('[SW] Could not cache page:', url);
+          }
+        }
+      }),
+      // Cache all JS modules for full offline support
+      caches.open(STATIC_CACHE).then(async cache => {
+        for (const url of MODULE_URLS) {
+          try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (response.ok) await cache.put(url, response);
+          } catch (e) {
+            console.warn('[SW] Could not cache module:', url);
+          }
+        }
+      }),
+    ])
   );
 });
 
@@ -246,6 +325,9 @@ async function handleApiRequest(request) {
 
     // Queue writable actions for background sync
     if (SYNCABLE_ACTIONS.includes(action)) {
+      // Add offline timestamp for conflict detection
+      body._queued_at = new Date().toISOString();
+      body._offline = true;
       await queueForSync({ url: request.url, action, body, timestamp: Date.now() });
       return new Response(JSON.stringify({
         success: true,
