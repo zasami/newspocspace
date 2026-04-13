@@ -3,7 +3,7 @@
 $fsInitYear = (int) date('Y');
 $fsFiches = Db::fetchAll(
     "SELECT fs.id, fs.user_id, fs.annee, fs.mois, fs.original_name, fs.size, fs.created_at,
-            u.prenom, u.nom, u.employee_id,
+            u.prenom, u.nom, u.employee_id, u.photo,
             f.code AS fonction_code,
             m.nom AS module_nom, m.code AS module_code,
             up.prenom AS uploaded_by_prenom, up.nom AS uploaded_by_nom
@@ -83,13 +83,12 @@ $fsUsers = Db::fetchAll(
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>Collaborateur</th>
-          <th>Fonction</th>
           <th>Période</th>
           <th>Fichier</th>
           <th>Taille</th>
           <th>Ajouté le</th>
           <th>Par</th>
+          <th></th>
           <th></th>
         </tr>
       </thead>
@@ -517,25 +516,80 @@ function renderTable() {
     if (filterMois) filtered = filtered.filter(f => f.mois == filterMois);
 
     if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Aucune fiche de salaire</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Aucune fiche de salaire</td></tr>';
         return;
     }
 
-    tbody.innerHTML = filtered.map(f => `
-        <tr>
-            <td><strong>${esc(f.nom)} ${esc(f.prenom)}</strong> ${f.employee_id ? '<small class="text-muted">' + esc(f.employee_id) + '</small>' : ''}</td>
-            <td>${f.fonction_code ? '<span class="badge bg-secondary">' + esc(f.fonction_code) + '</span>' : '-'}</td>
-            <td>${MOIS_NOMS[f.mois] || f.mois} ${f.annee}</td>
-            <td><i class="bi bi-file-pdf text-danger"></i> ${esc(f.original_name)}</td>
-            <td>${formatSize(f.size)}</td>
-            <td>${formatDate(f.created_at)}</td>
-            <td>${f.uploaded_by_prenom ? esc(f.uploaded_by_prenom) + ' ' + esc(f.uploaded_by_nom) : '-'}</td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${f.id}" title="Voir"><i class="bi bi-eye"></i></button>
-                <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${f.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
+    // Group by user
+    const groups = {};
+    const groupOrder = [];
+    filtered.forEach(f => {
+        if (!groups[f.user_id]) {
+            groups[f.user_id] = { user: f, fiches: [] };
+            groupOrder.push(f.user_id);
+        }
+        groups[f.user_id].fiches.push(f);
+    });
+
+    function avatar(f) {
+        if (f.photo) return `<img src="${esc(f.photo)}" class="fs-avatar">`;
+        const initials = (f.prenom?.[0] || '') + (f.nom?.[0] || '');
+        return `<div class="fs-avatar fs-avatar-initials">${esc(initials.toUpperCase())}</div>`;
+    }
+
+    let html = '';
+    groupOrder.forEach(uid => {
+        const g = groups[uid];
+        const u = g.user;
+        const count = g.fiches.length;
+
+        // Group header row
+        html += `<tr class="fs-group-header" data-group="${uid}">
+            <td colspan="7">
+                <div class="fs-group-user">
+                    <span class="fs-group-toggle"><span class="fs-toggle-icon"></span></span>
+                    ${avatar(u)}
+                    <div>
+                        <strong>${esc(u.nom)} ${esc(u.prenom)}</strong>
+                        ${u.employee_id ? `<span class="text-muted ms-1">${esc(u.employee_id)}</span>` : ''}
+                        ${u.fonction_code ? `<span class="badge bg-secondary ms-1">${esc(u.fonction_code)}</span>` : ''}
+                    </div>
+                    <span class="fs-group-count">${count} fiche${count > 1 ? 's' : ''}</span>
+                </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+
+        // Fiche rows (hidden by default)
+        g.fiches.forEach(f => {
+            html += `<tr class="fs-fiche-row" data-parent="${uid}" style="display:none">
+                <td class="ps-5">${MOIS_NOMS[f.mois] || f.mois} ${f.annee}</td>
+                <td><i class="bi bi-file-pdf text-danger"></i> ${esc(f.original_name)}</td>
+                <td>${formatSize(f.size)}</td>
+                <td>${formatDate(f.created_at)}</td>
+                <td>${f.uploaded_by_prenom ? esc(f.uploaded_by_prenom[0] + '. ' + f.uploaded_by_nom) : '-'}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${f.id}" title="Voir"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${f.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
+                </td>
+                <td></td>
+            </tr>`;
+        });
+    });
+
+    tbody.innerHTML = html;
+
+    // Collapse/expand groups
+    tbody.querySelectorAll('.fs-group-header').forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('[data-action]')) return;
+            const uid = row.dataset.group;
+            const rows = tbody.querySelectorAll(`tr[data-parent="${uid}"]`);
+            const isOpen = row.classList.contains('fs-open');
+            row.classList.toggle('fs-open');
+            rows.forEach(r => r.style.display = isOpen ? 'none' : '');
+        });
+    });
 }
 
 function updateStats() {
@@ -860,6 +914,22 @@ initFichesSalairePage();
 .fs-filter-auto{width:auto}
 .fs-pdf-icon{font-size:2.5rem;color:#c62828}
 .fs-browse-link{cursor:pointer;text-decoration:underline}
+.fs-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.fs-avatar-initials{display:flex;align-items:center;justify-content:center;background:#bcd2cb;color:#2d4a43;font-size:.78rem;font-weight:700;letter-spacing:.5px}
+.fs-group-header td{background:#F7F5F2 !important;border-bottom:1px solid #e9ecef;padding:10px 12px !important}
+.fs-group-user{display:flex;align-items:center;gap:10px}
+.fs-group-user strong{font-size:.9rem}
+.fs-group-toggle{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%;border:1.5px solid #ccc;transition:all .25s;cursor:pointer}
+.fs-group-header:hover .fs-group-toggle{border-color:#999}
+.fs-toggle-icon{position:relative;width:10px;height:10px}
+.fs-toggle-icon::before,.fs-toggle-icon::after{content:'';position:absolute;background:#999;border-radius:1px;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s}
+.fs-toggle-icon::before{width:10px;height:1.5px;top:50%;left:0;transform:translateY(-50%)}
+.fs-toggle-icon::after{width:1.5px;height:10px;left:50%;top:0;transform:translateX(-50%)}
+.fs-group-header.fs-open .fs-toggle-icon::after{transform:translateX(-50%) rotate(90deg);opacity:0}
+.fs-group-header.fs-open .fs-group-toggle{border-color:#2d4a43;background:rgba(188,210,203,.15)}
+.fs-group-header.fs-open .fs-toggle-icon::before,.fs-group-header.fs-open .fs-toggle-icon::after{background:#2d4a43}
+.fs-group-count{margin-left:auto;font-size:.75rem;color:#999;background:#fff;border:1px solid #e9ecef;padding:2px 10px;border-radius:20px}
+.fs-fiche-row td{font-size:.85rem;border-bottom:1px solid #f1f3f5;vertical-align:middle}
 .fs-detect-banner{background:#f4f9f6;border:1px solid #bcd2cb;border-radius:10px;padding:12px;margin-bottom:14px;animation:fsDetectIn .3s ease}
 @keyframes fsDetectIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .fs-detect-header{font-size:.82rem;font-weight:600;color:#2d4a43;margin-bottom:8px;display:flex;align-items:center;gap:6px}

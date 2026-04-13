@@ -457,5 +457,14 @@
         "category": "Formation",
         "done": false,
         "order": 51
+    },
+    {
+        "id": "afficher-changement",
+        "title": "Afficher changement",
+        "desc": "Pour l'affichage de changement dans la page admin, il faut seulement afficher le changement qui est validé par les deux collègues. pour évité le débordement et les informations inutile dans la page admin...",
+        "difficulty": "difficile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 52
     }
 ]

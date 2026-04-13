@@ -38,7 +38,7 @@ function admin_get_fiches_salaire()
     }
 
     $sql = "SELECT fs.id, fs.user_id, fs.annee, fs.mois, fs.original_name, fs.size, fs.created_at,
-                   u.prenom, u.nom, u.employee_id,
+                   u.prenom, u.nom, u.employee_id, u.photo,
                    f.code AS fonction_code,
                    m.nom AS module_nom, m.code AS module_code,
                    up.prenom AS uploaded_by_prenom, up.nom AS uploaded_by_nom
