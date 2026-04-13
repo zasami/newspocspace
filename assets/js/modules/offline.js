@@ -118,51 +118,111 @@ function hideOfflineBar() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Sync bar UI
+// Sync toast UI — floating toast with direction arrows + progress
 // ══════════════════════════════════════════════════════════════
-function showSyncBar(total) {
-    const bar = document.createElement('div');
-    bar.className = 'ss-sync-bar show';
-    bar.innerHTML = `
-        <div class="ss-sync-text"><i class="bi bi-arrow-repeat"></i> Synchronisation en cours...</div>
-        <div class="ss-sync-progress"><div class="ss-sync-progress-fill" id="ztSyncFill"></div></div>`;
-    document.body.appendChild(bar);
-    return {
-        update(current) {
-            const fill = bar.querySelector('#ztSyncFill');
-            if (fill) fill.style.width = Math.round((current / total) * 100) + '%';
-        },
-        done(success, failed, conflicts) {
-            const text = bar.querySelector('.ss-sync-text');
-            if (text) {
-                if (conflicts > 0) {
-                    text.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${success} OK, ${conflicts} conflit(s) resolus`;
-                    bar.classList.add('ss-sync-warning');
-                } else if (failed > 0) {
-                    text.innerHTML = `<i class="bi bi-exclamation-circle"></i> ${success} OK, ${failed} erreur(s)`;
-                    bar.classList.add('ss-sync-warning');
-                } else {
-                    text.innerHTML = `<i class="bi bi-check-circle"></i> ${success} action(s) synchronisee(s)`;
-                    bar.classList.add('ss-sync-success');
-                }
-            }
-            const fill = bar.querySelector('#ztSyncFill');
-            if (fill) fill.style.width = '100%';
-            setTimeout(() => { bar.classList.remove('show'); setTimeout(() => bar.remove(), 300); }, 3000);
-        },
-    };
+let _syncToast = null;
+
+function _ensureSyncToast() {
+    if (_syncToast && document.body.contains(_syncToast)) return _syncToast;
+    _syncToast = document.createElement('div');
+    _syncToast.className = 'ss-sync-toast';
+    _syncToast.innerHTML = `
+        <div class="ss-sync-toast-header">
+            <i class="bi bi-arrow-repeat ss-sync-toast-spinner"></i>
+            <span class="ss-sync-toast-title">Synchronisation</span>
+            <button class="ss-sync-toast-close" title="Fermer"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="ss-sync-toast-body">
+            <div class="ss-sync-toast-row" id="ssSyncDown">
+                <i class="bi bi-arrow-down-circle ss-sync-icon-down"></i>
+                <div class="ss-sync-toast-info">
+                    <span class="ss-sync-toast-label">Telechargement</span>
+                    <span class="ss-sync-toast-detail" id="ssSyncDownDetail">En attente...</span>
+                </div>
+            </div>
+            <div class="ss-sync-toast-progress">
+                <div class="ss-sync-toast-progress-fill ss-sync-down-fill" id="ssSyncDownFill"></div>
+            </div>
+            <div class="ss-sync-toast-row" id="ssSyncUp" style="display:none">
+                <i class="bi bi-arrow-up-circle ss-sync-icon-up"></i>
+                <div class="ss-sync-toast-info">
+                    <span class="ss-sync-toast-label">Televersement</span>
+                    <span class="ss-sync-toast-detail" id="ssSyncUpDetail">En attente...</span>
+                </div>
+            </div>
+            <div class="ss-sync-toast-progress" id="ssSyncUpBar" style="display:none">
+                <div class="ss-sync-toast-progress-fill ss-sync-up-fill" id="ssSyncUpFill"></div>
+            </div>
+        </div>
+        <div class="ss-sync-toast-footer" id="ssSyncFooter"></div>`;
+    document.body.appendChild(_syncToast);
+
+    _syncToast.querySelector('.ss-sync-toast-close').addEventListener('click', () => {
+        _syncToast.classList.remove('show');
+        setTimeout(() => { _syncToast?.remove(); _syncToast = null; }, 300);
+    });
+
+    requestAnimationFrame(() => _syncToast.classList.add('show'));
+    return _syncToast;
+}
+
+function _updateSyncDown(detail, percent) {
+    const toast = _ensureSyncToast();
+    const el = toast.querySelector('#ssSyncDownDetail');
+    const fill = toast.querySelector('#ssSyncDownFill');
+    if (el) el.textContent = detail;
+    if (fill) fill.style.width = percent + '%';
+}
+
+function _updateSyncUp(detail, percent) {
+    const toast = _ensureSyncToast();
+    const upRow = toast.querySelector('#ssSyncUp');
+    const upBar = toast.querySelector('#ssSyncUpBar');
+    if (upRow) upRow.style.display = '';
+    if (upBar) upBar.style.display = '';
+    const el = toast.querySelector('#ssSyncUpDetail');
+    const fill = toast.querySelector('#ssSyncUpFill');
+    if (el) el.textContent = detail;
+    if (fill) fill.style.width = percent + '%';
+}
+
+function _syncDone(message, status) {
+    const toast = _ensureSyncToast();
+    const footer = toast.querySelector('#ssSyncFooter');
+    const spinner = toast.querySelector('.ss-sync-toast-spinner');
+    if (spinner) {
+        spinner.classList.remove('ss-sync-toast-spinner');
+        spinner.className = status === 'success'
+            ? 'bi bi-check-circle-fill ss-sync-icon-done'
+            : 'bi bi-exclamation-circle-fill ss-sync-icon-warn';
+    }
+    const title = toast.querySelector('.ss-sync-toast-title');
+    if (title) title.textContent = 'Synchronisation terminee';
+    if (footer) footer.textContent = message;
+    toast.classList.add('ss-sync-toast--' + status);
+    // Auto-hide after 4s
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { toast?.remove(); _syncToast = null; }, 300);
+    }, 4000);
 }
 
 // ══════════════════════════════════════════════════════════════
 // Delta sync — pull all data from server into IndexedDB
 // ══════════════════════════════════════════════════════════════
-async function deltaSync() {
-    if (!navigator.onLine) return;
+let _deltaSyncRunning = false;
+
+async function deltaSync(showToast = true) {
+    if (!navigator.onLine || _deltaSyncRunning) return;
+    _deltaSyncRunning = true;
     try {
         const { apiPost } = await import('../helpers.js');
         const lastSync = await db.getMeta('last_sync');
+
+        if (showToast) _updateSyncDown('Recuperation des donnees...', 10);
+
         const res = await apiPost('sync_delta', { last_sync: lastSync });
-        if (!res.success) return;
+        if (!res.success) { _deltaSyncRunning = false; return; }
 
         // Store each data type in its IndexedDB store
         const syncMap = {
@@ -186,30 +246,46 @@ async function deltaSync() {
             cuisine_menus:   'cuisine_menus',
         };
 
-        for (const [key, store] of Object.entries(syncMap)) {
+        const entries = Object.entries(syncMap);
+        let stored = 0, totalItems = 0;
+
+        for (const [key, store] of entries) {
             if (res[key]?.length) {
                 await db.put(store, res[key]);
+                totalItems += res[key].length;
+            }
+            stored++;
+            if (showToast) {
+                const pct = Math.round(10 + (stored / entries.length) * 80);
+                _updateSyncDown(`${totalItems} elements recus...`, pct);
             }
         }
 
-        // Special: wiki categories go to meta
+        // Special stores
         if (res.wiki_categories?.length) {
             await db.setMeta('wiki_categories', res.wiki_categories);
+            totalItems += res.wiki_categories.length;
         }
-        // Horaires: full replace
         if (res.horaires?.length) {
             await db.setMeta('horaires', res.horaires);
+            totalItems += res.horaires.length;
         }
-        // Fiches salaire metadata
         if (res.fiches_salaire?.length) {
             await db.setMeta('fiches_salaire', res.fiches_salaire);
+            totalItems += res.fiches_salaire.length;
         }
 
         if (res.timestamp) await db.setMeta('last_sync', res.timestamp);
         await db.cleanup();
+
+        if (showToast) {
+            _updateSyncDown(`${totalItems} elements synchronises`, 100);
+        }
     } catch (e) {
         console.warn('[offline] deltaSync error:', e);
+        if (showToast) _updateSyncDown('Erreur de synchronisation', 0);
     }
+    _deltaSyncRunning = false;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -220,8 +296,9 @@ async function syncQueue() {
     if (!queue.length) return;
 
     const { apiPost } = await import('../helpers.js');
-    const syncBar = showSyncBar(queue.length);
     let success = 0, failed = 0, conflicts = 0;
+
+    _updateSyncUp(`0 / ${queue.length} actions...`, 0);
 
     for (let i = 0; i < queue.length; i++) {
         const item = queue[i];
@@ -231,25 +308,34 @@ async function syncQueue() {
                 success++;
                 await db.dequeue(item.id);
             } else if (res.conflict) {
-                // LWW conflict: server version wins, notify user
                 conflicts++;
                 await db.dequeue(item.id);
                 _showConflictToast(item.action, res.message || 'Conflit resolu par le serveur');
             } else {
                 failed++;
-                // Mark the item with error info for retry UI
                 await db.put('sync_queue', { ...item, _error: res.message, _errorAt: Date.now() });
             }
         } catch (e) {
             failed++;
             break; // still offline, stop
         }
-        syncBar.update(i + 1);
+        const pct = Math.round(((i + 1) / queue.length) * 100);
+        _updateSyncUp(`${i + 1} / ${queue.length} actions envoyees`, pct);
     }
-    syncBar.done(success, failed, conflicts);
+
+    // Final status
+    if (failed > 0 || conflicts > 0) {
+        const parts = [];
+        if (success) parts.push(`${success} OK`);
+        if (conflicts) parts.push(`${conflicts} conflit(s)`);
+        if (failed) parts.push(`${failed} erreur(s)`);
+        _updateSyncUp(parts.join(', '), 100);
+    } else {
+        _updateSyncUp(`${success} action(s) envoyee(s)`, 100);
+    }
 
     // Re-sync data after pushing changes
-    if (success > 0) deltaSync();
+    if (success > 0) await deltaSync(false);
 }
 
 function _showConflictToast(action, message) {
@@ -520,10 +606,16 @@ export async function initOffline() {
                 });
             }
         } catch (e) { /* silent */ }
-        // Sync queued actions
+        // Sync: upload queued actions first, then download fresh data
         const queueLen = await db.getQueueCount();
-        if (queueLen > 0) await syncQueue();
-        deltaSync();
+        if (queueLen > 0) {
+            await syncQueue();
+            // deltaSync already called inside syncQueue on success
+        } else {
+            await deltaSync(true);
+        }
+        // Show final status
+        _syncDone('Donnees a jour', 'success');
         _startPeriodicSync();
     });
 
@@ -537,21 +629,22 @@ export async function initOffline() {
     // Listen for SW sync messages
     navigator.serviceWorker?.addEventListener('message', evt => {
         if (evt.data?.type === 'SYNC_COMPLETE') {
-            deltaSync();
+            deltaSync(false);
             updateConnDot();
         }
     });
 
-    // Initial sync if online
+    // Initial sync if online (silent — no toast on first load)
     if (_online) {
-        deltaSync();
+        deltaSync(false);
         _startPeriodicSync();
     }
 }
 
 function _startPeriodicSync() {
     _stopPeriodicSync();
-    _syncTimer = setInterval(deltaSync, SYNC_INTERVAL);
+    // Periodic sync is silent (no toast) — toast only shows on reconnect
+    _syncTimer = setInterval(() => deltaSync(false), SYNC_INTERVAL);
 }
 
 function _stopPeriodicSync() {
