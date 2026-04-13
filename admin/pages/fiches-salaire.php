@@ -109,20 +109,7 @@ $fsUsers = Db::fetchAll(
         <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label class="form-label">Collaborateur</label>
-          <div class="zs-select" id="fsUploadUser" data-placeholder="-- Sélectionner --"></div>
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <label class="form-label">Année</label>
-            <input type="number" class="form-control" id="fsUploadAnnee" min="2000" max="2100">
-          </div>
-          <div class="col-6">
-            <label class="form-label">Mois</label>
-            <div class="zs-select" id="fsUploadMois" data-placeholder="Mois"></div>
-          </div>
-        </div>
+        <!-- Step 1: File first -->
         <div class="mb-3">
           <label class="form-label">Fichier PDF</label>
           <div class="fs-dropzone" id="fsDropzone">
@@ -131,6 +118,35 @@ $fsUsers = Db::fetchAll(
             <p class="mb-1 fw-semibold">Glissez votre fichier PDF ici</p>
             <p class="text-muted small mb-0">ou <span class="text-primary fs-browse-link">parcourir</span></p>
             <div id="fsDropzoneFile" class="d-none mt-2 small text-success fw-semibold"></div>
+          </div>
+        </div>
+
+        <!-- Detection banner -->
+        <div class="fs-detect-banner" id="fsDetectBanner" style="display:none">
+          <div class="fs-detect-header"><i class="bi bi-magic"></i> Détection automatique depuis le nom du fichier</div>
+          <div class="fs-detect-grid" id="fsDetectGrid"></div>
+        </div>
+
+        <!-- Fields (hidden by default, shown on click) -->
+        <div id="fsManualFieldsToggle" style="display:none;margin-bottom:10px">
+          <button type="button" class="fs-manual-toggle" id="fsShowManualBtn">
+            <i class="bi bi-pencil-square"></i> En cas d'erreur de détection, cliquez ici pour corriger manuellement
+          </button>
+        </div>
+        <div id="fsManualFields" style="display:none">
+          <div class="mb-3">
+            <label class="form-label">Collaborateur</label>
+            <div class="zs-select" id="fsUploadUser" data-placeholder="-- Sélectionner --"></div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Année</label>
+              <input type="number" class="form-control" id="fsUploadAnnee" min="2000" max="2100">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Mois</label>
+              <div class="zs-select" id="fsUploadMois" data-placeholder="Mois"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -214,8 +230,12 @@ function initFichesSalairePage() {
     document.getElementById('fsUploadBtn')?.addEventListener('click', () => {
         document.getElementById('fsUploadAnnee').value = fsYear;
         zerdaSelect.setValue('#fsUploadMois', String(new Date().getMonth() + 1));
+        zerdaSelect.setValue('#fsUploadUser', '');
         document.getElementById('fsUploadFile').value = '';
         document.getElementById('fsDropzoneFile').classList.add('d-none');
+        document.getElementById('fsDetectBanner').style.display = 'none';
+        document.getElementById('fsManualFieldsToggle').style.display = 'none';
+        document.getElementById('fsManualFields').style.display = '';
         new bootstrap.Modal('#fsUploadModal').show();
     });
 
@@ -245,6 +265,113 @@ function initFichesSalairePage() {
         const el = document.getElementById('fsDropzoneFile');
         el.textContent = '✓ ' + name;
         el.classList.remove('d-none');
+        detectFromFilename(name);
+    }
+
+    /**
+     * Parse filename patterns:
+     *   NOM_Prenom_YYYY_M_V1.pdf
+     *   NOM_Prenom_YYYY_MM.pdf
+     *   NOM_Prenom_YYYYMM.pdf
+     *   NOM-Prenom-YYYY-MM.pdf
+     *   NOM Prenom YYYY MM.pdf
+     *   NOM_Prenom.pdf (no date)
+     */
+    function detectFromFilename(filename) {
+        const banner = document.getElementById('fsDetectBanner');
+        const grid = document.getElementById('fsDetectGrid');
+        const base = filename.replace(/\.pdf$/i, '').replace(/[_\s]+V\d+$/i, '');
+
+        // Split by _ - or spaces
+        const parts = base.split(/[_\-\s]+/).filter(Boolean);
+
+        let detectedNom = null, detectedPrenom = null, detectedAnnee = null, detectedMois = null;
+        let matchedUser = null;
+
+        // Try to find year (4 digits 20xx) and month
+        const remaining = [];
+        for (const p of parts) {
+            const n = parseInt(p);
+            if (/^\d{6}$/.test(p)) {
+                // YYYYMM format
+                detectedAnnee = parseInt(p.substring(0, 4));
+                detectedMois = parseInt(p.substring(4, 6));
+            } else if (/^\d{4}$/.test(p) && n >= 2000 && n <= 2100) {
+                detectedAnnee = n;
+            } else if (/^\d{1,2}$/.test(p) && n >= 1 && n <= 12 && detectedAnnee) {
+                detectedMois = n;
+            } else {
+                remaining.push(p);
+            }
+        }
+
+        // First remaining = nom, second = prenom
+        if (remaining.length >= 2) {
+            detectedNom = remaining[0];
+            detectedPrenom = remaining[1];
+        } else if (remaining.length === 1) {
+            detectedNom = remaining[0];
+        }
+
+        // Try to match user
+        if (detectedNom) {
+            const nomLower = detectedNom.toLowerCase();
+            const prenomLower = (detectedPrenom || '').toLowerCase();
+            matchedUser = fsUsers.find(u => {
+                const uNom = u.nom.toLowerCase();
+                const uPrenom = u.prenom.toLowerCase();
+                // Exact match nom + prenom
+                if (uNom === nomLower && prenomLower && uPrenom === prenomLower) return true;
+                // Match by employee_id
+                if (u.employee_id && u.employee_id.toLowerCase() === nomLower) return true;
+                // Partial match (nom contains)
+                if (prenomLower && uNom.includes(nomLower) && uPrenom.includes(prenomLower)) return true;
+                return false;
+            });
+            // Fallback: fuzzy match nom only
+            if (!matchedUser && nomLower.length >= 3) {
+                matchedUser = fsUsers.find(u => u.nom.toLowerCase() === nomLower);
+            }
+        }
+
+        // Render banner
+        const items = [];
+        if (detectedNom || detectedPrenom) {
+            const cls = matchedUser ? 'fs-detect-ok' : 'fs-detect-warn';
+            const val = matchedUser
+                ? `${esc(matchedUser.nom)} ${esc(matchedUser.prenom)}`
+                : `${esc(detectedNom || '?')} ${esc(detectedPrenom || '?')} <span style="color:#f57f17;font-size:.7rem">(non trouvé)</span>`;
+            items.push(`<div class="fs-detect-item ${cls}"><span class="fs-detect-label">Collaborateur</span><span class="fs-detect-value">${val}</span></div>`);
+        }
+        if (detectedAnnee) {
+            items.push(`<div class="fs-detect-item fs-detect-ok"><span class="fs-detect-label">Année</span><span class="fs-detect-value">${detectedAnnee}</span></div>`);
+        }
+        if (detectedMois) {
+            items.push(`<div class="fs-detect-item fs-detect-ok"><span class="fs-detect-label">Mois</span><span class="fs-detect-value">${MOIS_NOMS[detectedMois] || detectedMois}</span></div>`);
+        }
+
+        // Auto-fill form fields
+        if (matchedUser) zerdaSelect.setValue('#fsUploadUser', matchedUser.id);
+        if (detectedAnnee) document.getElementById('fsUploadAnnee').value = detectedAnnee;
+        if (detectedMois) zerdaSelect.setValue('#fsUploadMois', String(detectedMois));
+
+        const allDetected = matchedUser && detectedAnnee && detectedMois;
+        if (items.length) {
+            grid.innerHTML = items.join('');
+            banner.style.display = '';
+        } else {
+            banner.style.display = 'none';
+        }
+
+        // If all detected → hide manual fields, show toggle link
+        if (allDetected) {
+            document.getElementById('fsManualFields').style.display = 'none';
+            document.getElementById('fsManualFieldsToggle').style.display = '';
+        } else {
+            // Partial detection or none → show fields
+            document.getElementById('fsManualFields').style.display = '';
+            document.getElementById('fsManualFieldsToggle').style.display = 'none';
+        }
     }
 
     document.getElementById('fsBulkUploadBtn')?.addEventListener('click', () => {
@@ -263,6 +390,11 @@ function initFichesSalairePage() {
 
     document.getElementById('fsUploadSubmit')?.addEventListener('click', uploadSingle);
     document.getElementById('fsBulkSubmit')?.addEventListener('click', uploadBulk);
+
+    document.getElementById('fsShowManualBtn')?.addEventListener('click', () => {
+        document.getElementById('fsManualFields').style.display = '';
+        document.getElementById('fsManualFieldsToggle').style.display = 'none';
+    });
 
     // Init filters from injected data
     const userOpts = fsUsers.map(u => ({
@@ -480,4 +612,15 @@ initFichesSalairePage();
 .fs-filter-auto{width:auto}
 .fs-pdf-icon{font-size:2.5rem;color:#c62828}
 .fs-browse-link{cursor:pointer;text-decoration:underline}
+.fs-detect-banner{background:#f0faf0;border:1px solid #c8e6c9;border-radius:10px;padding:12px;margin-bottom:14px;animation:fsDetectIn .3s ease}
+@keyframes fsDetectIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.fs-detect-header{font-size:.82rem;font-weight:600;color:#2e7d32;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.fs-detect-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fs-detect-item{background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:6px 10px;font-size:.8rem}
+.fs-detect-item .fs-detect-label{font-size:.68rem;text-transform:uppercase;color:#999;letter-spacing:.3px;display:block}
+.fs-detect-item .fs-detect-value{font-weight:600;color:#212529}
+.fs-detect-item.fs-detect-ok{border-color:#a5d6a7;background:#f1f8e9}
+.fs-detect-item.fs-detect-warn{border-color:#ffe082;background:#fffde7}
+.fs-manual-toggle{background:none;border:none;color:#999;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;transition:color .15s}
+.fs-manual-toggle:hover{color:#2e7d32;text-decoration:underline}
 </style>
