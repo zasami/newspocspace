@@ -187,13 +187,22 @@ $fsUsers = Db::fetchAll(
           <input type="file" class="form-control" id="fsBulkFiles" accept="application/pdf" multiple>
           <div class="form-text" id="fsBulkCount"></div>
         </div>
-        <div id="fsBulkResult" class="d-none">
-          <div class="alert alert-success small" id="fsBulkSuccess"></div>
-          <div class="alert alert-warning small d-none" id="fsBulkSkipped"></div>
+
+        <!-- Progress area (hidden until import starts) -->
+        <div id="fsBulkProgress" style="display:none">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small fw-semibold" id="fsBulkProgressLabel">Importation en cours...</span>
+            <span class="small text-muted" id="fsBulkProgressCounter">0 / 0</span>
+          </div>
+          <div class="progress mb-2" style="height:8px;border-radius:4px">
+            <div class="progress-bar bg-success" id="fsBulkProgressBar" style="width:0%;transition:width .3s"></div>
+          </div>
+          <div class="fs-bulk-current" id="fsBulkCurrentFile"></div>
+          <div class="fs-bulk-log" id="fsBulkLog" style="max-height:200px;overflow-y:auto"></div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal" id="fsBulkCloseBtn">Fermer</button>
         <button class="btn btn-primary" id="fsBulkSubmit"><i class="bi bi-upload"></i> Importer</button>
       </div>
     </div>
@@ -379,7 +388,9 @@ function initFichesSalairePage() {
         zerdaSelect.setValue('#fsBulkMois', String(new Date().getMonth() + 1));
         document.getElementById('fsBulkFiles').value = '';
         document.getElementById('fsBulkCount').textContent = '';
-        document.getElementById('fsBulkResult').classList.add('d-none');
+        document.getElementById('fsBulkProgress').style.display = 'none';
+        document.getElementById('fsBulkLog').innerHTML = '';
+        document.getElementById('fsBulkSubmit').style.display = '';
         new bootstrap.Modal('#fsBulkModal').show();
     });
 
@@ -528,50 +539,117 @@ async function uploadSingle() {
 async function uploadBulk() {
     const annee = document.getElementById('fsBulkAnnee').value;
     const mois = zerdaSelect.getValue('#fsBulkMois');
-    const files = document.getElementById('fsBulkFiles').files;
+    const fileList = document.getElementById('fsBulkFiles').files;
 
-    if (!files.length) { alert('Sélectionnez des fichiers'); return; }
+    if (!fileList.length) { alert('Sélectionnez des fichiers'); return; }
+    if (!annee || !mois) { alert('Sélectionnez année et mois'); return; }
 
-    const fd = new FormData();
-    fd.append('action', 'admin_bulk_upload_fiches');
-    fd.append('annee', annee);
-    fd.append('mois', mois);
-    for (let i = 0; i < files.length; i++) {
-        fd.append('files[]', files[i]);
-    }
+    const files = Array.from(fileList);
+    const total = files.length;
+    let uploaded = 0, skipped = 0, errors = 0;
 
     const btn = document.getElementById('fsBulkSubmit');
+    const closeBtn = document.getElementById('fsBulkCloseBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Import...';
+    btn.style.display = 'none';
+    closeBtn.disabled = true;
 
-    try {
-        const resp = await fetch('/spocspace/admin/api.php', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
-            body: fd,
+    const progressArea = document.getElementById('fsBulkProgress');
+    const progressBar = document.getElementById('fsBulkProgressBar');
+    const progressLabel = document.getElementById('fsBulkProgressLabel');
+    const progressCounter = document.getElementById('fsBulkProgressCounter');
+    const currentFile = document.getElementById('fsBulkCurrentFile');
+    const log = document.getElementById('fsBulkLog');
+
+    progressArea.style.display = '';
+    progressBar.style.width = '0%';
+    progressCounter.textContent = `0 / ${total}`;
+    log.innerHTML = '';
+
+    /**
+     * Detect user from filename (reuse same logic as single upload)
+     */
+    function detectUserFromName(filename) {
+        const base = filename.replace(/\.pdf$/i, '').replace(/[_\s]+V\d+$/i, '');
+        const parts = base.split(/[_\-\s]+/).filter(Boolean);
+        const remaining = [];
+        for (const p of parts) {
+            const n = parseInt(p);
+            if (/^\d{4,6}$/.test(p) || (/^\d{1,2}$/.test(p) && n >= 1 && n <= 12)) continue;
+            remaining.push(p);
+        }
+        if (remaining.length < 1) return null;
+        const nomLower = remaining[0].toLowerCase();
+        const prenomLower = (remaining[1] || '').toLowerCase();
+        return fsUsers.find(u => {
+            const uN = u.nom.toLowerCase(), uP = u.prenom.toLowerCase();
+            if (uN === nomLower && prenomLower && uP === prenomLower) return true;
+            if (u.employee_id && u.employee_id.toLowerCase() === nomLower) return true;
+            if (!prenomLower && nomLower.length >= 3 && uN === nomLower) return true;
+            return false;
         });
-        const res = await resp.json();
-        const resultDiv = document.getElementById('fsBulkResult');
-        resultDiv.classList.remove('d-none');
+    }
 
-        document.getElementById('fsBulkSuccess').textContent = res.message || `${res.uploaded} fiche(s) importée(s)`;
+    for (let i = 0; i < total; i++) {
+        const file = files[i];
+        const pct = Math.round(((i) / total) * 100);
+        progressBar.style.width = pct + '%';
+        progressCounter.textContent = `${i + 1} / ${total}`;
+        progressLabel.textContent = `Importation en cours... (${i + 1}/${total})`;
 
-        const skippedDiv = document.getElementById('fsBulkSkipped');
-        if (res.skipped?.length) {
-            skippedDiv.classList.remove('d-none');
-            skippedDiv.innerHTML = '<strong>Fichiers ignorés :</strong><ul class="mb-0">' +
-                res.skipped.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>';
-        } else {
-            skippedDiv.classList.add('d-none');
+        // Show current file
+        currentFile.innerHTML = `<span class="spinner-border"></span><i class="bi bi-file-earmark-pdf"></i><span class="fs-bc-name">${esc(file.name)}</span>`;
+
+        const matchedUser = detectUserFromName(file.name);
+
+        if (!matchedUser) {
+            skipped++;
+            log.innerHTML += `<div class="fs-bulk-log-item log-skip"><i class="bi bi-exclamation-triangle"></i><span>${esc(file.name)}</span><small>Collaborateur non trouvé</small></div>`;
+            log.scrollTop = log.scrollHeight;
+            continue;
         }
 
-        await loadFiches();
-    } catch (e) {
-        alert('Erreur réseau');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-upload"></i> Importer';
+        // Upload one file via existing single upload API
+        const fd = new FormData();
+        fd.append('action', 'admin_upload_fiche_salaire');
+        fd.append('user_id', matchedUser.id);
+        fd.append('annee', annee);
+        fd.append('mois', mois);
+        fd.append('file', file);
+
+        try {
+            const resp = await fetch('/spocspace/admin/api.php', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
+                body: fd,
+            });
+            const res = await resp.json();
+            if (res.success) {
+                uploaded++;
+                log.innerHTML += `<div class="fs-bulk-log-item log-ok"><i class="bi bi-check-circle-fill"></i><span>${esc(file.name)}</span><small>${esc(matchedUser.nom)} ${esc(matchedUser.prenom)}</small></div>`;
+            } else {
+                skipped++;
+                log.innerHTML += `<div class="fs-bulk-log-item log-skip"><i class="bi bi-dash-circle"></i><span>${esc(file.name)}</span><small>${esc(res.message || 'Erreur')}</small></div>`;
+            }
+        } catch (e) {
+            errors++;
+            log.innerHTML += `<div class="fs-bulk-log-item log-err"><i class="bi bi-x-circle-fill"></i><span>${esc(file.name)}</span><small>Erreur réseau</small></div>`;
+        }
+        log.scrollTop = log.scrollHeight;
     }
+
+    // Done
+    progressBar.style.width = '100%';
+    currentFile.innerHTML = '';
+    progressLabel.innerHTML = `<i class="bi bi-check-circle-fill text-success"></i> Terminé : <strong>${uploaded}</strong> importé${uploaded > 1 ? 's' : ''}` +
+        (skipped ? `, <strong>${skipped}</strong> ignoré${skipped > 1 ? 's' : ''}` : '') +
+        (errors ? `, <strong class="text-danger">${errors}</strong> erreur${errors > 1 ? 's' : ''}` : '');
+
+    btn.disabled = false;
+    btn.style.display = '';
+    btn.innerHTML = '<i class="bi bi-upload"></i> Importer';
+    closeBtn.disabled = false;
+    await loadFiches();
 }
 
 function viewFiche(id) {
@@ -623,4 +701,15 @@ initFichesSalairePage();
 .fs-detect-item.fs-detect-warn{border-color:#ffe082;background:#fffde7}
 .fs-manual-toggle{background:none;border:none;color:#999;font-size:.78rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px;transition:color .15s}
 .fs-manual-toggle:hover{color:#2e7d32;text-decoration:underline}
+.fs-bulk-current{background:#f8f9fa;border:1px solid #e9ecef;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:.82rem;display:flex;align-items:center;gap:8px;min-height:38px}
+.fs-bulk-current i{color:#c62828;font-size:1.1rem}
+.fs-bulk-current .fs-bc-name{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-bulk-current .spinner-border{width:16px;height:16px;border-width:2px;color:#2d4a43}
+.fs-bulk-log{display:flex;flex-direction:column;gap:3px}
+.fs-bulk-log-item{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:4px;font-size:.78rem}
+.fs-bulk-log-item.log-ok{background:#f1f8e9;color:#2e7d32}
+.fs-bulk-log-item.log-skip{background:#fff8e1;color:#e65100}
+.fs-bulk-log-item.log-err{background:#fde2e0;color:#c62828}
+.fs-bulk-log-item .bi{font-size:.85rem;flex-shrink:0}
+.fs-bulk-log-item span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
