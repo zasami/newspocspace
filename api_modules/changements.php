@@ -38,7 +38,10 @@ function get_mes_changements()
 
 function get_collegues()
 {
+    global $params;
     $user = require_auth();
+
+    $dateFilter = Sanitize::date($params['date'] ?? '');
 
     $users = Db::fetchAll(
         "SELECT u.id, u.prenom, u.nom, u.photo, u.taux, u.fonction_id,
@@ -59,6 +62,26 @@ function get_collegues()
          ORDER BY u.nom, u.prenom",
         [$user['id']]
     );
+
+    // If date provided, add each colleague's shift on that day
+    if ($dateFilter) {
+        $mois = substr($dateFilter, 0, 7);
+        $planning = Db::fetch("SELECT id FROM plannings WHERE mois_annee = ?", [$mois]);
+        if ($planning) {
+            foreach ($users as &$u) {
+                $assign = Db::fetch(
+                    "SELECT pa.horaire_type_id, pa.statut AS assign_statut,
+                            ht.code AS horaire_code, ht.nom AS horaire_nom, ht.couleur
+                     FROM planning_assignations pa
+                     LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+                     WHERE pa.planning_id = ? AND pa.date_jour = ? AND pa.user_id = ?",
+                    [$planning['id'], $dateFilter, $u['id']]
+                );
+                $u['shift_on_date'] = $assign ?: null;
+            }
+            unset($u);
+        }
+    }
 
     respond([
         'success' => true,

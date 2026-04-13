@@ -78,10 +78,9 @@ export function destroy() {
 }
 
 function onConfirmModalClosed() {
-    state.dateDestinataire = null;
-    state.colAssignOnDate = null;
+    // Keep dateDestinataire and colAssignOnDate so user can reopen modal
     if (state.collegueId) {
-        renderCalendar('chgColCal', state.colMonth, state.colPlanning, onColDayClick, null);
+        renderCalendar('chgColCal', state.colMonth, state.colPlanning, onColDayClick, state.dateDestinataire);
     }
 }
 
@@ -115,7 +114,7 @@ async function loadMyPlanning() {
     renderMyPlanningFromState();
 }
 
-function onMyDayClick(date, assign) {
+async function onMyDayClick(date, assign) {
     if (!assign) return;
     state.dateDemandeur = date;
     state.myAssignOnDate = assign;
@@ -123,8 +122,30 @@ function onMyDayClick(date, assign) {
     state.collegue = null;
     state.dateDestinataire = null;
     state.colAssignOnDate = null;
+    state.isOffSwap = false;
+    state.dateCompensation = null;
+    state.compensationAssign = null;
 
     renderCalendar('chgMyCal', state.myMonth, state.myPlanning, onMyDayClick, state.dateDemandeur);
+
+    // Load colleagues with their shift on selected day
+    const res = await apiPost('get_collegues', { date });
+    state.myFonctionId = res.my_fonction_id || null;
+    const all = res.data || [];
+
+    // Filter: same function + colleague must have shift on this day (if user is OFF)
+    const myHasShift = assign && assign.horaire_type_id;
+    state.collegues = all.filter(c => {
+        // Same function
+        if (state.myFonctionId && c.fonction_id !== state.myFonctionId) return false;
+        // If I'm OFF: colleague must work on this day
+        if (!myHasShift) {
+            return c.shift_on_date && c.shift_on_date.horaire_type_id;
+        }
+        // If I work: show all (they can swap same day or different day)
+        return true;
+    });
+
     openSlidedown();
 }
 
@@ -193,16 +214,23 @@ async function loadColleagues() {
 
 function renderColleagueList() {
     const q = (el('chgColSearch')?.value || '').toLowerCase().trim();
+    const container = el('chgColList');
+    if (!container) return;
+
+    // If a colleague is already selected, hide list
+    if (state.collegueId) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Filter by search query if typed
     const list = state.collegues.filter(c => {
         if (!q) return true;
         return `${c.prenom} ${c.nom} ${c.fonction_nom || ''} ${c.module_nom || ''}`.toLowerCase().includes(q);
     });
 
-    const container = el('chgColList');
-    if (!container) return;
-
     if (!list.length) {
-        container.innerHTML = '<div class="text-muted text-center py-3">Aucun collègue trouvé</div>';
+        container.innerHTML = '<div class="text-muted text-center py-3" style="font-size:.85rem">Aucun collègue disponible pour cet échange</div>';
         return;
     }
 
@@ -211,18 +239,22 @@ function renderColleagueList() {
         const avatar = c.photo
             ? `<img src="${escapeHtml(c.photo)}" alt="" class="chg-col-avatar">`
             : `<div class="chg-col-avatar-initials">${initials}</div>`;
-        const taux = c.taux ? `<span class="chg-col-taux">${Math.round(c.taux)}%</span>` : '';
-        const mod = c.module_code ? `<span class="chg-col-module">${escapeHtml(c.module_code)}</span>` : '';
-        const active = state.collegueId === c.id ? ' chg-col-active' : '';
 
-        return `<div class="chg-col-item${active}" data-col-id="${escapeHtml(c.id)}">
+        // Show colleague's shift on selected day
+        let shiftBadge = '';
+        if (c.shift_on_date && c.shift_on_date.horaire_type_id) {
+            shiftBadge = `<span class="chg-dual-badge" style="background:${escapeHtml(c.shift_on_date.couleur || '#6c757d')};font-size:.7rem;padding:1px 6px">${escapeHtml(c.shift_on_date.horaire_code)}</span>`;
+        } else {
+            shiftBadge = '<span style="font-size:.72rem;color:#999">OFF</span>';
+        }
+
+        return `<div class="chg-col-item" data-col-id="${escapeHtml(c.id)}">
             ${avatar}
             <div class="chg-col-info">
                 <div class="chg-col-name">${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</div>
                 <div class="chg-col-meta">
                     ${c.fonction_code ? `<span class="chg-col-fonction">${escapeHtml(c.fonction_code)}</span>` : ''}
-                    ${mod}
-                    ${taux}
+                    ${shiftBadge}
                 </div>
             </div>
         </div>`;
@@ -242,6 +274,9 @@ function selectColleague(id) {
     state.colAssignOnDate = null;
     state.colMonth = state.myMonth;
 
+    // Clear list and show selected name in search
+    const searchInput = el('chgColSearch');
+    if (searchInput) searchInput.value = `${c.prenom} ${c.nom}`;
     renderColleagueList();
 
     el('chgSlidePlaceholder')?.classList.add('chg-hidden');
@@ -295,6 +330,28 @@ function selectColleague(id) {
     infoDiv.appendChild(metaDiv);
     headerEl.appendChild(infoDiv);
 
+    // Button to change colleague
+    const changeBtn = document.createElement('button');
+    changeBtn.className = 'btn btn-sm btn-outline-secondary ms-auto';
+    changeBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+    changeBtn.title = 'Changer de collègue';
+    changeBtn.addEventListener('click', () => {
+        state.collegueId = null;
+        state.collegue = null;
+        state.dateDestinataire = null;
+        state.colAssignOnDate = null;
+        state.isOffSwap = false;
+        state.dateCompensation = null;
+        state.compensationAssign = null;
+        el('chgCompensationPanel')?.remove();
+        el('chgColSearch').value = '';
+        el('chgSlidePlaceholder')?.classList.remove('chg-hidden');
+        el('chgColPanel')?.classList.add('chg-hidden');
+        el('chgColSearch')?.focus();
+        renderColleagueList();
+    });
+    headerEl.appendChild(changeBtn);
+
     loadColPlanning();
 }
 
@@ -334,8 +391,8 @@ function onColDayClick(date, assign) {
 
 /* ═══ Compensation picker (cas 3: jour OFF) ═══ */
 function showCompensationPicker() {
-    const slide = el('chgSlidedown');
-    if (!slide) return;
+    const colPanel = el('chgColPanel');
+    if (!colPanel) return;
 
     // Remove existing compensation panel
     el('chgCompensationPanel')?.remove();
@@ -345,23 +402,20 @@ function showCompensationPicker() {
     panel.className = 'chg-compensation-panel';
     panel.innerHTML = `
         <div class="chg-comp-header">
-            <div class="chg-comp-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <i class="bi bi-info-circle chg-comp-icon-inline"></i>
             <div>
-                <div class="chg-comp-title">Jour de compensation requis</div>
-                <div class="chg-comp-desc">Vous êtes en repos le <strong>${formatDateFr(state.dateDemandeur)}</strong>.
-                Pour prendre le shift de ${escapeHtml(state.collegue.prenom)}, vous devez céder un de vos jours de travail en échange.</div>
+                <div class="chg-comp-title">Jour de compensation</div>
+                <div class="chg-comp-desc">Vous êtes en repos — choisissez un jour de travail à céder à ${escapeHtml(state.collegue.prenom)} en échange.</div>
             </div>
         </div>
-        <div class="chg-comp-subtitle"><i class="bi bi-calendar-check"></i> Choisissez un jour de travail à céder :</div>
         <div id="chgCompCal" class="chg-comp-cal"></div>
     `;
-    slide.appendChild(panel);
+    colPanel.appendChild(panel);
 
-    // Render my calendar with only work days clickable
     renderCompensationCalendar();
 
     setTimeout(() => {
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
 }
 
@@ -442,87 +496,45 @@ function openConfirmModal() {
     const block = document.createElement('div');
     block.className = 'chg-confirm-block';
 
+    // ═══ Tableau résumé clair ═══
+    const summaryTable = document.createElement('div');
+    summaryTable.className = 'chg-summary-grid';
+
+    // Header
+    summaryTable.innerHTML = `<div class="chg-summary-row chg-summary-header">
+        <span class="chg-summary-date">Date</span>
+        <span class="chg-summary-person"><i class="bi bi-person-fill"></i> Vous</span>
+        <span class="chg-summary-person"><i class="bi bi-person"></i> ${escapeHtml(c.prenom)}</span>
+    </div>`;
+
     if (state.isOffSwap && state.dateCompensation) {
-        // ═══ CAS 3: Double échange ═══
-        // Échange 1 : X prend le shift de Y
-        const label1 = document.createElement('div');
-        label1.className = 'chg-confirm-step-label';
-        label1.innerHTML = '<span class="chg-step-num">1</span> Vous prenez le shift de ' + escapeHtml(c.prenom);
-        block.appendChild(label1);
-
-        const row1 = document.createElement('div');
-        row1.className = 'chg-confirm-row';
-        const give1 = document.createElement('div');
-        give1.className = 'chg-confirm-side chg-confirm-give';
-        give1.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-moon"></i> Votre jour OFF</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateDemandeur)}</div>`;
-        give1.appendChild(buildBadgeEl(a));
-        row1.appendChild(give1);
-        const arrow1 = document.createElement('div');
-        arrow1.className = 'chg-confirm-arrow';
-        arrow1.innerHTML = '<i class="bi bi-arrow-right"></i>';
-        row1.appendChild(arrow1);
-        const take1 = document.createElement('div');
-        take1.className = 'chg-confirm-side chg-confirm-take';
-        take1.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-in-down-left"></i> Vous travaillez</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateDestinataire)}</div>`;
-        take1.appendChild(buildBadgeEl(b));
-        row1.appendChild(take1);
-        block.appendChild(row1);
-
-        // Échange 2 : X cède un jour de travail à Y
-        const label2 = document.createElement('div');
-        label2.className = 'chg-confirm-step-label';
-        label2.style.marginTop = '16px';
-        label2.innerHTML = '<span class="chg-step-num">2</span> Compensation — vous cédez un jour à ' + escapeHtml(c.prenom);
-        block.appendChild(label2);
-
-        const row2 = document.createElement('div');
-        row2.className = 'chg-confirm-row';
-        const give2 = document.createElement('div');
-        give2.className = 'chg-confirm-side chg-confirm-give';
-        give2.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-up-right"></i> Vous cédez</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateCompensation)}</div>`;
-        give2.appendChild(buildBadgeEl(state.compensationAssign));
-        row2.appendChild(give2);
-        const arrow2 = document.createElement('div');
-        arrow2.className = 'chg-confirm-arrow';
-        arrow2.innerHTML = '<i class="bi bi-arrow-right"></i>';
-        row2.appendChild(arrow2);
-        const take2 = document.createElement('div');
-        take2.className = 'chg-confirm-side chg-confirm-take';
-        take2.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-person"></i> ${escapeHtml(c.prenom)} travaille</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateCompensation)}</div>`;
-        take2.appendChild(buildBadgeEl(state.compensationAssign));
-        row2.appendChild(take2);
-        block.appendChild(row2);
-
+        // Cas 3 : ligne 1 = jour où vous prenez le shift
+        summaryTable.innerHTML += `<div class="chg-summary-row">
+            <span class="chg-summary-date">${formatDateFr(state.dateDestinataire)}</span>
+            <span class="chg-summary-person chg-summary-gain">${buildBadgeInline(b)} <small>travaille</small></span>
+            <span class="chg-summary-person chg-summary-lose"><span class="chg-swap-off">Repos</span></span>
+        </div>`;
+        // Cas 3 : ligne 2 = jour de compensation
+        summaryTable.innerHTML += `<div class="chg-summary-row">
+            <span class="chg-summary-date">${formatDateFr(state.dateCompensation)}</span>
+            <span class="chg-summary-person chg-summary-lose"><span class="chg-swap-off">Repos</span></span>
+            <span class="chg-summary-person chg-summary-gain">${buildBadgeInline(state.compensationAssign)} <small>travaille</small></span>
+        </div>`;
     } else {
-        // ═══ CAS 1 & 2: Échange simple ═══
-        const row = document.createElement('div');
-        row.className = 'chg-confirm-row';
-
-        const giveSide = document.createElement('div');
-        giveSide.className = 'chg-confirm-side chg-confirm-give';
-        giveSide.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-up-right"></i> Vous cédez</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateDemandeur)}</div>`;
-        giveSide.appendChild(buildBadgeEl(a));
-        row.appendChild(giveSide);
-
-        const arrowDiv = document.createElement('div');
-        arrowDiv.className = 'chg-confirm-arrow';
-        arrowDiv.innerHTML = '<i class="bi bi-arrow-left-right"></i>';
-        row.appendChild(arrowDiv);
-
-        const takeSide = document.createElement('div');
-        takeSide.className = 'chg-confirm-side chg-confirm-take';
-        takeSide.innerHTML = `<div class="chg-confirm-label"><i class="bi bi-box-arrow-in-down-left"></i> Vous prenez</div>
-            <div class="chg-confirm-date">${formatDateFr(state.dateDestinataire)}</div>`;
-        takeSide.appendChild(buildBadgeEl(b));
-        row.appendChild(takeSide);
-
-        block.appendChild(row);
+        // Cas 1 & 2
+        summaryTable.innerHTML += `<div class="chg-summary-row">
+            <span class="chg-summary-date">${formatDateFr(state.dateDemandeur)}</span>
+            <span class="chg-summary-person chg-summary-gain">${buildBadgeInline(b)}</span>
+            <span class="chg-summary-person chg-summary-lose">${buildBadgeInline(a)}</span>
+        </div>`;
+        summaryTable.innerHTML += `<div class="chg-summary-row">
+            <span class="chg-summary-date">${formatDateFr(state.dateDestinataire)}</span>
+            <span class="chg-summary-person chg-summary-lose">${buildBadgeInline(a)}</span>
+            <span class="chg-summary-person chg-summary-gain">${buildBadgeInline(b)}</span>
+        </div>`;
     }
+
+    block.appendChild(summaryTable);
 
     // "Échange avec" line
     const withDiv = document.createElement('div');
@@ -634,15 +646,26 @@ function openConfirmModal() {
 function renderDualGridModal() {
     buildDualGridHtml('chgDualTableM', 'chgDualRangeM');
     setupDragScroll();
-    // Auto-scroll to first swap day
-    setTimeout(() => {
-        const wrap = document.querySelector('.chg-dual-grid-wrap');
+    scrollToSwapDay();
+}
+
+function scrollToSwapDay() {
+    const modalEl = document.getElementById('chgConfirmModal');
+    if (!modalEl) return;
+
+    function doScroll() {
+        const wrap = modalEl.querySelector('.chg-dual-grid-wrap');
         const swapCell = wrap?.querySelector('.chg-dual-cell-give, .chg-dual-cell-take');
         if (wrap && swapCell) {
             const offset = swapCell.offsetLeft - wrap.offsetLeft - 140;
             wrap.scrollLeft = Math.max(0, offset);
         }
-    }, 50);
+    }
+
+    // Try immediately (if modal already visible, e.g. after nav click)
+    setTimeout(doScroll, 100);
+    // Also listen for modal shown event
+    modalEl.addEventListener('shown.bs.modal', doScroll, { once: true });
 }
 
 function setupDragScroll() {
@@ -848,6 +871,13 @@ function cellBadgeDOM(a) {
     span.className = 'chg-dual-empty';
     span.textContent = '—';
     return span;
+}
+
+function buildBadgeInline(a) {
+    if (a && a.horaire_type_id) {
+        return `<span class="chg-badge-inline" style="background:${escapeHtml(a.couleur || '#6c757d')}">${escapeHtml(a.horaire_code)}</span>`;
+    }
+    return '<span class="chg-swap-off">OFF</span>';
 }
 
 function buildBadgeEl(a) {

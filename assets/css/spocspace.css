@@ -2905,23 +2905,17 @@ input[type="checkbox"]:not(.form-check-input):hover {
 
 /* Compensation panel (cas 3: jour OFF) */
 .chg-compensation-panel {
-  margin-top: 16px; padding: 16px; border-radius: 10px;
-  background: #FFF8E7; border: 1px solid #F0E4C4;
+  margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+  background: var(--ss-bg); border: 1px solid var(--ss-border-light);
 }
 .chg-comp-header {
-  display: flex; gap: 12px; margin-bottom: 14px;
+  display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;
 }
-.chg-comp-icon {
-  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: #FEEFC3; color: #B45309; font-size: 1.1rem;
+.chg-comp-icon-inline {
+  color: var(--ss-text-muted); font-size: 1rem; margin-top: 2px; flex-shrink: 0;
 }
-.chg-comp-title { font-size: .92rem; font-weight: 700; color: #92400E; margin-bottom: 2px; }
-.chg-comp-desc { font-size: .82rem; color: #78350F; line-height: 1.5; }
-.chg-comp-subtitle {
-  font-size: .82rem; font-weight: 600; color: #92400E; margin-bottom: 10px;
-  display: flex; align-items: center; gap: 6px;
-}
+.chg-comp-title { font-size: .85rem; font-weight: 600; color: var(--ss-text); margin-bottom: 2px; }
+.chg-comp-desc { font-size: .8rem; color: var(--ss-text-muted); line-height: 1.5; }
 .chg-comp-cal {
   display: flex; flex-wrap: wrap; gap: 6px;
 }
@@ -2936,15 +2930,34 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .chg-comp-day-name { font-weight: 600; min-width: 48px; }
 .chg-comp-day-module { font-size: .75rem; color: var(--ss-text-muted); }
 
-/* Step labels for cas 3 modal */
+/* Step labels */
 .chg-confirm-step-label {
-  font-size: .85rem; font-weight: 600; color: var(--ss-text-secondary);
-  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  font-size: .85rem; font-weight: 600; color: var(--ss-text);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
 }
-.chg-step-num {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--ss-teal); color: #fff; font-size: .75rem; font-weight: 700;
+.chg-confirm-step-label i { color: var(--ss-text-muted); }
+
+/* Summary table */
+.chg-summary-grid {
+  border: 1px solid var(--ss-border-light); border-radius: 8px; overflow: hidden;
+}
+.chg-summary-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--ss-border-light); font-size: .84rem;
+}
+.chg-summary-row:last-child { border-bottom: none; }
+.chg-summary-header {
+  background: var(--ss-bg); font-weight: 600; font-size: .78rem;
+  color: var(--ss-text-muted); text-transform: uppercase; letter-spacing: .3px;
+}
+.chg-summary-date { padding: 10px 12px; font-weight: 600; color: var(--ss-text); font-size: .82rem; }
+.chg-summary-person { padding: 10px 12px; display: flex; align-items: center; gap: 6px; }
+.chg-summary-person small { color: var(--ss-text-muted); font-size: .75rem; }
+.chg-summary-gain { background: rgba(39,174,96,.06); }
+.chg-summary-lose { background: rgba(220,38,38,.04); }
+
+@media (max-width: 600px) {
+  .chg-summary-row { grid-template-columns: 1fr; }
 }
 .chg-modal-close {
   width: 32px; height: 32px; border-radius: 50%;

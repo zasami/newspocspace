@@ -374,7 +374,7 @@ async function uploadSingle() {
     try {
         const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
-            headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+            headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
             body: fd,
         });
         const res = await resp.json();
@@ -383,7 +383,7 @@ async function uploadSingle() {
             showToast(res.message, 'success');
             await loadFiches();
         } else {
-            alert(res.error || 'Erreur');
+            alert(res.message || res.error || 'Erreur');
         }
     } catch (e) {
         alert('Erreur réseau');
@@ -415,7 +415,7 @@ async function uploadBulk() {
     try {
         const resp = await fetch('/spocspace/admin/api.php', {
             method: 'POST',
-            headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+            headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
             body: fd,
         });
         const res = await resp.json();
