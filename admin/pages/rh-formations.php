@@ -7,6 +7,9 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 ?>
 <style>
 /* stat cards use global .stat-card from admin.css */
+.rhf-stat-filter { cursor: pointer; transition: all .15s; border: 2px solid transparent; }
+.rhf-stat-filter:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.rhf-stat-filter.active { border-color: var(--cl-primary, #7B6B5B); background: var(--cl-bg, #F7F5F2); }
 
 /* ── Table overrides ── */
 #rhfBody .table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); }
@@ -95,7 +98,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 <!-- Stat cards -->
 <div class="row g-3 mb-4">
   <div class="col-sm-6 col-lg-3">
-    <div class="stat-card">
+    <div class="stat-card rhf-stat-filter" data-filter-statut="">
       <div class="stat-icon bg-teal"><i class="bi bi-mortarboard"></i></div>
       <div>
         <div class="stat-value" id="rhfStatTotal"><?= $ssrTotalFormations ?></div>
@@ -104,7 +107,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
     </div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="stat-card">
+    <div class="stat-card rhf-stat-filter" data-filter-statut="planifiee">
       <div class="stat-icon bg-green"><i class="bi bi-calendar-check"></i></div>
       <div>
         <div class="stat-value" id="rhfStatPlanifiees"><?= $ssrPlanifiees ?></div>
@@ -113,7 +116,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
     </div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="stat-card">
+    <div class="stat-card rhf-stat-filter" data-filter-statut="en_cours">
       <div class="stat-icon bg-orange"><i class="bi bi-play-circle"></i></div>
       <div>
         <div class="stat-value" id="rhfStatEnCours"><?= $ssrEnCours ?></div>
@@ -122,7 +125,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
     </div>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <div class="stat-card">
+    <div class="stat-card rhf-stat-filter" data-filter-statut="terminee">
       <div class="stat-icon bg-teal"><i class="bi bi-check-circle"></i></div>
       <div>
         <div class="stat-value" id="rhfStatTerminees"><?= $ssrTerminees ?></div>
@@ -399,7 +402,29 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
         el.innerHTML = html;
     }
 
-    document.getElementById('rhfFilterStatut')?.addEventListener('change', loadFormations);
+    document.getElementById('rhfFilterStatut')?.addEventListener('change', () => {
+        syncStatFilterActive();
+        loadFormations();
+    });
+
+    function syncStatFilterActive() {
+        const val = document.getElementById('rhfFilterStatut')?.value || '';
+        document.querySelectorAll('.rhf-stat-filter').forEach(c => {
+            c.classList.toggle('active', (c.dataset.filterStatut || '') === val);
+        });
+    }
+
+    document.querySelectorAll('.rhf-stat-filter').forEach(card => {
+        card.addEventListener('click', () => {
+            const sel = document.getElementById('rhfFilterStatut');
+            if (!sel) return;
+            const target = card.dataset.filterStatut || '';
+            sel.value = (sel.value === target && target !== '') ? '' : target;
+            syncStatFilterActive();
+            loadFormations();
+        });
+    });
+    syncStatFilterActive();
 
     document.getElementById('rhfBody')?.addEventListener('click', e => {
         const detail = e.target.closest('[data-detail]');
