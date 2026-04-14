@@ -169,6 +169,99 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
   </div>
 </div>
 
+<!-- Modal ajout affectation -->
+<div class="modal fade" id="stgAffModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvelle affectation formateur</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Formateur *</label>
+          <select class="form-select form-select-sm" id="stgAffFormateur"><option value="">—</option></select>
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Date début *</label>
+            <input type="date" class="form-control form-control-sm" id="stgAffDebut">
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Date fin *</label>
+            <input type="date" class="form-control form-control-sm" id="stgAffFin">
+          </div>
+        </div>
+        <div class="mb-2 mt-2">
+          <label class="form-label small fw-semibold">Étage</label>
+          <select class="form-select form-select-sm" id="stgAffEtage"><option value="">—</option></select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Rôle</label>
+          <select class="form-select form-select-sm" id="stgAffRole">
+            <option value="ponctuel">Ponctuel (journée, quelques jours)</option>
+            <option value="remplacant">Remplaçant</option>
+            <option value="principal">Principal</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Notes</label>
+          <input type="text" class="form-control form-control-sm" id="stgAffNotes">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm btn-primary" id="btnSaveAff">Affecter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal ajout objectif -->
+<div class="modal fade" id="stgObjModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nouvel objectif</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Titre *</label>
+          <input type="text" class="form-control form-control-sm" id="stgObjTitre" placeholder="Ex. Maîtriser les transferts">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Description</label>
+          <textarea class="form-control form-control-sm" id="stgObjDesc" rows="3"></textarea>
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Date cible</label>
+            <input type="date" class="form-control form-control-sm" id="stgObjDate">
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Statut</label>
+            <select class="form-select form-select-sm" id="stgObjStatut">
+              <option value="en_cours">En cours</option>
+              <option value="atteint">Atteint</option>
+              <option value="non_atteint">Non atteint</option>
+              <option value="abandonne">Abandonné</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-2 mt-2">
+          <label class="form-label small fw-semibold">Commentaire RUV</label>
+          <textarea class="form-control form-control-sm" id="stgObjComm" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-sm btn-primary" id="btnSaveObj">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal détail stagiaire -->
 <div class="modal fade" id="stgDetailModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -187,6 +280,7 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
     let refs = { formateurs: [], etages: [], ruvs: [] };
     let stagiairesData = [];
     let currentDetailId = null;
+    let currentData = null;
     const TYPE_LABELS = { decouverte:'Découverte', cfc_asa:'CFC ASA', cfc_ase:'CFC ASE', cfc_asfm:'CFC ASFM', bachelor_inf:'Bachelor inf.', civiliste:'Civiliste', autre:'Autre' };
     const STATUT_LABELS = { prevu:'Prévu', actif:'Actif', termine:'Terminé', interrompu:'Interrompu' };
 
@@ -318,8 +412,10 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
         currentDetailId = id;
         adminApiPost('admin_get_stagiaire_detail', { id }).then(r => {
             if (!r.success) return;
+            currentData = r;
             renderDetail(r);
-            new bootstrap.Modal(document.getElementById('stgDetailModal')).show();
+            const existing = bootstrap.Modal.getInstance(document.getElementById('stgDetailModal'));
+            if (!existing) new bootstrap.Modal(document.getElementById('stgDetailModal')).show();
         });
     }
 
@@ -508,21 +604,76 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
                 if (r.success) { showToast(r.message, 'success'); openDetail(currentDetailId); }
             });
         } else if (btn.id === 'btnAddAff') {
-            const formId = prompt('ID formateur (à remplacer par un modal plus tard):');
-            if (!formId) return;
-            const dd = prompt('Date début (YYYY-MM-DD):');
-            const df = prompt('Date fin (YYYY-MM-DD):');
-            if (!dd || !df) return;
-            adminApiPost('admin_add_stagiaire_affectation', { stagiaire_id: currentDetailId, formateur_id: formId, date_debut: dd, date_fin: df, role_formateur: 'ponctuel' }).then(r => {
-                if (r.success) { showToast(r.message, 'success'); openDetail(currentDetailId); }
-            });
+            openAffModal();
         } else if (btn.id === 'btnAddObj') {
-            const titre = prompt('Titre objectif:');
-            if (!titre) return;
-            adminApiPost('admin_save_stagiaire_objectif', { stagiaire_id: currentDetailId, titre }).then(r => {
-                if (r.success) { showToast(r.message, 'success'); openDetail(currentDetailId); }
-            });
+            openObjModal();
         }
+    });
+
+    function openAffModal() {
+        const formSel = document.getElementById('stgAffFormateur');
+        formSel.innerHTML = '<option value="">—</option>' +
+            refs.formateurs.map(u => `<option value="${u.id}">${escapeHtml(u.prenom+' '+u.nom)}</option>`).join('');
+        const etSel = document.getElementById('stgAffEtage');
+        etSel.innerHTML = '<option value="">—</option>' +
+            refs.etages.map(e => `<option value="${e.id}">${escapeHtml(e.nom)}</option>`).join('');
+        const stag = currentData?.stagiaire;
+        document.getElementById('stgAffDebut').value = stag?.date_debut || '';
+        document.getElementById('stgAffFin').value = stag?.date_fin || '';
+        document.getElementById('stgAffEtage').value = stag?.etage_id || '';
+        document.getElementById('stgAffRole').value = 'ponctuel';
+        document.getElementById('stgAffNotes').value = '';
+        new bootstrap.Modal(document.getElementById('stgAffModal')).show();
+    }
+
+    function openObjModal() {
+        document.getElementById('stgObjTitre').value = '';
+        document.getElementById('stgObjDesc').value = '';
+        document.getElementById('stgObjDate').value = '';
+        document.getElementById('stgObjStatut').value = 'en_cours';
+        document.getElementById('stgObjComm').value = '';
+        new bootstrap.Modal(document.getElementById('stgObjModal')).show();
+    }
+
+    document.getElementById('btnSaveAff')?.addEventListener('click', () => {
+        const data = {
+            stagiaire_id: currentDetailId,
+            formateur_id: document.getElementById('stgAffFormateur').value,
+            etage_id: document.getElementById('stgAffEtage').value || null,
+            date_debut: document.getElementById('stgAffDebut').value,
+            date_fin: document.getElementById('stgAffFin').value,
+            role_formateur: document.getElementById('stgAffRole').value,
+            notes: document.getElementById('stgAffNotes').value,
+        };
+        if (!data.formateur_id || !data.date_debut || !data.date_fin) {
+            showToast('Formateur et dates requis', 'error'); return;
+        }
+        adminApiPost('admin_add_stagiaire_affectation', data).then(r => {
+            if (r.success) {
+                showToast(r.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('stgAffModal'))?.hide();
+                openDetail(currentDetailId);
+            } else showToast(r.error || 'Erreur', 'error');
+        });
+    });
+
+    document.getElementById('btnSaveObj')?.addEventListener('click', () => {
+        const data = {
+            stagiaire_id: currentDetailId,
+            titre: document.getElementById('stgObjTitre').value,
+            description: document.getElementById('stgObjDesc').value,
+            date_cible: document.getElementById('stgObjDate').value || null,
+            statut: document.getElementById('stgObjStatut').value,
+            commentaire_ruv: document.getElementById('stgObjComm').value,
+        };
+        if (!data.titre.trim()) { showToast('Titre requis', 'error'); return; }
+        adminApiPost('admin_save_stagiaire_objectif', data).then(r => {
+            if (r.success) {
+                showToast(r.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('stgObjModal'))?.hide();
+                openDetail(currentDetailId);
+            } else showToast(r.error || 'Erreur', 'error');
+        });
     });
 
     loadRefs().then(load);
