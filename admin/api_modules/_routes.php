@@ -169,6 +169,14 @@ return [
     'stats' => [
         'admin_get_absence_stats',
     ],
+    'stagiaires' => [
+        'admin_get_stagiaires', 'admin_get_stagiaires_refs', 'admin_get_stagiaire_detail',
+        'admin_save_stagiaire', 'admin_delete_stagiaire',
+        'admin_add_stagiaire_affectation', 'admin_delete_stagiaire_affectation',
+        'admin_validate_stagiaire_report',
+        'admin_save_stagiaire_objectif', 'admin_delete_stagiaire_objectif',
+        'admin_get_stagiaires_dashboard',
+    ],
     'recrutement' => [
         'admin_get_offres', 'admin_create_offre', 'admin_update_offre', 'admin_delete_offre',
         'admin_get_candidatures', 'admin_get_candidature_detail', 'admin_update_candidature_status',

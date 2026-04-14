@@ -226,6 +226,27 @@ function sync_delta()
         [$uid]
     );
 
+    // ── Stagiaires (si user est stagiaire ou formateur) ──
+    $result['mon_stage'] = Db::fetch(
+        "SELECT s.id, s.type, s.date_debut, s.date_fin, s.statut, s.objectifs_generaux,
+                (SELECT e.nom FROM etages e WHERE e.id = s.etage_id) AS etage_nom,
+                (SELECT CONCAT(u.prenom,' ',u.nom) FROM users u WHERE u.id = s.formateur_principal_id) AS formateur_nom
+         FROM stagiaires s WHERE s.user_id = ? ORDER BY s.date_debut DESC LIMIT 1",
+        [$uid]
+    );
+    $today = date('Y-m-d');
+    $result['stagiaires_affectes'] = Db::fetchAll(
+        "SELECT DISTINCT s.id, s.type, s.date_debut, s.date_fin,
+                u.prenom, u.nom, u.photo,
+                (SELECT COUNT(*) FROM stagiaire_reports r WHERE r.stagiaire_id = s.id AND r.statut = 'soumis') AS reports_a_valider
+         FROM stagiaire_affectations a
+         JOIN stagiaires s ON s.id = a.stagiaire_id
+         JOIN users u ON u.id = s.user_id
+         WHERE a.formateur_id = ? AND a.date_debut <= ? AND a.date_fin >= ?
+           AND s.statut IN ('prevu','actif')",
+        [$uid, $today, $today]
+    );
+
     // ── Annuaire: all active entries ──
     $result['annuaire'] = Db::fetchAll(
         "SELECT id, type, est_organisation, categorie, nom, prenom, fonction, service,

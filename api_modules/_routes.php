@@ -78,6 +78,11 @@ return [
     'annuaire' => [
         'get_annuaire', 'search_annuaire',
     ],
+    'stagiaires' => [
+        'get_my_stagiaires_as_formateur', 'get_stagiaire_view_formateur',
+        'validate_stagiaire_report', 'save_stagiaire_evaluation',
+        'get_my_stage', 'save_my_report', 'delete_my_report',
+    ],
     'calls' => [
         'call_invite', 'call_poll', 'call_accept', 'call_reject',
         'call_end', 'call_ice', 'call_ice_poll', 'call_history',

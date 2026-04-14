@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v7';
+const CACHE_VERSION = 'ss-v8';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -35,6 +35,7 @@ const PAGE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces',
+  'annuaire', 'mes-stagiaires', 'mon-stage',
 ].map(p => '/spocspace/pages/' + p + '.php');
 
 // JS modules to pre-cache for full offline support
@@ -45,6 +46,7 @@ const MODULE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces', 'offline',
+  'annuaire', 'mes-stagiaires', 'mon-stage',
 ].map(m => '/spocspace/assets/js/modules/' + m + '.js');
 
 // API actions that can be cached for offline reading
@@ -84,6 +86,10 @@ const CACHEABLE_GET_ACTIONS = [
   'get_repartition',
   // Auth & sync
   'me', 'sync_delta', 'get_horaires_types',
+  // Annuaire
+  'get_annuaire', 'search_annuaire',
+  // Stagiaires
+  'get_my_stagiaires_as_formateur', 'get_stagiaire_view_formateur', 'get_my_stage',
 ];
 
 // API actions that should be queued for sync when offline
@@ -101,6 +107,8 @@ const SYNCABLE_ACTIONS = [
   'mark_notification_read', 'mark_all_notifications_read', 'mark_alert_read',
   // Changements
   'submit_changement', 'confirmer_changement', 'refuser_changement', 'annuler_changement',
+  // Stagiaires
+  'save_my_report', 'delete_my_report', 'validate_stagiaire_report', 'save_stagiaire_evaluation',
   // Votes & sondages
   'submit_vote', 'submit_sondage_reponses',
   // Covoiturage

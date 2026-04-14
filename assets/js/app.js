@@ -36,6 +36,8 @@ const moduleMap = {
     'wiki':         () => import('./modules/wiki.js'),
     'annonces':     () => import('./modules/annonces.js'),
     'annuaire':     () => import('./modules/annuaire.js'),
+    'mes-stagiaires': () => import('./modules/mes-stagiaires.js'),
+    'mon-stage':    () => import('./modules/mon-stage.js'),
 };
 
 let currentModule = null;

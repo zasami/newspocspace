@@ -56,6 +56,7 @@ $sidebarNav = [
             'covoiturage' => ['label' => 'Covoiturage',      'icon' => 'car-front'],
             'emails'      => ['label' => 'Messagerie interne','icon' => 'chat-dots'],
             'mur'         => ['label' => 'Mur social',         'icon' => 'chat-square-heart'],
+            'mes-stagiaires' => ['label' => 'Mes stagiaires', 'icon' => 'mortarboard'],
         ],
     ],
     'cuisine' => [
@@ -90,6 +91,18 @@ if ($user && ($user['type_employe'] ?? '') === 'externe') {
             'profile' => ['label' => 'Mon profil', 'icon' => 'person-circle'],
         ],
     ];
+}
+
+// Stagiaire: ajoute "Mon stage", retire les items non pertinents
+if ($user && ($user['role'] ?? '') === 'stagiaire') {
+    $sidebarNav['stage'] = [
+        'label' => 'Mon stage',
+        'items' => [
+            'mon-stage' => ['label' => 'Mon stage', 'icon' => 'journal-text'],
+        ],
+    ];
+    // Remove "mes-stagiaires" from collab for stagiaires themselves
+    unset($sidebarNav['collab']['items']['mes-stagiaires']);
 }
 
 // Filter sidebar items by feature toggles (ems_config)
