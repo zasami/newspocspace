@@ -122,6 +122,8 @@ const SYNCABLE_ACTIONS = [
 // INSTALL — Pre-cache static assets
 // ══════════════════════════════════════════════════════════════
 self.addEventListener('install', event => {
+  // Force immediate activation — don't wait for old SW to die
+  self.skipWaiting();
   event.waitUntil(
     Promise.all([
       // Cache static assets
@@ -179,10 +181,23 @@ self.addEventListener('activate', event => {
 // FETCH — Network-first for API, cache-first for static
 // ══════════════════════════════════════════════════════════════
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  // Skip invalid or empty requests
+  if (!event.request || !event.request.url) return;
+
+  let url;
+  try { url = new URL(event.request.url); } catch { return; }
 
   // Skip non-GET cross-origin
   if (url.origin !== self.location.origin) return;
+
+  // Skip media files (video/audio) — streaming with Range requests, too large to cache
+  if (url.pathname.match(/\.(mp4|webm|ogg|mp3|wav|mov|m4v|avi)$/i)) return;
+
+  // Skip Range requests (partial content for media streaming)
+  if (event.request.headers.get('range')) return;
+
+  // Skip website subfolder entirely (public marketing site, separate concern)
+  if (url.pathname.startsWith('/spocspace/website/')) return;
 
   // Skip website + admin + care API (let them pass through directly)
   if (url.pathname.includes('/website/api.php')) return;

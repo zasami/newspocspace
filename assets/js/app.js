@@ -525,7 +525,7 @@ async function init() {
             if (document.visibilityState === 'visible') pollNotifBadge();
         });
         checkPendingAlerts();
-        import('./modules/offline.js').then(m => m.initOffline()).catch(() => {});
+        import('./modules/offline.js').then(m => m.initOffline()).catch(e => console.error('[offline] init failed:', e));
 
         // Persist shell data + auth token for offline boot (refresh on every load)
         if (navigator.onLine) {

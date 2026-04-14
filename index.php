@@ -240,6 +240,10 @@ if ($user && !empty($deniedPerms)) {
         </span>
       </a>
       <h5 class="fe-topbar-title" id="feTopbarTitle">Accueil</h5>
+      <span class="fe-sync-indicator" id="feSyncIndicator" title="Dernier sync" style="display:none">
+        <i class="bi bi-arrow-repeat"></i>
+        <span id="feSyncTime"></span>
+      </span>
     </div>
     <div class="fe-topbar-search" id="feTopbarSearch">
       <i class="bi bi-search fe-search-icon"></i>

@@ -112,22 +112,22 @@ function sync_delta()
         [$uid, $uid, $changeSince]
     );
 
-    // ── Annonces: published, last 60 days ──
+    // ── Annonces: visible, last 60 days ──
     $annonceSince = $lastSync ?: date('Y-m-d', strtotime('-60 days'));
     $result['annonces'] = Db::fetchAll(
-        "SELECT a.id, a.titre, a.description, a.categorie, a.priorite, a.created_at, a.updated_at,
+        "SELECT a.id, a.titre, a.description, a.categorie, a.epingle, a.created_at, a.updated_at,
                 u.prenom AS auteur_prenom, u.nom AS auteur_nom
          FROM annonces a
          LEFT JOIN users u ON u.id = a.created_by
-         WHERE a.is_published = 1 AND a.created_at > ?
+         WHERE a.visible = 1 AND a.created_at > ?
          ORDER BY a.created_at DESC LIMIT 30",
         [$annonceSince]
     );
 
     // ── Documents: list (metadata only, not files) ──
     $result['documents'] = Db::fetchAll(
-        "SELECT d.id, d.titre, d.description, d.service_id, d.file_path, d.file_size, d.mime_type, d.created_at
-         FROM documents d WHERE d.is_active = 1
+        "SELECT d.id, d.titre, d.description, d.service_id, d.original_name, d.size, d.mime_type, d.created_at
+         FROM documents d WHERE d.visible = 1 AND d.archived_at IS NULL
          ORDER BY d.created_at DESC LIMIT 100"
     );
 
@@ -136,7 +136,7 @@ function sync_delta()
         "SELECT pp.*,
                 (SELECT COUNT(*) FROM planning_votes pv WHERE pv.proposal_id = pp.id AND pv.user_id = ?) AS user_voted
          FROM planning_proposals pp
-         WHERE pp.status = 'ouvert'
+         WHERE pp.statut = 'ouvert'
          ORDER BY pp.created_at DESC",
         [$uid]
     );
@@ -146,7 +146,7 @@ function sync_delta()
         "SELECT s.*,
                 (SELECT COUNT(*) FROM sondage_reponses sr WHERE sr.sondage_id = s.id AND sr.user_id = ?) AS user_replied
          FROM sondages s
-         WHERE s.status = 'ouvert'
+         WHERE s.statut = 'ouvert'
          ORDER BY s.created_at DESC",
         [$uid]
     );
@@ -154,9 +154,9 @@ function sync_delta()
     // ── PV: last 6 months ──
     $pvSince = $lastSync ?: date('Y-m-d', strtotime('-180 days'));
     $result['pv'] = Db::fetchAll(
-        "SELECT pv.id, pv.titre, pv.date_reunion, pv.statut, pv.resume, pv.created_at, pv.updated_at
-         FROM pv WHERE pv.created_at > ?
-         ORDER BY pv.date_reunion DESC LIMIT 30",
+        "SELECT pv.id, pv.titre, pv.description, pv.statut, pv.is_public, pv.created_at, pv.updated_at
+         FROM pv WHERE pv.is_active = 1 AND pv.created_at > ?
+         ORDER BY pv.created_at DESC LIMIT 30",
         [$pvSince]
     );
 
@@ -166,15 +166,15 @@ function sync_delta()
     );
     if ($lastSync) {
         $result['wiki_pages'] = Db::fetchAll(
-            "SELECT id, category_id, titre, slug, resume, auteur_id, is_published, created_at, updated_at
-             FROM wiki_pages WHERE updated_at > ? AND is_published = 1
+            "SELECT id, categorie_id, titre, slug, description, created_by, visible, created_at, updated_at
+             FROM wiki_pages WHERE updated_at > ? AND visible = 1
              ORDER BY updated_at DESC",
             [$lastSync]
         );
     } else {
         $result['wiki_pages'] = Db::fetchAll(
-            "SELECT id, category_id, titre, slug, resume, auteur_id, is_published, created_at, updated_at
-             FROM wiki_pages WHERE is_published = 1
+            "SELECT id, categorie_id, titre, slug, description, created_by, visible, created_at, updated_at
+             FROM wiki_pages WHERE visible = 1
              ORDER BY updated_at DESC LIMIT 100"
         );
     }
@@ -182,15 +182,14 @@ function sync_delta()
     // ── Mur social: recent posts ──
     $murSince = $lastSync ?: date('Y-m-d', strtotime('-14 days'));
     $result['mur'] = Db::fetchAll(
-        "SELECT mp.*, u.prenom, u.nom, u.photo,
-                (SELECT COUNT(*) FROM mur_likes ml WHERE ml.post_id = mp.id) AS like_count,
-                (SELECT COUNT(*) FROM mur_likes ml WHERE ml.post_id = mp.id AND ml.user_id = ?) AS user_liked,
-                (SELECT COUNT(*) FROM mur_comments mc WHERE mc.post_id = mp.id) AS comment_count
+        "SELECT mp.id, mp.user_id, mp.body, mp.category, mp.is_anonymous, mp.status,
+                mp.is_pinned, mp.likes_count, mp.comments_count, mp.created_at,
+                u.prenom, u.nom, u.photo
          FROM mur_posts mp
          LEFT JOIN users u ON u.id = mp.user_id
-         WHERE mp.created_at > ?
+         WHERE mp.deleted_at IS NULL AND mp.status = 'approved' AND mp.created_at > ?
          ORDER BY mp.created_at DESC LIMIT 50",
-        [$uid, $murSince]
+        [$murSince]
     );
 
     // ── Collegues: active users basic info ──
@@ -205,23 +204,24 @@ function sync_delta()
 
     // ── Covoiturage ──
     $result['covoiturage'] = Db::fetchAll(
-        "SELECT cb.*, u.prenom, u.nom, u.photo
+        "SELECT cb.id, cb.user_id, cb.buddy_id, cb.created_at,
+                u.prenom, u.nom, u.photo
          FROM covoiturage_buddies cb
          LEFT JOIN users u ON u.id = cb.buddy_id
          WHERE cb.user_id = ?",
         [$uid]
     );
 
-    // ── Cuisine menus: current + next week ──
+    // ── Cuisine menus: current + next 2 weeks ──
     $result['cuisine_menus'] = Db::fetchAll(
-        "SELECT * FROM menus WHERE date_menu BETWEEN ? AND ?
-         ORDER BY date_menu",
+        "SELECT * FROM menus WHERE date_jour BETWEEN ? AND ?
+         ORDER BY date_jour",
         [date('Y-m-d'), date('Y-m-d', strtotime('+14 days'))]
     );
 
     // ── Fiches salaire: metadata (not files) ──
     $result['fiches_salaire'] = Db::fetchAll(
-        "SELECT id, mois, annee, file_path, created_at FROM fiches_salaire
+        "SELECT id, mois, annee, original_name, created_at FROM fiches_salaire
          WHERE user_id = ? ORDER BY annee DESC, mois DESC LIMIT 24",
         [$uid]
     );

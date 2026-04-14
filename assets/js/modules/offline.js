@@ -281,6 +281,7 @@ async function deltaSync(showToast = true) {
         if (showToast) {
             _updateSyncDown(`${totalItems} elements synchronises`, 100);
         }
+        _updateSyncIndicator();
     } catch (e) {
         console.warn('[offline] deltaSync error:', e);
         if (showToast) _updateSyncDown('Erreur de synchronisation', 0);
@@ -564,7 +565,7 @@ export async function getQueueCount() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Connection indicator update
+// Connection + sync indicator updates
 // ══════════════════════════════════════════════════════════════
 function updateConnDot() {
     const dot = document.querySelector('#feConnStatus .fe-conn-dot');
@@ -577,14 +578,56 @@ function updateConnDot() {
         dot.className = 'fe-conn-dot fe-conn-offline';
         status.title = 'Hors ligne';
     }
+    _updateSyncIndicator();
 }
+
+function _updateSyncIndicator() {
+    const el = document.getElementById('feSyncIndicator');
+    const timeEl = document.getElementById('feSyncTime');
+    if (!el || !timeEl) return;
+
+    if (!navigator.onLine) {
+        el.style.display = '';
+        el.className = 'fe-sync-indicator offline';
+        timeEl.textContent = 'Hors ligne';
+        return;
+    }
+
+    db.getMeta('last_sync').then(lastSync => {
+        if (!lastSync) {
+            el.style.display = 'none';
+            return;
+        }
+        el.style.display = '';
+        el.className = 'fe-sync-indicator synced';
+        timeEl.textContent = _formatTimeAgo(lastSync);
+        el.title = 'Derniere synchronisation : ' + new Date(lastSync).toLocaleString('fr-CH');
+    }).catch(() => {});
+}
+
+function _formatTimeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const sec = Math.floor(diff / 1000);
+    if (sec < 30) return 'A l\'instant';
+    if (sec < 60) return 'Il y a ' + sec + 's';
+    const min = Math.floor(sec / 60);
+    if (min < 60) return 'Il y a ' + min + ' min';
+    const hrs = Math.floor(min / 60);
+    if (hrs < 24) return 'Il y a ' + hrs + 'h';
+    return 'Il y a ' + Math.floor(hrs / 24) + 'j';
+}
+
+// Refresh sync indicator every 30s
+setInterval(() => _updateSyncIndicator(), 30000);
 
 // ══════════════════════════════════════════════════════════════
 // Init
 // ══════════════════════════════════════════════════════════════
 export async function initOffline() {
+    console.log('[offline] initOffline starting...');
     await db.open();
     _online = navigator.onLine;
+    console.log('[offline] online:', _online);
     if (!_online) showOfflineBar();
     updateConnDot();
 
@@ -634,9 +677,29 @@ export async function initOffline() {
         }
     });
 
-    // Initial sync if online (silent — no toast on first load)
+    // Click sync indicator to force sync
+    document.getElementById('feSyncIndicator')?.addEventListener('click', async () => {
+        if (!navigator.onLine || _deltaSyncRunning) return;
+        const el = document.getElementById('feSyncIndicator');
+        if (el) el.className = 'fe-sync-indicator syncing';
+        await deltaSync(true);
+        _syncDone('Donnees synchronisees', 'success');
+    });
+
+    // Initial sync if online — show toast on first load so user sees data syncing
     if (_online) {
-        deltaSync(false);
+        try {
+            const lastSync = await db.getMeta('last_sync');
+            const showInitialToast = !lastSync || (Date.now() - new Date(lastSync).getTime() > 60000);
+            console.log('[offline] initial sync, showToast:', showInitialToast, 'lastSync:', lastSync);
+            await deltaSync(showInitialToast);
+            if (showInitialToast) {
+                _syncDone('Donnees synchronisees', 'success');
+            }
+            _updateSyncIndicator();
+        } catch (e) {
+            console.error('[offline] initial sync failed:', e);
+        }
         _startPeriodicSync();
     }
 }
