@@ -313,7 +313,32 @@ function setupSearch() {
         for (const [type, items] of Object.entries(groups)) {
             html += `<div style="font-size:.7rem;color:#999;padding:4px 10px;font-weight:600">${typeLabels[type]||type}</div>`;
             items.forEach(r => {
-                html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
+                if (type === 'collegue') {
+                    const online = !!r.is_online;
+                    const presenceDot = `<span class="ss-presence-dot ${online ? 'ss-presence-online' : 'ss-presence-offline'}" style="width:10px;height:10px;border-width:1.5px"></span>`;
+                    const callBtns = online
+                        ? `<button class="fe-search-call-btn fe-search-call-audio" data-call-audio="${r.id}" title="Appel audio"><i class="bi bi-telephone-fill"></i></button>
+                           <button class="fe-search-call-btn fe-search-call-video" data-call-video="${r.id}" title="Appel vidéo"><i class="bi bi-camera-video-fill"></i></button>`
+                        : `<button class="fe-search-call-btn" disabled title="Hors ligne" style="opacity:.4;cursor:not-allowed"><i class="bi bi-telephone-x"></i></button>`;
+                    html += `
+                        <div class="fe-search-item fe-search-item-collegue fe-result-item"
+                             data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"
+                             data-user-photo="${escapeHtml(r.photo||'')}"
+                             data-user-prenom="${escapeHtml(r.prenom||'')}"
+                             data-user-nom="${escapeHtml(r.nom||'')}">
+                            <span class="fe-search-item-icon" style="background:${typeColors[type]};position:relative">
+                                <i class="bi bi-${r.icon}"></i>
+                                ${presenceDot}
+                            </span>
+                            <div class="fe-search-item-body">
+                                <div class="fe-search-item-name">${escapeHtml(r.title)}</div>
+                                <div class="fe-search-item-meta">${online ? '<span style="color:#2d4a43;font-weight:600">En ligne</span>' : 'Hors ligne'}</div>
+                            </div>
+                            <div class="fe-search-call-actions">${callBtns}</div>
+                        </div>`;
+                } else {
+                    html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
+                }
             });
         }
         panel.innerHTML = html;
@@ -355,7 +380,29 @@ function setupSearch() {
         clearBtn.addEventListener('click', () => { input.value = ''; updateClear(); renderHistory(''); input.focus(); });
     }
 
-    panel.addEventListener('click', (e) => {
+    panel.addEventListener('click', async (e) => {
+        // Call buttons inside collegue result
+        const callAudio = e.target.closest('[data-call-audio]');
+        const callVideo = e.target.closest('[data-call-video]');
+        if (callAudio || callVideo) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = callAudio || callVideo;
+            const item = btn.closest('.fe-search-item-collegue');
+            if (!item) return;
+            const user = {
+                id: item.dataset.id,
+                prenom: item.dataset.userPrenom,
+                nom: item.dataset.userNom,
+                photo: item.dataset.userPhoto,
+            };
+            closePanel();
+            try {
+                const m = await import('./call-ui.js');
+                m.startCall(user, callAudio ? 'audio' : 'video');
+            } catch (err) { console.error(err); }
+            return;
+        }
         const del = e.target.closest('.fe-hist-del');
         if (del) { e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(input.value); return; }
         const hist = e.target.closest('.fe-hist-item');
@@ -583,6 +630,9 @@ async function init() {
 
         // Auto-lock screen after 15 min inactivity
         import('./lockscreen.js').then(m => m.initLockScreen()).catch(() => {});
+
+        // WebRTC call polling for incoming calls
+        import('./call-ui.js').then(m => m.initIncomingPoll()).catch(() => {});
     }
 }
 

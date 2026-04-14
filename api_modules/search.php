@@ -18,16 +18,22 @@ function global_search()
 
     // ── Collègues ─────────────────────────────────────
     $users = Db::fetchAll(
-        "SELECT id, prenom, nom, photo FROM users
-         WHERE is_active = 1 AND (CONCAT(prenom, ' ', nom) LIKE ? OR nom LIKE ? OR prenom LIKE ?)
+        "SELECT id, prenom, nom, photo, last_seen_at,
+                (last_seen_at IS NOT NULL AND last_seen_at > DATE_SUB(NOW(), INTERVAL 30 SECOND)) AS is_online
+         FROM users
+         WHERE is_active = 1 AND id != ? AND (CONCAT(prenom, ' ', nom) LIKE ? OR nom LIKE ? OR prenom LIKE ?)
          ORDER BY nom, prenom LIMIT 5",
-        [$like, $like, $like]
+        [$user['id'], $like, $like, $like]
     );
     foreach ($users as $u) {
         $results[] = [
             'type' => 'collegue', 'icon' => 'person', 'id' => $u['id'],
             'title' => $u['prenom'] . ' ' . $u['nom'], 'subtitle' => '',
             'page' => 'collegues',
+            'photo' => $u['photo'],
+            'prenom' => $u['prenom'],
+            'nom' => $u['nom'],
+            'is_online' => (int) $u['is_online'],
         ];
     }
 

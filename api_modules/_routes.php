@@ -78,6 +78,10 @@ return [
     'annuaire' => [
         'get_annuaire', 'search_annuaire',
     ],
+    'calls' => [
+        'call_invite', 'call_poll', 'call_accept', 'call_reject',
+        'call_end', 'call_ice', 'call_ice_poll', 'call_history',
+    ],
     'wiki' => [
         'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
         'toggle_wiki_favori', 'log_wiki_search',

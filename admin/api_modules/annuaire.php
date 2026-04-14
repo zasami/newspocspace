@@ -52,40 +52,40 @@ function admin_save_annuaire()
         bad_request('Type invalide');
     }
 
+    $estOrg = !empty($params['est_organisation']) ? 1 : 0;
     $data = [
-        'type'        => $type,
-        'categorie'   => Sanitize::text($params['categorie'] ?? '', 50),
-        'nom'         => Sanitize::text($params['nom'] ?? '', 100),
-        'prenom'      => Sanitize::text($params['prenom'] ?? '', 50),
-        'fonction'    => Sanitize::text($params['fonction'] ?? '', 100),
-        'service'     => Sanitize::text($params['service'] ?? '', 100),
-        'telephone_1' => Sanitize::text($params['telephone_1'] ?? '', 30),
-        'telephone_2' => Sanitize::text($params['telephone_2'] ?? '', 30),
-        'email'       => Sanitize::email($params['email'] ?? ''),
-        'adresse'     => Sanitize::text($params['adresse'] ?? '', 500),
-        'notes'       => Sanitize::text($params['notes'] ?? '', 1000),
-        'ordre'       => (int) ($params['ordre'] ?? 100),
-        'is_favori'   => !empty($params['is_favori']) ? 1 : 0,
+        'type'             => $type,
+        'est_organisation' => $estOrg,
+        'categorie'        => Sanitize::text($params['categorie'] ?? '', 50),
+        'nom'              => Sanitize::text($params['nom'] ?? '', 100),
+        'prenom'           => $estOrg ? '' : Sanitize::text($params['prenom'] ?? '', 50),
+        'fonction'         => Sanitize::text($params['fonction'] ?? '', 100),
+        'service'          => Sanitize::text($params['service'] ?? '', 100),
+        'telephone_1'      => Sanitize::text($params['telephone_1'] ?? '', 30),
+        'telephone_2'      => Sanitize::text($params['telephone_2'] ?? '', 30),
+        'email'            => Sanitize::email($params['email'] ?? ''),
+        'adresse'          => Sanitize::text($params['adresse'] ?? '', 500),
+        'notes'            => Sanitize::text($params['notes'] ?? '', 1000),
+        'ordre'            => (int) ($params['ordre'] ?? 100),
+        'is_favori'        => !empty($params['is_favori']) ? 1 : 0,
     ];
 
-    if (empty($data['nom'])) bad_request('Le nom est requis');
+    if (empty($data['nom'])) bad_request($estOrg ? 'Le nom de l\'organisation est requis' : 'Le nom est requis');
 
     if ($id) {
-        // Update
         Db::exec(
-            "UPDATE annuaire SET type=?, categorie=?, nom=?, prenom=?, fonction=?, service=?,
+            "UPDATE annuaire SET type=?, est_organisation=?, categorie=?, nom=?, prenom=?, fonction=?, service=?,
              telephone_1=?, telephone_2=?, email=?, adresse=?, notes=?, ordre=?, is_favori=?
              WHERE id = ?",
             [...array_values($data), $id]
         );
         respond(['success' => true, 'id' => $id, 'message' => 'Contact mis à jour']);
     } else {
-        // Insert
         $id = Uuid::v4();
         Db::exec(
-            "INSERT INTO annuaire (id, type, categorie, nom, prenom, fonction, service,
+            "INSERT INTO annuaire (id, type, est_organisation, categorie, nom, prenom, fonction, service,
              telephone_1, telephone_2, email, adresse, notes, ordre, is_favori, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [$id, ...array_values($data), $admin['id'] ?? null]
         );
         respond(['success' => true, 'id' => $id, 'message' => 'Contact ajouté']);
@@ -148,16 +148,20 @@ function admin_import_annuaire_csv()
             continue;
         }
 
+        // Optional 12th column "organisation" (1/oui/o/yes = organisation)
+        $orgRaw = strtolower(trim($cols[11] ?? ''));
+        $estOrg = in_array($orgRaw, ['1', 'oui', 'o', 'yes', 'org', 'organisation', 'societe', 'société']) ? 1 : 0;
+
         try {
             Db::exec(
-                "INSERT INTO annuaire (id, type, categorie, nom, prenom, fonction, service,
+                "INSERT INTO annuaire (id, type, est_organisation, categorie, nom, prenom, fonction, service,
                  telephone_1, telephone_2, email, adresse, notes, created_by)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
-                    Uuid::v4(), $type,
+                    Uuid::v4(), $type, $estOrg,
                     trim($cols[1] ?? ''),
                     $nom,
-                    trim($cols[3] ?? ''),
+                    $estOrg ? '' : trim($cols[3] ?? ''),
                     trim($cols[4] ?? ''),
                     trim($cols[5] ?? ''),
                     trim($cols[6] ?? ''),
@@ -186,11 +190,12 @@ function admin_export_annuaire_csv()
 {
     require_admin();
     $rows = Db::fetchAll("SELECT * FROM annuaire WHERE is_active = 1 ORDER BY type, nom");
-    $csv = "type;categorie;nom;prenom;fonction;service;telephone_1;telephone_2;email;adresse;notes\n";
+    $csv = "type;categorie;nom;prenom;fonction;service;telephone_1;telephone_2;email;adresse;notes;organisation\n";
     foreach ($rows as $r) {
         $csv .= implode(';', array_map(fn($v) => str_replace(["\n", ";", "\r"], [' ', ',', ''], (string)$v), [
             $r['type'], $r['categorie'], $r['nom'], $r['prenom'], $r['fonction'], $r['service'],
             $r['telephone_1'], $r['telephone_2'], $r['email'], $r['adresse'], $r['notes'],
+            $r['est_organisation'] ? '1' : '0',
         ])) . "\n";
     }
     respond(['success' => true, 'csv' => $csv, 'count' => count($rows)]);

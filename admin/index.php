@@ -383,6 +383,17 @@ window.__SS_ADMIN__ = {
   adminId: '<?= h($admin['id']) ?>',
   adminName: '<?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?>'
 };
+// Bridge __SS__ for shared modules (call-ui uses it)
+window.__SS__ = window.__SS__ || {
+  user: { id: '<?= h($admin['id']) ?>', prenom: '<?= h($admin['prenom'] ?? '') ?>', nom: '<?= h($admin['nom'] ?? '') ?>', email: '<?= h($admin['email'] ?? '') ?>', role: '<?= h($admin['role'] ?? 'admin') ?>' },
+  csrfToken: '<?= $csrfToken ?>',
+};
+</script>
+<!-- WebRTC call engine for admin (receive + make calls) -->
+<script nonce="<?= $cspNonce ?>" type="module">
+  import * as callUi from '/spocspace/assets/js/call-ui.js';
+  callUi.initIncomingPoll();
+  window.ssStartCall = callUi.startCall;
 </script>
 
   <!-- PAGE CONTENT -->
@@ -1228,6 +1239,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
             { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/spocspace/admin/messages') },
             { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/spocspace/admin/famille') },
             { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/spocspace/admin/documents') },
+            { id: 'nav_annuaire',     label: 'Annuaire téléphonique', default: 'Alt+H',     action: () => goTo('/spocspace/admin/annuaire') },
         ]},
         { group: 'Outils', items: [
             { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/spocspace/admin/todos') },

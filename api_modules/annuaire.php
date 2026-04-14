@@ -9,7 +9,7 @@ function get_annuaire()
     global $params;
     $type = $params['type'] ?? null;
 
-    $sql = "SELECT id, type, categorie, nom, prenom, fonction, service,
+    $sql = "SELECT id, type, est_organisation, categorie, nom, prenom, fonction, service,
                    telephone_1, telephone_2, email, adresse, notes, is_favori, ordre
             FROM annuaire WHERE is_active = 1";
     $args = [];
@@ -33,7 +33,7 @@ function search_annuaire()
     }
     $like = '%' . $q . '%';
     $rows = Db::fetchAll(
-        "SELECT id, type, categorie, nom, prenom, fonction, service,
+        "SELECT id, type, est_organisation, categorie, nom, prenom, fonction, service,
                 telephone_1, telephone_2, email, is_favori
          FROM annuaire WHERE is_active = 1
          AND (nom LIKE ? OR prenom LIKE ? OR fonction LIKE ? OR service LIKE ?

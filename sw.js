@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v5';
+const CACHE_VERSION = 'ss-v7';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';

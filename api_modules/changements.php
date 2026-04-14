@@ -44,7 +44,8 @@ function get_collegues()
     $dateFilter = Sanitize::date($params['date'] ?? '');
 
     $users = Db::fetchAll(
-        "SELECT u.id, u.prenom, u.nom, u.photo, u.taux, u.fonction_id,
+        "SELECT u.id, u.prenom, u.nom, u.photo, u.taux, u.fonction_id, u.last_seen_at,
+                (u.last_seen_at IS NOT NULL AND u.last_seen_at > DATE_SUB(NOW(), INTERVAL 30 SECOND)) AS is_online,
                 f.nom AS fonction_nom, f.code AS fonction_code,
                 m.nom AS module_nom, m.code AS module_code
          FROM users u

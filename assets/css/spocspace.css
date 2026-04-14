@@ -3218,6 +3218,217 @@ input[type="checkbox"]:not(.form-check-input):hover {
   text-align: center; padding: 60px 20px; color: var(--ss-text-muted);
   background: #fff; border: 1px dashed var(--ss-border); border-radius: 12px;
 }
+
+/* Online/offline presence on collegue cards */
+.ss-avatar-with-presence { position: relative; flex-shrink: 0; }
+.ss-presence-dot {
+  position: absolute; bottom: 0; right: 0;
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid #fff;
+}
+.ss-presence-online { background: #2d4a43; box-shadow: 0 0 0 3px rgba(45,74,67,.15); }
+.ss-presence-offline { background: #9B9B9B; }
+.ss-presence-label.is-online { color: #2d4a43; font-weight: 600; }
+
+.an-emp-card-offline { opacity: .72; }
+.an-emp-card-offline:hover { opacity: 1; }
+
+/* Call buttons in global search results */
+.fe-search-item-collegue {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding-right: 10px !important;
+}
+.fe-search-item-body { flex: 1; min-width: 0; }
+.fe-search-call-actions {
+  display: flex; gap: 4px; flex-shrink: 0;
+}
+.fe-search-call-btn {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: none; cursor: pointer; font-size: .9rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.fe-search-call-audio { background: #bcd2cb; color: #2d4a43; }
+.fe-search-call-audio:hover { background: #a3c0b6; }
+.fe-search-call-video { background: #B8C9D4; color: #3B4F6B; }
+.fe-search-call-video:hover { background: #9eb8c5; }
+
+/* ═══════════════════════════════════════
+   CALL — history items
+   ═══════════════════════════════════════ */
+.ss-callhist-item {
+  background: #fff; border: 1px solid var(--ss-border); border-radius: 12px;
+  padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+  margin-bottom: 8px; transition: all .15s;
+}
+.ss-callhist-item:hover { box-shadow: var(--ss-shadow-sm); }
+.ss-callhist-missed .ss-callhist-name { color: #7B3B2C; }
+
+.ss-callhist-arrow {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.ss-call-arrow-out { background: #bcd2cb; color: #2d4a43; }
+.ss-call-arrow-in { background: #B8C9D4; color: #3B4F6B; }
+.ss-call-arrow-missed { background: #E2B8AE; color: #7B3B2C; }
+
+.ss-callhist-info { flex: 1; min-width: 0; }
+.ss-callhist-name {
+  font-weight: 600; color: var(--ss-text); font-size: .92rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.ss-callhist-media { font-size: .78rem; color: var(--ss-text-muted); }
+.ss-callhist-meta {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .76rem; color: var(--ss-text-muted); margin-top: 2px;
+}
+.ss-callhist-duration { font-family: monospace; font-weight: 600; }
+
+/* ═══════════════════════════════════════
+   CALL — overlays & controls
+   ═══════════════════════════════════════ */
+.ss-call-overlay {
+  position: fixed; inset: 0; z-index: 99990;
+  background: rgba(25, 25, 24, 0.92); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .3s ease; pointer-events: none;
+}
+.ss-call-overlay.show { opacity: 1; pointer-events: all; }
+
+.ss-call-card {
+  background: #fff; border-radius: 28px; padding: 36px 28px;
+  text-align: center; max-width: 340px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+.ss-call-status-label {
+  font-size: .82rem; color: #6B6B6B; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-weight: 600;
+}
+.ss-call-status-label.pulsing { animation: ss-call-pulse 1.5s ease-in-out infinite; }
+@keyframes ss-call-pulse { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+
+.ss-call-avatar {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: #bcd2cb; color: #2d4a43;
+  margin: 0 auto 18px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0,0,0,.1);
+}
+.ss-call-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.ss-call-name { font-size: 1.3rem; font-weight: 700; color: #1A1A1A; margin-bottom: 4px; }
+.ss-call-fonction { font-size: .82rem; color: #6B6B6B; margin-bottom: 28px; }
+
+.ss-call-actions {
+  display: flex; gap: 22px; justify-content: center;
+  position: relative; z-index: 10;
+}
+.ss-call-btn {
+  width: 72px; height: 72px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: #fff; cursor: pointer;
+  transition: transform .15s, box-shadow .2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.2);
+  user-select: none;
+  position: relative; z-index: 2;
+}
+.ss-call-btn:active { transform: scale(0.95); }
+.ss-call-btn:hover { transform: scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.ss-call-btn-accept { background: #2d4a43; }
+.ss-call-btn-accept:hover { background: #1f3631; }
+.ss-call-btn-reject { background: #7B3B2C; }
+.ss-call-btn-reject:hover { background: #5e2b1f; }
+.ss-call-btn-reject:active { transform: scale(0.95); }
+
+/* Incoming — ring animation */
+.ss-call-overlay--incoming .ss-call-avatar {
+  animation: ss-call-ring 1.5s ease-in-out infinite;
+}
+@keyframes ss-call-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,.4); }
+  50%      { box-shadow: 0 0 0 16px rgba(255,255,255,0); }
+}
+
+/* Active call fullscreen */
+.ss-call-overlay--active {
+  background: #000;
+  backdrop-filter: none;
+  padding: 0;
+}
+.ss-call-overlay--active .ss-call-card { display: none; }
+
+.ss-call-remote-video {
+  width: 100%; height: 100%;
+  object-fit: cover; background: #111;
+}
+.ss-call-local-video {
+  position: absolute; top: 16px; right: 16px;
+  width: 120px; height: 160px; object-fit: cover;
+  border-radius: 14px; border: 2px solid #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4); background: #111;
+  z-index: 2;
+}
+
+.ss-call-active-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 20px; z-index: 3;
+  background: linear-gradient(to bottom, rgba(0,0,0,.6), transparent);
+}
+.ss-call-active-info { display: flex; align-items: center; gap: 12px; color: #fff; }
+.ss-call-avatar-sm { width: 44px; height: 44px; font-size: .9rem; margin: 0; }
+.ss-call-active-name { font-weight: 600; font-size: .95rem; }
+.ss-call-active-duration { font-size: .78rem; opacity: .85; font-family: monospace; }
+
+.ss-call-active-controls {
+  position: absolute; bottom: 28px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 16px; z-index: 10;
+}
+.ss-call-ctrl {
+  touch-action: manipulation; user-select: none;
+  -webkit-tap-highlight-color: rgba(255,255,255,.2);
+}
+.ss-call-ctrl {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: rgba(255,255,255,.2); backdrop-filter: blur(10px);
+  color: #fff; border: none; cursor: pointer;
+  font-size: 1.3rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.ss-call-ctrl:hover { background: rgba(255,255,255,.35); }
+.ss-call-ctrl.active { background: rgba(255,255,255,.6); color: #1A1A1A; }
+.ss-call-ctrl-end { background: #7B3B2C; }
+.ss-call-ctrl-end:hover { background: #5e2b1f; }
+
+/* Audio-only active call: show a dark card instead of video */
+.ss-call-overlay--active:has(#ssCallRemoteAudio) {
+  background: #191918;
+  padding: 0;
+}
+.ss-call-overlay--active:has(#ssCallRemoteAudio) .ss-call-active-top {
+  position: static; padding: 60px 20px 20px;
+  background: none; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.ss-call-overlay--active:has(#ssCallRemoteAudio) .ss-call-active-info {
+  flex-direction: column; gap: 16px;
+}
+.ss-call-overlay--active:has(#ssCallRemoteAudio) .ss-call-avatar-sm {
+  width: 120px; height: 120px; font-size: 2.5rem;
+}
+.ss-call-overlay--active:has(#ssCallRemoteAudio) .ss-call-active-name { font-size: 1.3rem; }
+.ss-call-overlay--active:has(#ssCallRemoteAudio) .ss-call-active-duration { font-size: .9rem; margin-top: 6px; }
+
+@media (max-width: 600px) {
+  .ss-call-local-video { width: 90px; height: 120px; top: 12px; right: 12px; }
+  .ss-call-ctrl { width: 52px; height: 52px; font-size: 1.15rem; }
+}
 .an-emp-empty i { font-size: 2.5rem; opacity: .2; display: block; margin-bottom: 10px; }
 
 @media (max-width: 600px) {
