@@ -42,6 +42,8 @@ const OFFLINE_GET_ACTIONS = [
     'get_repartition',
     // Auth & misc
     'me', 'get_horaires_types',
+    // Annuaire
+    'get_annuaire', 'search_annuaire',
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -244,6 +246,7 @@ async function deltaSync(showToast = true) {
             collegues:       'collegues',
             covoiturage:     'covoiturage',
             cuisine_menus:   'cuisine_menus',
+            annuaire:        'annuaire',
         };
 
         const entries = Object.entries(syncMap);
@@ -477,6 +480,20 @@ async function _resolveOfflineGet(action, params) {
         // Cuisine menus
         if (action.includes('menu') || action.includes('cuisine')) {
             const all = await db.getAll('cuisine_menus');
+            return { success: true, data: all || [], _fromCache: true };
+        }
+        // Annuaire
+        if (action.includes('annuaire')) {
+            let all = await db.getAll('annuaire');
+            if (action === 'search_annuaire' && params?.q) {
+                const q = params.q.toLowerCase();
+                all = all.filter(i =>
+                    [i.nom, i.prenom, i.fonction, i.service, i.telephone_1, i.telephone_2, i.email, i.categorie]
+                        .filter(Boolean).some(v => v.toLowerCase().includes(q))
+                );
+            } else if (params?.type) {
+                all = all.filter(i => i.type === params.type);
+            }
             return { success: true, data: all || [], _fromCache: true };
         }
         // Horaires

@@ -75,6 +75,9 @@ return [
     'search' => [
         'global_search',
     ],
+    'annuaire' => [
+        'get_annuaire', 'search_annuaire',
+    ],
     'wiki' => [
         'get_wiki_categories', 'get_wiki_tags', 'get_wiki_pages', 'get_wiki_page',
         'toggle_wiki_favori', 'log_wiki_search',

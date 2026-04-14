@@ -3,7 +3,7 @@
  * Cache temporaire de travail — la source de verite est le serveur
  */
 const DB_NAME = 'ss_local';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORES = {
     planning:      { keyPath: 'id', indexes: ['date_jour', 'user_id'] },
@@ -24,6 +24,7 @@ const STORES = {
     collegues:     { keyPath: 'id', indexes: ['nom'] },
     covoiturage:   { keyPath: 'id', indexes: ['user_id'] },
     cuisine_menus: { keyPath: 'id', indexes: ['date_menu'] },
+    annuaire:      { keyPath: 'id', indexes: ['type', 'nom'] },
     sync_queue:    { keyPath: 'id', autoIncrement: true },
     meta:          { keyPath: 'key' },
 };

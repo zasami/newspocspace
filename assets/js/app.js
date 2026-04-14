@@ -35,6 +35,7 @@ const moduleMap = {
     'mur':          () => import('./modules/mur.js'),
     'wiki':         () => import('./modules/wiki.js'),
     'annonces':     () => import('./modules/annonces.js'),
+    'annuaire':     () => import('./modules/annuaire.js'),
 };
 
 let currentModule = null;
@@ -306,8 +307,8 @@ function setupSearch() {
         if (!results.length) { panel.innerHTML = '<div class="fe-search-item" style="opacity:.5;justify-content:center"><span>Aucun résultat</span></div>'; return; }
         const groups = {};
         results.forEach(r => { if (!groups[r.type]) groups[r.type]=[]; groups[r.type].push(r); });
-        const typeLabels = { collegue:'Collègues', wiki:'Wiki', annonce:'Annonces', document:'Documents', page:'Pages' };
-        const typeColors = { collegue:'#bcd2cb', wiki:'#B8C9D4', annonce:'#D0C4D8', document:'#D4C4A8', page:'#f0eeea' };
+        const typeLabels = { collegue:'Collègues', wiki:'Wiki', annonce:'Annonces', document:'Documents', contact:'Annuaire', page:'Pages' };
+        const typeColors = { collegue:'#bcd2cb', wiki:'#B8C9D4', annonce:'#D0C4D8', document:'#D4C4A8', contact:'#E2B8AE', page:'#f0eeea' };
         let html = '';
         for (const [type, items] of Object.entries(groups)) {
             html += `<div style="font-size:.7rem;color:#999;padding:4px 10px;font-weight:600">${typeLabels[type]||type}</div>`;
@@ -368,9 +369,11 @@ function setupSearch() {
             const type = result.dataset.type || '';
             if (!page) return;
 
-            // Documents: passer l'id en highlight pour scroll + surbrillance
-            if (page === 'documents' && id) {
-                loadPage('documents', { highlight: id });
+            // Documents / Annuaire : passer l'id en highlight pour scroll + surbrillance
+            if ((page === 'documents' || page === 'annuaire') && id) {
+                const url = `${BASE}/${page}?highlight=${encodeURIComponent(id)}`;
+                history.pushState({}, '', url);
+                loadPage(page, { highlight: id });
                 return;
             }
             // Pages avec id (annonces, wiki, etc.)

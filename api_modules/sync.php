@@ -226,6 +226,14 @@ function sync_delta()
         [$uid]
     );
 
+    // ── Annuaire: all active entries ──
+    $result['annuaire'] = Db::fetchAll(
+        "SELECT id, type, categorie, nom, prenom, fonction, service,
+                telephone_1, telephone_2, email, adresse, notes, is_favori, ordre, updated_at
+         FROM annuaire WHERE is_active = 1
+         ORDER BY is_favori DESC, ordre ASC, nom ASC"
+    );
+
     // ── Conflict detection: send server timestamps for queued items ──
     $result['_server_time'] = date('c');
 

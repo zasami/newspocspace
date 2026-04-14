@@ -70,6 +70,7 @@ $sidebarNav = [
     'info' => [
         'label' => 'Informations',
         'items' => [
+            'annuaire'  => ['label' => 'Annuaire téléphonique', 'icon' => 'telephone'],
             'annonces'  => ['label' => 'Annonces officielles', 'icon' => 'megaphone'],
             'votes'     => ['label' => 'Votes',           'icon' => 'hand-thumbs-up'],
             'pv'        => ['label' => 'Procès-Verbaux',  'icon' => 'file-earmark-text'],
@@ -262,6 +263,9 @@ if ($user && !empty($deniedPerms)) {
         <span class="fe-topbar-notif" id="msgBadge" style="display:none"></span>
       </a>
       <?php endif; ?>
+      <a href="/spocspace/annuaire" data-link="annuaire" class="fe-topbar-icon-btn" title="Annuaire téléphonique">
+        <i class="bi bi-telephone"></i>
+      </a>
       <button class="fe-topbar-icon-btn" id="fullscreenToggle" title="Plein écran">
         <i class="bi bi-arrows-fullscreen"></i>
       </button>

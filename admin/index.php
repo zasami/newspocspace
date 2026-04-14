@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -145,6 +145,7 @@ $pageLabels = [
     'email-externe' => 'Email',
     'email-config'  => 'Configuration Email',
     'contacts'      => 'Contacts',
+    'annuaire'      => 'Annuaire téléphonique',
     'recrutement'      => 'Recrutement',
     'rh-offres'        => 'Offres d\'emploi',
     'rh-candidatures'  => 'Candidatures',
@@ -228,6 +229,7 @@ $sidebarCategories = [
             'messages' => ['label' => 'Messagerie',            'icon' => 'chat-dots'],
             'email-externe' => ['label' => 'Email',              'icon' => 'envelope'],
             'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
+            'annuaire'      => ['label' => 'Annuaire',           'icon' => 'telephone'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
@@ -344,6 +346,9 @@ $activeSection = match($page) {
       </a>
       <a href="<?= admin_url('contacts') ?>" class="topbar-icon-btn" id="topbarContactsBtn" title="Contacts">
         <i class="bi bi-person-rolodex"></i>
+      </a>
+      <a href="<?= admin_url('annuaire') ?>" class="topbar-icon-btn" id="topbarAnnuaireBtn" title="Annuaire téléphonique">
+        <i class="bi bi-telephone"></i>
       </a>
       <button class="topbar-icon-btn" id="ztInstallBtn" title="Installer l'application" style="display:none">
         <i class="bi bi-download"></i>

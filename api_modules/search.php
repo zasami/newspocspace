@@ -83,5 +83,23 @@ function global_search()
         ];
     }
 
+    // ── Annuaire ──────────────────────────────────────
+    $contacts = Db::fetchAll(
+        "SELECT id, nom, prenom, type, fonction, telephone_1 FROM annuaire
+         WHERE is_active = 1
+           AND (nom LIKE ? OR prenom LIKE ? OR fonction LIKE ? OR telephone_1 LIKE ? OR telephone_2 LIKE ?)
+         ORDER BY is_favori DESC, nom ASC LIMIT 5",
+        [$like, $like, $like, $like, $like]
+    );
+    foreach ($contacts as $c) {
+        $fullName = trim(($c['prenom'] ?? '') . ' ' . ($c['nom'] ?? ''));
+        $subtitle = $c['fonction'] ?: ($c['telephone_1'] ?: ucfirst($c['type']));
+        $results[] = [
+            'type' => 'contact', 'icon' => 'telephone', 'id' => $c['id'],
+            'title' => $fullName, 'subtitle' => $subtitle,
+            'page' => 'annuaire',
+        ];
+    }
+
     respond(['success' => true, 'results' => $results, 'query' => $q]);
 }

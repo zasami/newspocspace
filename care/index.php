@@ -232,6 +232,9 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <div id="careSearchPanel" class="care-search-panel"></div>
     </div>
     <div class="topbar-right">
+      <a href="/spocspace/admin/?page=annuaire" class="topbar-icon-btn" title="Annuaire téléphonique">
+        <i class="bi bi-telephone"></i>
+      </a>
       <div class="topbar-user d-none d-sm-flex">
         <span class="topbar-user-name"><?= h($user['prenom'] . ' ' . $user['nom']) ?></span>
         <span class="topbar-user-role"><?= h($roleLabel) ?></span>

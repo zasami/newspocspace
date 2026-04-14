@@ -191,6 +191,11 @@ return [
     'care_search' => [
         'admin_care_global_search',
     ],
+    'annuaire' => [
+        'admin_get_annuaire', 'admin_search_annuaire',
+        'admin_save_annuaire', 'admin_delete_annuaire', 'admin_toggle_favori_annuaire',
+        'admin_import_annuaire_csv', 'admin_export_annuaire_csv',
+    ],
     'annonces' => [
         'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
         'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',
