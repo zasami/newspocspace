@@ -93,13 +93,13 @@ async function openDetail(id) {
 }
 
 function renderReport(r, canEdit) {
-    const statusColors = {brouillon:'#9B9B9B', soumis:'#c99a3e', valide:'#2d7d32', a_refaire:'#c0392b'};
+    const statutClass = {brouillon:'ss-badge-brouillon', soumis:'ss-badge-en_cours', valide:'ss-badge-acquis', a_refaire:'ss-badge-non_acquis'}[r.statut] || 'ss-badge-brouillon';
     const taches = r.taches || [];
     return `<div class="ms-report">
         <div class="ms-report-head">
             <strong>${fmt(r.date_report)}</strong>
-            <span class="ms-report-type">${r.type}</span>
-            <span class="ms-report-status" style="background:${statusColors[r.statut]}">${r.statut}</span>
+            <span class="ss-badge ss-badge-type">${r.type}</span>
+            <span class="ss-badge ${statutClass}">${r.statut}</span>
             <span class="text-muted small ms-auto">${taches.length} tâche(s)</span>
         </div>
         ${r.titre ? `<div class="ms-report-title">${esc(r.titre)}</div>` : ''}

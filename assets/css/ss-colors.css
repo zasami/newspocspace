@@ -1,0 +1,128 @@
+/* ═══════════════════════════════════════════════════════════
+   SpocSpace — Standard Color Palette
+   Source de vérité pour toutes les couleurs du système.
+   Synchronisé avec admin/assets/css/admin.css (tokens --cl-*)
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Neutres ── */
+  --cl-bg:              #F7F5F2;
+  --cl-surface:         #FFFFFF;
+  --cl-border:          #E8E5E0;
+  --cl-border-light:    #F0EDE8;
+  --cl-border-hover:    #D4D0CA;
+  --cl-text:            #1A1A1A;
+  --cl-text-secondary:  #6B6B6B;
+  --cl-text-muted:      #9B9B9B;
+  --cl-accent:          #191918;
+  --cl-accent-hover:    #000000;
+  --cl-accent-bg:       rgba(25,25,24,0.06);
+  --cl-sidebar-bg:      #FAFAF8;
+  --cl-sidebar-hover:   #F0EDE8;
+  --cl-sidebar-active:  #EDE8E0;
+
+  /* ── Pastels d'état (fond + texte) ── */
+  --cl-teal-bg:    #bcd2cb;  --cl-teal-fg:    #2d4a43;  /* validé / acquis / success */
+  --cl-green-bg:   #B8C9D4;  --cl-green-fg:   #3B4F6B;  /* info / en attente */
+  --cl-orange-bg:  #D4C4A8;  --cl-orange-fg:  #6B5B3E;  /* en cours / pending */
+  --cl-red-bg:     #E2B8AE;  --cl-red-fg:     #7B3B2C;  /* non acquis / refusé / danger */
+  --cl-purple-bg:  #D0C4D8;  --cl-purple-fg:  #5B4B6B;  /* type spécial / animation */
+  --cl-neutral-bg: #EEEEEE;  --cl-neutral-fg: #666666;  /* non évalué / neutre */
+
+  /* ── Badges statut solides (strong) ── */
+  --cl-badge-success-bg: #DCFCE7;  --cl-badge-success-fg: #166534;
+  --cl-badge-danger-bg:  #FEE2E2;  --cl-badge-danger-fg:  #991B1B;
+  --cl-badge-warning-bg: #FEF3C7;  --cl-badge-warning-fg: #92400E;
+  --cl-badge-neutral-bg: #F3F4F6;  --cl-badge-neutral-fg: #4B5563;
+  --cl-badge-info-bg:    #E8E6DC;  --cl-badge-info-fg:    #5A5550;
+
+  /* ── Radius / shadows ── */
+  --cl-radius:     16px;
+  --cl-radius-lg:  16px;
+  --cl-radius-sm:  8px;
+  --cl-radius-xs:  6px;
+  --cl-shadow:     0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --cl-shadow-md:  0 4px 12px rgba(0,0,0,0.06);
+  --cl-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Classes utilitaires pastels (alias sans "stat-") ── */
+.ss-bg-teal   { background: var(--cl-teal-bg);   color: var(--cl-teal-fg); }
+.ss-bg-green  { background: var(--cl-green-bg);  color: var(--cl-green-fg); }
+.ss-bg-orange { background: var(--cl-orange-bg); color: var(--cl-orange-fg); }
+.ss-bg-red    { background: var(--cl-red-bg);    color: var(--cl-red-fg); }
+.ss-bg-purple { background: var(--cl-purple-bg); color: var(--cl-purple-fg); }
+.ss-bg-neutral{ background: var(--cl-neutral-bg);color: var(--cl-neutral-fg); }
+
+/* Badges pastel (arrondis, petit texte, usage status) */
+.ss-badge {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+.ss-badge-acquis,
+.ss-badge-valide,
+.ss-badge-actif,
+.ss-badge-success       { background: var(--cl-teal-bg);   color: var(--cl-teal-fg); }
+.ss-badge-en_cours,
+.ss-badge-pending,
+.ss-badge-warning       { background: var(--cl-orange-bg); color: var(--cl-orange-fg); }
+.ss-badge-non_acquis,
+.ss-badge-refuse,
+.ss-badge-danger        { background: var(--cl-red-bg);    color: var(--cl-red-fg); }
+.ss-badge-non_evalue,
+.ss-badge-brouillon,
+.ss-badge-neutral       { background: var(--cl-neutral-bg);color: var(--cl-neutral-fg); }
+.ss-badge-info,
+.ss-badge-prevu         { background: var(--cl-green-bg);  color: var(--cl-green-fg); }
+.ss-badge-type,
+.ss-badge-purple        { background: var(--cl-purple-bg); color: var(--cl-purple-fg); }
+
+/* Badges "strong" (fond plus vif) — pour statuts forts */
+.ss-badge-strong-success { background: var(--cl-badge-success-bg); color: var(--cl-badge-success-fg); }
+.ss-badge-strong-danger  { background: var(--cl-badge-danger-bg);  color: var(--cl-badge-danger-fg); }
+.ss-badge-strong-warning { background: var(--cl-badge-warning-bg); color: var(--cl-badge-warning-fg); }
+.ss-badge-strong-neutral { background: var(--cl-badge-neutral-bg); color: var(--cl-badge-neutral-fg); }
+.ss-badge-strong-info    { background: var(--cl-badge-info-bg);    color: var(--cl-badge-info-fg); }
+
+/* ═══════════════════════════════════════════════════════════
+   Form controls — checkbox / radio / range : couleur d'accent
+   standardisée sur --cl-accent (noir SpocSpace).
+   Supprime le bleu Bootstrap par défaut, partout.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Native inputs (hors Bootstrap) */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: var(--cl-accent, #191918);
+}
+
+/* Bootstrap form-check — override du bleu --bs-primary */
+.form-check-input:checked {
+  background-color: var(--cl-accent, #191918) !important;
+  border-color: var(--cl-accent, #191918) !important;
+}
+.form-check-input:focus {
+  border-color: var(--cl-border-hover, #D4D0CA) !important;
+  box-shadow: 0 0 0 .2rem var(--cl-accent-bg, rgba(25,25,24,0.15)) !important;
+}
+.form-check-input[type="checkbox"]:indeterminate {
+  background-color: var(--cl-accent, #191918) !important;
+  border-color: var(--cl-accent, #191918) !important;
+}
+
+/* Switch (form-switch) */
+.form-switch .form-check-input:checked {
+  background-color: var(--cl-accent, #191918) !important;
+  border-color: var(--cl-accent, #191918) !important;
+}
+
+/* Form controls focus — retire le halo bleu Bootstrap */
+.form-control:focus, .form-select:focus {
+  border-color: var(--cl-border-hover, #D4D0CA);
+  box-shadow: 0 0 0 .15rem var(--cl-accent-bg, rgba(25,25,24,0.08));
+}

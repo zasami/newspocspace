@@ -38,6 +38,7 @@ const moduleMap = {
     'annuaire':     () => import('./modules/annuaire.js'),
     'mes-stagiaires': () => import('./modules/mes-stagiaires.js'),
     'mon-stage':    () => import('./modules/mon-stage.js'),
+    'report-edit':  () => import('./modules/report-edit.js'),
 };
 
 let currentModule = null;

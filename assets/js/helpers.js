@@ -2,6 +2,65 @@
  * SpocSpace - Helpers
  */
 
+/**
+ * Bootstrap-styled confirmation modal — remplace `confirm()` natif.
+ * Respecte la palette SpocSpace et le layout header / body / footer.
+ * Usage : const ok = await ssConfirm('Question ?', { okText:'Supprimer', variant:'danger' });
+ */
+export function ssConfirm(message, { title = 'Confirmation', okText = 'Confirmer', cancelText = 'Annuler', variant = 'primary', icon = null } = {}) {
+    return new Promise(resolve => {
+        let modalEl = document.getElementById('ssConfirmModal');
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = 'ssConfirmModal';
+            modalEl.className = 'modal fade';
+            modalEl.tabIndex = -1;
+            modalEl.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi ss-confirm-icon"></i> <span class="ss-confirm-title"></span></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body ss-confirm-body"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-outline-secondary ss-confirm-cancel" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn btn-sm ss-confirm-ok"></button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modalEl);
+        }
+
+        modalEl.querySelector('.ss-confirm-title').textContent = title;
+        const body = modalEl.querySelector('.ss-confirm-body');
+        if (typeof message === 'string') body.innerHTML = `<p class="mb-0">${message}</p>`;
+        else { body.innerHTML = ''; if (message) body.append(message); }
+
+        const iconEl = modalEl.querySelector('.ss-confirm-icon');
+        iconEl.className = 'bi ss-confirm-icon ' + (icon || (variant === 'danger' ? 'bi-exclamation-triangle' : variant === 'warning' ? 'bi-exclamation-circle' : 'bi-question-circle'));
+
+        const okBtn = modalEl.querySelector('.ss-confirm-ok');
+        okBtn.textContent = okText;
+        okBtn.className = 'btn btn-sm ss-confirm-ok btn-' + (variant === 'danger' ? 'danger' : variant === 'warning' ? 'warning' : 'primary');
+
+        modalEl.querySelector('.ss-confirm-cancel').textContent = cancelText;
+
+        let confirmed = false;
+        const onOk = () => { confirmed = true; bsModal.hide(); };
+        okBtn.addEventListener('click', onOk, { once: true });
+
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const onHidden = () => {
+            modalEl.removeEventListener('hidden.bs.modal', onHidden);
+            okBtn.removeEventListener('click', onOk);
+            resolve(confirmed);
+        };
+        modalEl.addEventListener('hidden.bs.modal', onHidden);
+        bsModal.show();
+    });
+}
+
 export async function apiPost(action, data = {}) {
     const body = { action, ...data };
     const headers = { 'Content-Type': 'application/json' };

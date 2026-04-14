@@ -11,14 +11,15 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
 .stg-stat-filter:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
 .stg-stat-filter.active { border-color: var(--cl-primary, #7B6B5B); background: var(--cl-bg, #F7F5F2); }
 .stg-badge { font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
-.stg-badge-prevu     { background: #B8C9D4; color: #3B4F6B; }
-.stg-badge-actif     { background: #bcd2cb; color: #2d4a43; }
-.stg-badge-termine   { background: #D4C4A8; color: #6B5B3E; }
-.stg-badge-interrompu{ background: #E2B8AE; color: #7B3B2C; }
-.stg-type-badge { font-size: .7rem; padding: 2px 8px; border-radius: 10px; background: #D0C4D8; color: #5B4B6B; font-weight: 600; }
+.stg-badge-prevu     { background: #B8C9D4; color: #3B4F6B; } /* palette green */
+.stg-badge-actif     { background: #bcd2cb; color: #2d4a43; } /* palette teal */
+.stg-badge-termine   { background: #D4C4A8; color: #6B5B3E; } /* palette orange */
+.stg-badge-interrompu{ background: #E2B8AE; color: #7B3B2C; } /* palette red */
+.stg-type-badge { font-size: .7rem; padding: 2px 8px; border-radius: 10px; background: #D0C4D8; color: #5B4B6B; font-weight: 600; } /* palette purple */
 .stg-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--cl-bg); display: inline-flex; align-items: center; justify-content: center; color: var(--cl-text-muted); font-size: .75rem; font-weight: 600; overflow: hidden; }
 .stg-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.stg-pending-banner { background: linear-gradient(135deg, #fdf4e6 0%, #f6e8cd 100%); border-left: 4px solid #c99a3e; padding: 12px 16px; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: .9rem; }
+/* Bandeau pending — pastel orange (palette SpocSpace) */
+.stg-pending-banner { background: #D4C4A8; border-left: 4px solid #6B5B3E; color: #6B5B3E; padding: 12px 16px; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: .9rem; }
 #stgBody .table th { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); }
 #stgBody .table td { vertical-align: middle; font-size: .88rem; }
 .stg-row-btn { background: none; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; color: var(--cl-text-muted); font-size: .9rem; transition: all .12s; display: inline-flex; align-items: center; justify-content: center; }
@@ -332,7 +333,7 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
                 : `<div class="stg-avatar">${escapeHtml(initials.toUpperCase())}</div>`;
             const pending = parseInt(s.reports_a_valider) || 0;
             const reportsBadge = pending > 0
-                ? `<span class="badge bg-warning text-dark">${pending} à valider</span>`
+                ? `<span class="stg-type-badge" style="background:#D4C4A8;color:#6B5B3E">${pending} à valider</span>`
                 : `<span class="text-muted small">${s.reports_total || 0} reports</span>`;
             html += `<tr data-id="${s.id}">
                 <td>${avatar}</td>
@@ -488,7 +489,7 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
                 <td>${escapeHtml(a.formateur_prenom + ' ' + a.formateur_nom)}</td>
                 <td>${escapeHtml(a.etage_nom || '—')}</td>
                 <td>${formatDate(a.date_debut)} → ${formatDate(a.date_fin)}</td>
-                <td><span class="badge bg-secondary">${a.role_formateur}</span></td>
+                <td><span class="stg-type-badge">${a.role_formateur}</span></td>
                 <td><button class="stg-row-btn danger" data-del-aff="${a.id}"><i class="bi bi-trash"></i></button></td>
             </tr>`).join('') + '</tbody></table></div>';
     }
@@ -497,13 +498,14 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
         const el = document.getElementById('stgReportsList');
         if (!list.length) { el.innerHTML = '<div class="text-muted small">Aucun report</div>'; return; }
         el.innerHTML = list.map(r => {
-            const badgeCls = {brouillon:'bg-secondary', soumis:'bg-warning text-dark', valide:'bg-success', a_refaire:'bg-danger'}[r.statut] || 'bg-secondary';
+            const stgBadgeMap = {brouillon:'stg-badge-termine', soumis:'stg-badge-termine', valide:'stg-badge-actif', a_refaire:'stg-badge-interrompu'};
+            const badgeCls = 'stg-badge ' + (stgBadgeMap[r.statut] || 'stg-badge-termine');
             return `<div class="card mb-2"><div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <strong>${formatDate(r.date_report)}</strong>
-                        <span class="badge bg-light text-dark ms-2">${r.type}</span>
-                        <span class="badge ${badgeCls} ms-1">${r.statut}</span>
+                        <span class="stg-type-badge ms-2">${r.type}</span>
+                        <span class="${badgeCls} ms-1">${r.statut}</span>
                     </div>
                     ${r.statut === 'soumis' ? `
                         <div>
@@ -524,7 +526,7 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
         el.innerHTML = list.map(e => `<div class="card mb-2"><div class="card-body p-3">
             <div class="d-flex justify-content-between mb-2">
                 <div><strong>${formatDate(e.date_eval)}</strong>
-                    <span class="badge bg-light text-dark ms-2">${e.periode}</span>
+                    <span class="stg-type-badge ms-2">${e.periode}</span>
                     <span class="text-muted small ms-2">par ${escapeHtml(e.formateur_prenom + ' ' + e.formateur_nom)}</span></div>
             </div>
             <div class="row g-2 small mb-2">
@@ -545,10 +547,11 @@ $ssrReportsPending = (int) Db::getOne("SELECT COUNT(*) FROM stagiaire_reports WH
         const el = document.getElementById('stgObjList');
         if (!list.length) { el.innerHTML = '<div class="text-muted small">Aucun objectif défini</div>'; return; }
         el.innerHTML = list.map(o => {
-            const cls = {en_cours:'bg-primary', atteint:'bg-success', non_atteint:'bg-danger', abandonne:'bg-secondary'}[o.statut] || 'bg-secondary';
+            const objMap = {en_cours:'stg-badge-prevu', atteint:'stg-badge-actif', non_atteint:'stg-badge-interrompu', abandonne:'stg-badge-termine'};
+            const cls = 'stg-badge ' + (objMap[o.statut] || 'stg-badge-termine');
             return `<div class="card mb-2"><div class="card-body p-3">
                 <div class="d-flex justify-content-between">
-                    <div><strong>${escapeHtml(o.titre)}</strong> <span class="badge ${cls} ms-2">${o.statut}</span>
+                    <div><strong>${escapeHtml(o.titre)}</strong> <span class="${cls} ms-2">${o.statut}</span>
                         ${o.date_cible ? `<span class="text-muted small ms-2">Cible: ${formatDate(o.date_cible)}</span>` : ''}
                     </div>
                     <button class="stg-row-btn danger" data-del-obj="${o.id}"><i class="bi bi-trash"></i></button>

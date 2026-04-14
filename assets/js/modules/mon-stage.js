@@ -1,26 +1,8 @@
-import { apiPost } from '../helpers.js';
-
-// Lazy-loaded rich editor (avoid blocking page init if load fails)
-let _richEditor = null;
-async function _getEditor() {
-    if (_richEditor) return _richEditor;
-    try {
-        _richEditor = await import('../rich-editor.js');
-    } catch (err) {
-        console.warn('[mon-stage] rich-editor failed, falling back to textarea', err);
-        _richEditor = null;
-    }
-    return _richEditor;
-}
+import { apiPost, ssConfirm } from '../helpers.js';
 
 const TYPE_LABELS = { decouverte:'Découverte', cfc_asa:'CFC ASA', cfc_ase:'CFC ASE', cfc_asfm:'CFC ASFM', bachelor_inf:'Bachelor inf.', civiliste:'Civiliste', autre:'Autre' };
 const NIVEAU_LABELS = { acquis:'Acquis', en_cours:'En cours', non_acquis:'Non acquis', non_evalue:'À évaluer' };
 let currentData = null;
-let catalogue = [];
-let editor = null;
-let currentReportId = null;
-let selectedTaches = new Map(); // tache_id -> { nb_fois, commentaire_stagiaire }
-let reportModal = null;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-CH') : '—';
@@ -39,12 +21,6 @@ async function load() {
     }
     currentData = r;
     render();
-    loadCatalogue();
-}
-
-async function loadCatalogue() {
-    const r = await apiPost('get_stagiaire_taches_catalogue', {});
-    if (r.success) catalogue = r.taches || [];
 }
 
 function render() {
@@ -72,7 +48,7 @@ function render() {
         <div class="mst-section">
             <div class="mst-section-head">
                 <h4><i class="bi bi-journal-text"></i> Mes reports</h4>
-                <button class="btn btn-sm btn-primary" id="btnNewReport"><i class="bi bi-plus-lg"></i> Nouveau report</button>
+                <button class="btn btn-sm btn-primary" data-link="report-edit"><i class="bi bi-plus-lg"></i> Nouveau report</button>
             </div>
             ${reports.length ? reports.map(renderReport).join('') : '<div class="text-muted small">Aucun report pour l\'instant — rédigez votre premier !</div>'}
         </div>
@@ -96,15 +72,15 @@ function render() {
 }
 
 function renderReport(r) {
-    const statusColors = {brouillon:'#9B9B9B', soumis:'#c99a3e', valide:'#2d7d32', a_refaire:'#c0392b'};
+    const statutClass = {brouillon:'ss-badge-brouillon', soumis:'ss-badge-en_cours', valide:'ss-badge-acquis', a_refaire:'ss-badge-non_acquis'}[r.statut] || 'ss-badge-brouillon';
     const editable = r.statut === 'brouillon' || r.statut === 'a_refaire';
     const taches = r.taches || [];
     const tachesSummary = taches.length ? renderTachesSummary(taches) : '';
     return `<div class="ms-report">
         <div class="ms-report-head">
             <strong>${fmt(r.date_report)}</strong>
-            <span class="ms-report-type">${r.type}</span>
-            <span class="ms-report-status" style="background:${statusColors[r.statut]}">${r.statut}</span>
+            <span class="ss-badge ss-badge-type">${r.type}</span>
+            <span class="ss-badge ${statutClass}">${r.statut}</span>
             <span class="text-muted small ms-auto">${taches.length} tâche(s)</span>
         </div>
         ${r.titre ? `<div class="ms-report-title">${esc(r.titre)}</div>` : ''}
@@ -113,17 +89,15 @@ function renderReport(r) {
         ${r.commentaire_formateur ? `<div class="ms-report-comment"><strong>Commentaire ${r.valideur_nom ? 'de '+esc(r.valideur_nom) : ''}:</strong> ${esc(r.commentaire_formateur)}</div>` : ''}
         ${editable ? `
             <div class="ms-report-actions">
-                <button class="btn btn-sm btn-outline-secondary ms-btn-sm" data-edit-report="${r.id}"><i class="bi bi-pencil"></i> Modifier</button>
-                ${r.statut === 'brouillon' ? `<button class="btn btn-sm btn-outline-secondary ms-btn-sm" data-del-report="${r.id}"><i class="bi bi-trash"></i> Supprimer</button>` : ''}
+                <button class="btn btn-sm btn-outline-secondary" data-edit-report="${r.id}"><i class="bi bi-pencil"></i> Modifier</button>
+                ${r.statut === 'brouillon' ? `<button class="btn btn-sm btn-outline-secondary" data-del-report="${r.id}"><i class="bi bi-trash"></i> Supprimer</button>` : ''}
             </div>` : ''}
     </div>`;
 }
 
 function renderTachesSummary(taches) {
     const byCat = {};
-    taches.forEach(t => {
-        (byCat[t.categorie] = byCat[t.categorie] || []).push(t);
-    });
+    taches.forEach(t => { (byCat[t.categorie] = byCat[t.categorie] || []).push(t); });
     const niveauBadge = (n) => {
         const cls = {acquis:'mst-niv-acquis', en_cours:'mst-niv-encours', non_acquis:'mst-niv-nonacquis', non_evalue:'mst-niv-pending'}[n] || 'mst-niv-pending';
         return `<span class="mst-niv-badge ${cls}">${NIVEAU_LABELS[n] || n}</span>`;
@@ -150,161 +124,22 @@ function renderEval(e) {
     </div>`;
 }
 
-async function openReportModal(existingReport) {
-    currentReportId = existingReport?.id || '';
-    selectedTaches = new Map();
-    (existingReport?.taches || []).forEach(t => {
-        selectedTaches.set(t.tache_id, {
-            nb_fois: t.nb_fois || 1,
-            commentaire_stagiaire: t.commentaire_stagiaire || ''
-        });
-    });
-
-    document.getElementById('mstReportId').value = currentReportId;
-    document.getElementById('mstReportTitle').textContent = existingReport ? 'Modifier report' : 'Nouveau report';
-    document.getElementById('mstRType').value = existingReport?.type || 'quotidien';
-    document.getElementById('mstRDate').value = existingReport?.date_report || new Date().toISOString().slice(0,10);
-    document.getElementById('mstRTitre').value = existingReport?.titre || '';
-
-    renderTachesChecklist();
-
-    if (!reportModal) reportModal = new bootstrap.Modal(document.getElementById('mstReportModal'));
-    reportModal.show();
-
-    const wrap = document.getElementById('mstREditor');
-    wrap.innerHTML = '';
-    const rich = await _getEditor();
-    if (rich) {
-        if (editor) { rich.destroyEditor(editor); editor = null; }
-        try {
-            editor = await rich.createEditor(wrap, {
-                placeholder: 'Décris ta journée, ce que tu as appris, les difficultés rencontrées, les questions…',
-                content: existingReport?.contenu || '',
-                mode: 'full',
-            });
-        } catch (err) {
-            console.warn('[mon-stage] createEditor failed, using textarea', err);
-            editor = null;
-        }
-    }
-    if (!editor) {
-        wrap.innerHTML = `<textarea id="mstRTextarea" class="ms-input" rows="10" placeholder="Décris ta journée...">${esc(existingReport?.contenu?.replace(/<[^>]+>/g, '') || '')}</textarea>`;
-    }
-}
-
-function renderTachesChecklist() {
-    const el = document.getElementById('mstTachesList');
-    if (!catalogue.length) { el.innerHTML = '<div class="text-muted small">Aucun catalogue chargé.</div>'; return; }
-    const byCat = {};
-    catalogue.forEach(t => {
-        (byCat[t.categorie] = byCat[t.categorie] || []).push(t);
-    });
-    let html = '';
-    Object.keys(byCat).forEach(cat => {
-        html += `<div class="mst-tcat-section">
-            <div class="mst-tcat-title">${esc(cat)}</div>
-            <div class="mst-tcat-items">`;
-        byCat[cat].forEach(t => {
-            const sel = selectedTaches.get(t.id);
-            const checked = sel ? 'checked' : '';
-            const nb = sel?.nb_fois || 1;
-            html += `<label class="mst-tache-item ${checked ? 'is-checked' : ''}" data-tid="${t.id}">
-                <input type="checkbox" ${checked} data-tache-check="${t.id}">
-                <span class="mst-tache-name">${esc(t.nom)}</span>
-                ${t.description ? `<span class="mst-tache-desc" title="${esc(t.description)}"><i class="bi bi-info-circle"></i></span>` : ''}
-                <input type="number" class="mst-tache-nb" min="1" max="20" value="${nb}" data-tache-nb="${t.id}" title="Nombre de fois" ${checked ? '' : 'disabled'}>
-            </label>`;
-        });
-        html += '</div></div>';
-    });
-    el.innerHTML = html;
-}
-
-async function saveReport(action) {
-    let contenuHtml = '';
-    if (editor && _richEditor) {
-        contenuHtml = _richEditor.getHTML(editor);
-    } else {
-        const ta = document.getElementById('mstRTextarea');
-        contenuHtml = ta ? ta.value : '';
-    }
-    const contenuText = contenuHtml.replace(/<[^>]+>/g, '').trim();
-    if (!contenuText) { alert('Contenu du rapport obligatoire'); return; }
-
-    const taches = [];
-    selectedTaches.forEach((v, tacheId) => {
-        taches.push({ tache_id: tacheId, nb_fois: v.nb_fois, commentaire_stagiaire: v.commentaire_stagiaire });
-    });
-
-    const data = {
-        id: currentReportId || '',
-        type: document.getElementById('mstRType').value,
-        date_report: document.getElementById('mstRDate').value,
-        titre: document.getElementById('mstRTitre').value,
-        contenu: contenuHtml,
-        taches,
-        action,
-    };
-    const r = await apiPost('save_my_report', data);
-    if (r.success) {
-        if (editor && _richEditor) { _richEditor.destroyEditor(editor); editor = null; }
-        reportModal?.hide();
-        load();
-    }
-}
-
 function bind() {
     document.addEventListener('click', async (e) => {
-        if (e.target.closest('#btnNewReport')) { openReportModal(null); return; }
-        if (e.target.closest('#btnSaveDraft')) { saveReport('save'); return; }
-        if (e.target.closest('#btnSubmitReport')) {
-            if (!confirm('Soumettre ce report au formateur ? Il ne sera plus modifiable après validation.')) return;
-            saveReport('submit');
-            return;
-        }
         const editBtn = e.target.closest('[data-edit-report]');
         if (editBtn) {
-            const rep = (currentData.reports || []).find(r => r.id === editBtn.dataset.editReport);
-            if (rep) openReportModal(rep);
+            history.pushState({}, '', `/spocspace/report-edit?id=${editBtn.dataset.editReport}`);
+            window.dispatchEvent(new PopStateEvent('popstate'));
             return;
         }
         const delBtn = e.target.closest('[data-del-report]');
         if (delBtn) {
-            if (!confirm('Supprimer ce brouillon ?')) return;
+            const ok = await ssConfirm('Ce brouillon sera supprimé définitivement.', { title: 'Supprimer le brouillon ?', okText: 'Supprimer', variant: 'danger' });
+            if (!ok) return;
             const r = await apiPost('delete_my_report', { id: delBtn.dataset.delReport });
             if (r.success) load();
         }
     });
-
-    document.addEventListener('change', (e) => {
-        const chk = e.target.closest('[data-tache-check]');
-        if (chk) {
-            const tid = chk.dataset.tacheCheck;
-            const label = chk.closest('.mst-tache-item');
-            const nbInput = label.querySelector('[data-tache-nb]');
-            if (chk.checked) {
-                selectedTaches.set(tid, { nb_fois: parseInt(nbInput.value) || 1, commentaire_stagiaire: '' });
-                label.classList.add('is-checked');
-                nbInput.disabled = false;
-            } else {
-                selectedTaches.delete(tid);
-                label.classList.remove('is-checked');
-                nbInput.disabled = true;
-            }
-            return;
-        }
-        const nb = e.target.closest('[data-tache-nb]');
-        if (nb) {
-            const tid = nb.dataset.tacheNb;
-            if (selectedTaches.has(tid)) {
-                const cur = selectedTaches.get(tid);
-                cur.nb_fois = parseInt(nb.value) || 1;
-                selectedTaches.set(tid, cur);
-            }
-        }
-    });
 }
 
-export function destroy() {
-    if (editor && _richEditor) { _richEditor.destroyEditor(editor); editor = null; }
-}
+export function destroy() {}

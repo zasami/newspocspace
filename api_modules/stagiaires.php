@@ -412,7 +412,8 @@ function save_my_report()
     $dateReport = Sanitize::date($params['date_report'] ?? date('Y-m-d'));
     $titre = Sanitize::text($params['titre'] ?? '', 200);
     $contenu = Sanitize::text($params['contenu'] ?? '', 10000);
-    $action = $params['action'] ?? 'save'; // 'save' = brouillon, 'submit' = soumis
+    // 'mode' évite de collisionner avec le champ 'action' de l'API
+    $action = $params['mode'] ?? $params['action_mode'] ?? 'save';
 
     if (!$contenu) bad_request('Contenu requis');
 

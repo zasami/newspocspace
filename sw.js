@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v9';
+const CACHE_VERSION = 'ss-v11';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -35,7 +35,7 @@ const PAGE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces',
-  'annuaire', 'mes-stagiaires', 'mon-stage',
+  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit',
 ].map(p => '/spocspace/pages/' + p + '.php');
 
 // JS modules to pre-cache for full offline support
@@ -46,7 +46,7 @@ const MODULE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces', 'offline',
-  'annuaire', 'mes-stagiaires', 'mon-stage',
+  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit',
 ].map(m => '/spocspace/assets/js/modules/' + m + '.js');
 
 // API actions that can be cached for offline reading
