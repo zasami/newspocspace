@@ -4005,3 +4005,66 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mst-section { margin-top: 1.5rem; }
 .mst-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
 .mst-section h4 { font-size: 1rem; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+/* ═══ Stagiaires — Checklist tâches ═══ */
+.mst-form-row { display: flex; gap: 12px; }
+.mst-form-row .flex-1 { flex: 1; }
+.mst-section-label { margin-top: 1rem; margin-bottom: .5rem; font-weight: 600; color: var(--ss-primary, #7B6B5B); display: flex; align-items: center; gap: 6px; }
+.mst-section-label i { font-size: 1.1em; }
+.mst-section-label .text-muted { font-weight: 400; font-size: .75rem; margin-left: 4px; }
+
+.mst-taches-list { max-height: 40vh; overflow-y: auto; border: 1px solid var(--ss-border, #e5e1db); border-radius: 10px; padding: 8px; background: var(--ss-bg, #F7F5F2); }
+.mst-tcat-section { margin-bottom: 12px; }
+.mst-tcat-section:last-child { margin-bottom: 0; }
+.mst-tcat-title { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ss-text-muted, #6B6B6B); font-weight: 600; margin-bottom: 4px; padding: 4px 6px; }
+.mst-tcat-items { display: flex; flex-direction: column; gap: 4px; }
+.mst-tache-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #fff; border: 1px solid transparent; border-radius: 8px; cursor: pointer; font-size: .85rem; transition: all .12s; }
+.mst-tache-item:hover { border-color: var(--ss-border, #e5e1db); }
+.mst-tache-item.is-checked { background: #e6f4ee; border-color: #bcd2cb; }
+.mst-tache-item input[type="checkbox"] { accent-color: #2d7d32; width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+.mst-tache-name { flex: 1; }
+.mst-tache-desc { color: var(--ss-text-muted, #6B6B6B); font-size: .85em; cursor: help; }
+.mst-tache-nb { width: 50px; padding: 2px 6px; border: 1px solid var(--ss-border); border-radius: 4px; font-size: .8rem; text-align: center; }
+.mst-tache-nb:disabled { background: #eee; opacity: .5; }
+
+.mst-editor-wrap { border: 1px solid var(--ss-border, #e5e1db); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+.mst-editor-wrap .zs-ed-content { min-height: 180px; padding: 10px 14px; background: #fff; }
+
+.mst-content-html { white-space: normal; }
+.mst-content-html p { margin: 0 0 .5em 0; }
+.mst-content-html ul, .mst-content-html ol { padding-left: 1.2em; margin: .3em 0; }
+.mst-content-html h2, .mst-content-html h3 { margin: .6em 0 .3em 0; }
+
+/* Synthèse tâches dans liste report (stagiaire) */
+.mst-taches-summary { background: #f5f2ed; border-radius: 8px; padding: 8px 10px; margin: 6px 0 8px; font-size: .8rem; }
+.mst-tcat { margin-bottom: 4px; }
+.mst-tchip { display: inline-block; background: #fff; padding: 2px 8px; border-radius: 12px; margin: 2px 3px; border: 1px solid var(--ss-border); font-size: .78rem; }
+
+/* Évaluation tâches côté formateur */
+.mst-taches-eval { background: #f8f6f2; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.mst-tcat-eval { margin-bottom: 10px; }
+.mst-tcat-eval:last-child { margin-bottom: 0; }
+.mst-tcat-title-eval { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--ss-text-muted); font-weight: 600; margin-bottom: 4px; }
+.mst-tache-eval-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; background: #fff; border-radius: 6px; margin-bottom: 3px; font-size: .82rem; }
+.mst-tache-eval-name { flex: 1; display: flex; align-items: center; gap: 6px; }
+.mst-tache-eval-name i { color: #2d7d32; }
+
+.mst-niv-buttons { display: flex; gap: 3px; }
+.mst-niv-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ss-border); background: #fff; cursor: pointer; transition: all .12s; padding: 0; }
+.mst-niv-btn:hover { transform: scale(1.15); }
+.mst-niv-btn-acquis { border-color: #2d7d32; }
+.mst-niv-btn-acquis.active { background: #2d7d32; box-shadow: 0 0 0 2px rgba(45,125,50,.2); }
+.mst-niv-btn-en_cours { border-color: #c99a3e; }
+.mst-niv-btn-en_cours.active { background: #c99a3e; box-shadow: 0 0 0 2px rgba(201,154,62,.2); }
+.mst-niv-btn-non_acquis { border-color: #c0392b; }
+.mst-niv-btn-non_acquis.active { background: #c0392b; box-shadow: 0 0 0 2px rgba(192,57,43,.2); }
+.mst-niv-btn-non_evalue { border-color: #9B9B9B; }
+.mst-niv-btn-non_evalue.active { background: #9B9B9B; box-shadow: 0 0 0 2px rgba(155,155,155,.2); }
+
+.mst-niv-badge { font-size: .7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.mst-niv-acquis { background: #bcd2cb; color: #2d4a43; }
+.mst-niv-encours { background: #D4C4A8; color: #6B5B3E; }
+.mst-niv-nonacquis { background: #E2B8AE; color: #7B3B2C; }
+.mst-niv-pending { background: #eee; color: #666; }
+
+.ss-modal-lg .ss-modal-dialog { max-width: 780px; }

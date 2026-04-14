@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v8';
+const CACHE_VERSION = 'ss-v9';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -90,6 +90,7 @@ const CACHEABLE_GET_ACTIONS = [
   'get_annuaire', 'search_annuaire',
   // Stagiaires
   'get_my_stagiaires_as_formateur', 'get_stagiaire_view_formateur', 'get_my_stage',
+  'get_stagiaire_taches_catalogue',
 ];
 
 // API actions that should be queued for sync when offline
@@ -109,6 +110,7 @@ const SYNCABLE_ACTIONS = [
   'submit_changement', 'confirmer_changement', 'refuser_changement', 'annuler_changement',
   // Stagiaires
   'save_my_report', 'delete_my_report', 'validate_stagiaire_report', 'save_stagiaire_evaluation',
+  'evaluer_tache_report',
   // Votes & sondages
   'submit_vote', 'submit_sondage_reponses',
   // Covoiturage

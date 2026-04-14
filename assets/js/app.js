@@ -147,6 +147,10 @@ function parseRoute() {
     if (pageId === 'home' && window.__SS__?.user?.type_employe === 'externe') {
         pageId = 'cuisine-home';
     }
+    // Stagiaires: default to mon-stage
+    if (pageId === 'home' && window.__SS__?.user?.role === 'stagiaire') {
+        pageId = 'mon-stage';
+    }
     const params = {};
     if (parts.length > 1) params.slug = parts[1];
 

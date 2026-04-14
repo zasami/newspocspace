@@ -94,6 +94,16 @@ function admin_get_stagiaire_detail()
          ORDER BY r.date_report DESC",
         [$id]
     );
+    foreach ($reports as &$rep) {
+        $rep['taches'] = Db::fetchAll(
+            "SELECT rt.*, c.nom AS tache_nom, c.categorie, c.code
+             FROM stagiaire_report_taches rt
+             JOIN stagiaire_taches_catalogue c ON c.id = rt.tache_id
+             WHERE rt.report_id = ?",
+            [$rep['id']]
+        );
+    }
+    unset($rep);
 
     $evaluations = Db::fetchAll(
         "SELECT e.*, u.prenom AS formateur_prenom, u.nom AS formateur_nom

@@ -5,6 +5,98 @@
  * - Stagiaire: voit son profil, rédige reports, voit évaluations reçues
  */
 
+// ─── Mapping type stagiaire → referentiel catalogue ────────────────────
+function _stag_referentiel($type)
+{
+    $map = [
+        'cfc_asa' => 'asa_crs', 'cfc_ase' => 'ase', 'cfc_asfm' => 'asfm',
+        'bachelor_inf' => 'bachelor_inf', 'decouverte' => 'decouverte',
+        'civiliste' => 'civiliste', 'autre' => 'commun',
+    ];
+    return $map[$type] ?? 'commun';
+}
+
+function _load_taches_catalogue_for_type($type)
+{
+    $ref = _stag_referentiel($type);
+    return Db::fetchAll(
+        "SELECT id, referentiel, categorie, code, nom, description, ordre
+         FROM stagiaire_taches_catalogue
+         WHERE is_active = 1 AND referentiel IN (?, 'commun')
+         ORDER BY referentiel = 'commun', categorie, ordre, nom",
+        [$ref]
+    );
+}
+
+function _load_report_taches($reportId)
+{
+    return Db::fetchAll(
+        "SELECT rt.*, c.nom AS tache_nom, c.categorie, c.code
+         FROM stagiaire_report_taches rt
+         JOIN stagiaire_taches_catalogue c ON c.id = rt.tache_id
+         WHERE rt.report_id = ?",
+        [$reportId]
+    );
+}
+
+function get_stagiaire_taches_catalogue()
+{
+    $user = require_auth();
+    global $params;
+    $uid = $user['id'];
+
+    // Determine referentiel: depuis mon stage si stagiaire, ou depuis stagiaire_id si formateur
+    $type = $params['type'] ?? null;
+    if (!$type && !empty($params['stagiaire_id'])) {
+        $type = Db::getOne("SELECT type FROM stagiaires WHERE id = ?", [$params['stagiaire_id']]);
+    }
+    if (!$type) {
+        $type = Db::getOne("SELECT type FROM stagiaires WHERE user_id = ? ORDER BY date_debut DESC LIMIT 1", [$uid]);
+    }
+    $type = $type ?: 'autre';
+
+    respond(['success' => true, 'taches' => _load_taches_catalogue_for_type($type), 'type' => $type]);
+}
+
+function evaluer_tache_report()
+{
+    $user = require_auth();
+    global $params;
+    $uid = $user['id'];
+
+    $id = $params['id'] ?? ''; // id de stagiaire_report_taches
+    $niveau = $params['niveau_formateur'] ?? 'non_evalue';
+    $commentaire = Sanitize::text($params['commentaire_formateur'] ?? '', 500);
+
+    if (!$id) bad_request('ID requis');
+    if (!in_array($niveau, ['acquis','en_cours','non_acquis','non_evalue'])) $niveau = 'non_evalue';
+
+    // Vérifier droit : formateur affecté actuellement
+    $row = Db::fetch(
+        "SELECT rt.id, r.stagiaire_id FROM stagiaire_report_taches rt
+         JOIN stagiaire_reports r ON r.id = rt.report_id
+         WHERE rt.id = ?",
+        [$id]
+    );
+    if (!$row) not_found('Ligne introuvable');
+
+    $today = date('Y-m-d');
+    $hasAccess = (int) Db::getOne(
+        "SELECT COUNT(*) FROM stagiaire_affectations
+         WHERE stagiaire_id = ? AND formateur_id = ? AND date_debut <= ? AND date_fin >= ?",
+        [$row['stagiaire_id'], $uid, $today, $today]
+    );
+    if (!$hasAccess) forbidden('Pas affecté à ce stagiaire');
+
+    Db::exec(
+        "UPDATE stagiaire_report_taches
+         SET niveau_formateur = ?, commentaire_formateur = ?, evalue_by = ?, evalue_at = NOW()
+         WHERE id = ?",
+        [$niveau, $commentaire, $uid, $id]
+    );
+    respond(['success' => true, 'message' => 'Évaluation enregistrée']);
+}
+
 // ─── Pour formateur: liste stagiaires où il est affecté actuellement ────
 function get_my_stagiaires_as_formateur()
 {
@@ -80,6 +172,8 @@ function get_stagiaire_view_formateur()
          ORDER BY date_report DESC LIMIT 60",
         [$stagId]
     );
+    foreach ($reports as &$rep) { $rep['taches'] = _load_report_taches($rep['id']); }
+    unset($rep);
 
     $evaluations = Db::fetchAll(
         "SELECT e.*, u.prenom AS formateur_prenom, u.nom AS formateur_nom
@@ -230,6 +324,8 @@ function get_my_stage()
          ORDER BY r.date_report DESC",
         [$stag['id']]
     );
+    foreach ($reports as &$rep) { $rep['taches'] = _load_report_taches($rep['id']); }
+    unset($rep);
 
     $evaluations = Db::fetchAll(
         "SELECT e.*, u.prenom AS formateur_prenom, u.nom AS formateur_nom
@@ -286,7 +382,6 @@ function save_my_report()
     $submittedAt = $action === 'submit' ? date('Y-m-d H:i:s') : null;
 
     if ($id) {
-        // vérifier propriété + statut modifiable
         $own = Db::fetch("SELECT statut FROM stagiaire_reports WHERE id = ? AND stagiaire_id = ?", [$id, $stag['id']]);
         if (!$own) forbidden('Pas votre report');
         if ($own['statut'] === 'valide') bad_request('Report déjà validé, non modifiable');
@@ -295,7 +390,6 @@ function save_my_report()
              WHERE id = ?",
             [$type, $dateReport, $titre, $contenu, $statut, $submittedAt, $id]
         );
-        respond(['success' => true, 'id' => $id, 'message' => $action === 'submit' ? 'Report soumis' : 'Brouillon enregistré']);
     } else {
         $id = Uuid::v4();
         Db::exec(
@@ -303,8 +397,47 @@ function save_my_report()
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [$id, $stag['id'], $type, $dateReport, $titre, $contenu, $statut, $submittedAt]
         );
-        respond(['success' => true, 'id' => $id, 'message' => $action === 'submit' ? 'Report soumis' : 'Brouillon enregistré']);
     }
+
+    // Sync checklist tâches
+    $taches = $params['taches'] ?? null;
+    if (is_array($taches)) {
+        // On remplace entièrement, en préservant les évaluations déjà faites
+        $existing = Db::fetchAll("SELECT id, tache_id, niveau_formateur, commentaire_formateur, evalue_by, evalue_at FROM stagiaire_report_taches WHERE report_id = ?", [$id]);
+        $byTache = [];
+        foreach ($existing as $e) $byTache[$e['tache_id']] = $e;
+
+        $newTacheIds = [];
+        foreach ($taches as $t) {
+            $tacheId = $t['tache_id'] ?? null;
+            if (!$tacheId) continue;
+            $newTacheIds[] = $tacheId;
+            $nbFois = max(1, min(20, (int) ($t['nb_fois'] ?? 1)));
+            $commStag = Sanitize::text($t['commentaire_stagiaire'] ?? '', 500);
+
+            if (isset($byTache[$tacheId])) {
+                Db::exec(
+                    "UPDATE stagiaire_report_taches SET stagiaire_coche = 1, nb_fois = ?, commentaire_stagiaire = ?
+                     WHERE id = ?",
+                    [$nbFois, $commStag, $byTache[$tacheId]['id']]
+                );
+            } else {
+                Db::exec(
+                    "INSERT INTO stagiaire_report_taches (id, report_id, tache_id, stagiaire_coche, nb_fois, commentaire_stagiaire)
+                     VALUES (?, ?, ?, 1, ?, ?)",
+                    [Uuid::v4(), $id, $tacheId, $nbFois, $commStag]
+                );
+            }
+        }
+        // Supprimer les tâches décochées (si pas encore évaluées)
+        foreach ($byTache as $tid => $e) {
+            if (!in_array($tid, $newTacheIds) && $e['niveau_formateur'] === 'non_evalue') {
+                Db::exec("DELETE FROM stagiaire_report_taches WHERE id = ?", [$e['id']]);
+            }
+        }
+    }
+
+    respond(['success' => true, 'id' => $id, 'message' => $action === 'submit' ? 'Report soumis' : 'Brouillon enregistré']);
 }
 
 function delete_my_report()

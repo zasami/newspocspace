@@ -1,6 +1,8 @@
 import { apiPost } from '../helpers.js';
 
 const TYPE_LABELS = { decouverte:'Découverte', cfc_asa:'CFC ASA', cfc_ase:'CFC ASE', cfc_asfm:'CFC ASFM', bachelor_inf:'Bachelor inf.', civiliste:'Civiliste', autre:'Autre' };
+const NIVEAU_LABELS = { acquis:'Acquis', en_cours:'En cours', non_acquis:'Non acquis', non_evalue:'À évaluer' };
+const NIVEAU_CYCLE = ['non_evalue', 'acquis', 'en_cours', 'non_acquis'];
 let currentStagId = null;
 let currentData = null;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -88,14 +90,17 @@ async function openDetail(id) {
 
 function renderReport(r, canEdit) {
     const statusColors = {brouillon:'#9B9B9B', soumis:'#c99a3e', valide:'#2d7d32', a_refaire:'#c0392b'};
+    const taches = r.taches || [];
     return `<div class="ms-report">
         <div class="ms-report-head">
             <strong>${fmt(r.date_report)}</strong>
             <span class="ms-report-type">${r.type}</span>
             <span class="ms-report-status" style="background:${statusColors[r.statut]}">${r.statut}</span>
+            <span class="text-muted small ms-auto">${taches.length} tâche(s)</span>
         </div>
         ${r.titre ? `<div class="ms-report-title">${esc(r.titre)}</div>` : ''}
-        <div class="ms-report-content">${esc(r.contenu || '')}</div>
+        ${taches.length ? renderTachesEval(taches, canEdit) : ''}
+        <div class="ms-report-content mst-content-html">${r.contenu || ''}</div>
         ${r.commentaire_formateur ? `<div class="ms-report-comment"><strong>Commentaire:</strong> ${esc(r.commentaire_formateur)}</div>` : ''}
         ${canEdit && r.statut === 'soumis' ? `
             <div class="ms-report-actions">
@@ -103,6 +108,34 @@ function renderReport(r, canEdit) {
                 <button class="ss-btn-secondary ms-btn-sm" data-refuse="${r.id}"><i class="bi bi-arrow-counterclockwise"></i> À refaire</button>
             </div>` : ''}
     </div>`;
+}
+
+function renderTachesEval(taches, canEdit) {
+    const byCat = {};
+    taches.forEach(t => { (byCat[t.categorie] = byCat[t.categorie] || []).push(t); });
+    let html = '<div class="mst-taches-eval">';
+    Object.keys(byCat).forEach(cat => {
+        html += `<div class="mst-tcat-eval"><div class="mst-tcat-title-eval">${esc(cat)}</div>`;
+        byCat[cat].forEach(t => {
+            const cls = {acquis:'mst-niv-acquis', en_cours:'mst-niv-encours', non_acquis:'mst-niv-nonacquis', non_evalue:'mst-niv-pending'}[t.niveau_formateur] || 'mst-niv-pending';
+            html += `<div class="mst-tache-eval-row">
+                <div class="mst-tache-eval-name">
+                    <i class="bi bi-check2-square"></i> ${esc(t.tache_nom)}
+                    ${t.nb_fois > 1 ? `<span class="text-muted">×${t.nb_fois}</span>` : ''}
+                </div>
+                ${canEdit ? `
+                    <div class="mst-niv-buttons" data-rt-id="${t.id}">
+                        ${['acquis','en_cours','non_acquis','non_evalue'].map(n =>
+                            `<button class="mst-niv-btn mst-niv-btn-${n} ${t.niveau_formateur === n ? 'active' : ''}" data-niveau="${n}" title="${NIVEAU_LABELS[n]}"></button>`
+                        ).join('')}
+                    </div>
+                ` : `<span class="mst-niv-badge ${cls}">${NIVEAU_LABELS[t.niveau_formateur] || t.niveau_formateur}</span>`}
+            </div>`;
+        });
+        html += '</div>';
+    });
+    html += '</div>';
+    return html;
 }
 
 function renderEval(e) {
@@ -186,6 +219,17 @@ function bindModals() {
         if (vBtn) {
             const r = await apiPost('validate_stagiaire_report', { id: vBtn.dataset.validate, statut: 'valide' });
             if (r.success) openDetail(currentStagId);
+            return;
+        }
+        const nivBtn = e.target.closest('.mst-niv-btn');
+        if (nivBtn) {
+            const container = nivBtn.closest('[data-rt-id]');
+            const rtId = container?.dataset.rtId;
+            const niveau = nivBtn.dataset.niveau;
+            if (rtId && niveau) {
+                const r = await apiPost('evaluer_tache_report', { id: rtId, niveau_formateur: niveau });
+                if (r.success) openDetail(currentStagId);
+            }
             return;
         }
         const rBtn = e.target.closest('[data-refuse]');

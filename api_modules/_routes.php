@@ -82,6 +82,7 @@ return [
         'get_my_stagiaires_as_formateur', 'get_stagiaire_view_formateur',
         'validate_stagiaire_report', 'save_stagiaire_evaluation',
         'get_my_stage', 'save_my_report', 'delete_my_report',
+        'get_stagiaire_taches_catalogue', 'evaluer_tache_report',
     ],
     'calls' => [
         'call_invite', 'call_poll', 'call_accept', 'call_reject',
