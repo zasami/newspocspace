@@ -5,6 +5,10 @@ const NIVEAU_LABELS = { acquis:'Acquis', en_cours:'En cours', non_acquis:'Non ac
 const NIVEAU_CYCLE = ['non_evalue', 'acquis', 'en_cours', 'non_acquis'];
 let currentStagId = null;
 let currentData = null;
+let detailModal = null;
+let evalModal = null;
+function _detail() { return detailModal || (detailModal = new bootstrap.Modal(document.getElementById('msDetailModal'))); }
+function _eval() { return evalModal || (evalModal = new bootstrap.Modal(document.getElementById('msEvalModal'))); }
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-CH') : '—';
 
@@ -73,7 +77,7 @@ async function openDetail(id) {
             <div class="ms-info-row"><span class="ms-lbl">Étage:</span> ${esc(s.etage_nom || '—')}</div>
             ${s.objectifs_generaux ? `<div class="ms-info-row"><span class="ms-lbl">Objectifs:</span> ${esc(s.objectifs_generaux)}</div>` : ''}
             ${!canEdit ? '<div class="ms-alert">Vous consultez en lecture seule — votre affectation n\'est plus active.</div>' : ''}
-            ${canEdit ? `<button class="ss-btn-primary mt-3" id="btnNewEval"><i class="bi bi-plus-lg"></i> Nouvelle évaluation</button>` : ''}
+            ${canEdit ? `<button class="btn btn-sm btn-primary mt-3" id="btnNewEval"><i class="bi bi-plus-lg"></i> Nouvelle évaluation</button>` : ''}
         </div>
         <div class="ms-tab-pane" data-pane="reports">
             ${r.reports.length ? r.reports.map(rep => renderReport(rep, canEdit)).join('') : '<div class="text-muted small">Aucun report</div>'}
@@ -85,7 +89,7 @@ async function openDetail(id) {
             ${r.objectifs.length ? r.objectifs.map(renderObj).join('') : '<div class="text-muted small">Aucun objectif défini par la RUV</div>'}
         </div>
     `;
-    document.getElementById('msDetailModal').style.display = 'flex';
+    _detail().show();
 }
 
 function renderReport(r, canEdit) {
@@ -104,8 +108,8 @@ function renderReport(r, canEdit) {
         ${r.commentaire_formateur ? `<div class="ms-report-comment"><strong>Commentaire:</strong> ${esc(r.commentaire_formateur)}</div>` : ''}
         ${canEdit && r.statut === 'soumis' ? `
             <div class="ms-report-actions">
-                <button class="ss-btn-primary ms-btn-sm" data-validate="${r.id}"><i class="bi bi-check"></i> Valider</button>
-                <button class="ss-btn-secondary ms-btn-sm" data-refuse="${r.id}"><i class="bi bi-arrow-counterclockwise"></i> À refaire</button>
+                <button class="btn btn-sm btn-primary ms-btn-sm" data-validate="${r.id}"><i class="bi bi-check"></i> Valider</button>
+                <button class="btn btn-sm btn-outline-secondary ms-btn-sm" data-refuse="${r.id}"><i class="bi bi-arrow-counterclockwise"></i> À refaire</button>
             </div>` : ''}
     </div>`;
 }
@@ -168,7 +172,7 @@ function openEvalModal() {
     document.getElementById('msEvalDate').value = new Date().toISOString().slice(0,10);
     ['msEvalPeriode'].forEach(i => document.getElementById(i).value = 'journaliere');
     ['msNInit','msNComm','msNConn','msNAuto','msNSav','msNPonc','msPFortes','msPAmelio','msComGen'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('msEvalModal').style.display = 'flex';
+    _eval().show();
 }
 
 async function saveEval() {
@@ -189,7 +193,7 @@ async function saveEval() {
     };
     const r = await apiPost('save_stagiaire_evaluation', data);
     if (r.success) {
-        document.getElementById('msEvalModal').style.display = 'none';
+        _eval().hide();
         openDetail(currentStagId);
     }
 }
@@ -198,12 +202,6 @@ function bindModals() {
     document.addEventListener('click', async (e) => {
         const openBtn = e.target.closest('[data-open]');
         if (openBtn) { openDetail(openBtn.dataset.open); return; }
-        if (e.target.closest('[data-close-ms]') || e.target.classList.contains('ss-modal-backdrop') && e.target.closest('#msDetailModal')) {
-            document.getElementById('msDetailModal').style.display = 'none'; return;
-        }
-        if (e.target.closest('[data-close-eval]')) {
-            document.getElementById('msEvalModal').style.display = 'none'; return;
-        }
         const tabBtn = e.target.closest('.ms-tab');
         if (tabBtn) {
             tabBtn.parentElement.querySelectorAll('.ms-tab').forEach(b => b.classList.remove('active'));

@@ -153,7 +153,12 @@ $editFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER 
       <div class="card-header"><h6 class="mb-0"><i class="bi bi-shield-check"></i> Accès SpocSpace</h6></div>
       <div class="card-body">
         <p class="small text-muted mb-2">Gérez les pages et fonctionnalités accessibles par ce collaborateur.</p>
-        <button class="btn btn-outline-primary btn-sm" id="openPermBtn"><i class="bi bi-sliders"></i> Configurer les accès</button>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-primary btn-sm" id="openPermBtn"><i class="bi bi-sliders"></i> Configurer les accès</button>
+          <button class="btn btn-outline-secondary btn-sm" id="applyFonctionProfileBtn" title="Réinitialise les accès selon le profil par défaut de la fonction (Hôtellerie, Cuisinier, Stagiaire, Apprenti…)">
+            <i class="bi bi-magic"></i> Appliquer profil de fonction
+          </button>
+        </div>
       </div>
     </div>
 
@@ -312,6 +317,15 @@ async function initUsereditPage() {
 
     // ── Permissions ──
     document.getElementById('openPermBtn')?.addEventListener('click', () => loadPermissionsModal(id));
+    document.getElementById('applyFonctionProfileBtn')?.addEventListener('click', async () => {
+        if (!confirm('Appliquer le profil par défaut de la fonction ? Cela réinitialise tous les accès.')) return;
+        const r = await adminApiPost('admin_apply_fonction_profile', { id });
+        if (r.success) {
+            showToast(r.message || 'Profil appliqué', r.applied ? 'success' : 'warning');
+        } else {
+            showToast(r.error || 'Erreur', 'error');
+        }
+    });
 
     // ── Avatar ──
     const avatarPreview = document.getElementById('avatarPreview');

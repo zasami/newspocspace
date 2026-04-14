@@ -149,6 +149,9 @@ function admin_create_user()
         );
     }
 
+    // Apply default permissions for fonction (if profil defined)
+    if ($fonctionId) Permission::applyFonctionDefaults($id, $fonctionId);
+
     // Send welcome message via internal messaging
     $adminId = $_SESSION['ss_user']['id'] ?? '';
     $loginUrl = APP_URL . '/login';
@@ -222,6 +225,9 @@ function admin_update_user()
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
+    // Capture previous fonction_id to detect changes
+    $prevFonctionId = Db::getOne("SELECT fonction_id FROM users WHERE id = ?", [$id]);
+
     $fields = [];
     $values = [];
 
@@ -253,7 +259,30 @@ function admin_update_user()
         }
     }
 
+    // Si la fonction a changé et qu'admin demande d'appliquer le profil (ou toujours auto)
+    $newFonctionId = $params['fonction_id'] ?? null;
+    $applyProfile = !empty($params['apply_fonction_profile']); // bouton explicite
+    if ($newFonctionId && $newFonctionId !== $prevFonctionId) {
+        // Auto-apply si fonction a un profil défini
+        Permission::applyFonctionDefaults($id, $newFonctionId);
+    } elseif ($applyProfile && $newFonctionId) {
+        Permission::applyFonctionDefaults($id, $newFonctionId);
+    }
+
     respond(['success' => true, 'message' => 'Collaborateur mis à jour']);
+}
+
+function admin_apply_fonction_profile()
+{
+    require_admin();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    $fonctionId = Db::getOne("SELECT fonction_id FROM users WHERE id = ?", [$id]);
+    if (!$fonctionId) bad_request('Aucune fonction assignée');
+    $applied = Permission::applyFonctionDefaults($id, $fonctionId);
+    respond(['success' => true, 'applied' => $applied,
+        'message' => $applied ? 'Profil de fonction appliqué' : 'Cette fonction n\'a pas de profil défini']);
 }
 
 function admin_upload_user_avatar()

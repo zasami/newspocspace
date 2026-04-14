@@ -4,47 +4,48 @@
         <h2 class="mst-title"><i class="bi bi-journal-text"></i> Mon stage</h2>
     </div>
     <div id="mstContent"><div class="text-muted">Chargement…</div></div>
+</div>
 
-    <!-- Modal report -->
-    <div class="ss-modal" id="mstReportModal" style="display:none">
-        <div class="ss-modal-backdrop"></div>
-        <div class="ss-modal-dialog ss-modal-lg">
-            <div class="ss-modal-header">
-                <h3 id="mstReportTitle">Nouveau report</h3>
-                <button class="ss-modal-close" data-close-report>&times;</button>
-            </div>
-            <div class="ss-modal-body">
-                <input type="hidden" id="mstReportId">
-                <div class="mst-form-row">
-                    <div class="flex-1">
-                        <label class="ms-lbl">Type</label>
-                        <select id="mstRType" class="ms-input">
-                            <option value="quotidien">Quotidien</option>
-                            <option value="hebdo">Hebdomadaire</option>
-                        </select>
-                    </div>
-                    <div class="flex-1">
-                        <label class="ms-lbl">Date</label>
-                        <input type="date" id="mstRDate" class="ms-input">
-                    </div>
-                </div>
-                <label class="ms-lbl">Titre (optionnel)</label>
-                <input type="text" id="mstRTitre" class="ms-input" placeholder="Ex. Accompagnement toilettes matinales">
-
-                <div class="mst-section-label">
-                    <i class="bi bi-check2-square"></i> Tâches réalisées aujourd'hui
-                    <span class="text-muted small">(coche tout ce que tu as fait)</span>
-                </div>
-                <div id="mstTachesList" class="mst-taches-list"><div class="text-muted small">Chargement du catalogue…</div></div>
-
-                <label class="ms-lbl mt-3">Contenu du rapport *</label>
-                <div id="mstREditor" class="mst-editor-wrap"></div>
-            </div>
-            <div class="ss-modal-footer">
-                <button class="ss-btn-secondary" data-close-report>Annuler</button>
-                <button class="ss-btn-secondary" id="btnSaveDraft">Brouillon</button>
-                <button class="ss-btn-primary" id="btnSubmitReport">Soumettre</button>
-            </div>
+<!-- Modal report -->
+<div class="modal fade" id="mstReportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mstReportTitle">Nouveau report</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mstReportId">
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Type</label>
+            <select id="mstRType" class="form-select form-select-sm">
+              <option value="quotidien">Quotidien</option>
+              <option value="hebdo">Hebdomadaire</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Date</label>
+            <input type="date" id="mstRDate" class="form-control form-control-sm">
+          </div>
         </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Titre (optionnel)</label>
+          <input type="text" id="mstRTitre" class="form-control form-control-sm" placeholder="Ex. Accompagnement toilettes matinales">
+        </div>
+        <div class="mst-section-label">
+          <i class="bi bi-check2-square"></i> Tâches réalisées aujourd'hui
+          <span class="text-muted small">(coche tout ce que tu as fait)</span>
+        </div>
+        <div id="mstTachesList" class="mst-taches-list"><div class="text-muted small">Chargement du catalogue…</div></div>
+        <label class="form-label small fw-semibold mt-3">Contenu du rapport *</label>
+        <div id="mstREditor" class="mst-editor-wrap"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSaveDraft">Brouillon</button>
+        <button type="button" class="btn btn-sm btn-primary" id="btnSubmitReport">Soumettre</button>
+      </div>
     </div>
+  </div>
 </div>

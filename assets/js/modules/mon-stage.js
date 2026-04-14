@@ -20,6 +20,7 @@ let catalogue = [];
 let editor = null;
 let currentReportId = null;
 let selectedTaches = new Map(); // tache_id -> { nb_fois, commentaire_stagiaire }
+let reportModal = null;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-CH') : '—';
@@ -71,7 +72,7 @@ function render() {
         <div class="mst-section">
             <div class="mst-section-head">
                 <h4><i class="bi bi-journal-text"></i> Mes reports</h4>
-                <button class="ss-btn-primary" id="btnNewReport"><i class="bi bi-plus-lg"></i> Nouveau report</button>
+                <button class="btn btn-sm btn-primary" id="btnNewReport"><i class="bi bi-plus-lg"></i> Nouveau report</button>
             </div>
             ${reports.length ? reports.map(renderReport).join('') : '<div class="text-muted small">Aucun report pour l\'instant — rédigez votre premier !</div>'}
         </div>
@@ -112,8 +113,8 @@ function renderReport(r) {
         ${r.commentaire_formateur ? `<div class="ms-report-comment"><strong>Commentaire ${r.valideur_nom ? 'de '+esc(r.valideur_nom) : ''}:</strong> ${esc(r.commentaire_formateur)}</div>` : ''}
         ${editable ? `
             <div class="ms-report-actions">
-                <button class="ss-btn-secondary ms-btn-sm" data-edit-report="${r.id}"><i class="bi bi-pencil"></i> Modifier</button>
-                ${r.statut === 'brouillon' ? `<button class="ss-btn-secondary ms-btn-sm" data-del-report="${r.id}"><i class="bi bi-trash"></i> Supprimer</button>` : ''}
+                <button class="btn btn-sm btn-outline-secondary ms-btn-sm" data-edit-report="${r.id}"><i class="bi bi-pencil"></i> Modifier</button>
+                ${r.statut === 'brouillon' ? `<button class="btn btn-sm btn-outline-secondary ms-btn-sm" data-del-report="${r.id}"><i class="bi bi-trash"></i> Supprimer</button>` : ''}
             </div>` : ''}
     </div>`;
 }
@@ -167,7 +168,8 @@ async function openReportModal(existingReport) {
 
     renderTachesChecklist();
 
-    document.getElementById('mstReportModal').style.display = 'flex';
+    if (!reportModal) reportModal = new bootstrap.Modal(document.getElementById('mstReportModal'));
+    reportModal.show();
 
     const wrap = document.getElementById('mstREditor');
     wrap.innerHTML = '';
@@ -246,7 +248,7 @@ async function saveReport(action) {
     const r = await apiPost('save_my_report', data);
     if (r.success) {
         if (editor && _richEditor) { _richEditor.destroyEditor(editor); editor = null; }
-        document.getElementById('mstReportModal').style.display = 'none';
+        reportModal?.hide();
         load();
     }
 }
@@ -254,10 +256,6 @@ async function saveReport(action) {
 function bind() {
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#btnNewReport')) { openReportModal(null); return; }
-        if (e.target.closest('[data-close-report]') || (e.target.classList.contains('ss-modal-backdrop') && e.target.closest('#mstReportModal'))) {
-            if (editor && _richEditor) { _richEditor.destroyEditor(editor); editor = null; }
-            document.getElementById('mstReportModal').style.display = 'none'; return;
-        }
         if (e.target.closest('#btnSaveDraft')) { saveReport('save'); return; }
         if (e.target.closest('#btnSubmitReport')) {
             if (!confirm('Soumettre ce report au formateur ? Il ne sera plus modifiable après validation.')) return;

@@ -118,4 +118,26 @@ class Permission
             );
         }
     }
+
+    /**
+     * Applique les permissions par défaut de la fonction à un user.
+     * - Denied perms de la fonction → granted=0
+     * - Les autres → granted=1 (réinitialise d'anciennes restrictions)
+     * Ignore si la fonction n'a pas de profil défini.
+     */
+    public static function applyFonctionDefaults(string $userId, string $fonctionId): bool
+    {
+        if (!$fonctionId) return false;
+        $json = Db::getOne("SELECT default_denied_perms FROM fonctions WHERE id = ?", [$fonctionId]);
+        if (!$json) return false;
+        $denied = json_decode($json, true);
+        if (!is_array($denied)) return false;
+
+        $perms = [];
+        foreach (self::ALL_KEYS as $key => $_) {
+            $perms[$key] = in_array($key, $denied) ? 0 : 1;
+        }
+        self::setForUser($userId, $perms);
+        return true;
+    }
 }

@@ -16,6 +16,17 @@ function _stag_referentiel($type)
     return $map[$type] ?? 'commun';
 }
 
+// Mapping fonction code → referentiel (pour apprentis/collabs)
+function _fonction_referentiel($code)
+{
+    $map = [
+        'INF' => 'infirmiere', 'ASSC' => 'asa_crs', 'AS' => 'asa_crs',
+        'ASE' => 'ase', 'APP' => 'asa_crs', 'STAG' => 'asa_crs',
+        'CIV' => 'decouverte',
+    ];
+    return $map[$code] ?? null;
+}
+
 function _load_taches_catalogue_for_type($type)
 {
     $ref = _stag_referentiel($type);
@@ -45,17 +56,44 @@ function get_stagiaire_taches_catalogue()
     global $params;
     $uid = $user['id'];
 
-    // Determine referentiel: depuis mon stage si stagiaire, ou depuis stagiaire_id si formateur
+    // 1. Type explicite (API client peut forcer)
     $type = $params['type'] ?? null;
+
+    // 2. Si stagiaire_id fourni (cas formateur consulte un stagiaire)
     if (!$type && !empty($params['stagiaire_id'])) {
         $type = Db::getOne("SELECT type FROM stagiaires WHERE id = ?", [$params['stagiaire_id']]);
     }
+
+    // 3. Sinon on regarde si le user courant est un stagiaire
+    $referentiel = null;
     if (!$type) {
         $type = Db::getOne("SELECT type FROM stagiaires WHERE user_id = ? ORDER BY date_debut DESC LIMIT 1", [$uid]);
     }
-    $type = $type ?: 'autre';
 
-    respond(['success' => true, 'taches' => _load_taches_catalogue_for_type($type), 'type' => $type]);
+    if ($type) {
+        $referentiel = _stag_referentiel($type);
+    } else {
+        // 4. Fallback: déduire depuis fonction_code du user courant
+        $fCode = Db::getOne(
+            "SELECT f.code FROM users u JOIN fonctions f ON f.id = u.fonction_id WHERE u.id = ?",
+            [$uid]
+        );
+        $referentiel = _fonction_referentiel($fCode);
+    }
+
+    if (!$referentiel) {
+        respond(['success' => true, 'taches' => [], 'type' => $type, 'message' => 'Aucun référentiel applicable']);
+    }
+
+    $taches = Db::fetchAll(
+        "SELECT id, referentiel, categorie, code, nom, description, ordre
+         FROM stagiaire_taches_catalogue
+         WHERE is_active = 1 AND referentiel IN (?, 'commun')
+         ORDER BY referentiel = 'commun', categorie, ordre, nom",
+        [$referentiel]
+    );
+
+    respond(['success' => true, 'taches' => $taches, 'type' => $type, 'referentiel' => $referentiel]);
 }
 
 function evaluer_tache_report()

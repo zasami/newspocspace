@@ -9,6 +9,7 @@ return [
         'admin_upload_user_avatar', 'admin_delete_user_avatar', 'admin_flag_photo',
         'admin_delete_user_permanent',
         'admin_get_user_permissions', 'admin_save_user_permissions',
+        'admin_apply_fonction_profile',
     ],
     'planning' => [
         'admin_get_planning', 'admin_save_assignation', 'admin_delete_assignation',
