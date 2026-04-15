@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v11';
+const CACHE_VERSION = 'ss-v17';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -35,7 +35,7 @@ const PAGE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces',
-  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit',
+  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit', 'stagiaire-detail',
 ].map(p => '/spocspace/pages/' + p + '.php');
 
 // JS modules to pre-cache for full offline support
@@ -46,7 +46,7 @@ const MODULE_URLS = [
   'covoiturage', 'repartition', 'cuisine', 'cuisine-home',
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces', 'offline',
-  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit',
+  'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit', 'stagiaire-detail',
 ].map(m => '/spocspace/assets/js/modules/' + m + '.js');
 
 // API actions that can be cached for offline reading
@@ -268,12 +268,21 @@ async function cacheFirst(request, cacheName) {
 }
 
 async function handleNavigate(request) {
+  // Helper: fetch avec un retry rapide (utile pour les micro-coupures)
+  const tryFetch = async (req, attempts = 2) => {
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+      try { return await fetch(req); }
+      catch (e) { lastErr = e; if (i < attempts - 1) await new Promise(r => setTimeout(r, 300)); }
+    }
+    throw lastErr;
+  };
+
   try {
-    const response = await fetch(request);
+    const response = await tryFetch(request, 2);
     if (response.ok) {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
-      // Cache the SPA shell for offline fallback
       const p = new URL(request.url).pathname;
       if (p.startsWith('/spocspace/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
         cache.put(new Request('/spocspace/'), response.clone());
@@ -281,11 +290,20 @@ async function handleNavigate(request) {
     }
     return response;
   } catch {
-    // Offline: try exact match first, then shell, then offline page
+    // 1. Si le navigateur est en ligne, inutile de montrer "Hors ligne" :
+    //    essayer le shell en cache, sinon proposer un "Serveur injoignable" avec retry.
     const cached = await caches.match(request);
     if (cached) return cached;
     const shell = await caches.match('/spocspace/');
     if (shell) return shell;
+
+    // Vraiment aucun cache dispo : page d'erreur contextuelle
+    const online = (self.navigator && self.navigator.onLine);
+    if (online) {
+      return new Response(serverUnreachablePage(), {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
     return new Response(offlinePage(), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -293,8 +311,18 @@ async function handleNavigate(request) {
 }
 
 async function networkFirst(request, cacheName) {
+  // Retry rapide pour absorber les micro-coupures
+  const tryFetch = async (req, attempts = 2) => {
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+      try { return await fetch(req); }
+      catch (e) { lastErr = e; if (i < attempts - 1) await new Promise(r => setTimeout(r, 300)); }
+    }
+    throw lastErr;
+  };
+
   try {
-    const response = await fetch(request);
+    const response = await tryFetch(request, 2);
     if (response.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, response.clone());
@@ -303,9 +331,13 @@ async function networkFirst(request, cacheName) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
-    // For page fragments, return a helpful offline message
+    // Pour les fragments de page, message adapté selon navigator.onLine
     if (request.url.includes('/pages/')) {
-      return new Response('<div class="text-center py-5"><i class="bi bi-wifi-off" style="font-size:2rem;opacity:.2"></i><h5 class="mt-3">Hors ligne</h5><p class="text-muted">Cette page n\'est pas disponible hors ligne. Visitez-la une fois en ligne pour la mettre en cache.</p></div>', {
+      const online = (self.navigator && self.navigator.onLine);
+      const msg = online
+        ? `<div class="text-center py-5"><i class="bi bi-cloud-slash" style="font-size:2rem;opacity:.3"></i><h5 class="mt-3">Serveur injoignable</h5><p class="text-muted">Le serveur ne répond pas pour l'instant. <button class="btn btn-sm btn-primary mt-2" onclick="location.reload()">Réessayer</button></p></div>`
+        : `<div class="text-center py-5"><i class="bi bi-wifi-off" style="font-size:2rem;opacity:.2"></i><h5 class="mt-3">Hors ligne</h5><p class="text-muted">Cette page n'est pas disponible hors ligne. Visitez-la une fois en ligne pour la mettre en cache.</p></div>`;
+      return new Response(msg, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
@@ -522,6 +554,44 @@ button:hover { background: #000; }
 <script>
   if (navigator.onLine) location.reload();
   window.addEventListener('online', () => location.reload());
+</script>
+</body>
+</html>`;
+}
+
+// Page affichée quand le user a internet mais le serveur SpocSpace ne répond pas
+function serverUnreachablePage() {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpocSpace — Serveur injoignable</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F7F5F2; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.card { background: #fff; border-radius: 2rem; padding: 3rem; text-align: center; max-width: 440px; border: 1px solid #E8E5E0; }
+.icon { width: 64px; height: 64px; border-radius: 50%; background: #D4C4A8; color: #6B5B3E; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem; }
+h1 { font-size: 1.3rem; margin-bottom: .5rem; color: #1A1A1A; }
+p { color: #6B6B6B; font-size: .9rem; margin-bottom: 1.5rem; }
+button { background: #1A1A1A; color: #fff; border: none; padding: .7rem 2rem; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: .9rem; }
+button:hover { background: #000; }
+.status { margin-top: 1rem; font-size: .78rem; color: #9B9B9B; }
+.hint { font-size: .78rem; color: #9B9B9B; margin-top: .8rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">☁</div>
+  <h1>Serveur injoignable</h1>
+  <p>Ton appareil est connecté à Internet, mais le serveur SpocSpace ne répond pas en ce moment. Cela arrive parfois lors de micro-coupures.</p>
+  <button onclick="location.reload()">Réessayer</button>
+  <div class="hint">Si le problème persiste, patiente quelques minutes et réessaie.</div>
+  <div class="status" id="st">Reconnexion automatique quand le serveur répond…</div>
+</div>
+<script>
+// Réessai auto toutes les 10s
+setInterval(() => { fetch(location.href, { cache: 'no-store' }).then(r => { if (r.ok) location.reload(); }).catch(()=>{}); }, 10000);
 </script>
 </body>
 </html>`;

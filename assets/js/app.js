@@ -37,6 +37,7 @@ const moduleMap = {
     'annonces':     () => import('./modules/annonces.js'),
     'annuaire':     () => import('./modules/annuaire.js'),
     'mes-stagiaires': () => import('./modules/mes-stagiaires.js'),
+    'stagiaire-detail': () => import('./modules/stagiaire-detail.js'),
     'mon-stage':    () => import('./modules/mon-stage.js'),
     'report-edit':  () => import('./modules/report-edit.js'),
 };

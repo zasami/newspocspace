@@ -117,6 +117,51 @@ Table `ems_config` (clé-valeur). API dans `admin/api_modules/config.php` :
 
 Page admin `etablissement` : identité EMS, direction, infirmière chef, RH, structure modules (générateur + cards individuelles), règles planning.
 
+## Architecture de rendu — Migration SSR (2026-04-15+)
+
+Les nouvelles pages et migrations de la SPA employé utilisent le **pattern SSR** : PHP génère le HTML avec les données, JS uniquement pour les interactions. Plan détaillé : [docs/Migration_SSR_Plan.md](docs/Migration_SSR_Plan.md).
+
+### Helpers PHP partagés (`pages/_partials/helpers.php`)
+- `render_stat_card($label, $value, $icon, $variant, $sub=null)` — carte stat palette
+- `render_page_header($title, $icon, $backLink, $backLabel, $actions)` — header + breadcrumb
+- `render_statut_badge($statut)` / `render_type_badge($type)` — badges palette
+- `render_empty_state($message, $icon, $hint=null)` — état vide
+- `render_progress_bar($percent, $label)` — progression
+- `fmt_date_fr($date)` / `fmt_relative($date)` — formatage dates
+
+### Template standard page SPA migrée
+```php
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+// Chargement DB + calculs ici
+?>
+<div class="page-wrap">
+  <?= render_page_header('Titre', 'bi-icon', 'parent', 'Parent') ?>
+  <div class="row g-3 mb-3">
+    <?= render_stat_card('Label', $n, 'bi-check', 'teal') ?>
+  </div>
+  <?php foreach ($items as $i): ?>
+    <div><?= h($i['nom']) ?> <?= render_statut_badge($i['statut']) ?></div>
+  <?php endforeach ?>
+  <?php if (!$items) echo render_empty_state('Aucun élément') ?>
+</div>
+```
+
+### Règles strictes
+- **`h()` systématique** sur variables user (alias htmlspecialchars)
+- **`nonce="<?= CSP_NONCE ?>"`** sur chaque `<script>`
+- **Check session + role** en tête de chaque page PHP
+- **Prepared statements** uniquement (`Db::fetch`, `Db::fetchAll`, `Db::exec`)
+- **JS minimal** : handlers d'interaction ; après mutation → `location.reload()` (le SW re-cache la page rendue)
+- **API JSON** conservée pour : mutations POST, polling live, long-polling notifications
+
+### Ordre de migration
+1. **Phase 1 simples** : mon-stage (prototype), profile, annuaire, fiches-salaire, annonces, documents
+2. **Phase 2 moyennes** : mes-stagiaires, stagiaire-detail, collegues, covoiturage, desirs, vacances, absences, changements, votes, sondages, pv
+3. **Phase 3 complexes** : planning, emails, mur, wiki, report-edit (garde TipTap), repartition, cuisine-*, home
+
 ## Travail en cours
 
 _(section vidée quand toutes les tâches sont terminées)_

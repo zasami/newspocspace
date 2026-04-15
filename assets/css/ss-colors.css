@@ -126,3 +126,86 @@ input[type="range"] {
   border-color: var(--cl-border-hover, #D4D0CA);
   box-shadow: 0 0 0 .15rem var(--cl-accent-bg, rgba(25,25,24,0.08));
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Bootstrap nav-tabs — style standard SpocSpace
+   Soulignement qui se déplace + accent noir (pas bleu)
+   Synchronisé avec admin.css pour cohérence admin/SPA.
+   ═══════════════════════════════════════════════════════════ */
+.nav-tabs {
+  border-bottom: 1px solid var(--cl-border, #E8E5E0);
+}
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--cl-text-secondary, #6B6B6B);
+  font-weight: 500;
+  padding: .55rem 1rem;
+  transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  border-radius: var(--cl-radius-sm, 8px) var(--cl-radius-sm, 8px) 0 0;
+  background: transparent;
+}
+.nav-tabs .nav-link:hover {
+  color: var(--cl-text, #1A1A1A);
+  border-bottom-color: var(--cl-border-hover, #D4D0CA);
+  background: var(--cl-sidebar-hover, #F0EDE8);
+  isolation: isolate;
+}
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+  color: var(--cl-accent, #191918);
+  border-bottom-color: var(--cl-accent, #191918);
+  background: var(--cl-sidebar-active, #EDE8E0);
+  font-weight: 600;
+}
+
+/* nav-pills (chips) cohérent avec la palette */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: var(--cl-accent, #191918);
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Stat cards — pattern standard (palette pastels)
+   Utilisées dans tous les dashboards / pages de détail
+   ═══════════════════════════════════════════════════════════ */
+.stat-card {
+  background: var(--cl-surface, #fff);
+  border: 1px solid var(--cl-border, #E8E5E0);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: box-shadow .15s, transform .15s;
+  height: 100%;
+}
+.stat-card:hover { box-shadow: var(--cl-shadow-md); transform: translateY(-1px); }
+.stat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.stat-icon.bg-teal   { background: var(--cl-teal-bg);   color: var(--cl-teal-fg); }
+.stat-icon.bg-green  { background: var(--cl-green-bg);  color: var(--cl-green-fg); }
+.stat-icon.bg-orange { background: var(--cl-orange-bg); color: var(--cl-orange-fg); }
+.stat-icon.bg-red    { background: var(--cl-red-bg);    color: var(--cl-red-fg); }
+.stat-icon.bg-purple { background: var(--cl-purple-bg); color: var(--cl-purple-fg); }
+.stat-icon.bg-neutral{ background: var(--cl-neutral-bg);color: var(--cl-neutral-fg); }
+.stat-value {
+  font-size: 1.4rem; font-weight: 700; line-height: 1.1;
+  color: var(--cl-text, #1A1A1A);
+  min-width: 0;
+}
+.stat-label {
+  font-size: .74rem;
+  color: var(--cl-text-muted, #9B9B9B);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.stat-sub {
+  font-size: .72rem; font-weight: 500;
+  color: var(--cl-text-muted, #9B9B9B);
+}

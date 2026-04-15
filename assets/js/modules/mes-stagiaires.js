@@ -201,7 +201,12 @@ async function saveEval() {
 function bindModals() {
     document.addEventListener('click', async (e) => {
         const openBtn = e.target.closest('[data-open]');
-        if (openBtn) { openDetail(openBtn.dataset.open); return; }
+        if (openBtn) {
+            // Navigation vers page pleine (au lieu d'un modal)
+            history.pushState({}, '', `/spocspace/stagiaire-detail?id=${openBtn.dataset.open}`);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            return;
+        }
         const tabBtn = e.target.closest('.ms-tab');
         if (tabBtn) {
             tabBtn.parentElement.querySelectorAll('.ms-tab').forEach(b => b.classList.remove('active'));
