@@ -12,44 +12,7 @@ $absInitData = Db::fetchAll(
     [$uid]
 );
 ?>
-<style>
-.abs-dropzone {
-  border: 2px dashed var(--ss-border, #d1cfc9); border-radius: 10px; padding: 24px 16px;
-  text-align: center; cursor: pointer; transition: all .25s ease;
-  background: var(--ss-bg-secondary, #f9f7f4);
-}
-.abs-dropzone:hover { border-color: var(--ss-accent, #2d4a43); background: rgba(188,210,203,.15); }
-.abs-dropzone.abs-dropzone-drag { border-color: var(--ss-accent, #2d4a43); background: rgba(188,210,203,.25); transform: scale(1.01); }
-.abs-dropzone-content { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ss-text-secondary, #6B6B69); }
-.abs-dropzone-content i { font-size: 2rem; color: var(--ss-accent, #2d4a43); opacity: .6; }
-.abs-dropzone-content span { font-size: .88rem; font-weight: 500; }
-.abs-dropzone-content small { font-size: .75rem; opacity: .7; }
-.abs-dropzone-file { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
-.abs-dropzone-file i { font-size: 1.4rem; color: var(--ss-accent, #2d4a43); }
-.abs-dropzone-file .abs-file-info { flex: 1; text-align: left; }
-.abs-dropzone-file .abs-file-info .abs-file-name { font-size: .85rem; font-weight: 600; color: var(--ss-text, #1A1A18); }
-.abs-dropzone-file .abs-file-info .abs-file-size { font-size: .75rem; color: var(--ss-text-secondary, #6B6B69); }
-.abs-dropzone-file .abs-file-remove { background: none; border: none; color: #7B3B2C; cursor: pointer; font-size: 1.1rem; padding: 4px; border-radius: 50%; transition: background .2s; }
-.abs-dropzone-file .abs-file-remove:hover { background: #E2B8AE; }
 
-.ss-lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: ztLbFadeIn .3s ease; }
-.ss-lightbox-hidden { display: none !important; }
-.ss-lightbox-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.8); backdrop-filter: blur(10px); }
-.ss-lightbox-content { position: relative; width: 100%; height: 100%; overflow: hidden; }
-.ss-lightbox-stage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: default; user-select: none; }
-.ss-lightbox-stage img { max-width: 90vw; max-height: calc(100vh - 120px); width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); will-change: transform; }
-.ss-lightbox-stage iframe { width: 85vw; height: calc(100vh - 120px); border: none; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.5); background: #fff; }
-.ss-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,.1); border: none; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .3s; backdrop-filter: blur(10px); z-index: 10; font-size: 24px; }
-.ss-lightbox-close:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
-.ss-lightbox-title { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.15); color: #fff; padding: 10px 24px; border-radius: 24px; font-size: 15px; font-weight: 600; backdrop-filter: blur(10px); z-index: 11; }
-.ss-lightbox-toolbar { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: rgba(30,30,30,.85); backdrop-filter: blur(12px); border-radius: 999px; padding: 6px 16px; z-index: 12; }
-.ss-lb-btn { width: 40px; height: 40px; border: none; background: transparent; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: background .2s; }
-.ss-lb-btn:hover { background: rgba(255,255,255,.15); }
-.ss-lb-zoom { color: #fff; font-size: 14px; font-weight: 600; min-width: 48px; text-align: center; user-select: none; }
-.ss-lightbox-stage.ss-zoomed { cursor: grab; }
-.ss-lightbox-stage.ss-dragging { cursor: grabbing !important; }
-@keyframes ztLbFadeIn { from { opacity: 0; } to { opacity: 1; } }
-</style>
 
 <!-- Lightbox -->
 <div id="ztLightbox" class="ss-lightbox ss-lightbox-hidden">

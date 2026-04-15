@@ -1,0 +1,20 @@
+.cov-day-card{border-radius:10px;padding:0.75rem;border:1px solid var(--ss-border-light,#e5e5e5);cursor:pointer;transition:all .15s;text-align:center}
+.cov-day-card:hover{border-color:var(--ss-teal,#191918);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cov-day-card.active{border-color:var(--ss-teal);background:var(--ss-accent-bg)}
+.cov-day-card.rest{opacity:.4;cursor:default}
+.cov-day-name{font-size:0.75rem;text-transform:uppercase;color:var(--ss-text-muted);margin-bottom:2px}
+.cov-day-date{font-size:0.9rem;font-weight:600;margin-bottom:4px}
+.cov-day-shift{font-size:0.75rem;padding:2px 6px;border-radius:4px;display:inline-block}
+.cov-day-count{font-size:0.72rem;color:var(--ss-text-muted);margin-top:3px}
+.cov-match-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0;border-bottom:1px solid var(--ss-border-light,#eee)}
+.cov-match-item:last-child{border-bottom:none}
+.cov-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.8rem;flex-shrink:0}
+.cov-match-badge{font-size:0.7rem;padding:2px 6px;border-radius:4px;font-weight:500}
+.cov-match-exact{background:#e8f5e9;color:#2e7d32}
+.cov-match-overlap{background:#fff3e0;color:#e65100}
+/* Buddy list */
+.cov-buddy-item{display:flex;align-items:center;gap:0.75rem;padding:8px 0;border-bottom:1px solid var(--ss-border-light,#eee)}
+.cov-buddy-item:last-child{border-bottom:none}
+.cov-search-item{display:flex;align-items:center;gap:0.75rem;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .15s}
+.cov-search-item:hover{background:var(--ss-accent-bg)}
+.cov-search-item.is-buddy{opacity:.5;cursor:default}

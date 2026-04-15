@@ -1,33 +1,62 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+
 $uid = $_SESSION['ss_user']['id'];
-$initNotifs = Db::fetchAll(
+$notifs = Db::fetchAll(
     "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 30",
     [$uid]
 );
-$initUnread = (int) Db::getOne(
+$unread = (int) Db::getOne(
     "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
     [$uid]
 );
+
+// Mapping type → icône + variant palette
+function notif_icon($type) {
+    return match ($type) {
+        'message', 'email'      => ['bi-chat-dots', 'green'],
+        'stagiaire_report'      => ['bi-journal-check', 'teal'],
+        'changement'            => ['bi-arrow-left-right', 'orange'],
+        'absence', 'vacances'   => ['bi-calendar-x', 'red'],
+        'planning'              => ['bi-calendar3', 'green'],
+        'desir'                 => ['bi-star', 'purple'],
+        'alerte'                => ['bi-exclamation-triangle', 'red'],
+        default                 => ['bi-bell', 'neutral'],
+    };
+}
+
+$actions = '<button class="btn btn-sm btn-outline-secondary" id="markAllRead" '
+    . ($unread ? '' : 'disabled') . '>'
+    . '<i class="bi bi-check2-all"></i> Tout marquer comme lu</button>';
 ?>
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
-  <h1><i class="bi bi-bell"></i> Notifications</h1>
-  <button class="btn btn-sm btn-outline-secondary" id="markAllRead"><i class="bi bi-check2-all"></i> Tout marquer comme lu</button>
-</div>
+<div class="notif-wrap">
+    <?= render_page_header('Notifications', 'bi-bell', null, null, $actions) ?>
 
-<div id="notifList" class="card">
-  <div class="card-body" style="padding:0">
-    <div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span> Chargement...</div>
-  </div>
+    <div id="notifList" class="card">
+        <?php if (!$notifs): ?>
+            <?= render_empty_state('Aucune notification', 'bi-bell-slash') ?>
+        <?php else: ?>
+            <div class="card-body p-0">
+            <?php foreach ($notifs as $n):
+                [$icon, $variant] = notif_icon($n['type']);
+                $unreadCls = $n['is_read'] ? '' : ' unread';
+            ?>
+                <div class="notif-item<?= $unreadCls ?>"
+                     data-notif-id="<?= h($n['id']) ?>"
+                     <?= !empty($n['url']) ? 'data-notif-url="' . h($n['url']) . '"' : '' ?>>
+                    <div class="notif-icon bg-<?= $variant ?>"><i class="bi <?= $icon ?>"></i></div>
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="notif-title"><?= h($n['title']) ?></div>
+                        <?php if ($n['message']): ?>
+                            <div class="notif-msg"><?= h($n['message']) ?></div>
+                        <?php endif ?>
+                        <div class="notif-time"><?= h(fmt_relative($n['created_at'])) ?></div>
+                    </div>
+                </div>
+            <?php endforeach ?>
+            </div>
+        <?php endif ?>
+    </div>
 </div>
-
-<style>
-.notif-item{display:flex;gap:0.75rem;padding:0.85rem 1.2rem;border-bottom:1px solid var(--ss-border-light);cursor:pointer;transition:background .15s}
-.notif-item:hover{background:var(--ss-accent-bg,rgba(0,180,160,.05))}
-.notif-item.unread{background:rgba(0,180,160,.04);border-left:3px solid var(--ss-teal)}
-.notif-item.unread .notif-title{font-weight:700}
-.notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem}
-.notif-title{font-size:0.9rem;margin-bottom:2px}
-.notif-msg{font-size:0.8rem;color:var(--ss-text-muted);line-height:1.3}
-.notif-time{font-size:0.72rem;color:var(--ss-text-muted);margin-top:3px}
-</style>
-<script type="application/json" id="__ss_ssr__"><?= json_encode(['notifications' => $initNotifs, 'unread' => $initUnread], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

@@ -166,6 +166,8 @@ if ($user && !empty($deniedPerms)) {
 <link rel="stylesheet" href="assets/css/ss-colors.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/spocspace.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/emoji-picker.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/css/annonces.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/css/pages-all.css?v=<?= $v ?>">
 <?php if ($cssMode === 'tailwind'): ?>
 <script nonce="<?= $cspNonce ?>" src="/spocspace/assets/js/vendor/tailwind-browser.min.js"></script>
 <style type="text/tailwindcss">

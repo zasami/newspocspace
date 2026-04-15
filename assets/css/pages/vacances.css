@@ -1,0 +1,104 @@
+/* ── Layout ── */
+.vac-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
+.vac-header-left{display:flex;align-items:center;gap:.75rem}
+.vac-header-right{display:flex;align-items:center;gap:.75rem}
+.vac-title{font-size:1.1rem;font-weight:700;margin:0;color:var(--ss-navy,#1B2A4A)}
+
+/* Solde */
+.vac-solde{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-radius:8px;padding:5px 12px;text-align:center}
+.vac-solde-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.04em;color:#388e3c;font-weight:600}
+.vac-solde-value{font-size:1.3rem;font-weight:800;color:#2e7d32;line-height:1.1}
+.vac-solde-detail{font-size:.6rem;color:#558b2f}
+.vac-solde.low{background:linear-gradient(135deg,#fff3e0,#ffe0b2)}
+.vac-solde.low .vac-solde-value{color:#e65100}
+.vac-solde.low .vac-solde-label,.vac-solde.low .vac-solde-detail{color:#bf360c}
+
+.vac-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.4rem}
+.vac-current-month{font-size:1rem;font-weight:700;min-width:140px;text-align:center;color:var(--ss-navy,#1B2A4A)}
+
+.vac-month-pills{display:flex;gap:3px;margin-bottom:.5rem;overflow-x:auto;padding:2px 0}
+.vac-month-pill{border:1px solid #dee2e6;background:#fff;border-radius:4px;padding:2px 9px;font-size:.68rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.vac-month-pill:hover{background:#e3f2fd;border-color:#90caf9}
+.vac-month-pill.active{background:var(--ss-navy,#1B2A4A);color:#fff;border-color:var(--ss-navy,#1B2A4A)}
+
+/* ══ Section: Ma ligne ══ */
+.vac-my-section{background:#f5f4ed;border:2px solid #eceae2;border-radius:10px;padding:10px 12px 8px;margin-bottom:12px}
+.vac-my-label{font-size:.85rem;font-weight:700;color:#1a1a1a;margin-bottom:2px}
+.vac-my-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.vac-drag-hint{font-size:.7rem;color:#66bb6a}
+.vac-legend-inline{display:flex;align-items:center;gap:8px;font-size:.65rem;color:#555;flex-shrink:0}
+.vac-drag-info{background:linear-gradient(90deg,#ff9800,#f57c00);color:#fff;padding:5px 12px;font-size:.78rem;font-weight:500;display:flex;align-items:center;gap:6px;border-radius:5px;margin-bottom:6px}
+
+/* My grid — large cells */
+.vac-my-wrap{overflow-x:auto;border-radius:6px;padding-bottom:10px}
+.vac-my-table{border-collapse:separate;border-spacing:0;width:100%;user-select:none;-webkit-user-select:none}
+.vac-my-table th{background:#e8f5e9;border:1px solid #c8e6c9;padding:4px 2px;text-align:center;font-size:.72rem;font-weight:600;color:#2e7d32;white-space:nowrap}
+.vac-my-table th.th-we{background:#fff8e1;color:#856404;border-color:#ffe082}
+.vac-my-table th.th-today{background:#faf5eb;color:#8d6e27;font-weight:700}
+.vac-my-table td.mc{min-width:44px;height:44px;border:1px solid #c8e6c9;background:#fff;position:relative;cursor:crosshair;transition:all .15s;text-align:center;vertical-align:middle}
+.vac-my-table td.mc:hover{background:#e3f2fd;border-color:#90caf9}
+.vac-my-table td.mc.we{background:#fffbf0;cursor:default}
+.vac-my-table td.mc.blocked{background:repeating-linear-gradient(45deg,#ffcdd2,#ffcdd2 2px,#fff 2px,#fff 5px);cursor:not-allowed}
+.vac-my-table td.mc.today{background:repeating-linear-gradient(135deg,#faf5eb,#faf5eb 3px,#f5eed8 3px,#f5eed8 5px)}
+.vac-my-table td.mc.vv{background:#a5d6a7;cursor:default}
+.vac-my-table td.mc.va{background:#ffe082;cursor:pointer}
+.vac-my-table td.mc.drag-hl{background:#ffcc80!important;outline:2px solid #ff9800;outline-offset:-2px}
+.vac-my-table td.mc .my-lbl{font-size:.6rem;font-weight:700;color:#1b5e20}
+.vac-my-table td.mc.va .my-lbl{color:#e65100}
+.vac-my-table td.mc .my-del{position:absolute;top:-5px;right:-5px;z-index:6;width:16px;height:16px;border-radius:50%;background:#fff;color:#d32f2f;font-size:.6rem;display:none;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3);cursor:pointer;line-height:1;border:1px solid #ffcdd2;transition:all .2s}
+.vac-my-table td.mc:hover .my-del{display:flex}
+.vac-my-table td.mc.del-confirm{background:#ffcdd2!important;border-color:#e53935!important;animation:vac-pulse-red .6s ease-in-out infinite alternate}
+.vac-my-table td.mc.del-confirm .my-del{display:flex;background:#d32f2f;color:#fff;border-color:#b71c1c;width:20px;height:20px;font-size:.7rem}
+.vac-my-table td.mc.del-confirm .my-lbl{color:#c62828}
+@keyframes vac-pulse-red{from{background:#ffcdd2}to{background:#ef9a9a}}
+
+/* ══ Section: Équipe ══ */
+.vac-team-section{margin-bottom:8px}
+.vac-team-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap}
+.vac-team-label{font-size:.85rem;font-weight:700;color:var(--ss-navy,#1B2A4A)}
+.vac-size-btn{font-size:.85rem;padding:.25rem .4rem}
+.vac-size-btn.active{background:var(--ss-navy,#1B2A4A);color:#fff;border-color:var(--ss-navy,#1B2A4A)}
+.vac-team-wrap{overflow-x:auto;border:1px solid #e0e0e0;border-radius:6px;max-height:calc(100vh - 280px);overflow-y:auto}
+.vac-team-table{border-collapse:separate;border-spacing:0;width:100%;font-size:.72rem;user-select:none;-webkit-user-select:none}
+.vac-team-table th,.vac-team-table td{border:1px solid #ececec;padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:middle}
+.vac-team-table thead th{position:sticky;top:0;z-index:10;background:#f8f9fa;font-weight:600;font-size:.68rem}
+.vac-team-table .col-user{position:sticky;left:0;z-index:5;background:#fff;text-align:left;min-width:150px;max-width:180px;font-weight:500;padding:1px 5px;overflow:hidden;text-overflow:ellipsis}
+.vac-team-table thead .col-user{z-index:15;background:#f8f9fa}
+.vac-team-table .module-sep td{background:#2c3e50;color:#fff;font-weight:700;font-size:.75rem;text-align:left;padding:3px 8px;border-color:#2c3e50}
+.vac-team-table .fn-badge{display:inline-block;font-size:.6rem;padding:0 3px;border-radius:3px;background:#e9ecef;color:#495057;font-weight:600;margin-right:2px;vertical-align:middle}
+.vac-team-table .tc{min-width:30px;height:22px;position:relative;cursor:default;transition:all .15s}
+.vac-team-table .tc.we{background:#fffbf0}
+.vac-team-table .tc.today{background:repeating-linear-gradient(135deg,#faf5eb,#faf5eb 3px,#f5eed8 3px,#f5eed8 5px)}
+.vac-team-table .tc.vv{background:#a5d6a7}
+.vac-team-table .tc.va{background:#ffe082}
+
+/* Cell sizing */
+#vacTeamGrid.size-small .vac-team-table .tc{min-width:20px;height:16px;padding:0 1px}
+#vacTeamGrid.size-small .vac-team-table .col-user{min-width:100px;max-width:120px}
+#vacTeamGrid.size-large .vac-team-table .tc{min-width:45px;height:32px;padding:0 4px}
+#vacTeamGrid.size-large .vac-team-table .col-user{min-width:170px;max-width:200px}
+#vacTeamGrid.size-large .t-lbl{font-size:.6rem}
+.vac-team-table .th-we{background:#fff8e1!important;color:#856404}
+.vac-team-table .th-today{background:#faf5eb!important;color:#8d6e27;font-weight:700}
+.vac-team-table .myrow td{background:rgba(25,135,84,.07)}
+.vac-team-table .myrow .col-user{background:rgba(25,135,84,.12);font-weight:700;color:#1b5e20}
+.vac-team-table .myrow td:first-child{border-left:3px solid #43a047}
+.vac-team-table .t-lbl{position:absolute;top:0;left:0;bottom:0;display:flex;align-items:center;padding:0 2px;font-size:.52rem;font-weight:700;color:#1b5e20;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;z-index:2}
+.vac-team-table .t-lbl.att{color:#e65100}
+.vac-my-table tr.del-confirm td { background: #ffcdd2 !important; border-color: #e53935 !important; animation: vac-pulse-red .6s ease-in-out infinite alternate; }
+.vac-my-table tr.del-confirm td.mc .my-del { display: flex !important; background: #d32f2f; color: #fff; border-color: #b71c1c; width: 20px; height: 20px; font-size: .7rem; }
+
+/* ── Legend ── */
+.vac-leg{display:flex;align-items:center;gap:3px}
+.vac-sw{display:inline-block;width:14px;height:10px;border:1px solid #bbb;border-radius:2px}
+.vac-sw-blocked{background:repeating-linear-gradient(45deg,#ffcdd2,#ffcdd2 2px,#fff 2px,#fff 5px)}
+.vac-sw-today{background:repeating-linear-gradient(135deg,#faf5eb,#faf5eb 3px,#f5eed8 3px,#f5eed8 5px)}
+.vac-empty{text-align:center;padding:2rem;color:#999}
+
+@media(max-width:768px){
+  .vac-header{flex-direction:column;align-items:stretch}
+  .vac-controls{flex-direction:column;align-items:stretch}
+  .vac-my-table td.mc{min-width:32px;height:36px}
+  .vac-team-table .tc{min-width:22px}
+  .vac-team-table .col-user{min-width:100px;max-width:120px}
+}
