@@ -1,76 +1,107 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; } ?>
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+
+$uid = $_SESSION['ss_user']['id'];
+$today = date('Y-m-d');
+
+// Stagiaires actifs (formateur affecté sur la période courante)
+$actifs = Db::fetchAll(
+    "SELECT DISTINCT s.id, s.type, s.date_debut, s.date_fin, s.statut,
+            u.prenom, u.nom, u.email, u.photo,
+            (SELECT e.nom FROM etages e WHERE e.id = s.etage_id) AS etage_nom,
+            (SELECT COUNT(*) FROM stagiaire_reports r WHERE r.stagiaire_id = s.id AND r.statut = 'soumis') AS reports_a_valider
+     FROM stagiaire_affectations a
+     JOIN stagiaires s ON s.id = a.stagiaire_id
+     JOIN users u ON u.id = s.user_id
+     WHERE a.formateur_id = ?
+       AND a.date_debut <= ? AND a.date_fin >= ?
+       AND s.statut IN ('prevu','actif')
+     ORDER BY s.date_debut DESC",
+    [$uid, $today, $today]
+);
+
+// Historique (stages terminés ou affectations expirées)
+$history = Db::fetchAll(
+    "SELECT DISTINCT s.id, s.type, s.date_debut, s.date_fin, s.statut,
+            u.prenom, u.nom, u.email, u.photo
+     FROM stagiaire_affectations a
+     JOIN stagiaires s ON s.id = a.stagiaire_id
+     JOIN users u ON u.id = s.user_id
+     WHERE a.formateur_id = ?
+       AND a.date_fin < ?
+     ORDER BY a.date_fin DESC LIMIT 20",
+    [$uid, $today]
+);
+
+$TYPE_LABELS = [
+    'decouverte' => 'Découverte', 'cfc_asa' => 'CFC ASA', 'cfc_ase' => 'CFC ASE',
+    'cfc_asfm' => 'CFC ASFM', 'bachelor_inf' => 'Bachelor inf.',
+    'civiliste' => 'Civiliste', 'autre' => 'Autre',
+];
+
+function render_stagiaire_card($s, $types, $isPast = false) {
+    $initials = strtoupper(mb_substr($s['prenom'] ?? '', 0, 1) . mb_substr($s['nom'] ?? '', 0, 1));
+    $pending = (int) ($s['reports_a_valider'] ?? 0);
+    $cls = 'ms-card' . ($isPast ? ' ms-card-past' : '');
+    ob_start(); ?>
+    <div class="<?= $cls ?>" data-open-stagiaire="<?= h($s['id']) ?>">
+        <div class="ms-card-avatar">
+            <?php if (!empty($s['photo'])): ?>
+                <img src="<?= h($s['photo']) ?>" alt="">
+            <?php else: ?>
+                <span><?= h($initials) ?></span>
+            <?php endif ?>
+        </div>
+        <div class="ms-card-body">
+            <div class="ms-card-name"><?= h($s['prenom'] . ' ' . $s['nom']) ?></div>
+            <div class="ms-card-type">
+                <?= h($types[$s['type']] ?? $s['type']) ?>
+                <?php if (!empty($s['etage_nom'])): ?> • <?= h($s['etage_nom']) ?><?php endif ?>
+            </div>
+            <div class="ms-card-period">
+                <?= h(fmt_date_fr($s['date_debut'])) ?> → <?= h(fmt_date_fr($s['date_fin'])) ?>
+            </div>
+            <?php if ($pending > 0): ?>
+                <div class="ms-card-pending">
+                    <i class="bi bi-bell-fill"></i> <?= $pending ?> report(s) à valider
+                </div>
+            <?php endif ?>
+        </div>
+    </div>
+    <?php return ob_get_clean();
+}
+?>
 <div class="ms-wrap">
-    <div class="ms-header">
+    <div class="ms-header mb-3">
         <h2 class="ms-title"><i class="bi bi-mortarboard-fill"></i> Mes stagiaires</h2>
-        <p class="ms-sub text-muted small mb-0">Liste des stagiaires dont vous êtes formateur — validez leurs reports et complétez les évaluations.</p>
+        <p class="ms-sub text-muted small mb-0">
+            Liste des stagiaires dont vous êtes formateur — validez leurs reports et complétez les évaluations.
+        </p>
     </div>
 
-    <div id="msActifs"></div>
-
-    <div class="ms-history-section">
-        <h5 class="mt-4"><i class="bi bi-clock-history"></i> Historique</h5>
-        <div id="msHistory"></div>
-    </div>
-</div>
-
-<!-- Modal détail stagiaire -->
-<div class="modal fade" id="msDetailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="msDetailTitle">Stagiaire</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <div class="modal-body" id="msDetailBody"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal évaluation -->
-<div class="modal fade" id="msEvalModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Évaluation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="msEvalId">
-        <input type="hidden" id="msEvalStagId">
-        <div class="row g-2 mb-2">
-          <div class="col-6">
-            <label class="form-label small fw-semibold">Date</label>
-            <input type="date" id="msEvalDate" class="form-control form-control-sm">
-          </div>
-          <div class="col-6">
-            <label class="form-label small fw-semibold">Période</label>
-            <select id="msEvalPeriode" class="form-select form-select-sm">
-              <option value="journaliere">Journalière</option>
-              <option value="hebdo">Hebdomadaire</option>
-              <option value="mi_stage">Mi-stage</option>
-              <option value="finale">Finale</option>
-            </select>
-          </div>
+    <h5 class="mt-3 mb-2"><i class="bi bi-person-check"></i> Actifs
+        <span class="text-muted small">(<?= count($actifs) ?>)</span>
+    </h5>
+    <?php if (!$actifs): ?>
+        <?= render_empty_state("Aucun stagiaire actif à votre charge", 'bi-person-badge') ?>
+    <?php else: ?>
+        <div class="ms-grid">
+            <?php foreach ($actifs as $s) echo render_stagiaire_card($s, $TYPE_LABELS, false) ?>
         </div>
-        <div class="row g-2">
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Initiative</label><input type="number" min="1" max="5" id="msNInit" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Communication</label><input type="number" min="1" max="5" id="msNComm" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Connaissances</label><input type="number" min="1" max="5" id="msNConn" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Autonomie</label><input type="number" min="1" max="5" id="msNAuto" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Savoir-être</label><input type="number" min="1" max="5" id="msNSav" class="form-control form-control-sm"></div>
-          <div class="col-6 col-md-4"><label class="form-label small fw-semibold">Ponctualité</label><input type="number" min="1" max="5" id="msNPonc" class="form-control form-control-sm"></div>
-        </div>
-        <label class="form-label small fw-semibold mt-2">Points forts</label>
-        <textarea id="msPFortes" class="form-control form-control-sm" rows="2"></textarea>
-        <label class="form-label small fw-semibold mt-2">Points à améliorer</label>
-        <textarea id="msPAmelio" class="form-control form-control-sm" rows="2"></textarea>
-        <label class="form-label small fw-semibold mt-2">Commentaire général</label>
-        <textarea id="msComGen" class="form-control form-control-sm" rows="3"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-sm btn-primary" id="btnSaveEval">Enregistrer</button>
-      </div>
+    <?php endif ?>
+
+    <div class="ms-history-section mt-4">
+        <h5><i class="bi bi-clock-history"></i> Historique
+            <span class="text-muted small">(<?= count($history) ?>)</span>
+        </h5>
+        <?php if (!$history): ?>
+            <div class="text-muted small">Aucun stagiaire passé.</div>
+        <?php else: ?>
+            <div class="ms-grid">
+                <?php foreach ($history as $s) echo render_stagiaire_card($s, $TYPE_LABELS, true) ?>
+            </div>
+        <?php endif ?>
     </div>
-  </div>
 </div>
