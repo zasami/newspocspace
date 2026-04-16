@@ -215,7 +215,7 @@ async function openDetail(id) {
                 <div class="ev-closed-text">
                     <strong>Inscriptions clôturées</strong>
                     <p class="mb-2">La date limite d'inscription est dépassée. Contactez <strong>${escapeHtml(nom)}</strong>, responsable de cet événement, pour une inscription de dernière minute.</p>
-                    <button class="btn btn-sm btn-outline-dark" id="btnContactOrga">
+                    <button class="ev-btn-contact" id="btnContactOrga">
                         <i class="bi bi-chat-dots"></i> Contacter ${escapeHtml(ev.createur_prenom || 'le responsable')}
                     </button>
                 </div>

@@ -261,15 +261,16 @@ function renderEventCard($ev, $now, $isPast = false) {
 }
 .ev-hero-close:hover { background: rgba(255,255,255,.35); color: #fff; }
 
-/* ── Description card ── */
+/* ── Description card (style plugin card) ── */
 .ev-description-box {
     font-size: .88rem; line-height: 1.7; white-space: pre-wrap;
-    padding: 16px 20px; border-radius: 14px; margin-bottom: 14px;
+    padding: 18px 22px; border-radius: 16px; margin-bottom: 14px;
     max-height: 180px; overflow-y: auto;
     color: var(--cl-text-secondary, #555);
-    background: var(--cl-accent-bg, #f4f1ec);
-    border: 1px solid rgba(0,0,0,.04);
-    box-shadow: inset 0 1px 3px rgba(0,0,0,.03);
+    background: var(--cl-surface, #fff);
+    border: 1.5px solid var(--cl-border, #e5e0da);
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    transition: border-color .2s, box-shadow .2s;
 }
 
 /* ── Info cards ── */
@@ -327,12 +328,19 @@ function renderEventCard($ev, $now, $isPast = false) {
 
 /* ── Closed inscription box ── */
 .ev-closed-box {
-    display: flex; gap: 14px; padding: 16px; border-radius: 12px;
-    background: var(--cl-surface, #fff); border: 1px solid var(--cl-border, #e5e5e5);
+    display: flex; gap: 14px; padding: 18px 20px; border-radius: 16px;
+    background: var(--cl-surface, #fff); border: 1.5px solid var(--cl-border, #e5e0da);
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
 }
 .ev-closed-icon { font-size: 1.8rem; color: var(--cl-text-muted, #999); flex-shrink: 0; padding-top: 2px; }
 .ev-closed-text { font-size: 0.88rem; line-height: 1.5; }
 .ev-closed-text p { color: var(--cl-text-secondary, #666); }
+.ev-btn-contact {
+    border: 1.5px solid #D4C4A8; color: #6B5B3E; background: transparent;
+    padding: 6px 16px; border-radius: 8px; font-size: .85rem; font-weight: 500;
+    cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.ev-btn-contact:hover { background: #D4C4A8; color: #4A3D2A; }
 
 /* ── Modal footer ── */
 #evDetailModal .modal-footer { border-top: 1px solid var(--cl-border, #e5e5e5); flex-wrap: wrap; }
