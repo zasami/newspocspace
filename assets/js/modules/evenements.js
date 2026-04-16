@@ -59,9 +59,9 @@ function updateCountdowns() {
         else if (h > 0) txt = `${h}h ${pad(m)}m ${pad(s)}s`;
         else txt = `${m}m ${pad(s)}s`;
 
-        // For timer overlay on image
-        if (el.classList.contains('ev-card-timer')) {
-            el.innerHTML = `<i class="bi bi-hourglass-split"></i> ${txt}`;
+        // For timer overlay on image (card or hero)
+        if (el.classList.contains('ev-card-timer') || el.classList.contains('ev-hero-timer')) {
+            el.innerHTML = `<i class="bi bi-hourglass-split"></i> <span>${txt}</span>`;
         }
         // For text countdown in card body
         const span = el.querySelector('span');
@@ -132,11 +132,24 @@ async function openDetail(id) {
     const eventNotPassed = ev.date_debut >= new Date().toISOString().slice(0, 10);
 
     // ── Header avec image hero ou simple ──
+    // Remove any old timer from header
+    headerEl.querySelectorAll('.ev-hero-timer').forEach(e => e.remove());
+
     if (ev.image_url) {
         headerEl.className = 'modal-header ev-hero-header';
         headerEl.style.cssText = `background-image: url('${ev.image_url.replace(/'/g, "\\'")}')`;
         titleEl.style.cssText = 'color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)';
         if (closeBtn) closeBtn.className = 'btn btn-sm ms-auto d-flex align-items-center justify-content-center ev-hero-close';
+
+        // Timer on hero image
+        if (countdownStr && !isInscrit) {
+            const timerEl = document.createElement('div');
+            timerEl.className = 'ev-hero-timer' + (deadlineExpired ? ' expired' : '');
+            if (!deadlineExpired && hasDeadline) timerEl.dataset.deadline = ev.date_limite_inscription;
+            const icon = deadlineExpired ? 'bi-lock' : 'bi-hourglass-split';
+            timerEl.innerHTML = `<i class="bi ${icon}"></i> <span>${escapeHtml(countdownStr)}</span>`;
+            headerEl.appendChild(timerEl);
+        }
     }
     titleEl.textContent = ev.titre;
 
@@ -178,8 +191,8 @@ async function openDetail(id) {
         html += '</div></div>';
     }
 
-    // ── Countdown ──
-    if (countdownStr) {
+    // ── Countdown (only in body if no hero image) ──
+    if (countdownStr && !ev.image_url) {
         const cls = deadlineExpired ? 'ev-countdown-badge expired' : 'ev-countdown-badge';
         const icon = deadlineExpired ? 'bi-lock' : 'bi-hourglass-split';
         html += `<div class="ev-section"><div class="${cls}"><i class="bi ${icon}"></i> ${escapeHtml(countdownStr)}</div></div>`;

@@ -211,13 +211,13 @@ function renderEventCard($ev, $now, $isPast = false) {
 /* ── Timer overlay on image ── */
 .ev-card-timer {
     position: absolute; bottom: 8px; right: 8px;
-    background: rgba(0,0,0,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    background: rgba(0,0,0,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .5px;
     padding: 4px 10px; border-radius: 8px;
     display: flex; align-items: center; gap: 5px;
     font-variant-numeric: tabular-nums;
 }
-.ev-card-timer.expired { background: rgba(192,57,43,.7); }
+.ev-card-timer.expired { background: rgba(123,59,44,.65); }
 .ev-card-date {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-width: 52px; padding: 8px; border-radius: 10px;
@@ -234,12 +234,12 @@ function renderEventCard($ev, $now, $isPast = false) {
 
 .ev-badge-inscrit { font-size: 0.72rem; font-weight: 600; color: #16A34A; background: rgba(22,163,74,0.1); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .ev-badge-ferme { font-size: 0.72rem; font-weight: 600; color: #888; background: rgba(0,0,0,0.06); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
-.ev-badge-complet { font-size: 0.72rem; font-weight: 600; color: #c0392b; background: rgba(192,57,43,0.08); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+.ev-badge-complet { font-size: 0.72rem; font-weight: 600; color: var(--cl-red-fg, #7B3B2C); background: var(--cl-red-bg, #E2B8AE); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .ev-badge-open { font-size: 0.72rem; font-weight: 600; color: var(--cl-accent, #2d4a43); background: rgba(45,74,67,0.08); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 
 /* ── Countdown ── */
 .ev-card-countdown { font-size: 0.72rem; font-weight: 600; color: var(--cl-accent, #EA9D3D); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
-.ev-card-countdown.expired { color: #c0392b; }
+.ev-card-countdown.expired { color: var(--cl-red-fg, #7B3B2C); }
 
 /* ── Hero header with image ── */
 .ev-hero-header {
@@ -318,13 +318,24 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-val-label { font-size: 0.7rem; color: var(--cl-text-muted, #999); font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
 .ev-val-value { font-weight: 600; }
 
-/* ── Modal countdown badge ── */
+/* ── Modal countdown badge (body, no image) ── */
 .ev-countdown-badge {
     display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
     border-radius: 8px; font-size: 0.82rem; font-weight: 600;
     background: rgba(234,157,61,0.1); color: #EA9D3D;
 }
-.ev-countdown-badge.expired { background: rgba(192,57,43,0.08); color: #c0392b; }
+.ev-countdown-badge.expired { background: var(--cl-red-bg, #E2B8AE); color: var(--cl-red-fg, #7B3B2C); }
+
+/* ── Hero timer (on image, bottom-right) ── */
+.ev-hero-timer {
+    position: absolute; bottom: 14px; right: 14px; z-index: 2;
+    background: rgba(0,0,0,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    color: #fff; font-size: .78rem; font-weight: 700; letter-spacing: .4px;
+    padding: 5px 12px; border-radius: 8px;
+    display: flex; align-items: center; gap: 5px;
+    font-variant-numeric: tabular-nums;
+}
+.ev-hero-timer.expired { background: rgba(123,59,44,.6); }
 
 /* ── Closed inscription box ── */
 .ev-closed-box {
