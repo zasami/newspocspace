@@ -1,4 +1,4 @@
-import { apiPost, escapeHtml } from '../helpers.js';
+import { apiPost, escapeHtml, ssConfirm } from '../helpers.js';
 
 let detailModal = null;
 
@@ -227,7 +227,13 @@ async function inscrire(eventId, champs) {
 }
 
 async function desinscrire(eventId) {
-    if (!confirm('Voulez-vous vous désinscrire de cet événement ?')) return;
+    const ok = await ssConfirm('Voulez-vous vous désinscrire de cet événement ?', {
+        title: 'Se désinscrire',
+        okText: 'Se désinscrire',
+        variant: 'danger',
+        icon: 'bi-x-circle',
+    });
+    if (!ok) return;
 
     const btn = document.getElementById('btnDesinscrire');
     btn.disabled = true;

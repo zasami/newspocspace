@@ -556,8 +556,17 @@ $initList = Db::fetchAll(
     // ─── Toggle status ───
     async function toggleEvent(statut) {
         if (!selectedId) return;
-        const labels = { ouvert: 'ouvrir', ferme: 'fermer', brouillon: 'remettre en brouillon', annule: 'annuler' };
-        if (!confirm('Voulez-vous ' + (labels[statut] || statut) + ' cet événement ?')) return;
+        const icons = { ouvert: 'bi-play-circle', ferme: 'bi-stop-circle', brouillon: 'bi-arrow-counterclockwise', annule: 'bi-x-circle' };
+        const types = { ouvert: 'success', ferme: 'warning', brouillon: 'info', annule: 'danger' };
+        const labels = { ouvert: 'Ouvrir', ferme: 'Fermer', brouillon: 'Remettre en brouillon', annule: 'Annuler' };
+        const ok = await adminConfirm({
+            title: labels[statut] || 'Changer le statut',
+            text: 'Voulez-vous ' + (labels[statut] || statut).toLowerCase() + ' cet événement ?',
+            icon: icons[statut] || 'bi-question-circle',
+            type: types[statut] || 'warning',
+            okText: labels[statut] || 'Confirmer',
+        });
+        if (!ok) return;
 
         const r = await adminApiPost('admin_toggle_evenement', { id: selectedId, statut });
         if (r.success) { toast('Statut mis à jour', 'success'); loadList(); loadDetail(selectedId); }
@@ -567,7 +576,14 @@ $initList = Db::fetchAll(
     // ─── Delete ───
     async function deleteEvent() {
         if (!selectedId) return;
-        if (!confirm('Supprimer cet événement et toutes ses inscriptions ?')) return;
+        const ok = await adminConfirm({
+            title: 'Supprimer l\'événement',
+            text: 'Supprimer cet événement et toutes ses inscriptions ? Cette action est irréversible.',
+            icon: 'bi-trash3',
+            type: 'danger',
+            okText: 'Supprimer',
+        });
+        if (!ok) return;
 
         const r = await adminApiPost('admin_delete_evenement', { id: selectedId });
         if (r.success) {
