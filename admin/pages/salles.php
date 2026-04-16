@@ -493,38 +493,62 @@ $users = Db::fetchAll(
         dates.forEach((d, di) => {
             const dateStr = fmtDate(d);
             const resas = dayResaMap[dateStr] || [];
+            if (!resas.length) return;
 
-            resas.forEach(r => {
-                const salle = salles.find(s => s.id === r.salle_id);
-                const color = salle ? salle.couleur : '#888';
-
+            // Calculate positions for overlap detection
+            const blocks = resas.map(r => {
                 const isJE = parseInt(r.journee_entiere);
                 const [hd, md] = r.heure_debut.split(':').map(Number);
                 const [hf, mf] = r.heure_fin.split(':').map(Number);
-                // Clamp to visible grid range
-                const clampedStartMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
-                const clampedEndMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
-                const topPx = clampedStartMin * HOUR_H / 60;
-                const heightPx = Math.max((clampedEndMin - clampedStartMin) * HOUR_H / 60, 18);
+                const startMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
+                const endMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
+                return { r, isJE, startMin, endMin };
+            });
+
+            // Assign columns for overlapping blocks
+            blocks.forEach(b => { b.col = 0; b.totalCols = 1; });
+            for (let i = 0; i < blocks.length; i++) {
+                const overlaps = [blocks[i]];
+                for (let j = 0; j < blocks.length; j++) {
+                    if (i === j) continue;
+                    if (blocks[j].startMin < blocks[i].endMin && blocks[j].endMin > blocks[i].startMin) {
+                        overlaps.push(blocks[j]);
+                    }
+                }
+                if (overlaps.length > 1) {
+                    // Sort by salle name for consistent ordering
+                    overlaps.sort((a, b) => (a.r.salle_nom || '').localeCompare(b.r.salle_nom || '') || a.r.titre.localeCompare(b.r.titre));
+                    overlaps.forEach((ob, idx) => {
+                        ob.col = idx;
+                        ob.totalCols = Math.max(ob.totalCols, overlaps.length);
+                    });
+                }
+            }
+
+            const firstCell = grid.querySelector('.sl-day-col[data-date="' + dateStr + '"][data-hour="' + HOURS_START + '"]');
+            if (!firstCell) return;
+            firstCell.style.position = 'relative';
+            firstCell.style.overflow = 'visible';
+
+            blocks.forEach(({ r, isJE, startMin, endMin, col, totalCols }) => {
+                const salle = salles.find(s => s.id === r.salle_id);
+                const color = salle ? salle.couleur : '#888';
+                const topPx = startMin * HOUR_H / 60;
+                const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 18);
+
+                const widthPct = 100 / totalCols;
+                const leftPct = col * widthPct;
 
                 const block = document.createElement('div');
                 block.className = 'sl-block' + (isJE ? ' sl-block-journee' : '');
-                block.style.cssText = 'background:' + color + ';top:' + topPx + 'px;height:' + heightPx + 'px';
+                block.style.cssText = 'background:' + color + ';top:' + topPx + 'px;height:' + heightPx + 'px;left:' + leftPct + '%;width:calc(' + widthPct + '% - 4px);right:auto';
                 block.dataset.id = r.id;
                 const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
                 block.innerHTML = '<div class="sl-block-title">' + escapeHtml(r.titre) + '</div>'
                     + (heightPx > 30 ? '<div class="sl-block-time">' + timeLabel + '</div>' : '')
                     + (heightPx > 45 ? '<div class="sl-block-user">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (filteredSalles.length > 1 ? ' · ' + escapeHtml(r.salle_nom) : '') + '</div>' : '');
                 block.addEventListener('click', () => showDetail(r));
-
-                // Attach to the day column — use a container approach
-                // We'll position blocks inside the first cell of each day column
-                const firstCell = grid.querySelector('.sl-day-col[data-date="' + dateStr + '"][data-hour="' + HOURS_START + '"]');
-                if (firstCell) {
-                    firstCell.style.position = 'relative';
-                    firstCell.style.overflow = 'visible';
-                    firstCell.appendChild(block);
-                }
+                firstCell.appendChild(block);
             });
         });
 

@@ -165,24 +165,53 @@ function renderGrid() {
     dates.forEach((d, di) => {
         const dateStr = fmtDate(d);
         const resas = dayResaMap[dateStr] || [];
+        if (!resas.length) return;
 
-        resas.forEach(r => {
-            const salle = salles.find(s => s.id === r.salle_id);
-            const color = salle ? salle.couleur : '#888';
-            const isMine = r.user_id === userId;
-
+        // Calculate positions for overlap detection
+        const blocks = resas.map(r => {
             const isJE = parseInt(r.journee_entiere);
             const [hd, md] = r.heure_debut.split(':').map(Number);
             const [hf, mf] = r.heure_fin.split(':').map(Number);
-            // Clamp to visible grid range
-            const clampedStartMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
-            const clampedEndMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
-            const topPx = clampedStartMin * HOUR_H / 60;
-            const heightPx = Math.max((clampedEndMin - clampedStartMin) * HOUR_H / 60, 16);
+            const startMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
+            const endMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
+            return { r, isJE, startMin, endMin };
+        });
+
+        // Assign columns for overlapping blocks
+        blocks.forEach(b => { b.col = 0; b.totalCols = 1; });
+        for (let i = 0; i < blocks.length; i++) {
+            const overlaps = [blocks[i]];
+            for (let j = 0; j < blocks.length; j++) {
+                if (i === j) continue;
+                if (blocks[j].startMin < blocks[i].endMin && blocks[j].endMin > blocks[i].startMin) {
+                    overlaps.push(blocks[j]);
+                }
+            }
+            if (overlaps.length > 1) {
+                overlaps.sort((a, b) => (a.r.salle_id || '').localeCompare(b.r.salle_id || '') || a.r.titre.localeCompare(b.r.titre));
+                overlaps.forEach((ob, idx) => {
+                    ob.col = idx;
+                    ob.totalCols = Math.max(ob.totalCols, overlaps.length);
+                });
+            }
+        }
+
+        const firstCell = grid.querySelector('.sl-cell[data-date="' + dateStr + '"][data-hour="' + HOURS_START + '"]');
+        if (!firstCell) return;
+
+        blocks.forEach(({ r, isJE, startMin, endMin, col, totalCols }) => {
+            const salle = salles.find(s => s.id === r.salle_id);
+            const color = salle ? salle.couleur : '#888';
+            const isMine = r.user_id === userId;
+            const topPx = startMin * HOUR_H / 60;
+            const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 16);
+
+            const widthPct = 100 / totalCols;
+            const leftPct = col * widthPct;
 
             const block = document.createElement('div');
             const hatchStyle = isJE ? 'background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(255,255,255,.18) 4px,rgba(255,255,255,.18) 8px);border:2px solid rgba(255,255,255,.35);' : '';
-            block.style.cssText = 'position:absolute;left:2px;right:2px;top:' + topPx + 'px;height:' + heightPx + 'px;background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s;' + hatchStyle;
+            block.style.cssText = 'position:absolute;top:' + topPx + 'px;height:' + heightPx + 'px;left:' + leftPct + '%;width:calc(' + widthPct + '% - 4px);background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s;' + hatchStyle;
             const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5);
             block.innerHTML = '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
                 + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + timeLabel + '</div>' : '')
@@ -191,9 +220,7 @@ function renderGrid() {
             block.addEventListener('click', (e) => { e.stopPropagation(); showDetail(r); });
             block.addEventListener('mouseenter', () => { block.style.transform = 'scale(1.02)'; });
             block.addEventListener('mouseleave', () => { block.style.transform = ''; });
-
-            const firstCell = grid.querySelector('.sl-cell[data-date="' + dateStr + '"][data-hour="' + HOURS_START + '"]');
-            if (firstCell) firstCell.appendChild(block);
+            firstCell.appendChild(block);
         });
     });
 
