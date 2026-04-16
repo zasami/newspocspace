@@ -69,7 +69,7 @@ $users = Db::fetchAll(
 .sl-color-trigger-chevron { font-size: .65rem; color: var(--cl-text-muted, #9B9B9B); transition: transform .2s; }
 .sl-color-trigger.open .sl-color-trigger-chevron { transform: rotate(180deg); }
 .sl-color-dropdown-wrap { position: relative; display: inline-block; }
-.sl-color-dropdown { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; background: var(--cl-surface, #fff); border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 12px; padding: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: none; min-width: 260px; }
+.sl-color-dropdown { position: fixed; z-index: 9999; background: var(--cl-surface, #fff); border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 12px; padding: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: none; min-width: 260px; }
 .sl-color-dropdown.show { display: block; animation: slDropFade .15s ease-out; }
 @keyframes slDropFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 .sl-color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -333,16 +333,24 @@ $users = Db::fetchAll(
         pickerEl.appendChild(sw);
     });
 
-    // Toggle dropdown
+    // Move dropdown to body so it's not clipped by modal overflow
+    document.body.appendChild(colorDropdown);
+
+    // Toggle dropdown — position relative to trigger
     colorTrigger.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = colorDropdown.classList.toggle('show');
         colorTrigger.classList.toggle('open', isOpen);
+        if (isOpen) {
+            const rect = colorTrigger.getBoundingClientRect();
+            colorDropdown.style.top = (rect.bottom + 6) + 'px';
+            colorDropdown.style.left = rect.left + 'px';
+        }
     });
 
     // Close on click outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.sl-color-dropdown-wrap')) {
+        if (!e.target.closest('.sl-color-dropdown') && !e.target.closest('.sl-color-trigger')) {
             colorDropdown.classList.remove('show');
             colorTrigger.classList.remove('open');
         }
