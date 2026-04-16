@@ -220,7 +220,7 @@ $initList = Db::fetchAll(
 
 <!-- ── Modal Liste Inscriptions ── -->
 <div class="modal fade" id="evInscritsModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="evInscritsTitle">Inscriptions</h5>
@@ -253,17 +253,6 @@ $initList = Db::fetchAll(
 .ev-admin-stat-label { font-size: .75rem; color: var(--cl-text-muted); font-weight: 500; }
 .ev-admin-stat-arrow { margin-left: auto; color: var(--cl-text-muted); font-size: .9rem; }
 .ev-admin-desc { font-size: .88rem; line-height: 1.6; white-space: pre-wrap; color: var(--cl-text-secondary); padding: 12px 16px; border-radius: 12px; background: var(--cl-accent-bg, #f4f1ec); border: 1px solid rgba(0,0,0,.04); max-height: 120px; overflow-y: auto; }
-
-/* ── Action buttons (inscrits modal) ── */
-.ev-action-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 8px; font-size: .82rem; font-weight: 500;
-  border: 1.5px solid var(--cl-border, #E8E5E0); background: var(--cl-surface, #fff);
-  color: var(--cl-text, #333); cursor: pointer; transition: all .2s;
-}
-.ev-action-btn:hover { background: var(--cl-accent-bg, #f4f1ec); border-color: #D4C4A8; }
-.ev-action-btn-primary { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
-.ev-action-btn-primary:hover { background: #a3c2b8; border-color: #a3c2b8; }
 
 /* ── Inscrits table wrap ── */
 .ev-inscrits-wrap {
@@ -1012,11 +1001,11 @@ $initList = Db::fetchAll(
         }).join('');
 
         body.innerHTML = `
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <button type="button" class="ev-action-btn" id="btnInscritsPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter PDF</button>
-                <button type="button" class="ev-action-btn" id="btnInscritsShare"><i class="bi bi-share"></i> Partager en interne</button>
-                <button type="button" class="ev-action-btn ev-action-btn-primary" id="btnInscritsEmail"><i class="bi bi-envelope"></i> Envoyer par email</button>
-                <button type="button" class="ev-action-btn" id="btnInscritsCsv"><i class="bi bi-download"></i> Export CSV</button>
+            <div class="d-flex flex-wrap gap-2 mb-3 justify-content-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnInscritsCsv"><i class="bi bi-download"></i> Export CSV</button>
+                <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter PDF</button>
+                <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsShare"><i class="bi bi-share"></i> Partager</button>
+                <button type="button" class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscritsEmail"><i class="bi bi-envelope"></i> Envoyer par email</button>
             </div>
             <div class="ev-inscrits-wrap">
                 <table class="ev-inscrits-table">
