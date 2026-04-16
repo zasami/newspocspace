@@ -239,12 +239,15 @@ function renderEventCard($ev, $now, $isPast = false) {
 }
 .ev-hero-close:hover { background: rgba(255,255,255,.35); color: #fff; }
 
-/* ── Description ── */
+/* ── Description card ── */
 .ev-description-box {
-    font-size: .9rem; line-height: 1.7; white-space: pre-wrap;
-    padding: 12px 16px; border-radius: 10px; margin-bottom: 14px;
-    background: var(--cl-surface, #fff); border-left: 3px solid var(--cl-accent, #2d4a43);
-    max-height: 160px; overflow-y: auto; color: var(--cl-text, #333);
+    font-size: .88rem; line-height: 1.7; white-space: pre-wrap;
+    padding: 16px 20px; border-radius: 14px; margin-bottom: 14px;
+    max-height: 180px; overflow-y: auto;
+    color: var(--cl-text-secondary, #555);
+    background: var(--cl-accent-bg, #f4f1ec);
+    border: 1px solid rgba(0,0,0,.04);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.03);
 }
 
 /* ── Info cards ── */
