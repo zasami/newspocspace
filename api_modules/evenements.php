@@ -28,8 +28,10 @@ function get_evenement_detail() {
 
     $ev = Db::fetch(
         "SELECT e.*,
-                (SELECT COUNT(*) FROM evenement_inscriptions WHERE evenement_id = e.id AND statut = 'inscrit') AS nb_inscrits
+                (SELECT COUNT(*) FROM evenement_inscriptions WHERE evenement_id = e.id AND statut = 'inscrit') AS nb_inscrits,
+                u.prenom AS createur_prenom, u.nom AS createur_nom, u.id AS createur_id
          FROM evenements e
+         LEFT JOIN users u ON u.id = e.created_by
          WHERE e.id = ? AND e.statut IN ('ouvert', 'ferme')",
         [$id]
     );
@@ -87,6 +89,11 @@ function inscrire_evenement() {
 
     $ev = Db::fetch("SELECT * FROM evenements WHERE id = ? AND statut = 'ouvert'", [$eventId]);
     if (!$ev) bad_request('Événement non disponible');
+
+    // Vérifier date limite
+    if ($ev['date_limite_inscription'] && strtotime($ev['date_limite_inscription']) < time()) {
+        bad_request('La date limite d\'inscription est dépassée');
+    }
 
     // Vérifier max participants
     if ($ev['max_participants']) {

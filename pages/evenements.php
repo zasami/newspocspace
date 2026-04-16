@@ -9,7 +9,7 @@ $uid  = $user['id'];
 // ─── Événements ouverts ou fermés (visibles) ───
 $events = Db::fetchAll(
     "SELECT e.id, e.titre, e.description, e.date_debut, e.date_fin, e.heure_debut, e.heure_fin,
-            e.lieu, e.image_url, e.max_participants, e.statut, e.inscription_obligatoire,
+            e.lieu, e.image_url, e.max_participants, e.statut, e.inscription_obligatoire, e.date_limite_inscription,
             (SELECT COUNT(*) FROM evenement_inscriptions WHERE evenement_id = e.id AND statut = 'inscrit') AS nb_inscrits,
             (SELECT COUNT(*) FROM evenement_champs WHERE evenement_id = e.id) AS nb_champs,
             (SELECT id FROM evenement_inscriptions WHERE evenement_id = e.id AND user_id = ? AND statut = 'inscrit' LIMIT 1) AS mon_inscription_id
@@ -109,9 +109,27 @@ function renderEventCard($ev, $now, $isPast = false) {
     $isFull = $ev['max_participants'] && $ev['nb_inscrits'] >= $ev['max_participants'];
     $isInscrit = !empty($ev['mon_inscription_id']);
     $isOpen = $ev['statut'] === 'ouvert';
-    $dateStr = fmt_date_fr($ev['date_debut'], 'd M Y');
-    if ($ev['date_fin'] && $ev['date_fin'] !== $ev['date_debut']) {
-        $dateStr .= ' → ' . fmt_date_fr($ev['date_fin'], 'd M Y');
+    $moisFr = ['','JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
+
+    // Countdown inscription
+    $countdown = '';
+    $deadlineExpired = false;
+    if (!empty($ev['date_limite_inscription']) && $isOpen && !$isInscrit) {
+        $dlTs = strtotime($ev['date_limite_inscription']);
+        $diff = $dlTs - time();
+        if ($diff <= 0) {
+            $deadlineExpired = true;
+            $jours = (int)abs($diff / 86400);
+            $countdown = 'Clôturé depuis ' . ($jours > 0 ? $jours . ' j' : "aujourd'hui");
+        } else {
+            $jours = (int)floor($diff / 86400);
+            $heures = (int)floor(($diff % 86400) / 3600);
+            if ($jours > 0) {
+                $countdown = $jours . ' j' . ($heures > 0 ? ' ' . $heures . ' h' : '') . ' restants';
+            } else {
+                $countdown = $heures . ' h restantes';
+            }
+        }
     }
     ?>
     <div class="ev-card <?= $isPast ? 'ev-card-past' : '' ?> <?= !empty($ev['image_url']) ? 'ev-card-has-img' : '' ?>" data-event-id="<?= h($ev['id']) ?>">
@@ -120,8 +138,7 @@ function renderEventCard($ev, $now, $isPast = false) {
         <?php else: ?>
             <div class="ev-card-date">
                 <div class="ev-card-day"><?= date('d', strtotime($ev['date_debut'])) ?></div>
-                <?php $moisFr = ['','JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC']; ?>
-            <div class="ev-card-month"><?= $moisFr[(int)date('n', strtotime($ev['date_debut']))] ?></div>
+                <div class="ev-card-month"><?= $moisFr[(int)date('n', strtotime($ev['date_debut']))] ?></div>
             </div>
         <?php endif; ?>
         <div class="ev-card-body">
@@ -132,10 +149,17 @@ function renderEventCard($ev, $now, $isPast = false) {
             <?php if ($ev['heure_debut']): ?>
                 <div class="ev-card-meta"><i class="bi bi-clock"></i> <?= h(substr($ev['heure_debut'], 0, 5)) ?><?= $ev['heure_fin'] ? ' - ' . h(substr($ev['heure_fin'], 0, 5)) : '' ?></div>
             <?php endif; ?>
+            <?php if ($countdown): ?>
+                <div class="ev-card-countdown <?= $deadlineExpired ? 'expired' : '' ?>">
+                    <i class="bi bi-<?= $deadlineExpired ? 'lock' : 'hourglass-split' ?>"></i> <?= h($countdown) ?>
+                </div>
+            <?php endif; ?>
             <div class="ev-card-footer">
                 <span class="ev-card-count"><i class="bi bi-people-fill"></i> <?= (int)$ev['nb_inscrits'] ?><?= $ev['max_participants'] ? '/' . (int)$ev['max_participants'] : '' ?></span>
                 <?php if ($isInscrit): ?>
                     <span class="ev-badge-inscrit"><i class="bi bi-check-circle-fill"></i> Inscrit</span>
+                <?php elseif ($deadlineExpired): ?>
+                    <span class="ev-badge-ferme"><i class="bi bi-lock"></i> Clôturé</span>
                 <?php elseif (!$isOpen): ?>
                     <span class="ev-badge-ferme">Fermé</span>
                 <?php elseif ($isFull): ?>
@@ -187,9 +211,13 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-card-count { font-size: 0.8rem; color: var(--cl-text-muted, #999); }
 
 .ev-badge-inscrit { font-size: 0.72rem; font-weight: 600; color: #16A34A; background: rgba(22,163,74,0.1); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
-.ev-badge-ferme { font-size: 0.75rem; font-weight: 500; color: #999; }
-.ev-badge-complet { font-size: 0.75rem; font-weight: 500; color: #c0392b; }
-.ev-badge-open { font-size: 0.75rem; font-weight: 500; color: var(--cl-accent, #2d4a43); }
+.ev-badge-ferme { font-size: 0.72rem; font-weight: 600; color: #888; background: rgba(0,0,0,0.06); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+.ev-badge-complet { font-size: 0.72rem; font-weight: 600; color: #c0392b; background: rgba(192,57,43,0.08); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+.ev-badge-open { font-size: 0.72rem; font-weight: 600; color: var(--cl-accent, #2d4a43); background: rgba(45,74,67,0.08); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
+
+/* ── Countdown ── */
+.ev-card-countdown { font-size: 0.72rem; font-weight: 600; color: var(--cl-accent, #EA9D3D); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.ev-card-countdown.expired { color: #c0392b; }
 
 /* ── Hero header with image ── */
 .ev-hero-header {
@@ -263,6 +291,23 @@ function renderEventCard($ev, $now, $isPast = false) {
 }
 .ev-val-label { font-size: 0.7rem; color: var(--cl-text-muted, #999); font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
 .ev-val-value { font-weight: 600; }
+
+/* ── Modal countdown badge ── */
+.ev-countdown-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+    border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    background: rgba(234,157,61,0.1); color: #EA9D3D;
+}
+.ev-countdown-badge.expired { background: rgba(192,57,43,0.08); color: #c0392b; }
+
+/* ── Closed inscription box ── */
+.ev-closed-box {
+    display: flex; gap: 14px; padding: 16px; border-radius: 12px;
+    background: var(--cl-surface, #fff); border: 1px solid var(--cl-border, #e5e5e5);
+}
+.ev-closed-icon { font-size: 1.8rem; color: var(--cl-text-muted, #999); flex-shrink: 0; padding-top: 2px; }
+.ev-closed-text { font-size: 0.88rem; line-height: 1.5; }
+.ev-closed-text p { color: var(--cl-text-secondary, #666); }
 
 /* ── Modal footer ── */
 #evDetailModal .modal-footer { border-top: 1px solid var(--cl-border, #e5e5e5); }

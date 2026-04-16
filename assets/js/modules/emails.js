@@ -156,6 +156,13 @@ export async function init() {
     // Load inbox
     await loadList();
     updateUnreadBadge();
+
+    // Auto-open compose if prefill data from another module
+    if (window.__SS_COMPOSE_PREFILL__) {
+        const prefill = window.__SS_COMPOSE_PREFILL__;
+        delete window.__SS_COMPOSE_PREFILL__;
+        setTimeout(() => openCompose(prefill), 400);
+    }
 }
 
 function setupColleagueSearch(inputId, dropdownId, selectedArr, tagsContainerId) {

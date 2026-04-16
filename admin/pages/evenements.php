@@ -111,6 +111,11 @@ $initList = Db::fetchAll(
             <label class="form-label small fw-semibold">Lieu</label>
             <input type="text" class="form-control" id="evLieu" placeholder="Ex: Salle polyvalente">
           </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Date limite d'inscription</label>
+            <input type="datetime-local" class="form-control" id="evDateLimite">
+            <small class="text-muted">Laissez vide = pas de limite</small>
+          </div>
           <div class="col-sm-3">
             <label class="form-label small fw-semibold">Max participants</label>
             <input type="number" class="form-control" id="evMaxPart" min="0" placeholder="Illimité">
@@ -511,6 +516,7 @@ $initList = Db::fetchAll(
         document.getElementById('evHeureFin').value = '';
         document.getElementById('evLieu').value = '';
         document.getElementById('evMaxPart').value = '';
+        document.getElementById('evDateLimite').value = '';
         document.getElementById('evStatut').value = 'brouillon';
         document.getElementById('evFieldsList').innerHTML = '';
         fieldCounter = 0;
@@ -536,6 +542,7 @@ $initList = Db::fetchAll(
         document.getElementById('evHeureFin').value = (ev.heure_fin || '').substring(0, 5);
         document.getElementById('evLieu').value = ev.lieu || '';
         document.getElementById('evMaxPart').value = ev.max_participants || '';
+        document.getElementById('evDateLimite').value = (ev.date_limite_inscription || '').replace(' ', 'T').substring(0, 16);
         document.getElementById('evStatut').value = ev.statut;
         setCoverImage(ev.image_url || '');
 
@@ -648,6 +655,7 @@ $initList = Db::fetchAll(
             heure_fin: document.getElementById('evHeureFin').value || null,
             lieu: document.getElementById('evLieu').value,
             max_participants: document.getElementById('evMaxPart').value || null,
+            date_limite_inscription: document.getElementById('evDateLimite').value || null,
             statut: document.getElementById('evStatut').value,
             image_url: document.getElementById('evImageUrl').value || null,
             champs: collectFields(),
