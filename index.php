@@ -54,6 +54,7 @@ $sidebarNav = [
         'items' => [
             'collegues'   => ['label' => 'Collègues',            'icon' => 'people'],
             'covoiturage' => ['label' => 'Covoiturage',      'icon' => 'car-front'],
+            'salles'      => ['label' => 'Réservation salles',  'icon' => 'door-open'],
             'emails'      => ['label' => 'Messagerie interne','icon' => 'chat-dots'],
             'mur'         => ['label' => 'Mur social',         'icon' => 'chat-square-heart'],
             'mes-stagiaires' => ['label' => 'Mes stagiaires', 'icon' => 'mortarboard'],
@@ -73,6 +74,7 @@ $sidebarNav = [
         'items' => [
             'annuaire'  => ['label' => 'Annuaire téléphonique', 'icon' => 'telephone'],
             'annonces'  => ['label' => 'Annonces officielles', 'icon' => 'megaphone'],
+            'evenements' => ['label' => 'Événements',          'icon' => 'calendar-event'],
             'votes'     => ['label' => 'Votes',           'icon' => 'hand-thumbs-up'],
             'pv'        => ['label' => 'Procès-Verbaux',  'icon' => 'file-earmark-text'],
             'sondages'  => ['label' => 'Sondages',        'icon' => 'clipboard2-check'],

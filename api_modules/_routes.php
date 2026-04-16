@@ -67,6 +67,9 @@ return [
     'alerts' => [
         'get_pending_alerts', 'mark_alert_read',
     ],
+    'evenements' => [
+        'get_evenements', 'get_evenement_detail', 'inscrire_evenement', 'desinscrire_evenement',
+    ],
     'menus' => [
         'get_menus_semaine', 'reserver_menu', 'annuler_reservation_menu',
     ],
@@ -99,6 +102,9 @@ return [
         'toggle_mur_like', 'get_mur_comments', 'add_mur_comment', 'delete_mur_comment',
         'get_mur_stats', 'upload_mur_media', 'delete_mur_media', 'get_mur_gallery', 'search_mur_users',
         'update_mur_comment',
+    ],
+    'salles' => [
+        'get_salles_disponibilites', 'create_reservation_salle', 'annuler_reservation_salle',
     ],
     'cuisine' => [
         'cuisine_get_menus_semaine', 'cuisine_save_menu', 'cuisine_delete_menu',

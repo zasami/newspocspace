@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -205,6 +205,7 @@ $sidebarCategories = [
         'label' => 'Outils',
         'items' => [
             'agenda'   => ['label' => 'Agenda',                 'icon' => 'calendar-week'],
+            'salles'   => ['label' => 'Réservation salles',     'icon' => 'door-open'],
             'todos'    => ['label' => 'Tâches',                'icon' => 'check2-square'],
             'notes'    => ['label' => 'Notes',                 'icon' => 'journal-text'],
             'pv'       => ['label' => 'Procès-Verbaux',       'icon' => 'file-earmark-text'],
@@ -213,6 +214,7 @@ $sidebarCategories = [
             'wiki'     => ['label' => 'Base de connaissances', 'icon' => 'book'],
             'wiki-analytics' => ['label' => 'Analytics Wiki',  'icon' => 'graph-up'],
             'annonces' => ['label' => 'Annonces officielles',  'icon' => 'megaphone'],
+            'evenements' => ['label' => 'Événements',            'icon' => 'calendar-event'],
         ],
     ],
     'rh' => [

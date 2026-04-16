@@ -1,0 +1,286 @@
+/**
+ * SpocSpace — Salles module (employee SPA)
+ * Weekly timeline + reservation form
+ */
+import { apiPost, escapeHtml } from '../helpers.js';
+
+const HOURS_START = 7;
+const HOURS_END = 20;
+const HOUR_H = 48;
+
+let salles = [];
+let reservations = [];
+let userId = '';
+let currentMonday = null;
+let filterSalle = '';
+let resaModal = null;
+let detailModal = null;
+let currentDetailResa = null;
+
+export async function init() {
+    const ssr = window.__SS_PAGE_DATA__;
+    if (ssr) {
+        salles = ssr.salles || [];
+        reservations = ssr.reservations || [];
+        userId = ssr.userId || '';
+        currentMonday = ssr.monday ? new Date(ssr.monday + 'T00:00:00') : getMonday(new Date());
+    } else {
+        currentMonday = getMonday(new Date());
+    }
+
+    // Modals
+    const resaEl = document.getElementById('slResaModal');
+    const detailEl = document.getElementById('slDetailModal');
+    if (resaEl) resaModal = new bootstrap.Modal(resaEl);
+    if (detailEl) detailModal = new bootstrap.Modal(detailEl);
+
+    // Nav
+    document.getElementById('slPrev')?.addEventListener('click', () => { currentMonday.setDate(currentMonday.getDate() - 7); loadWeek(); });
+    document.getElementById('slNext')?.addEventListener('click', () => { currentMonday.setDate(currentMonday.getDate() + 7); loadWeek(); });
+    document.getElementById('slToday')?.addEventListener('click', () => { currentMonday = getMonday(new Date()); loadWeek(); });
+
+    // Filter
+    document.getElementById('slSalleFilter')?.addEventListener('change', (e) => { filterSalle = e.target.value; renderGrid(); });
+
+    // New reservation
+    document.getElementById('slNewBtn')?.addEventListener('click', () => openResaModal());
+    document.getElementById('slResaSaveBtn')?.addEventListener('click', saveResa);
+
+    // Cancel from detail
+    document.getElementById('slDetailCancelBtn')?.addEventListener('click', cancelFromDetail);
+
+    // Cancel from list
+    document.getElementById('slMyResas')?.addEventListener('click', handleCancelResa);
+
+    // Render
+    updateWeekLabel();
+    renderGrid();
+}
+
+export function destroy() {
+    resaModal = null;
+    detailModal = null;
+}
+
+function getMonday(d) {
+    const dt = new Date(d);
+    const day = dt.getDay() || 7;
+    dt.setDate(dt.getDate() - day + 1);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+}
+
+function fmtDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function fmtDateFr(d) {
+    const jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const mois = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
+    return jours[d.getDay()] + ' ' + d.getDate() + ' ' + mois[d.getMonth()];
+}
+
+function getWeekDates() {
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(currentMonday);
+        d.setDate(d.getDate() + i);
+        dates.push(d);
+    }
+    return dates;
+}
+
+function updateWeekLabel() {
+    const dates = getWeekDates();
+    const moisFr = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    const d0 = dates[0], d6 = dates[6];
+    let label = d0.getDate() + ' ' + moisFr[d0.getMonth()];
+    if (d0.getMonth() !== d6.getMonth()) label += ' — ' + d6.getDate() + ' ' + moisFr[d6.getMonth()];
+    else label += ' — ' + d6.getDate();
+    label += ' ' + d6.getFullYear();
+    const el = document.getElementById('slWeekLabel');
+    if (el) el.textContent = label;
+}
+
+async function loadWeek() {
+    updateWeekLabel();
+    const dates = getWeekDates();
+    const res = await apiPost('get_salles_disponibilites', {
+        date_debut: fmtDate(dates[0]),
+        date_fin: fmtDate(dates[6])
+    });
+    if (res.success) {
+        reservations = res.reservations || [];
+        if (res.salles) salles = res.salles;
+        renderGrid();
+    }
+}
+
+function renderGrid() {
+    const dates = getWeekDates();
+    const today = fmtDate(new Date());
+    const totalHours = HOURS_END - HOURS_START;
+    const cols = dates.length;
+
+    const grid = document.getElementById('slGrid');
+    if (!grid) return;
+
+    grid.style.gridTemplateColumns = '50px repeat(' + cols + ', 1fr)';
+    grid.style.gridTemplateRows = 'auto repeat(' + totalHours + ', ' + HOUR_H + 'px)';
+
+    let html = '<div style="padding:8px 4px;font-weight:700;font-size:.7rem;text-align:center;background:var(--cl-bg,#F7F5F2);border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:2"></div>';
+    dates.forEach(d => {
+        const isToday = fmtDate(d) === today;
+        html += '<div style="padding:8px 4px;font-weight:700;font-size:.72rem;text-align:center;background:' + (isToday ? '#e8f0ed' : 'var(--cl-bg,#F7F5F2)') + ';border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:2;' + (isToday ? 'color:#2d4a43' : '') + '">' + fmtDateFr(d) + '</div>';
+    });
+
+    for (let h = HOURS_START; h < HOURS_END; h++) {
+        html += '<div style="grid-row:' + (h - HOURS_START + 2) + ';grid-column:1;height:' + HOUR_H + 'px;padding:2px 6px 0;font-size:.68rem;color:var(--cl-text-muted,#999);text-align:right;border-right:1.5px solid var(--cl-border-light,#F0EDE8);background:var(--cl-surface,#fff)">' + String(h).padStart(2, '0') + ':00</div>';
+        dates.forEach((d, di) => {
+            const isToday = fmtDate(d) === today;
+            html += '<div class="sl-cell" style="grid-row:' + (h - HOURS_START + 2) + ';grid-column:' + (di + 2) + ';height:' + HOUR_H + 'px;border-right:1px solid var(--cl-border-light,#F0EDE8);border-bottom:1px solid var(--cl-border-light,#F0EDE8);cursor:pointer;position:relative;overflow:visible;' + (isToday ? 'background:rgba(45,74,67,.04)' : '') + '" data-date="' + fmtDate(d) + '" data-hour="' + h + '"></div>';
+        });
+    }
+
+    grid.innerHTML = html;
+
+    // Place reservation blocks
+    const dayResaMap = {};
+    reservations.forEach(r => {
+        if (filterSalle && r.salle_id !== filterSalle) return;
+        if (!dayResaMap[r.date_jour]) dayResaMap[r.date_jour] = [];
+        dayResaMap[r.date_jour].push(r);
+    });
+
+    dates.forEach((d, di) => {
+        const dateStr = fmtDate(d);
+        const resas = dayResaMap[dateStr] || [];
+
+        resas.forEach(r => {
+            const salle = salles.find(s => s.id === r.salle_id);
+            const color = salle ? salle.couleur : '#888';
+            const isMine = r.user_id === userId;
+
+            const [hd, md] = r.heure_debut.split(':').map(Number);
+            const [hf, mf] = r.heure_fin.split(':').map(Number);
+            const startMin = (hd - HOURS_START) * 60 + md;
+            const endMin = (hf - HOURS_START) * 60 + mf;
+            const topPx = startMin * HOUR_H / 60;
+            const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 16);
+
+            const block = document.createElement('div');
+            block.style.cssText = 'position:absolute;left:2px;right:2px;top:' + topPx + 'px;height:' + heightPx + 'px;background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s';
+            block.innerHTML = '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
+                + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5) + '</div>' : '')
+                + (heightPx > 42 ? '<div style="opacity:.7;font-size:.6rem">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (isMine ? ' (moi)' : '') + '</div>' : '');
+
+            block.addEventListener('click', (e) => { e.stopPropagation(); showDetail(r); });
+            block.addEventListener('mouseenter', () => { block.style.transform = 'scale(1.02)'; });
+            block.addEventListener('mouseleave', () => { block.style.transform = ''; });
+
+            const firstCell = grid.querySelector('.sl-cell[data-date="' + dateStr + '"][data-hour="' + HOURS_START + '"]');
+            if (firstCell) firstCell.appendChild(block);
+        });
+    });
+
+    // Click empty cell → new reservation
+    grid.querySelectorAll('.sl-cell').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+            if (e.target !== cell) return;
+            const date = cell.dataset.date;
+            const hour = parseInt(cell.dataset.hour);
+            openResaModal(date, String(hour).padStart(2, '0') + ':00', String(hour + 1).padStart(2, '0') + ':00');
+        });
+    });
+}
+
+function openResaModal(date, debut, fin) {
+    if (!resaModal) return;
+    document.getElementById('slResaSalle').value = filterSalle || (salles[0]?.id || '');
+    document.getElementById('slResaTitre').value = '';
+    document.getElementById('slResaDesc').value = '';
+    document.getElementById('slResaDate').value = date || fmtDate(new Date());
+    document.getElementById('slResaDebut').value = debut || '08:00';
+    document.getElementById('slResaFin').value = fin || '09:00';
+    resaModal.show();
+}
+
+async function saveResa() {
+    const data = {
+        salle_id: document.getElementById('slResaSalle').value,
+        titre: document.getElementById('slResaTitre').value.trim(),
+        description: document.getElementById('slResaDesc').value.trim(),
+        date_jour: document.getElementById('slResaDate').value,
+        heure_debut: document.getElementById('slResaDebut').value,
+        heure_fin: document.getElementById('slResaFin').value,
+    };
+
+    if (!data.titre) { toast('Titre requis', 'error'); return; }
+    if (!data.date_jour) { toast('Date requise', 'error'); return; }
+
+    const res = await apiPost('create_reservation_salle', data);
+    if (res.success) {
+        resaModal.hide();
+        toast('Salle réservée !', 'success');
+        loadWeek();
+        // Refresh "mes réservations" → reload full page (SSR)
+        setTimeout(() => location.reload(), 600);
+    } else {
+        toast(res.message || 'Erreur', 'error');
+    }
+}
+
+function showDetail(r) {
+    currentDetailResa = r;
+    const salle = salles.find(s => s.id === r.salle_id);
+    document.getElementById('slDetailTitle').textContent = r.titre;
+
+    const dateFr = new Date(r.date_jour + 'T00:00:00').toLocaleDateString('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    let html = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+        + '<span style="width:12px;height:12px;border-radius:3px;background:' + escapeHtml(salle?.couleur || '#888') + ';display:inline-block"></span>'
+        + '<strong>' + escapeHtml(salle?.nom || '?') + '</strong></div>'
+        + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-calendar3"></i> ' + escapeHtml(dateFr) + '</p>'
+        + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-clock"></i> ' + r.heure_debut.substring(0, 5) + ' — ' + r.heure_fin.substring(0, 5) + '</p>'
+        + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-person"></i> ' + escapeHtml(r.prenom + ' ' + r.user_nom) + '</p>';
+    if (r.description) html += '<p style="margin:10px 0 0;font-size:.82rem;color:var(--cl-text-muted)">' + escapeHtml(r.description) + '</p>';
+
+    document.getElementById('slDetailBody').innerHTML = html;
+
+    // Show cancel button only for own reservations
+    const footer = document.getElementById('slDetailFooter');
+    footer.style.display = (r.user_id === userId) ? '' : 'none';
+
+    detailModal.show();
+}
+
+async function cancelFromDetail() {
+    if (!currentDetailResa) return;
+    const res = await apiPost('annuler_reservation_salle', { id: currentDetailResa.id });
+    if (res.success) {
+        detailModal.hide();
+        toast('Réservation annulée', 'success');
+        loadWeek();
+        setTimeout(() => location.reload(), 600);
+    } else {
+        toast(res.message || 'Erreur', 'error');
+    }
+}
+
+async function handleCancelResa(e) {
+    const btn = e.target.closest('.sl-cancel-resa');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const res = await apiPost('annuler_reservation_salle', { id });
+    if (res.success) {
+        toast('Réservation annulée', 'success');
+        btn.closest('.d-flex').remove();
+        loadWeek();
+    } else {
+        toast(res.message || 'Erreur', 'error');
+    }
+}
+
+function toast(msg, type) {
+    if (window.toast) window.toast(msg, type);
+    else if (window.showToast) window.showToast(msg, type);
+}

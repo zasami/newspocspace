@@ -212,6 +212,17 @@ return [
         'admin_set_backup_access_code', 'admin_check_backup_access_code',
         'admin_download_backup',
     ],
+    'evenements' => [
+        'admin_get_evenements', 'admin_get_evenement', 'admin_create_evenement',
+        'admin_update_evenement', 'admin_toggle_evenement', 'admin_delete_evenement',
+        'admin_export_evenement_inscriptions',
+    ],
+    'salles' => [
+        'admin_get_salles', 'admin_create_salle', 'admin_update_salle',
+        'admin_toggle_salle', 'admin_delete_salle',
+        'admin_get_reservations_salles', 'admin_create_reservation_salle',
+        'admin_update_reservation_salle', 'admin_delete_reservation_salle',
+    ],
     'annonces' => [
         'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
         'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',

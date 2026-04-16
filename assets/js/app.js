@@ -36,8 +36,10 @@ const moduleMap = {
     'wiki':         () => import('./modules/wiki.js'),
     'annonces':     () => import('./modules/annonces.js'),
     'annuaire':     () => import('./modules/annuaire.js'),
+    'evenements':   () => import('./modules/evenements.js'),
     'mes-stagiaires': () => import('./modules/mes-stagiaires.js'),
     'stagiaire-detail': () => import('./modules/stagiaire-detail.js'),
+    'salles':       () => import('./modules/salles.js'),
     'mon-stage':    () => import('./modules/mon-stage.js'),
     'report-edit':  () => import('./modules/report-edit.js'),
 };
