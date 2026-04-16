@@ -229,9 +229,6 @@ $initList = Db::fetchAll(
       <div class="modal-body" id="evInscritsBody"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
-        <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter PDF</button>
-        <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsShare"><i class="bi bi-share"></i> Partager</button>
-        <button type="button" class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscritsEmail"><i class="bi bi-envelope"></i> Envoyer par email</button>
       </div>
     </div>
   </div>
@@ -257,10 +254,24 @@ $initList = Db::fetchAll(
 .ev-admin-stat-arrow { margin-left: auto; color: var(--cl-text-muted); font-size: .9rem; }
 .ev-admin-desc { font-size: .88rem; line-height: 1.6; white-space: pre-wrap; color: var(--cl-text-secondary); padding: 12px 16px; border-radius: 12px; background: var(--cl-accent-bg, #f4f1ec); border: 1px solid rgba(0,0,0,.04); max-height: 120px; overflow-y: auto; }
 
-/* ── Inscrits modal table ── */
-.ev-inscrits-table { width: 100%; }
-.ev-inscrits-table th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--cl-text-muted); padding: 8px 12px; border-bottom: 2px solid var(--cl-border); }
-.ev-inscrits-table td { padding: 10px 12px; border-bottom: 1px solid var(--cl-border); font-size: .88rem; vertical-align: middle; }
+/* ── Action buttons (inscrits modal) ── */
+.ev-action-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; font-size: .82rem; font-weight: 500;
+  border: 1.5px solid var(--cl-border, #E8E5E0); background: var(--cl-surface, #fff);
+  color: var(--cl-text, #333); cursor: pointer; transition: all .2s;
+}
+.ev-action-btn:hover { background: var(--cl-accent-bg, #f4f1ec); border-color: #D4C4A8; }
+.ev-action-btn-primary { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
+.ev-action-btn-primary:hover { background: #a3c2b8; border-color: #a3c2b8; }
+
+/* ── Inscrits table wrap ── */
+.ev-inscrits-wrap {
+  border: 1.5px solid var(--cl-border, #E8E5E0); border-radius: 14px; overflow: hidden;
+}
+.ev-inscrits-table { width: 100%; border-collapse: collapse; }
+.ev-inscrits-table th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--cl-text-muted); padding: 10px 14px; background: var(--cl-accent-bg, #f8f6f3); border-bottom: 1.5px solid var(--cl-border); }
+.ev-inscrits-table td { padding: 10px 14px; border-bottom: 1px solid var(--cl-border); font-size: .88rem; vertical-align: middle; }
 .ev-inscrits-table tr:hover td { background: var(--cl-accent-bg, #f8f6f3); }
 .ev-inscrits-table tr:last-child td { border-bottom: none; }
 .ev-inscrits-avatar { width: 32px; height: 32px; border-radius: 50%; background: #D0C4D8; color: #5B4B6B; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .6rem; overflow: hidden; vertical-align: middle; margin-right: 8px; }
@@ -375,9 +386,6 @@ $initList = Db::fetchAll(
         renderList(initData);
 
         document.getElementById('btnNewEvent').addEventListener('click', openNewForm);
-        document.getElementById('btnInscritsPdf').addEventListener('click', exportPdf);
-        document.getElementById('btnInscritsShare').addEventListener('click', shareInscrits);
-        document.getElementById('btnInscritsEmail').addEventListener('click', emailInscrits);
         document.getElementById('btnAddField').addEventListener('click', addField);
         document.getElementById('btnSaveEvent').addEventListener('click', saveEvent);
 
@@ -1004,7 +1012,13 @@ $initList = Db::fetchAll(
         }).join('');
 
         body.innerHTML = `
-            <div class="table-responsive">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button type="button" class="ev-action-btn" id="btnInscritsPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter PDF</button>
+                <button type="button" class="ev-action-btn" id="btnInscritsShare"><i class="bi bi-share"></i> Partager en interne</button>
+                <button type="button" class="ev-action-btn ev-action-btn-primary" id="btnInscritsEmail"><i class="bi bi-envelope"></i> Envoyer par email</button>
+                <button type="button" class="ev-action-btn" id="btnInscritsCsv"><i class="bi bi-download"></i> Export CSV</button>
+            </div>
+            <div class="ev-inscrits-wrap">
                 <table class="ev-inscrits-table">
                     <thead><tr>
                         <th style="width:40px">#</th><th>Participant</th><th>Email</th><th>Inscrit le</th>
@@ -1013,6 +1027,12 @@ $initList = Db::fetchAll(
                     <tbody>${rows}</tbody>
                 </table>
             </div>`;
+
+        // Re-attach button handlers (they are inside the body now)
+        document.getElementById('btnInscritsPdf').addEventListener('click', exportPdf);
+        document.getElementById('btnInscritsShare').addEventListener('click', shareInscrits);
+        document.getElementById('btnInscritsEmail').addEventListener('click', emailInscrits);
+        document.getElementById('btnInscritsCsv').addEventListener('click', exportInscriptions);
 
         window._inscritsModal.show();
     }
