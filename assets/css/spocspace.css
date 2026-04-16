@@ -4928,3 +4928,11 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .ss-lightbox-wrap:fullscreen .ss-lightbox-content iframe { width: 100vw; height: calc(100vh - 96px); }
 .ss-lightbox-wrap:fullscreen .ss-lightbox-header,
 .ss-lightbox-wrap:fullscreen .ss-lightbox-footer { border-radius: 0; }
+
+/* ═══ Global modal blur effect ═══ */
+.modal-backdrop { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); background: rgba(0,0,0,.25) !important; }
+.modal-backdrop.show { opacity: 1 !important; }
+body.modal-open > .fe-sidebar,
+body.modal-open > .fe-topbar,
+body.modal-open > .fe-main { filter: blur(4px); transition: filter .2s ease; }
+body.modal-open > .fe-sidebar-overlay { filter: none; }
