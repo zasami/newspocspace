@@ -203,6 +203,23 @@ $users = Db::fetchAll(
             <input type="time" class="form-control form-control-sm" id="slResaFin" value="09:00" step="900">
           </div>
         </div>
+        <!-- Alert zone: existing reservations -->
+        <div id="slResaAlertWrap" style="display:none;margin-bottom:14px">
+          <div style="background:#FEF3C7;border:1.5px solid #F0C27F;border-radius:10px;overflow:hidden">
+            <div id="slResaAlertHeader" style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;color:#92400E">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span id="slResaAlertTitle">Créneaux déjà réservés</span>
+              <i class="bi bi-chevron-down ms-auto" id="slResaAlertChevron" style="transition:transform .2s;font-size:.7rem"></i>
+            </div>
+            <div id="slResaAlertBody" style="padding:0 12px 10px;font-size:.78rem;color:#6B5B3E;display:none">
+              <div id="slResaAlertList"></div>
+              <div style="margin-top:8px;font-size:.72rem;color:#92400E">
+                <i class="bi bi-lightbulb"></i> Choisissez un autre créneau, une autre date, ou une autre salle.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="sl-modal-field">
           <label>Réservé pour</label>
           <select class="form-select form-select-sm" id="slResaUser">
@@ -579,7 +596,79 @@ $users = Db::fetchAll(
         const hide = slJourneeCheck.checked;
         document.getElementById('slResaDebutWrap').style.display = hide ? 'none' : '';
         document.getElementById('slResaFinWrap').style.display = hide ? 'none' : '';
+        checkExistingReservations();
     });
+
+    // Check existing reservations when date/salle/journée changes
+    document.getElementById('slResaSalle').addEventListener('change', checkExistingReservations);
+    document.getElementById('slResaDate').addEventListener('change', checkExistingReservations);
+
+    // Alert collapse toggle
+    document.getElementById('slResaAlertHeader').addEventListener('click', () => {
+        const body = document.getElementById('slResaAlertBody');
+        const chev = document.getElementById('slResaAlertChevron');
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+    });
+
+    async function checkExistingReservations() {
+        const salleId = document.getElementById('slResaSalle').value;
+        const dateVal = document.getElementById('slResaDate').value;
+        const alertWrap = document.getElementById('slResaAlertWrap');
+        const alertList = document.getElementById('slResaAlertList');
+        const alertTitle = document.getElementById('slResaAlertTitle');
+        const alertBody = document.getElementById('slResaAlertBody');
+
+        if (!salleId || !dateVal) { alertWrap.style.display = 'none'; return; }
+
+        // Check from loaded reservations first, or fetch
+        const existing = reservations.filter(r => r.salle_id === salleId && r.date_jour === dateVal);
+        // Also exclude current reservation being edited
+        const editId = document.getElementById('slResaId').value;
+        const filtered = existing.filter(r => r.id !== editId);
+
+        if (!filtered.length) {
+            alertWrap.style.display = 'none';
+            return;
+        }
+
+        const salleObj = salles.find(s => s.id === salleId);
+        const salleName = salleObj ? salleObj.nom : 'cette salle';
+
+        // Calculate total hours booked
+        let totalMin = 0;
+        filtered.forEach(r => {
+            if (parseInt(r.journee_entiere)) { totalMin += (20 - 7) * 60; }
+            else {
+                const [h1,m1] = r.heure_debut.split(':').map(Number);
+                const [h2,m2] = r.heure_fin.split(':').map(Number);
+                totalMin += (h2 * 60 + m2) - (h1 * 60 + m1);
+            }
+        });
+        const totalH = Math.floor(totalMin / 60);
+        const totalM = totalMin % 60;
+        const durLabel = totalH > 0 ? totalH + 'h' + (totalM > 0 ? String(totalM).padStart(2,'0') : '') : totalM + 'min';
+
+        alertTitle.textContent = filtered.length + ' réservation' + (filtered.length > 1 ? 's' : '') + ' existante' + (filtered.length > 1 ? 's' : '') + ' (' + durLabel + ' occupées) — ' + salleName;
+
+        let listHtml = '';
+        filtered.forEach(r => {
+            const isJE = parseInt(r.journee_entiere);
+            const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
+            listHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)">'
+                + '<span style="width:8px;height:8px;border-radius:50%;background:' + escapeHtml(salleObj?.couleur || '#888') + ';flex-shrink:0"></span>'
+                + '<span style="font-weight:600">' + escapeHtml(r.titre) + '</span>'
+                + '<span style="margin-left:auto;white-space:nowrap">' + timeStr + '</span>'
+                + '</div>';
+        });
+        alertList.innerHTML = listHtml;
+
+        // Show alert expanded
+        alertWrap.style.display = 'block';
+        alertBody.style.display = 'block';
+        document.getElementById('slResaAlertChevron').style.transform = 'rotate(180deg)';
+    }
 
     function openResaModal(resa, date, debut, fin) {
         document.getElementById('slResaId').value = resa ? resa.id : '';
@@ -596,6 +685,7 @@ $users = Db::fetchAll(
         document.getElementById('slResaFin').value = resa && !isJournee ? resa.heure_fin.substring(0,5) : (fin || '09:00');
         if (resa) document.getElementById('slResaUser').value = resa.user_id;
         resaModal.show();
+        checkExistingReservations();
     }
 
     async function saveResa() {

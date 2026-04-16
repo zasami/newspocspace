@@ -52,6 +52,20 @@ export async function init() {
         });
     }
 
+    // Check existing reservations on date/salle/journée change
+    document.getElementById('slResaSalle')?.addEventListener('change', checkExistingReservations);
+    document.getElementById('slResaDate')?.addEventListener('change', checkExistingReservations);
+    if (slJourneeCheck) slJourneeCheck.addEventListener('change', checkExistingReservations);
+
+    // Alert collapse toggle
+    document.getElementById('slResaAlertHeader')?.addEventListener('click', () => {
+        const body = document.getElementById('slResaAlertBody');
+        const chev = document.getElementById('slResaAlertChevron');
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+    });
+
     // New reservation
     document.getElementById('slNewBtn')?.addEventListener('click', () => openResaModal());
     document.getElementById('slResaSaveBtn')?.addEventListener('click', saveResa);
@@ -250,6 +264,55 @@ function openResaModal(date, debut, fin) {
     document.getElementById('slResaDebut').value = debut || '08:00';
     document.getElementById('slResaFin').value = fin || '09:00';
     resaModal.show();
+    checkExistingReservations();
+}
+
+function checkExistingReservations() {
+    const salleId = document.getElementById('slResaSalle')?.value;
+    const dateVal = document.getElementById('slResaDate')?.value;
+    const alertWrap = document.getElementById('slResaAlertWrap');
+    const alertList = document.getElementById('slResaAlertList');
+    const alertTitle = document.getElementById('slResaAlertTitle');
+    const alertBody = document.getElementById('slResaAlertBody');
+
+    if (!alertWrap || !salleId || !dateVal) { if (alertWrap) alertWrap.style.display = 'none'; return; }
+
+    const filtered = reservations.filter(r => r.salle_id === salleId && r.date_jour === dateVal);
+
+    if (!filtered.length) { alertWrap.style.display = 'none'; return; }
+
+    const salleObj = salles.find(s => s.id === salleId);
+    const salleName = salleObj ? salleObj.nom : 'cette salle';
+
+    let totalMin = 0;
+    filtered.forEach(r => {
+        if (parseInt(r.journee_entiere)) { totalMin += 13 * 60; }
+        else {
+            const [h1, m1] = r.heure_debut.split(':').map(Number);
+            const [h2, m2] = r.heure_fin.split(':').map(Number);
+            totalMin += (h2 * 60 + m2) - (h1 * 60 + m1);
+        }
+    });
+    const totalH = Math.floor(totalMin / 60);
+    const totalM = totalMin % 60;
+    const durLabel = totalH > 0 ? totalH + 'h' + (totalM > 0 ? String(totalM).padStart(2, '0') : '') : totalM + 'min';
+
+    alertTitle.textContent = filtered.length + ' réservation' + (filtered.length > 1 ? 's' : '') + ' (' + durLabel + ') — ' + salleName;
+
+    let html = '';
+    filtered.forEach(r => {
+        const isJE = parseInt(r.journee_entiere);
+        const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + ' — ' + r.heure_fin.substring(0, 5);
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)">'
+            + '<span style="width:8px;height:8px;border-radius:50%;background:' + escapeHtml(salleObj?.couleur || '#888') + ';flex-shrink:0"></span>'
+            + '<span style="font-weight:600">' + escapeHtml(r.titre) + '</span>'
+            + '<span style="margin-left:auto;white-space:nowrap">' + timeStr + '</span>'
+            + '</div>';
+    });
+    alertList.innerHTML = html;
+    alertWrap.style.display = 'block';
+    alertBody.style.display = 'block';
+    document.getElementById('slResaAlertChevron').style.transform = 'rotate(180deg)';
 }
 
 async function saveResa() {

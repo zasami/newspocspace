@@ -137,6 +137,20 @@ $mesResas = Db::fetchAll(
             <input type="time" class="form-control form-control-sm" id="slResaFin" value="09:00" step="900">
           </div>
         </div>
+        <!-- Alert zone -->
+        <div id="slResaAlertWrap" style="display:none;margin-bottom:0">
+          <div style="background:#FEF3C7;border:1.5px solid #F0C27F;border-radius:10px;overflow:hidden">
+            <div id="slResaAlertHeader" style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;color:#92400E">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span id="slResaAlertTitle"></span>
+              <i class="bi bi-chevron-down ms-auto" id="slResaAlertChevron" style="transition:transform .2s;font-size:.7rem"></i>
+            </div>
+            <div id="slResaAlertBody" style="padding:0 12px 10px;font-size:.78rem;color:#6B5B3E;display:none">
+              <div id="slResaAlertList"></div>
+              <div style="margin-top:8px;font-size:.72rem;color:#92400E"><i class="bi bi-lightbulb"></i> Choisissez un autre créneau, une autre date, ou une autre salle.</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
