@@ -1,134 +1,185 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
-// ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['ss_user']['id'];
-$homeCurrentMois = date('Y-m');
-$homeDesirCount = (int) Db::getOne(
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+
+$user = $_SESSION['ss_user'];
+$uid  = $user['id'];
+$mois = date('Y-m');
+
+// ─── Stats ───
+$desirCount = (int) Db::getOne(
     "SELECT COUNT(*) FROM desirs WHERE user_id = ? AND mois_cible = ?",
-    [$uid, $homeCurrentMois]
+    [$uid, $mois]
 );
-$homeMaxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: 4);
-$homeUnread = (int) Db::getOne(
+$maxDesirs = (int) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'planning_desirs_max_mois'") ?: 4);
+
+$unread = (int) Db::getOne(
     "SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
     [$uid]
 );
+
+$soldeVac = (int) Db::getOne("SELECT solde_vacances FROM users WHERE id = ?", [$uid]);
+$prisVac = (int) Db::getOne(
+    "SELECT COALESCE(SUM(DATEDIFF(date_fin, date_debut) + 1), 0)
+     FROM absences WHERE user_id = ? AND type = 'vacances' AND statut = 'valide'
+       AND YEAR(date_debut) = YEAR(NOW())",
+    [$uid]
+);
+$restVac = max(0, $soldeVac - $prisVac);
+
+// Prochain service (assignation prévue)
+$nextShift = Db::fetch(
+    "SELECT pa.date, ht.code AS horaire_code, ht.couleur, ht.nom AS horaire_nom
+     FROM planning_assignations pa
+     JOIN plannings p ON p.id = pa.planning_id
+     JOIN horaires_types ht ON ht.id = pa.horaire_id
+     WHERE pa.user_id = ? AND pa.date >= CURDATE() AND p.statut IN ('provisoire','final','publie')
+     ORDER BY pa.date ASC LIMIT 1",
+    [$uid]
+);
 ?>
-<div class="page-header">
-  <h1>Bonjour <span id="homeUserName"></span></h1>
-  <p>Voici votre tableau de bord</p>
+<div class="home-wrap">
+    <div class="mb-3">
+        <h2 class="page-title mb-0">Bonjour <?= h($user['prenom'] ?? '') ?></h2>
+        <p class="text-muted small mb-0">Voici votre tableau de bord</p>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-md-4 col-lg">
+            <a class="stat-card text-decoration-none" data-link="planning" href="#">
+                <div class="stat-icon bg-teal"><i class="bi bi-calendar3"></i></div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="stat-value">
+                        <?php if ($nextShift): ?>
+                            <?= h(fmt_date_fr($nextShift['date'], 'd.m')) ?>
+                            <small class="stat-sub">· <?= h($nextShift['horaire_code']) ?></small>
+                        <?php else: ?>
+                            —
+                        <?php endif ?>
+                    </div>
+                    <div class="stat-label">Prochain service</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg">
+            <a class="stat-card text-decoration-none" data-link="desirs" href="#">
+                <div class="stat-icon bg-green"><i class="bi bi-star"></i></div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="stat-value"><?= $desirCount ?><small class="stat-sub">/<?= $maxDesirs ?></small></div>
+                    <div class="stat-label">Désirs ce mois</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg">
+            <a class="stat-card text-decoration-none" data-link="vacances" href="#">
+                <div class="stat-icon bg-orange"><i class="bi bi-calendar-x"></i></div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="stat-value"><?= $restVac ?></div>
+                    <div class="stat-label">Jours vacances restants</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg">
+            <a class="stat-card text-decoration-none" data-link="emails" href="#">
+                <div class="stat-icon bg-purple"><i class="bi bi-envelope"></i></div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="stat-value"><?= $unread ?></div>
+                    <div class="stat-label">Messages non lus</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Ma semaine + Menus — conservés en JS (navigation hebdo dynamique) -->
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="bi bi-calendar-week"></i> Ma semaine</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" id="homePrevWeek" title="Semaine précédente">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span id="homeWeekLabel" class="home-week-label"></span>
+                        <button class="btn btn-sm btn-outline-secondary" id="homeNextWeek" title="Semaine suivante">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="homeWeekPlanning">
+                    <div class="home-loading"><span class="spinner-border spinner-border-sm"></span> Chargement…</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="bi bi-egg-fried"></i> Menu du midi</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" id="menuPrevWeek" title="Semaine précédente">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span id="menuWeekLabel" class="home-week-label"></span>
+                        <button class="btn btn-sm btn-outline-secondary" id="menuNextWeek" title="Semaine suivante">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="homeMenus">
+                    <div class="home-loading"><span class="spinner-border spinner-border-sm"></span> Chargement…</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="stats-grid" id="homeStats">
-  <a href="#planning" data-link="planning" class="stat-card stat-card-link">
-    <div class="stat-icon teal"><i class="bi bi-calendar3"></i></div>
-    <div>
-      <div class="stat-value" id="statNextShift">—</div>
-      <div class="stat-label">Prochain service</div>
+<!-- Modal réservation repas -->
+<div class="modal fade" id="menuReservationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered home-modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="menuReservationTitle">Réserver un repas</h5>
+                <button type="button" class="btn btn-sm btn-light ms-auto home-close-btn" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body home-modal-body">
+                <div id="menuDetailContent"></div>
+                <hr>
+                <form id="menuReservationForm"></form>
+            </div>
+            <div class="modal-footer d-flex" id="menuReservationFooter">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
     </div>
-  </a>
-  <a href="#desirs" data-link="desirs" class="stat-card stat-card-link">
-    <div class="stat-icon green"><i class="bi bi-star"></i></div>
-    <div>
-      <div class="stat-value" id="statDesirs">—</div>
-      <div class="stat-label">Désirs ce mois</div>
-    </div>
-  </a>
-  <a href="#vacances" data-link="vacances" class="stat-card stat-card-link">
-    <div class="stat-icon orange"><i class="bi bi-calendar-x"></i></div>
-    <div>
-      <div class="stat-value" id="statVacances">—</div>
-      <div class="stat-label">Jours vacances restants</div>
-    </div>
-  </a>
-  <a href="#emails" data-link="emails" class="stat-card stat-card-link">
-    <div class="stat-icon purple"><i class="bi bi-envelope"></i></div>
-    <div>
-      <div class="stat-value" id="statMessages">—</div>
-      <div class="stat-label">Messages non lus</div>
-    </div>
-  </a>
 </div>
 
-<div class="d-flex gap-2 flex-wrap" style="align-items:flex-start">
-  <!-- Mon planning de la semaine -->
-  <div class="card" style="flex:1; min-width:300px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <h3 style="margin:0"><i class="bi bi-calendar-week"></i> Ma semaine</h3>
-      <div style="display:flex;align-items:center;gap:0.5rem">
-        <button class="btn btn-sm btn-outline-secondary" id="homePrevWeek" title="Semaine précédente"><i class="bi bi-chevron-left"></i></button>
-        <span id="homeWeekLabel" style="font-size:0.85rem;font-weight:600;min-width:160px;text-align:center"></span>
-        <button class="btn btn-sm btn-outline-secondary" id="homeNextWeek" title="Semaine suivante"><i class="bi bi-chevron-right"></i></button>
-      </div>
-    </div>
-    <div class="card-body" id="homeWeekPlanning">
-      <div class="empty-state">
-        <i class="bi bi-calendar3"></i>
-        <p>Aucun planning disponible</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Menu de la semaine -->
-  <div class="card" style="flex:1; min-width:300px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <h3 style="margin:0"><i class="bi bi-egg-fried"></i> Menu du midi</h3>
-      <div style="display:flex;align-items:center;gap:0.5rem">
-        <button class="btn btn-sm btn-outline-secondary" id="menuPrevWeek" title="Semaine précédente"><i class="bi bi-chevron-left"></i></button>
-        <span id="menuWeekLabel" style="font-size:0.85rem;font-weight:600;min-width:80px;text-align:center"></span>
-        <button class="btn btn-sm btn-outline-secondary" id="menuNextWeek" title="Semaine suivante"><i class="bi bi-chevron-right"></i></button>
-      </div>
-    </div>
-    <div class="card-body" id="homeMenus">
-      <div class="empty-state" style="padding:2rem">
-        <i class="bi bi-egg-fried"></i>
-        <p>Aucun menu disponible cette semaine</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal réservation -->
-  <div class="modal fade" id="menuReservationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:540px">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="menuReservationTitle">Réserver un repas</h5>
-          <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+<!-- Modal confirmation annulation -->
+<div class="modal fade" id="menuCancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered home-cancel-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-exclamation-triangle home-cancel-icon"></i>
+                    <span class="fw-semibold">Annuler la commande</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-light ms-auto home-close-btn" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0 small">Êtes-vous sûr de vouloir annuler votre commande ? Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer d-flex">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Non, garder</button>
+                <button type="button" class="btn btn-sm btn-danger ms-auto" id="menuCancelConfirmBtn">
+                    <i class="bi bi-x-circle"></i> Oui, annuler
+                </button>
+            </div>
         </div>
-        <div class="modal-body" style="max-height:60vh;overflow-y:auto">
-          <div id="menuDetailContent"></div>
-          <hr style="border-color:var(--ss-border-light);margin:1rem 0">
-          <form id="menuReservationForm"></form>
-        </div>
-        <div class="modal-footer d-flex" id="menuReservationFooter">
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
-        </div>
-      </div>
     </div>
-  </div>
-
-  <!-- Modal confirmation annulation commande -->
-  <div class="modal fade" id="menuCancelModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="d-flex align-items-center gap-3">
-            <i class="bi bi-exclamation-triangle" style="color:#c0392b;font-size:1.1rem"></i>
-            <span class="fw-semibold">Annuler la commande</span>
-          </div>
-          <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
-        </div>
-        <div class="modal-body">
-          <p style="margin:0;font-size:0.92rem">Êtes-vous sûr de vouloir annuler votre commande ? Cette action est irréversible.</p>
-        </div>
-        <div class="modal-footer d-flex">
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Non, garder</button>
-          <button type="button" class="btn btn-sm btn-danger ms-auto" id="menuCancelConfirmBtn"><i class="bi bi-x-circle"></i> Oui, annuler</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
-<script type="application/json" id="__ss_ssr__"><?= json_encode([
-    'desir_count' => $homeDesirCount,
-    'max_desirs'  => $homeMaxDesirs,
-    'unread_count' => $homeUnread,
-], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

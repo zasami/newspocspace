@@ -4505,3 +4505,22 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .vote-btn.contre:hover, .vote-btn.contre.active {
     background: var(--cl-red-bg); border-color: var(--cl-red-fg);
 }
+
+/* ═══ Home dashboard ═══ */
+.home-wrap { padding: 1rem; max-width: 1400px; margin: 0 auto; }
+.home-wrap .stat-card { cursor: pointer; color: var(--cl-text, #1A1A1A); }
+.home-wrap .stat-card:hover { text-decoration: none; }
+.home-week-label { font-size: .85rem; font-weight: 600; min-width: 160px; text-align: center; }
+.home-loading { text-align: center; padding: 2rem; color: var(--cl-text-muted, #9B9B9B); }
+
+/* Home modals */
+.home-modal-dialog { max-width: 540px; }
+.home-cancel-dialog { max-width: 420px; }
+.home-close-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--cl-border, #E8E5E0);
+    display: flex; align-items: center; justify-content: center;
+}
+.home-close-btn i { font-size: .85rem; }
+.home-modal-body { max-height: 60vh; overflow-y: auto; }
+.home-cancel-icon { color: var(--cl-red-fg); font-size: 1.1rem; }
