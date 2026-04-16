@@ -4,6 +4,7 @@
  * Support échange croisé multi-jours
  */
 import { apiPost, toast, escapeHtml, formatDate } from '../helpers.js';
+import { loadPage } from '../app.js';
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MOIS_NOMS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -59,7 +60,7 @@ export function init() {
 
     renderMyPlanningFromState();
     renderColleagueList();
-    renderChangements(ssrData.changements || []);
+    // Changements list is SSR-rendered — delegated click handler in bindEvents() covers it
 
     el('chgMyHint')?.classList.remove('chg-hidden');
 }
@@ -1053,8 +1054,8 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
 
 /* ═══ Changements list ═══ */
 async function loadChangements() {
-    const res = await apiPost('get_mes_changements');
-    renderChangements(res.changements || []);
+    // Reload full page for fresh SSR
+    loadPage('changements');
 }
 
 function renderChangements(items) {

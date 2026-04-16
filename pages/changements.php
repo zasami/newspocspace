@@ -1,13 +1,16 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
-// ─── Données serveur ──────────────────────────────────────────────────────────
-$uid = $_SESSION['ss_user']['id'];
-$chgCurrentMois = date('Y-m');
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
 
-// Mon planning du mois courant
-$chgPlanning = Db::fetch("SELECT id, statut FROM plannings WHERE mois_annee = ?", [$chgCurrentMois]);
-$chgMyPlanning = [];
-if ($chgPlanning) {
-    $chgMyPlanning = Db::fetchAll(
+$uid = $_SESSION['ss_user']['id'];
+$currentMois = date('Y-m');
+
+// ─── Mon planning du mois courant ─────────────────────────────────────────────
+$planning = Db::fetch("SELECT id, statut FROM plannings WHERE mois_annee = ?", [$currentMois]);
+$myPlanning = [];
+if ($planning) {
+    $myPlanning = Db::fetchAll(
         "SELECT pa.id AS assignation_id, pa.date_jour, pa.statut AS assign_statut,
                 ht.id AS horaire_type_id, ht.code AS horaire_code, ht.nom AS horaire_nom,
                 ht.couleur, ht.heure_debut, ht.heure_fin,
@@ -17,14 +20,14 @@ if ($chgPlanning) {
          LEFT JOIN modules m ON m.id = pa.module_id
          WHERE pa.planning_id = ? AND pa.user_id = ?
          ORDER BY pa.date_jour",
-        [$chgPlanning['id'], $uid]
+        [$planning['id'], $uid]
     );
 }
 
-// Collègues (même logique que get_collegues())
-$chgUserRow = Db::fetch("SELECT fonction_id FROM users WHERE id = ?", [$uid]);
-$chgFonctionId = $chgUserRow['fonction_id'] ?? null;
-$chgAllCollegues = Db::fetchAll(
+// ─── Collègues ────────────────────────────────────────────────────────────────
+$userRow = Db::fetch("SELECT fonction_id FROM users WHERE id = ?", [$uid]);
+$fonctionId = $userRow['fonction_id'] ?? null;
+$allCollegues = Db::fetchAll(
     "SELECT u.id, u.prenom, u.nom, u.photo, u.taux, u.fonction_id,
             f.nom AS fonction_nom, f.code AS fonction_code,
             m.nom AS module_nom, m.code AS module_code
@@ -44,8 +47,8 @@ $chgAllCollegues = Db::fetchAll(
     [$uid]
 );
 
-// Mes changements
-$chgChangements = Db::fetchAll(
+// ─── Mes changements ─────────────────────────────────────────────────────────
+$changements = Db::fetchAll(
     "SELECT ch.*,
             ud.prenom AS demandeur_prenom, ud.nom AS demandeur_nom,
             ude.prenom AS destinataire_prenom, ude.nom AS destinataire_nom,
@@ -67,10 +70,49 @@ $chgChangements = Db::fetchAll(
      ORDER BY ch.created_at DESC",
     [$uid, $uid]
 );
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+$nTotal     = count($changements);
+$nAttente   = count(array_filter($changements, fn($c) => $c['statut'] === 'en_attente_collegue'));
+$nAttenteAdmin = count(array_filter($changements, fn($c) => $c['statut'] === 'confirme_collegue'));
+$nValide    = count(array_filter($changements, fn($c) => $c['statut'] === 'valide'));
+$nRefuse    = count(array_filter($changements, fn($c) => $c['statut'] === 'refuse'));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+$STATUT_MAP = [
+    'en_attente_collegue' => ['badge-pending', 'En attente'],
+    'confirme_collegue'   => ['badge-info',    'Attente admin'],
+    'valide'              => ['badge-success',  'Validé'],
+    'refuse'              => ['badge-refused',  'Refusé'],
+];
+
+function chg_badge_html($code, $couleur, $moduleName = null) {
+    $bg = h($couleur ?: '#6c757d');
+    $html = '<span class="badge" style="background:' . $bg . ';color:#fff">' . h($code ?: '?') . '</span>';
+    if ($moduleName) $html .= ' <small class="text-muted">' . h($moduleName) . '</small>';
+    return $html;
+}
+
+function chg_fmt_datetime($dateStr) {
+    if (!$dateStr) return '';
+    try {
+        $d = new DateTime($dateStr);
+        return $d->format('j') . ' ' . mb_strtolower(strftime('%b', $d->getTimestamp())) . ' à ' . $d->format('H:i');
+    } catch (Exception $e) {
+        return h($dateStr);
+    }
+}
 ?>
-<div class="page-header">
-  <h1><i class="bi bi-arrow-left-right"></i> Changements d'horaire</h1>
-  <p>Proposer un échange d'horaire croisé avec un collègue</p>
+
+<?= render_page_header("Changements d'horaire", 'bi-arrow-left-right') ?>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-3">
+    <?= render_stat_card('Total', $nTotal, 'bi-arrow-left-right', 'neutral') ?>
+    <?= render_stat_card('Attente collègue', $nAttente, 'bi-clock-history', 'orange', $nAttente ? 'à confirmer' : null) ?>
+    <?= render_stat_card('Attente admin', $nAttenteAdmin, 'bi-hourglass-split', 'purple', $nAttenteAdmin ? 'validation direction' : null) ?>
+    <?= render_stat_card('Validés', $nValide, 'bi-check-circle', 'teal') ?>
+    <?= render_stat_card('Refusés', $nRefuse, 'bi-x-circle', 'red') ?>
 </div>
 
 <!-- ── Top row: calendrier + liste demandes ── -->
@@ -97,10 +139,87 @@ $chgChangements = Db::fetchAll(
   <div class="card chg-top-list">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3><i class="bi bi-list-check"></i> Mes demandes</h3>
-      <span class="badge badge-neutral" id="chgListCount">0</span>
+      <span class="badge badge-neutral" id="chgListCount"><?= $nTotal ?></span>
     </div>
     <div class="card-body chg-list-body">
-      <div id="changementsList"></div>
+      <div id="changementsList">
+        <?php if (!$changements): ?>
+          <div class="text-center text-muted py-4">Aucune demande</div>
+        <?php else: foreach ($changements as $ch):
+          $iAmDemandeur    = $ch['demandeur_id'] === $uid;
+          $iAmDestinataire = $ch['destinataire_id'] === $uid;
+          $sb = $STATUT_MAP[$ch['statut']] ?? ['badge-info', $ch['statut']];
+
+          $demandeurName    = h($ch['demandeur_prenom']) . ' ' . h($ch['demandeur_nom']);
+          $destinataireName = h($ch['destinataire_prenom']) . ' ' . h($ch['destinataire_nom']);
+
+          $horDem  = chg_badge_html($ch['horaire_demandeur_code'], $ch['horaire_demandeur_couleur'], $ch['module_demandeur_nom']);
+          $horDest = chg_badge_html($ch['horaire_destinataire_code'], $ch['horaire_destinataire_couleur'], $ch['module_destinataire_nom']);
+
+          $dateDem  = $ch['date_demandeur'] ?? $ch['date_jour'] ?? '';
+          $dateDest = $ch['date_destinataire'] ?? $ch['date_jour'] ?? '';
+
+          $hasDetails = !empty($ch['motif']) || !empty($ch['raison_refus']);
+
+          $createdDate = '';
+          if (!empty($ch['created_at'])) {
+              try { $createdDate = (new DateTime($ch['created_at']))->format('j M à H:i'); } catch (Exception $e) {}
+          }
+          $updatedDate = '';
+          if (!empty($ch['updated_at'])) {
+              try { $updatedDate = (new DateTime($ch['updated_at']))->format('j M à H:i'); } catch (Exception $e) {}
+          }
+
+          $roleTag = $iAmDemandeur
+              ? '<span class="chg-role-tag demand">Demandé</span>'
+              : '<span class="chg-role-tag invite">Reçu</span>';
+        ?>
+          <div class="chg-item">
+            <div class="chg-item-header">
+              <div class="chg-item-date">
+                <i class="bi bi-calendar3"></i>
+                <?= h(fmt_date_fr($dateDem)) ?> <i class="bi bi-arrow-left-right chg-date-arrow"></i> <?= h(fmt_date_fr($dateDest)) ?>
+              </div>
+              <?= $roleTag ?>
+              <span class="badge <?= h($sb[0]) ?>"><?= h($sb[1]) ?></span>
+            </div>
+            <div class="chg-exchange<?php if ($hasDetails) echo ' chg-exchange-has-details' ?>">
+              <div class="chg-person">
+                <div class="chg-person-name"><?= $demandeurName ?><?php if ($iAmDemandeur): ?> <span class="chg-person-you">(vous)</span><?php endif ?></div>
+                <div class="chg-person-shift"><span class="chg-person-shift-label">Cède :</span> <?= $horDem ?></div>
+              </div>
+              <div class="chg-arrow"><i class="bi bi-arrow-left-right"></i></div>
+              <div class="chg-person">
+                <div class="chg-person-name"><?= $destinataireName ?><?php if ($iAmDestinataire): ?> <span class="chg-person-you">(vous)</span><?php endif ?></div>
+                <div class="chg-person-shift"><span class="chg-person-shift-label">Cède :</span> <?= $horDest ?></div>
+              </div>
+              <?php if ($hasDetails): ?>
+                <button class="chg-details-toggle" data-toggle-details="<?= h($ch['id']) ?>" title="Voir les détails"><i class="bi bi-plus-lg"></i></button>
+              <?php endif ?>
+            </div>
+            <?php if ($ch['statut'] === 'en_attente_collegue' && $iAmDestinataire): ?>
+              <div class="d-flex gap-1 mt-2">
+                <button class="btn btn-success btn-sm" data-confirm="<?= h($ch['id']) ?>"><i class="bi bi-check-lg"></i> Accepter</button>
+                <button class="btn btn-danger btn-sm" data-refuse="<?= h($ch['id']) ?>"><i class="bi bi-x-lg"></i> Refuser</button>
+              </div>
+            <?php elseif ($ch['statut'] === 'en_attente_collegue' && $iAmDemandeur): ?>
+              <div class="d-flex gap-1 mt-2">
+                <button class="btn btn-light btn-sm" data-annuler="<?= h($ch['id']) ?>"><i class="bi bi-trash"></i> Annuler</button>
+              </div>
+            <?php endif ?>
+            <?php if ($hasDetails): ?>
+              <div class="chg-details" id="chgDetails-<?= h($ch['id']) ?>">
+                <?php if (!empty($ch['motif'])): ?>
+                  <div class="chg-info"><i class="bi bi-chat-dots"></i><span><?= h($ch['motif']) ?></span><?php if ($createdDate): ?><span class="chg-info-date"><?= h($createdDate) ?></span><?php endif ?></div>
+                <?php endif ?>
+                <?php if (!empty($ch['raison_refus'])): ?>
+                  <div class="chg-info refus"><i class="bi bi-chat-left-text"></i><span><?= h($ch['raison_refus']) ?></span><?php if ($updatedDate): ?><span class="chg-info-date"><?= h($updatedDate) ?></span><?php endif ?></div>
+                <?php endif ?>
+              </div>
+            <?php endif ?>
+          </div>
+        <?php endforeach; endif ?>
+      </div>
     </div>
   </div>
 </div>
@@ -148,7 +267,7 @@ $chgChangements = Db::fetchAll(
   </div>
 </div>
 
-<!-- ── Modal confirmation (Bootstrap 5 — style admin absences) ── -->
+<!-- ── Modal confirmation ── -->
 <div class="modal fade" id="chgConfirmModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable chg-modal-dialog">
     <div class="modal-content">
@@ -160,7 +279,6 @@ $chgChangements = Db::fetchAll(
         <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center chg-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="chgConfirmBody">
-        <!-- Filled by JS -->
       </div>
       <div class="modal-footer d-flex">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -170,7 +288,7 @@ $chgChangements = Db::fetchAll(
   </div>
 </div>
 
-<!-- ── Modal refus (Bootstrap 5 — style admin absences) ── -->
+<!-- ── Modal refus ── -->
 <div class="modal fade" id="refusModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered chg-modal-dialog-sm">
     <div class="modal-content">
@@ -195,9 +313,9 @@ $chgChangements = Db::fetchAll(
   </div>
 </div>
 <script type="application/json" id="__ss_ssr__"><?= json_encode([
-    'my_planning'  => $chgMyPlanning,
-    'collegues'    => $chgAllCollegues,
-    'changements'  => $chgChangements,
-    'my_fonction_id' => $chgFonctionId,
-    'current_mois' => $chgCurrentMois,
+    'my_planning'    => $myPlanning,
+    'collegues'      => $allCollegues,
+    'changements'    => $changements,
+    'my_fonction_id' => $fonctionId,
+    'current_mois'   => $currentMois,
 ], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

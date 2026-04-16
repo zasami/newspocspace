@@ -66,6 +66,7 @@ if (!function_exists('render_statut_badge')) {
             'actif'       => 'ss-badge-actif',
             'soumis'      => 'ss-badge-en_cours',
             'en_cours'    => 'ss-badge-en_cours',
+            'en_attente'  => 'ss-badge-en_cours',
             'brouillon'   => 'ss-badge-brouillon',
             'a_refaire'   => 'ss-badge-non_acquis',
             'non_acquis'  => 'ss-badge-non_acquis',

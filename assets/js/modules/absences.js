@@ -1,7 +1,8 @@
 /**
- * Absences module
+ * Absences module — SSR rendered, JS handles interactions only
  */
-import { apiPost, toast, escapeHtml, formatDate, statusBadge, absenceTypeBadge } from '../helpers.js';
+import { apiPost, toast, escapeHtml } from '../helpers.js';
+import { loadPage } from '../app.js';
 
 let _lbListeners = [];
 function _lbAdd(el, evt, fn, opts) { if (!el) return; el.addEventListener(evt, fn, opts); _lbListeners.push({ el, evt, fn, opts }); }
@@ -11,6 +12,7 @@ let selectedFile = null;
 
 export function init() {
     initDropZone();
+    initLightboxLinks();
 
     document.getElementById('absenceForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -32,15 +34,21 @@ export function init() {
             toast('Demande soumise');
             document.getElementById('absenceForm').reset();
             clearDropZone();
-            await loadAbsences();
+            // Reload page to get fresh SSR
+            loadPage('absences');
         } else {
             toast(res.message || 'Erreur');
         }
     });
+}
 
-    // Initial render from SSR data
-    const ssrAbsences = window.__SS_PAGE_DATA__?.absences || [];
-    renderAbsences(ssrAbsences);
+function initLightboxLinks() {
+    document.getElementById('absencesTableBody')?.querySelectorAll('.justif-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFileViewer(link.dataset.url, link.dataset.name, link.dataset.type);
+        });
+    });
 }
 
 function initDropZone() {
@@ -48,7 +56,6 @@ function initDropZone() {
     const fileInput = document.getElementById('absenceJustificatif');
     if (!dropZone || !fileInput) return;
 
-    // Click to browse
     dropZone.addEventListener('click', (e) => {
         if (e.target.closest('.abs-file-remove')) return;
         fileInput.click();
@@ -58,7 +65,6 @@ function initDropZone() {
         if (fileInput.files[0]) setDropZoneFile(fileInput.files[0]);
     });
 
-    // Drag & drop
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('abs-dropzone-drag'); });
     dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('abs-dropzone-drag'); });
     dropZone.addEventListener('drop', (e) => {
@@ -133,51 +139,6 @@ async function uploadJustificatif(absenceId, file) {
     }
 }
 
-async function loadAbsences() {
-    const res = await apiPost('get_mes_absences');
-    renderAbsences(res.absences || []);
-}
-
-function renderAbsences(absences) {
-    const tbody = document.getElementById('absencesTableBody');
-    if (!tbody) return;
-
-    if (!absences.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:2rem">Aucune absence enregistrée</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = absences.map(a => {
-        const path = a.justificatif_path || '';
-        const name = a.justificatif_name || 'Justificatif';
-        const ext = path.split('.').pop().toLowerCase();
-        const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
-        const isPdf = ext === 'pdf';
-        const fileType = isImage ? 'image' : (isPdf ? 'pdf' : 'other');
-
-        const justifCell = path
-            ? `<a href="#" class="justif-link" data-url="${escapeHtml(path)}" data-name="${escapeHtml(name)}" data-type="${fileType}" title="${escapeHtml(name)}"><i class="bi bi-check-lg" style="color:#2d4a43;"></i></a>`
-            : (a.justifie ? '<i class="bi bi-check-lg" style="color:#2d4a43;"></i>' : '<i class="bi bi-x-lg" style="color:#7B3B2C;"></i>');
-
-        return `<tr>
-        <td>${absenceTypeBadge(a.type)}</td>
-        <td>${escapeHtml(formatDate(a.date_debut))}</td>
-        <td>${escapeHtml(formatDate(a.date_fin))}</td>
-        <td>${statusBadge(a.statut)}</td>
-        <td>${justifCell}</td>
-        <td>${a.remplacement_prenom ? escapeHtml(a.remplacement_prenom + ' ' + a.remplacement_nom) : '<span class="text-muted">—</span>'}</td>
-      </tr>`;
-    }).join('');
-
-    // Attach lightbox click handlers
-    tbody.querySelectorAll('.justif-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            openFileViewer(link.dataset.url, link.dataset.name, link.dataset.type);
-        });
-    });
-}
-
 function openFileViewer(url, name, type) {
     const lb = document.getElementById('ztLightbox');
     const stage = document.getElementById('ztLbStage');
@@ -199,7 +160,7 @@ function openFileViewer(url, name, type) {
         stage.innerHTML = `<iframe src="${url}#toolbar=1"></iframe>`;
         toolbar.style.display = 'none';
     } else {
-        stage.innerHTML = `<div style="text-align:center;color:#fff;"><i class="bi bi-file-earmark" style="font-size:5rem;"></i><br><a href="${url}" target="_blank" style="color:#fff;text-decoration:underline;">Télécharger le fichier</a></div>`;
+        stage.innerHTML = `<div class="abs-lb-download"><i class="bi bi-file-earmark abs-lb-download-icon"></i><br><a href="${url}" target="_blank" class="abs-lb-download-link">Télécharger le fichier</a></div>`;
         toolbar.style.display = 'none';
     }
 

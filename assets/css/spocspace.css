@@ -4524,3 +4524,88 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .home-close-btn i { font-size: .85rem; }
 .home-modal-body { max-height: 60vh; overflow-y: auto; }
 .home-cancel-icon { color: var(--cl-red-fg); font-size: 1.1rem; }
+
+/* ═══ Planning — classes pour remplacer inline styles ═══ */
+.plan-btn-nav { height: 34px; padding: 0 8px; }
+.plan-btn-left { border-radius: 6px 0 0 6px; border-right: 0; }
+.plan-btn-right { border-radius: 0 6px 6px 0; border-left: 0; }
+.plan-month-input { width: 155px; height: 34px; border-radius: 0; }
+.plan-rows-sel { width: auto; height: 34px; }
+.plan-btn-34 { height: 34px; }
+.plan-btn-group-34 > .btn { height: 34px; }
+.plan-filter-badge {
+    background: var(--cl-border-light, #F0EDE8);
+    color: var(--cl-text, #1A1A1A);
+    margin-left: 4px;
+}
+.plan-filter-dialog { max-width: 520px; }
+.plan-filter-body { padding: 1rem 1.25rem; }
+.plan-filter-label {
+    font-size: .72rem; text-transform: uppercase;
+    letter-spacing: .5px; font-weight: 600;
+    color: var(--cl-text-muted, #9B9B9B);
+}
+.plan-filter-mini-btn { font-size: .75rem; padding: 2px 10px; }
+.plan-filter-mini-danger { color: var(--cl-red-fg); border-color: var(--cl-red-bg); }
+.plan-filter-list {
+    max-height: calc(100vh - 380px); min-height: 250px;
+    overflow-y: auto;
+    background: var(--cl-bg, #F7F5F2);
+    border: 1px solid var(--cl-border, #E8E5E0);
+    border-radius: 8px; padding: 4px 0;
+}
+
+/* ── Desirs SSR layout ── */
+#desirFormCard { flex: 0 0 380px; }
+.desir-right-panel { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 0; }
+.desir-detail-panel {
+    padding: .85rem 1.1rem; font-size: .9rem; color: var(--ss-text, #2c2c2c);
+    background: #faf7f0; border-bottom: 1px solid var(--ss-border-light, #e8e4da);
+    border-left: 3px solid var(--ss-teal, #2a9d8f);
+}
+.desir-perm-header { border-top: 1px solid var(--border-color, #e1e5eb); }
+.desir-banner-readonly {
+    margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; font-size: 0.8rem;
+    border-radius: 8px; background: #fff8e1; border: 1px solid #f4d03f; color: #7d5d0e;
+}
+.desir-banner-info {
+    margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; font-size: 0.8rem;
+    border-radius: 8px; background: rgba(26,26,26,0.04); border: 1px solid #d1cfc5; color: #1a1a1a;
+}
+.desir-banner-perm { font-size: 0.8rem; }
+.desir-submit-btn { border-radius: 10px; padding: 10px 20px; }
+.desir-badge-perm {
+    background: rgba(255,193,7,0.15); color: #d4a017;
+    font-size: 0.68rem; border: 1px solid rgba(255,193,7,0.3);
+}
+.desir-badge-modif {
+    background: #fff3cd; color: #856404; border: 1px solid #ffc107;
+}
+.desir-badge-modif-small {
+    background: #fff3cd; color: #856404; font-size: 0.68rem; border: 1px solid #ffc107;
+}
+.desir-badge-pending {
+    background: #fff3cd; color: #856404; border: 1px solid #ffc107;
+}
+
+/* ── Vacances SSR helpers ── */
+.vac-sw-valide { background: #a5d6a7; }
+.vac-sw-attente { background: #ffe082; }
+.vac-module-filter { width: 170px; }
+
+/* ═══ Absences SSR layout ═══ */
+.abs-layout { display: flex; gap: .75rem; flex-wrap: wrap; }
+.abs-form-card { flex: 0 0 360px; }
+.abs-list-card { flex: 1; min-width: 300px; }
+.abs-empty-cell { padding: 2rem; }
+.abs-icon-ok { color: #2d4a43; }
+.abs-icon-no { color: #7B3B2C; }
+.abs-toolbar-sep { width: 1px; height: 24px; background: rgba(255,255,255,.25); margin: 0 4px; }
+.chg-exchange-has-details { position: relative; }
+.abs-lb-download { text-align: center; color: #fff; }
+.abs-lb-download-icon { font-size: 5rem; }
+.abs-lb-download-link { color: #fff; text-decoration: underline; }
+@media (max-width: 768px) {
+  .abs-layout { flex-direction: column; }
+  .abs-form-card { flex: 1 1 auto; }
+}

@@ -1,7 +1,12 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
-// ─── Données serveur ──────────────────────────────────────────────────────────
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+
 $uid = $_SESSION['ss_user']['id'];
-$absInitData = Db::fetchAll(
+
+// ─── Données serveur ──────────────────────────────────────────────────────────
+$absences = Db::fetchAll(
     "SELECT a.*, u2.prenom AS valide_par_prenom, u2.nom AS valide_par_nom,
             ur.prenom AS remplacement_prenom, ur.nom AS remplacement_nom
      FROM absences a
@@ -11,8 +16,29 @@ $absInitData = Db::fetchAll(
      ORDER BY a.date_debut DESC",
     [$uid]
 );
-?>
 
+// ─── Stats ────────────────────────────────────────────────────────────────────
+$nTotal     = count($absences);
+$nAttente   = count(array_filter($absences, fn($a) => $a['statut'] === 'en_attente'));
+$nValide    = count(array_filter($absences, fn($a) => $a['statut'] === 'valide'));
+$nRefuse    = count(array_filter($absences, fn($a) => $a['statut'] === 'refuse'));
+$nJustifie  = count(array_filter($absences, fn($a) => !empty($a['justificatif_path']) || !empty($a['justifie'])));
+
+// Helpers badge
+$TYPE_BADGES = [
+    'vacances'      => ['badge-info',    'Vacances'],
+    'maladie'       => ['badge-refused', 'Maladie'],
+    'accident'      => ['badge-refused', 'Accident'],
+    'conge_special' => ['badge-purple',  'Congé spécial'],
+    'formation'     => ['badge-info',    'Formation'],
+    'autre'         => ['badge-pending', 'Autre'],
+];
+$STATUT_BADGES = [
+    'en_attente' => ['badge-pending', 'En attente'],
+    'valide'     => ['badge-success', 'Validé'],
+    'refuse'     => ['badge-refused', 'Refusé'],
+];
+?>
 
 <!-- Lightbox -->
 <div id="ztLightbox" class="ss-lightbox ss-lightbox-hidden">
@@ -25,20 +51,26 @@ $absInitData = Db::fetchAll(
       <button type="button" class="ss-lb-btn" id="ztLbZoomOut"><i class="bi bi-zoom-out"></i></button>
       <span class="ss-lb-zoom" id="ztLbZoomLevel">100%</span>
       <button type="button" class="ss-lb-btn" id="ztLbZoomIn"><i class="bi bi-zoom-in"></i></button>
-      <span style="width:1px;height:24px;background:rgba(255,255,255,.25);margin:0 4px;"></span>
+      <span class="abs-toolbar-sep"></span>
       <button type="button" class="ss-lb-btn" id="ztLbReset"><i class="bi bi-arrows-angle-contract"></i></button>
     </div>
   </div>
 </div>
 
-<div class="page-header">
-  <h1><i class="bi bi-calendar-x"></i> Mes Absences</h1>
-  <p>Demandes de vacances, maladie, et autres absences</p>
+<?= render_page_header('Mes Absences', 'bi-calendar-x') ?>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-3">
+    <?= render_stat_card('Total', $nTotal, 'bi-calendar-x', 'neutral') ?>
+    <?= render_stat_card('En attente', $nAttente, 'bi-clock-history', 'orange', $nAttente ? 'à traiter' : null) ?>
+    <?= render_stat_card('Validées', $nValide, 'bi-check-circle', 'teal') ?>
+    <?= render_stat_card('Refusées', $nRefuse, 'bi-x-circle', 'red') ?>
+    <?= render_stat_card('Justifiées', $nJustifie, 'bi-file-earmark-check', 'green', $nTotal ? 'sur ' . $nTotal : null) ?>
 </div>
 
-<div class="d-flex gap-2 flex-wrap">
+<div class="abs-layout">
   <!-- Formulaire -->
-  <div class="card" style="flex:0 0 360px;">
+  <div class="card abs-form-card">
     <div class="card-header">
       <h3>Nouvelle demande</h3>
     </div>
@@ -70,7 +102,7 @@ $absInitData = Db::fetchAll(
         </div>
         <div class="form-group">
           <label class="form-label">Justificatif (optionnel)</label>
-          <input type="file" id="absenceJustificatif" accept="image/*,.pdf" style="display:none;">
+          <input type="file" id="absenceJustificatif" accept="image/*,.pdf" class="d-none">
           <div id="absenceDropZone" class="abs-dropzone">
             <div class="abs-dropzone-content" id="absDropContent">
               <i class="bi bi-cloud-arrow-up"></i>
@@ -87,11 +119,11 @@ $absInitData = Db::fetchAll(
   </div>
 
   <!-- Liste -->
-  <div class="card" style="flex:1; min-width:300px;">
+  <div class="card abs-list-card">
     <div class="card-header">
       <h3>Mes demandes</h3>
     </div>
-    <div class="card-body" style="padding:0;">
+    <div class="card-body p-0">
       <div class="table-wrap">
         <table class="table">
           <thead>
@@ -105,11 +137,45 @@ $absInitData = Db::fetchAll(
             </tr>
           </thead>
           <tbody id="absencesTableBody">
-            <tr><td colspan="6" class="text-center text-muted" style="padding:2rem">Chargement...</td></tr>
+            <?php if (!$absences): ?>
+              <tr><td colspan="6" class="text-center text-muted abs-empty-cell">Aucune absence enregistrée</td></tr>
+            <?php else: foreach ($absences as $a):
+              $tb = $TYPE_BADGES[$a['type']] ?? ['badge-info', $a['type']];
+              $sb = $STATUT_BADGES[$a['statut']] ?? ['badge-info', $a['statut']];
+
+              $path = $a['justificatif_path'] ?? '';
+              $name = $a['justificatif_name'] ?? 'Justificatif';
+              $ext  = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+              $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif']);
+              $isPdf   = $ext === 'pdf';
+              $fileType = $isImage ? 'image' : ($isPdf ? 'pdf' : 'other');
+            ?>
+              <tr>
+                <td><span class="badge <?= h($tb[0]) ?>"><?= h($tb[1]) ?></span></td>
+                <td><?= h(fmt_date_fr($a['date_debut'])) ?></td>
+                <td><?= h(fmt_date_fr($a['date_fin'])) ?></td>
+                <td><span class="badge <?= h($sb[0]) ?>"><?= h($sb[1]) ?></span></td>
+                <td>
+                  <?php if ($path): ?>
+                    <a href="#" class="justif-link" data-url="<?= h($path) ?>" data-name="<?= h($name) ?>" data-type="<?= h($fileType) ?>" title="<?= h($name) ?>"><i class="bi bi-check-lg abs-icon-ok"></i></a>
+                  <?php elseif (!empty($a['justifie'])): ?>
+                    <i class="bi bi-check-lg abs-icon-ok"></i>
+                  <?php else: ?>
+                    <i class="bi bi-x-lg abs-icon-no"></i>
+                  <?php endif ?>
+                </td>
+                <td>
+                  <?php if (!empty($a['remplacement_prenom'])): ?>
+                    <?= h($a['remplacement_prenom'] . ' ' . $a['remplacement_nom']) ?>
+                  <?php else: ?>
+                    <span class="text-muted">—</span>
+                  <?php endif ?>
+                </td>
+              </tr>
+            <?php endforeach; endif ?>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
-<script type="application/json" id="__ss_ssr__"><?= json_encode(['absences' => $absInitData], JSON_HEX_TAG | JSON_HEX_APOS) ?></script>

@@ -1,10 +1,14 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
-// ─── Données serveur ──────────────────────────────────────────────────────────
+<?php
+require_once __DIR__ . '/../init.php';
+if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
+require_once __DIR__ . '/_partials/helpers.php';
+
 $uid = $_SESSION['ss_user']['id'];
 $vacYear = (int) date('Y');
 $vacDebut = "$vacYear-01-01";
 $vacFin = "$vacYear-12-31";
 
+// Collaborateurs actifs
 $vacUsers = Db::fetchAll(
     "SELECT u.id, u.prenom, u.nom, u.taux, u.solde_vacances,
             f.code AS fonction_code, f.nom AS fonction_nom,
@@ -16,6 +20,8 @@ $vacUsers = Db::fetchAll(
      WHERE u.is_active = 1
      ORDER BY m.ordre, f.ordre, u.nom"
 );
+
+// Absences vacances de l'annee
 $vacAbsences = Db::fetchAll(
     "SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.type, a.statut,
             u.prenom, u.nom
@@ -27,13 +33,19 @@ $vacAbsences = Db::fetchAll(
      ORDER BY a.date_debut",
     [$vacFin, $vacDebut]
 );
+
+// Periodes bloquees
 $vacBloquees = Db::fetchAll(
     "SELECT id, date_debut, date_fin, motif FROM periodes_bloquees
      WHERE date_debut <= ? AND date_fin >= ?
      ORDER BY date_debut",
     [$vacFin, $vacDebut]
 );
+
+// Modules
 $vacModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+
+// Mon solde
 $vacMoi = Db::fetch("SELECT solde_vacances FROM users WHERE id = ?", [$uid]);
 $vacMonSolde = floatval($vacMoi['solde_vacances'] ?? 27);
 $vacJoursUtilises = (int) Db::getOne(
@@ -43,6 +55,17 @@ $vacJoursUtilises = (int) Db::getOne(
        AND date_debut <= ? AND date_fin >= ?",
     [$vacFin, $vacDebut, $uid, $vacFin, $vacDebut]
 );
+$vacRestant = $vacMonSolde - $vacJoursUtilises;
+
+// Stats
+$mesVacances = array_filter($vacAbsences, fn($a) => $a['user_id'] === $uid);
+$nValides   = count(array_filter($mesVacances, fn($a) => $a['statut'] === 'valide'));
+$nEnAttente = count(array_filter($mesVacances, fn($a) => $a['statut'] === 'en_attente'));
+
+// Trouver mon info
+$meUser = null;
+foreach ($vacUsers as $u) { if ($u['id'] === $uid) { $meUser = $u; break; } }
+$monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h($meUser['fonction_code'] ?? '') : 'Mon planning';
 ?>
 <!-- Header -->
 <div class="vac-header">
@@ -50,12 +73,20 @@ $vacJoursUtilises = (int) Db::getOne(
     <h1 class="vac-title"><i class="bi bi-sun"></i> Vacances</h1>
   </div>
   <div class="vac-header-right">
-    <div class="vac-solde" id="vacSolde">
+    <div class="vac-solde<?= $vacRestant <= 5 ? ' low' : '' ?>" id="vacSolde">
       <div class="vac-solde-label">Solde restant</div>
-      <div class="vac-solde-value" id="vacSoldeValue">&mdash;</div>
-      <div class="vac-solde-detail" id="vacSoldeDetail"></div>
+      <div class="vac-solde-value" id="vacSoldeValue"><?= (int) round($vacRestant) ?>j</div>
+      <div class="vac-solde-detail" id="vacSoldeDetail"><?= (int) round($vacJoursUtilises) ?> pris / <?= (int) round($vacMonSolde) ?> total</div>
     </div>
   </div>
+</div>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-3">
+    <?= render_stat_card('Solde restant', (int) round($vacRestant) . 'j', 'bi-sun', $vacRestant <= 5 ? 'red' : 'teal', (int) round($vacJoursUtilises) . ' pris / ' . (int) round($vacMonSolde) . ' total') ?>
+    <?= render_stat_card('Validees', $nValides, 'bi-check-circle', 'green', $nValides > 0 ? 'periodes confirmees' : null) ?>
+    <?= render_stat_card('En attente', $nEnAttente, 'bi-hourglass-split', 'orange', $nEnAttente > 0 ? 'en cours de validation' : null) ?>
+    <?= render_stat_card('Total demandes', count($mesVacances), 'bi-calendar-range', 'purple', 'cette annee') ?>
 </div>
 
 <!-- Controls -->
@@ -75,15 +106,15 @@ $vacJoursUtilises = (int) Db::getOne(
 <!-- Month pills -->
 <div class="vac-month-pills" id="vacMonthPills"></div>
 
-<!-- ══════ SECTION 1: Ma ligne de dépôt ══════ -->
+<!-- SECTION 1: Ma ligne de depot -->
 <div class="vac-my-section">
-  <div class="vac-my-label"><i class="bi bi-person-fill"></i> <span id="vacMyName">Mon planning</span></div>
+  <div class="vac-my-label"><i class="bi bi-person-fill"></i> <span id="vacMyName"><?= $monNom ?></span></div>
   <div class="vac-my-topbar">
-    <div class="vac-drag-hint" id="vacDragHint"><i class="bi bi-mouse"></i> Glissez pour sélectionner</div>
+    <div class="vac-drag-hint" id="vacDragHint"><i class="bi bi-mouse"></i> Glissez pour selectionner</div>
     <div class="vac-legend-inline">
-      <span class="vac-leg"><span class="vac-sw" style="background:#a5d6a7"></span> Validées</span>
-      <span class="vac-leg"><span class="vac-sw" style="background:#ffe082"></span> En attente</span>
-      <span class="vac-leg"><span class="vac-sw vac-sw-blocked"></span> Bloqué</span>
+      <span class="vac-leg"><span class="vac-sw vac-sw-valide"></span> Validees</span>
+      <span class="vac-leg"><span class="vac-sw vac-sw-attente"></span> En attente</span>
+      <span class="vac-leg"><span class="vac-sw vac-sw-blocked"></span> Bloque</span>
       <span class="vac-leg"><span class="vac-sw vac-sw-today"></span> Aujourd'hui</span>
     </div>
   </div>
@@ -94,13 +125,16 @@ $vacJoursUtilises = (int) Db::getOne(
   <div id="vacMyGrid"></div>
 </div>
 
-<!-- ══════ SECTION 2: Consultation collègues ══════ -->
+<!-- SECTION 2: Consultation collegues -->
 <div class="vac-team-section">
   <div class="vac-team-header">
-    <span class="vac-team-label"><i class="bi bi-people"></i> Équipe</span>
+    <span class="vac-team-label"><i class="bi bi-people"></i> Equipe</span>
     <div class="d-flex gap-2 align-items-center flex-wrap">
-      <select class="form-select form-select-sm" id="vacModuleFilter" style="width:170px">
+      <select class="form-select form-select-sm vac-module-filter" id="vacModuleFilter">
         <option value="">Tous les modules</option>
+        <?php foreach ($vacModules as $m): ?>
+          <option value="<?= h($m['id']) ?>"><?= h($m['code']) ?> -- <?= h($m['nom']) ?></option>
+        <?php endforeach ?>
       </select>
       <div class="btn-group btn-group-sm" role="group">
         <button type="button" class="btn btn-outline-secondary vac-size-btn" id="vacSize--1" title="Petit">
@@ -118,18 +152,17 @@ $vacJoursUtilises = (int) Db::getOne(
   <div id="vacTeamGrid"></div>
 </div>
 
-
-<!-- ═══ MODAL: Saisie manuelle ═══ -->
+<!-- MODAL: Saisie manuelle -->
 <div class="modal fade" id="vacFormModal" tabindex="-1" aria-labelledby="vacFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="vacFormModalLabel"><i class="bi bi-calendar-plus"></i> Déposer des vacances</h5>
+        <h5 class="modal-title" id="vacFormModalLabel"><i class="bi bi-calendar-plus"></i> Deposer des vacances</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label small fw-bold">Date de début</label>
+          <label class="form-label small fw-bold">Date de debut</label>
           <input type="date" class="form-control form-control-sm" id="vacFormDebut">
         </div>
         <div class="mb-3">
@@ -140,13 +173,13 @@ $vacJoursUtilises = (int) Db::getOne(
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-success btn-sm" id="vacFormSubmit"><i class="bi bi-check-lg"></i> Déposer</button>
+        <button type="button" class="btn btn-success btn-sm" id="vacFormSubmit"><i class="bi bi-check-lg"></i> Deposer</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ MODAL: Confirmer drag ═══ -->
+<!-- MODAL: Confirmer drag -->
 <div class="modal fade" id="vacConfirmModal" tabindex="-1" aria-labelledby="vacConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -175,7 +208,6 @@ $vacJoursUtilises = (int) Db::getOne(
     </div>
   </div>
 </div>
-
 
 <script type="application/json" id="__ss_ssr__"><?= json_encode([
     'success'        => true,
