@@ -28,6 +28,249 @@ define('GLOBAL_EXCLUDE_TABLES', [
     'email_externe_cache',
 ]);
 
+/* ─────────────── Schema Compatibility ─────────────── */
+
+/**
+ * Get current schema version number
+ */
+function get_current_schema_version(): int
+{
+    $v = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'schema_version'");
+    return $v ? (int) $v : 0;
+}
+
+/**
+ * Snapshot the structure of all tables (column names, types, keys)
+ */
+function snapshot_schema(array $tables): array
+{
+    $schema = [];
+    foreach ($tables as $table) {
+        $cols = Db::fetchAll("SHOW COLUMNS FROM `$table`");
+        $schema[$table] = [];
+        foreach ($cols as $col) {
+            $schema[$table][$col['Field']] = [
+                'type' => $col['Type'],
+                'null' => $col['Null'],
+                'key' => $col['Key'],
+                'default' => $col['Default'],
+            ];
+        }
+    }
+    return $schema;
+}
+
+/**
+ * Compare backup schema with current schema and return compatibility report
+ */
+function check_backup_compatibility(array $manifest): array
+{
+    $currentVersion = get_current_schema_version();
+    $backupVersion = $manifest['schema_version'] ?? 0;
+    $backupSchema = $manifest['schema_snapshot'] ?? [];
+    $backupAppVersion = $manifest['app_version'] ?? 'unknown';
+
+    $report = [
+        'compatible' => true,
+        'backup_schema_version' => $backupVersion,
+        'current_schema_version' => $currentVersion,
+        'backup_app_version' => $backupAppVersion,
+        'current_app_version' => defined('APP_VERSION') ? APP_VERSION : 'unknown',
+        'version_match' => $backupVersion === $currentVersion,
+        'warnings' => [],
+        'errors' => [],
+        'table_diffs' => [],
+    ];
+
+    // Backup is newer than current system — cannot restore
+    if ($backupVersion > $currentVersion) {
+        $report['compatible'] = false;
+        $report['errors'][] = "La sauvegarde (v{$backupVersion}) est plus récente que le système actuel (v{$currentVersion}). Mettez à jour SpocSpace avant de restaurer.";
+        return $report;
+    }
+
+    // Backup is older — check column differences
+    if ($backupVersion < $currentVersion) {
+        $report['warnings'][] = "La sauvegarde (v{$backupVersion}) est antérieure au système actuel (v{$currentVersion}). Les données seront adaptées automatiquement.";
+    }
+
+    // No schema snapshot in old backups
+    if (empty($backupSchema)) {
+        if ($backupVersion > 0) {
+            $report['warnings'][] = "Pas de snapshot de schéma dans cette sauvegarde. Compatibilité non vérifiable.";
+        }
+        return $report;
+    }
+
+    // Compare each table's columns
+    foreach ($backupSchema as $table => $backupCols) {
+        // Check if table still exists
+        $exists = Db::getOne("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?", [$table]);
+        if (!$exists) {
+            $report['table_diffs'][$table] = ['status' => 'table_removed', 'message' => "Table '$table' n'existe plus dans le système actuel"];
+            $report['warnings'][] = "Table '$table' supprimée — ces données seront ignorées";
+            continue;
+        }
+
+        $currentCols = Db::fetchAll("SHOW COLUMNS FROM `$table`");
+        $currentColNames = array_column($currentCols, 'Field');
+        $backupColNames = array_keys($backupCols);
+
+        $added = array_diff($currentColNames, $backupColNames);   // new columns in current (not in backup)
+        $removed = array_diff($backupColNames, $currentColNames); // columns in backup but not in current
+        $common = array_intersect($backupColNames, $currentColNames);
+
+        // Type changes
+        $typeChanges = [];
+        $currentColMap = [];
+        foreach ($currentCols as $c) $currentColMap[$c['Field']] = $c;
+        foreach ($common as $col) {
+            $bType = $backupCols[$col]['type'] ?? '';
+            $cType = $currentColMap[$col]['Type'] ?? '';
+            if ($bType !== $cType) {
+                $typeChanges[$col] = ['from' => $bType, 'to' => $cType];
+            }
+        }
+
+        if ($added || $removed || $typeChanges) {
+            $diff = ['added_columns' => array_values($added), 'removed_columns' => array_values($removed), 'type_changes' => $typeChanges];
+            $report['table_diffs'][$table] = $diff;
+
+            if ($removed) {
+                $report['warnings'][] = "Table '$table' : colonnes supprimées depuis le backup : " . implode(', ', $removed) . " — ces colonnes seront ignorées";
+            }
+            if ($added) {
+                $report['warnings'][] = "Table '$table' : nouvelles colonnes ajoutées : " . implode(', ', $added) . " — valeurs par défaut utilisées";
+            }
+        }
+    }
+
+    // Check for new tables in current that backup doesn't know about
+    $backupTables = array_keys($backupSchema);
+    $currentTables = array_column(Db::fetchAll("SHOW TABLES"), array_key_first(Db::fetchAll("SHOW TABLES")[0]));
+    $newTables = array_diff($currentTables, $backupTables, GLOBAL_EXCLUDE_TABLES);
+    if ($newTables) {
+        $report['warnings'][] = count($newTables) . " nouvelles tables depuis la sauvegarde — non affectées par la restauration";
+    }
+
+    return $report;
+}
+
+/**
+ * Adapt INSERT SQL from backup to match current schema
+ * Handles: removed columns (strip them), added columns (let DB use defaults)
+ */
+function adapt_sql_to_current_schema(string $sqlContent, string $table): string
+{
+    // Check if table exists
+    $exists = Db::getOne("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?", [$table]);
+    if (!$exists) return ''; // table removed, skip
+
+    // Get current columns
+    $currentCols = Db::fetchAll("SHOW COLUMNS FROM `$table`");
+    $currentColNames = array_column($currentCols, 'Field');
+
+    // Parse the INSERT statement to get column list
+    // Format: INSERT INTO `table` (`col1`, `col2`, ...) VALUES ...
+    if (!preg_match('/INSERT\s+(?:IGNORE\s+)?INTO\s+`[^`]+`\s+\(([^)]+)\)/i', $sqlContent, $m)) {
+        return $sqlContent; // can't parse, return as-is
+    }
+
+    $backupColStr = $m[1];
+    preg_match_all('/`([^`]+)`/', $backupColStr, $colMatches);
+    $backupCols = $colMatches[1];
+
+    // Find columns to remove (in backup but not in current)
+    $removedIndexes = [];
+    foreach ($backupCols as $i => $col) {
+        if (!in_array($col, $currentColNames)) {
+            $removedIndexes[] = $i;
+        }
+    }
+
+    if (empty($removedIndexes)) return $sqlContent; // no adaptation needed
+
+    // Build new column list (without removed columns)
+    $newCols = [];
+    foreach ($backupCols as $i => $col) {
+        if (!in_array($i, $removedIndexes)) $newCols[] = $col;
+    }
+    $newColStr = '`' . implode('`, `', $newCols) . '`';
+
+    // Rebuild: replace column list
+    $pattern = '/(INSERT\s+(?:IGNORE\s+)?INTO\s+`[^`]+`\s+\()([^)]+)(\))/i';
+    $sqlContent = preg_replace($pattern, '${1}' . $newColStr . '${3}', $sqlContent);
+
+    // Now we need to remove the values at the removed indexes from each value tuple
+    // This is complex with regex, so we parse the VALUES section
+    $sqlContent = preg_replace_callback(
+        '/\(([^)]+)\)/',
+        function ($match) use ($removedIndexes) {
+            // Parse values carefully (handle quoted strings with commas)
+            $vals = parse_sql_values($match[1]);
+            if ($vals === null) return $match[0]; // can't parse, keep as-is
+            $newVals = [];
+            foreach ($vals as $i => $v) {
+                if (!in_array($i, $removedIndexes)) $newVals[] = $v;
+            }
+            return '(' . implode(', ', $newVals) . ')';
+        },
+        $sqlContent
+    );
+
+    return $sqlContent;
+}
+
+/**
+ * Parse SQL value list respecting quoted strings
+ */
+function parse_sql_values(string $valueStr): ?array
+{
+    $values = [];
+    $current = '';
+    $inQuote = false;
+    $escaped = false;
+
+    for ($i = 0; $i < strlen($valueStr); $i++) {
+        $ch = $valueStr[$i];
+        if ($escaped) {
+            $current .= $ch;
+            $escaped = false;
+            continue;
+        }
+        if ($ch === '\\') {
+            $current .= $ch;
+            $escaped = true;
+            continue;
+        }
+        if ($ch === "'" && !$inQuote) {
+            $inQuote = true;
+            $current .= $ch;
+            continue;
+        }
+        if ($ch === "'" && $inQuote) {
+            $current .= $ch;
+            // Check for '' escape
+            if ($i + 1 < strlen($valueStr) && $valueStr[$i + 1] === "'") {
+                $current .= "'";
+                $i++;
+                continue;
+            }
+            $inQuote = false;
+            continue;
+        }
+        if ($ch === ',' && !$inQuote) {
+            $values[] = trim($current);
+            $current = '';
+            continue;
+        }
+        $current .= $ch;
+    }
+    $values[] = trim($current);
+
+    return $values;
+}
+
 /* ─────────────── Helpers ─────────────── */
 
 function backup_dir_user(string $userId): string
@@ -196,7 +439,7 @@ function create_backup_zip(string $type, ?string $userId, string $createdBy): ar
         }
     }
 
-    // Add manifest
+    // Add manifest with schema snapshot for compatibility
     $manifest = [
         'id' => $id,
         'type' => $type,
@@ -204,8 +447,10 @@ function create_backup_zip(string $type, ?string $userId, string $createdBy): ar
         'created_at' => date('Y-m-d H:i:s'),
         'created_by' => $createdBy,
         'app_version' => defined('APP_VERSION') ? APP_VERSION : 'unknown',
+        'schema_version' => get_current_schema_version(),
         'tables' => $tablesIncluded,
         'row_counts' => $rowCounts,
+        'schema_snapshot' => snapshot_schema($tablesIncluded),
     ];
     $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
@@ -428,11 +673,15 @@ function admin_compare_backup()
         ];
     }
 
+    // Check compatibility
+    $compatibility = check_backup_compatibility($manifest);
+
     respond([
         'success' => true,
         'backup_id' => $backupId,
         'backup_date' => $backup['created_at'],
         'diff' => $diff,
+        'compatibility' => $compatibility,
     ]);
 }
 
@@ -469,6 +718,13 @@ function admin_restore_backup()
     $currentChecksum = hash_file('sha256', $zipPath);
     if ($currentChecksum !== $backup['checksum_sha256']) {
         bad_request('Intégrité compromise');
+    }
+
+    // Check compatibility
+    $manifest = read_backup_manifest($zipPath);
+    $compat = check_backup_compatibility($manifest ?: []);
+    if (!$compat['compatible']) {
+        bad_request(implode(' ', $compat['errors']));
     }
 
     // Auto-backup current state before restore
@@ -511,7 +767,7 @@ function admin_restore_backup()
             }
         }
 
-        // Import SQL from backup
+        // Import SQL from backup (with schema adaptation)
         foreach ($tables as $table) {
             $sqlContent = $zip->getFromName($table . '.sql');
             if (!$sqlContent) continue;
@@ -526,8 +782,13 @@ function admin_restore_backup()
             $insertSql = trim($insertSql);
             if (!$insertSql) continue;
 
+            // Adapt SQL if schema differs (remove old columns, etc.)
+            if (!$compat['version_match']) {
+                $insertSql = adapt_sql_to_current_schema($insertSql, $table);
+                if (!$insertSql) continue; // table removed
+            }
+
             if ($mode === 'merge') {
-                // Use INSERT IGNORE to skip existing rows
                 $insertSql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $insertSql);
             }
 
@@ -558,6 +819,8 @@ function admin_restore_backup()
         'success' => true,
         'mode' => $mode,
         'auto_backup_id' => $autoBackup['id'],
+        'adapted' => !$compat['version_match'],
+        'warnings' => $compat['warnings'],
         'message' => $mode === 'merge'
             ? 'Restauration partielle terminée (éléments manquants ajoutés)'
             : 'Restauration complète terminée (données écrasées)',
@@ -673,6 +936,13 @@ function admin_restore_global_backup()
         bad_request('Intégrité compromise');
     }
 
+    // Check compatibility
+    $manifest = read_backup_manifest($zipPath);
+    $compat = check_backup_compatibility($manifest ?: []);
+    if (!$compat['compatible']) {
+        bad_request(implode(' ', $compat['errors']));
+    }
+
     // Auto-backup before restore
     $autoBackup = create_backup_zip('global', null, $_SESSION['ss_user']['id']);
 
@@ -686,10 +956,13 @@ function admin_restore_global_backup()
         $tables = json_decode($backup['tables_included'], true) ?: [];
 
         if ($mode === 'overwrite') {
-            // Disable FK checks temporarily
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
             foreach ($tables as $table) {
-                $pdo->exec("TRUNCATE TABLE `$table`");
+                // Check table exists before truncate
+                $tableExists = Db::getOne("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?", [$table]);
+                if ($tableExists) {
+                    $pdo->exec("TRUNCATE TABLE `$table`");
+                }
             }
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
         }
@@ -706,6 +979,12 @@ function admin_restore_global_backup()
             }
             $insertSql = trim($insertSql);
             if (!$insertSql) continue;
+
+            // Adapt SQL if schema differs
+            if (!$compat['version_match']) {
+                $insertSql = adapt_sql_to_current_schema($insertSql, $table);
+                if (!$insertSql) continue;
+            }
 
             if ($mode === 'merge') {
                 $insertSql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $insertSql);
@@ -738,6 +1017,8 @@ function admin_restore_global_backup()
         'success' => true,
         'mode' => $mode,
         'auto_backup_id' => $autoBackup['id'],
+        'adapted' => !$compat['version_match'],
+        'warnings' => $compat['warnings'],
         'message' => 'Restauration globale terminée',
     ]);
 }

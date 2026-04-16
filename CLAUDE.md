@@ -196,7 +196,17 @@ Système de backup/restore à deux niveaux : per-user (admin) et global.
 - `admin_create_global_backup` — dump complet
 - `admin_restore_global_backup` — restauration totale (code spécial requis)
 
-**Page admin** : `sauvegardes` — 2 onglets (Mes sauvegardes / Global 🔒)
+**Page admin** : `sauvegardes` — 3 onglets (Mes sauvegardes / Global 🔒 / Configuration)
+
+**Compatibilité de version** :
+- Table `schema_migrations` : historique de toutes les migrations appliquées
+- `ems_config.schema_version` : numéro de migration courant (ex: 072)
+- Chaque backup contient dans `manifest.json` : `schema_version` + `schema_snapshot` (colonnes de chaque table)
+- A la restauration : comparaison automatique du schéma backup vs actuel
+  - Version backup > actuelle → **refusé** (mettre à jour SpocSpace d'abord)
+  - Version backup < actuelle → **adaptation auto** (colonnes supprimées retirées, nouvelles colonnes = valeurs par défaut)
+  - Version identique → restauration directe
+- Le modal Comparer affiche le rapport de compatibilité (vert/orange/rouge) avec détail des différences de colonnes
 
 **Restauration UX** :
 - Comparer : affiche diff (+ajoutés, -supprimés, ~modifiés) → restaurer seulement les différences

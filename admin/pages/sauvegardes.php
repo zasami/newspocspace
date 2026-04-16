@@ -321,12 +321,53 @@
             rows += '<tr><td>' + table + '</td><td>' + info.backup_count + '</td><td>' + info.current_count + '</td><td class="' + cls + '">' + symbol + '</td></tr>';
         }
 
+        // Compatibility info
+        let compatHtml = '';
+        if (r.compatibility) {
+            const c = r.compatibility;
+            const vInfo = '<div style="font-size:.78rem; margin-bottom:.75rem; padding:8px 12px; border-radius:8px; '
+                + (c.version_match ? 'background:#f0fdf4; color:#166534' : (c.compatible ? 'background:#fffbeb; color:#92400e' : 'background:#fef2f2; color:#991b1b'))
+                + '">'
+                + '<strong><i class="bi bi-' + (c.version_match ? 'check-circle' : (c.compatible ? 'exclamation-triangle' : 'x-circle')) + '"></i> '
+                + 'Schema v' + c.backup_schema_version + ' → v' + c.current_schema_version + '</strong>'
+                + (c.version_match ? ' — Compatible' : (c.compatible ? ' — Adaptation automatique' : ' — INCOMPATIBLE'))
+                + '</div>';
+            compatHtml += vInfo;
+
+            if (c.warnings && c.warnings.length) {
+                compatHtml += '<div style="font-size:.75rem; color:#92400e; margin-bottom:.75rem;">';
+                c.warnings.forEach(w => { compatHtml += '<div><i class="bi bi-exclamation-triangle"></i> ' + w + '</div>'; });
+                compatHtml += '</div>';
+            }
+            if (c.errors && c.errors.length) {
+                compatHtml += '<div style="font-size:.75rem; color:#991b1b; margin-bottom:.75rem;">';
+                c.errors.forEach(e => { compatHtml += '<div><i class="bi bi-x-circle-fill"></i> ' + e + '</div>'; });
+                compatHtml += '</div>';
+            }
+
+            // Table structure diffs
+            if (c.table_diffs && Object.keys(c.table_diffs).length) {
+                compatHtml += '<details style="font-size:.78rem; margin-bottom:.75rem;"><summary style="cursor:pointer; font-weight:600;"><i class="bi bi-diagram-3"></i> Differences de schema (' + Object.keys(c.table_diffs).length + ' tables)</summary><div style="margin-top:.5rem;">';
+                for (const [tbl, diff] of Object.entries(c.table_diffs)) {
+                    compatHtml += '<div style="margin-bottom:.4rem;"><strong>' + tbl + '</strong>';
+                    if (diff.added_columns && diff.added_columns.length) compatHtml += ' <span style="color:#16a34a;">+' + diff.added_columns.join(', +') + '</span>';
+                    if (diff.removed_columns && diff.removed_columns.length) compatHtml += ' <span style="color:#cc3333;">-' + diff.removed_columns.join(', -') + '</span>';
+                    if (diff.type_changes) { for (const [col, ch] of Object.entries(diff.type_changes)) { compatHtml += ' <span style="color:#92400e;">' + col + ': ' + ch.from + '→' + ch.to + '</span>'; } }
+                    compatHtml += '</div>';
+                }
+                compatHtml += '</div></details>';
+            }
+        }
+
+        const restoreDisabled = r.compatibility && !r.compatibility.compatible;
+
         showModal(
             '<button class="bk-modal-close" onclick="document.getElementById(\'bkModalContainer\').innerHTML=\'\'">&times;</button>'
             + '<h6><i class="bi bi-arrow-left-right"></i> Comparaison — ' + fmtDate(r.backup_date) + '</h6>'
+            + compatHtml
             + '<table class="bk-diff-table"><thead><tr><th>Table</th><th>Sauvegarde</th><th>Actuel</th><th>Diff</th></tr></thead><tbody>' + rows + '</tbody></table>'
             + '<div class="d-flex gap-2 mt-3">'
-            + '  <button class="bk-btn bk-btn-primary" onclick="bkRestoreMerge(\'' + id + '\',' + isGlobal + ')"><i class="bi bi-plus-circle"></i> Restaurer les differences</button>'
+            + '  <button class="bk-btn bk-btn-primary" onclick="bkRestoreMerge(\'' + id + '\',' + isGlobal + ')"' + (restoreDisabled ? ' disabled title="Version incompatible"' : '') + '><i class="bi bi-plus-circle"></i> Restaurer les differences</button>'
             + '  <button class="bk-btn bk-btn-outline" onclick="document.getElementById(\'bkModalContainer\').innerHTML=\'\'">Fermer</button>'
             + '</div>'
         );
