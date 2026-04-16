@@ -244,18 +244,21 @@ async function loadMurEvents() {
         const month = d.toLocaleDateString('fr-FR', { month: 'short' });
         const isInscrit = !!ev.mon_inscription_id;
 
-        // Image + rappel pour les événements non inscrits
-        if (ev.image_url && !isInscrit) {
+        if (ev.image_url) {
+            // Banner avec image (toujours affiché)
+            const statusLine = isInscrit
+                ? '<div class="mur-ev-banner-inscrit"><i class="bi bi-check-circle-fill"></i> Inscrit</div>'
+                : '<div class="mur-ev-banner-reminder"><i class="bi bi-hand-index-thumb"></i> N\'oubliez pas de voter !</div>';
             html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-ev-banner" style="text-decoration:none;color:inherit">
                 <img src="${escapeHtml(ev.image_url)}" alt="" class="mur-ev-banner-img">
                 <div class="mur-ev-banner-body">
                     <div class="mur-ev-banner-title">${escapeHtml(ev.titre)}</div>
-                    <div class="mur-ev-banner-reminder"><i class="bi bi-hand-index-thumb"></i> N'oubliez pas de voter !</div>
+                    ${statusLine}
                     <div class="mur-ev-banner-meta">${fmtDateShort(ev.date_debut)}${ev.lieu ? ' · ' + escapeHtml(ev.lieu) : ''} · ${ev.nb_inscrits} inscrit${ev.nb_inscrits > 1 ? 's' : ''}</div>
                 </div>
             </a>`;
         } else {
-            // Item compact (avec ou sans image)
+            // Item compact sans image
             html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
                 <div class="mur-ev-date"><div class="mur-ev-day">${day}</div><div class="mur-ev-month">${escapeHtml(month)}</div></div>
                 <div style="flex:1;min-width:0">

@@ -3891,6 +3891,7 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-ev-banner-body { padding: 10px 12px; }
 .mur-ev-banner-title { font-size: .85rem; font-weight: 700; margin-bottom: 2px; }
 .mur-ev-banner-reminder { font-size: .75rem; font-weight: 600; color: var(--ss-orange, #EA9D3D); margin-bottom: 3px; }
+.mur-ev-banner-inscrit { font-size: .72rem; font-weight: 600; color: #16A34A; margin-bottom: 3px; }
 .mur-ev-banner-meta { font-size: .7rem; color: var(--ss-muted, #888); }
 
 /* ── Empty + Loading ── */
