@@ -227,7 +227,11 @@ function renderGrid() {
             const hatchStyle = isJE ? 'background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(255,255,255,.18) 4px,rgba(255,255,255,.18) 8px);border:2px solid rgba(255,255,255,.35);' : '';
             block.style.cssText = 'position:absolute;top:' + topPx + 'px;height:' + heightPx + 'px;left:' + leftPct + '%;width:calc(' + widthPct + '% - 4px);background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s;' + hatchStyle;
             const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5);
-            block.innerHTML = '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
+            const salleObj = salles.find(s => s.id === r.salle_id);
+            const showSalle = !filterSalle && salles.length > 1;
+            const salleTag = showSalle ? '<div style="font-size:.55rem;opacity:.85;background:rgba(255,255,255,.2);display:inline-block;padding:0 4px;border-radius:3px;margin-bottom:1px">' + escapeHtml(salleObj?.nom || '') + '</div>' : '';
+            block.innerHTML = salleTag
+                + '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
                 + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + timeLabel + '</div>' : '')
                 + (heightPx > 42 ? '<div style="opacity:.7;font-size:.6rem">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (isMine ? ' (moi)' : '') + '</div>' : '');
 

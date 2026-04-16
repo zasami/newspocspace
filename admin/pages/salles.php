@@ -38,7 +38,7 @@ $users = Db::fetchAll(
 /* ── Reservation blocks ── */
 .sl-block { position: absolute; left: 3px; right: 3px; border-radius: 6px; padding: 4px 7px; font-size: .72rem; overflow: hidden; cursor: pointer; z-index: 3; color: #fff; line-height: 1.3; box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: transform .1s; }
 .sl-block:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
-.sl-block.sl-block-journee { background-image: repeating-linear-gradient(135deg, transparent, transparent 4px, rgba(255,255,255,.18) 4px, rgba(255,255,255,.18) 8px) !important; border: 2px solid rgba(255,255,255,.35); }
+.sl-block.sl-block-journee { background-image: repeating-linear-gradient(135deg, transparent, transparent 5px, rgba(255,255,255,.15) 5px, rgba(255,255,255,.15) 10px) !important; border: 2px solid rgba(255,255,255,.3); border-left: 4px solid rgba(255,255,255,.6); }
 .sl-block-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sl-block-time { opacity: .85; font-size: .65rem; }
 .sl-block-user { opacity: .75; font-size: .65rem; }
@@ -569,9 +569,12 @@ $users = Db::fetchAll(
                 block.style.cssText = 'background:' + color + ';top:' + topPx + 'px;height:' + heightPx + 'px;left:' + leftPct + '%;width:calc(' + widthPct + '% - 4px);right:auto';
                 block.dataset.id = r.id;
                 const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
-                block.innerHTML = '<div class="sl-block-title">' + escapeHtml(r.titre) + '</div>'
+                const showSalle = filteredSalles.length > 1;
+                const salleTag = showSalle ? '<div style="font-size:.58rem;opacity:.85;background:rgba(255,255,255,.2);display:inline-block;padding:0 4px;border-radius:3px;margin-bottom:1px">' + escapeHtml(r.salle_nom) + '</div>' : '';
+                block.innerHTML = salleTag
+                    + '<div class="sl-block-title">' + escapeHtml(r.titre) + '</div>'
                     + (heightPx > 30 ? '<div class="sl-block-time">' + timeLabel + '</div>' : '')
-                    + (heightPx > 45 ? '<div class="sl-block-user">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (filteredSalles.length > 1 ? ' · ' + escapeHtml(r.salle_nom) : '') + '</div>' : '');
+                    + (heightPx > 45 ? '<div class="sl-block-user">' + escapeHtml(r.prenom + ' ' + r.user_nom) + '</div>' : '');
                 block.addEventListener('click', () => showDetail(r));
                 firstCell.appendChild(block);
             });

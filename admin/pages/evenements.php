@@ -75,6 +75,22 @@ $initList = Db::fetchAll(
             <label class="form-label small fw-semibold">Description</label>
             <textarea class="form-control" id="evDescription" rows="3" placeholder="Décrivez l'événement..."></textarea>
           </div>
+          <!-- Image de couverture -->
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Image de couverture</label>
+            <div class="ev-cover-zone" id="evCoverZone">
+              <div class="ev-cover-placeholder" id="evCoverPlaceholder">
+                <i class="bi bi-image"></i>
+                <span>Cliquez pour ajouter une image (upload ou Pixabay)</span>
+              </div>
+              <div class="ev-cover-preview d-none" id="evCoverPreview">
+                <img src="" alt="" id="evCoverImg">
+                <button type="button" class="ev-cover-remove" id="evCoverRemove" title="Retirer l'image"><i class="bi bi-x-lg"></i></button>
+              </div>
+            </div>
+            <input type="hidden" id="evImageUrl" value="">
+          </div>
+
           <div class="col-sm-6 col-md-3">
             <label class="form-label small fw-semibold">Date début *</label>
             <input type="date" class="form-control" id="evDateDebut">
@@ -137,7 +153,103 @@ $initList = Db::fetchAll(
   </div>
 </div>
 
+<!-- ── Modal Image Picker ── -->
+<div class="modal fade" id="evImagePickerModal" tabindex="-1" style="z-index:1060">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Choisir une image</h5>
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Tabs Upload / Pixabay -->
+        <div class="d-flex gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-dark active" id="imgTabUpload" data-img-tab="upload"><i class="bi bi-cloud-arrow-up"></i> Télécharger</button>
+          <button class="btn btn-sm btn-outline-dark" id="imgTabPixabay" data-img-tab="pixabay"><i class="bi bi-images"></i> Pixabay</button>
+        </div>
+
+        <!-- Upload panel -->
+        <div id="imgPanelUpload">
+          <div class="ev-upload-zone" id="evUploadZone">
+            <div id="evUploadPlaceholder">
+              <i class="bi bi-cloud-arrow-up" style="font-size:2rem;opacity:.4"></i>
+              <p class="mb-0 mt-1 small">Glissez une image ou cliquez pour charger</p>
+              <span class="text-muted" style="font-size:.75rem">JPG, PNG, WebP — max 5 Mo</span>
+            </div>
+            <div class="d-none" id="evUploadPreviewWrap">
+              <img src="" alt="" id="evUploadPreviewImg" style="max-height:200px;border-radius:8px">
+            </div>
+            <input type="file" id="evUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+          </div>
+          <button class="btn btn-sm w-100 mt-2" style="background:#bcd2cb;color:#2d4a43" id="evUploadBtn" disabled>
+            <i class="bi bi-check-lg"></i> Utiliser cette image
+          </button>
+        </div>
+
+        <!-- Pixabay panel -->
+        <div id="imgPanelPixabay" class="d-none">
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="evPixabayInput" placeholder="Rechercher des photos...">
+            <select class="form-select" id="evPixabayCat" style="max-width:140px">
+              <option value="">Toutes</option>
+              <option value="nature">Nature</option>
+              <option value="people">Personnes</option>
+              <option value="food">Cuisine</option>
+              <option value="travel">Voyage</option>
+              <option value="buildings">Bâtiments</option>
+              <option value="business">Business</option>
+              <option value="feelings">Ambiance</option>
+            </select>
+            <button class="btn btn-outline-dark" id="evPixabaySearchBtn"><i class="bi bi-search"></i></button>
+          </div>
+          <div class="ev-pixabay-grid" id="evPixabayGrid">
+            <div class="text-center text-muted py-4"><i class="bi bi-images" style="font-size:2rem;opacity:.3"></i><p class="mt-1 small">Recherchez des photos libres de droits</p></div>
+          </div>
+          <div class="text-center mt-2 d-none" id="evPixabayLoading"><span class="spinner-border spinner-border-sm"></span> Recherche...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+/* ── Cover image zone ── */
+.ev-cover-zone {
+  border: 2px dashed var(--cl-border); border-radius: 10px; cursor: pointer;
+  text-align: center; transition: border-color 0.2s; overflow: hidden; position: relative;
+}
+.ev-cover-zone:hover { border-color: var(--cl-accent); }
+.ev-cover-placeholder { padding: 24px; color: var(--cl-text-muted); }
+.ev-cover-placeholder i { font-size: 2rem; opacity: 0.4; display: block; margin-bottom: 4px; }
+.ev-cover-placeholder span { font-size: 0.82rem; }
+.ev-cover-preview img { width: 100%; max-height: 180px; object-fit: cover; display: block; }
+.ev-cover-remove {
+  position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff;
+  border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+}
+.ev-cover-remove:hover { background: rgba(192,57,43,0.9); }
+
+/* ── Upload zone ── */
+.ev-upload-zone {
+  border: 2px dashed var(--cl-border); border-radius: 10px; text-align: center;
+  padding: 24px; cursor: pointer; transition: border-color 0.2s;
+}
+.ev-upload-zone:hover { border-color: var(--cl-accent); }
+
+/* ── Pixabay grid ── */
+.ev-pixabay-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  max-height: 400px; overflow-y: auto;
+}
+.ev-pixabay-thumb {
+  aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; cursor: pointer;
+  border: 2px solid transparent; transition: border-color 0.2s;
+}
+.ev-pixabay-thumb:hover { border-color: var(--cl-accent); }
+.ev-pixabay-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
 /* ── List ── */
 .ev-list { max-height: calc(100vh - 260px); overflow-y: auto; }
 .ev-item {
@@ -199,16 +311,22 @@ $initList = Db::fetchAll(
     let selectedId = null;
     let currentStatut = '';
     let formModal = null;
+    let imagePickerModal = null;
     let fieldCounter = 0;
+    let pendingUploadFile = null;
 
     // ─── Init ───
     document.addEventListener('DOMContentLoaded', () => {
         formModal = new bootstrap.Modal(document.getElementById('evFormModal'));
+        imagePickerModal = new bootstrap.Modal(document.getElementById('evImagePickerModal'));
         renderList(initData);
 
         document.getElementById('btnNewEvent').addEventListener('click', openNewForm);
         document.getElementById('btnAddField').addEventListener('click', addField);
         document.getElementById('btnSaveEvent').addEventListener('click', saveEvent);
+
+        // Image picker
+        initImagePicker();
 
         // Detail card actions delegate
         document.getElementById('evDetailCard').addEventListener('click', (e) => {
@@ -396,6 +514,7 @@ $initList = Db::fetchAll(
         document.getElementById('evFieldsList').innerHTML = '';
         fieldCounter = 0;
         toggleFieldsEmpty();
+        setCoverImage('');
         formModal.show();
     }
 
@@ -417,6 +536,7 @@ $initList = Db::fetchAll(
         document.getElementById('evLieu').value = ev.lieu || '';
         document.getElementById('evMaxPart').value = ev.max_participants || '';
         document.getElementById('evStatut').value = ev.statut;
+        setCoverImage(ev.image_url || '');
 
         // Populate champs
         document.getElementById('evFieldsList').innerHTML = '';
@@ -528,6 +648,7 @@ $initList = Db::fetchAll(
             lieu: document.getElementById('evLieu').value,
             max_participants: document.getElementById('evMaxPart').value || null,
             statut: document.getElementById('evStatut').value,
+            image_url: document.getElementById('evImageUrl').value || null,
             champs: collectFields(),
         };
 
