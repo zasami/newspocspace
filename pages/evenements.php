@@ -86,9 +86,9 @@ $mesInscriptions = array_filter($events, fn($e) => $e['mon_inscription_id']);
     <?php endif; ?>
 </div>
 
-<!-- Modal détail + inscription -->
+<!-- Modal détail + inscription (large) -->
 <div class="modal fade" id="evDetailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="evModalTitle">Événement</h5>
@@ -97,7 +97,6 @@ $mesInscriptions = array_filter($events, fn($e) => $e['mon_inscription_id']);
       <div class="modal-body" id="evModalBody">
         <div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>
       </div>
-      <div class="modal-footer" id="evModalFooter"></div>
     </div>
   </div>
 </div>
@@ -185,10 +184,12 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-modal-field { margin-bottom: 12px; }
 .ev-modal-field label { font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; display: block; }
 .ev-modal-field .form-text { font-size: 0.75rem; }
-.ev-inscrits-list { max-height: 200px; overflow-y: auto; }
-.ev-inscrit-chip {
-    display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
-    border-radius: 20px; background: var(--cl-accent-bg, #eef5f2); font-size: 0.8rem;
-    margin: 2px;
+
+/* ── Inscription values card ── */
+.ev-val-card {
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--cl-accent-bg, #eef5f2); font-size: 0.85rem;
 }
+.ev-val-label { font-size: 0.75rem; color: var(--cl-text-muted, #999); font-weight: 500; }
+.ev-val-value { font-weight: 500; }
 </style>

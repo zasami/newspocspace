@@ -34,11 +34,9 @@ async function openDetail(id) {
 
     const titleEl = document.getElementById('evModalTitle');
     const bodyEl = document.getElementById('evModalBody');
-    const footerEl = document.getElementById('evModalFooter');
 
     titleEl.textContent = 'Chargement...';
     bodyEl.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
-    footerEl.innerHTML = '';
     detailModal.show();
 
     const r = await apiPost('get_evenement_detail', { id });
@@ -58,10 +56,9 @@ async function openDetail(id) {
 
     titleEl.textContent = ev.titre;
 
-    // Build body
     let html = '';
 
-    // Info
+    // ── Infos événement ──
     html += '<div class="mb-3">';
     if (ev.description) {
         html += `<div class="mb-2" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">${escapeHtml(ev.description)}</div>`;
@@ -79,52 +76,79 @@ async function openDetail(id) {
     html += `<span><i class="bi bi-people-fill"></i> ${ev.nb_inscrits}${ev.max_participants ? '/' + ev.max_participants : ''} inscrits</span>`;
     html += '</div></div>';
 
-    // Inscription form (if open and not inscrit)
-    if (isOpen && !isInscrit && !isFull && champs.length > 0) {
-        html += '<div class="border-top pt-3 mb-3"><h6 class="small fw-semibold mb-2"><i class="bi bi-pencil-square"></i> Formulaire d\'inscription</h6>';
-        champs.forEach(c => {
-            html += renderField(c, '');
-        });
-        html += '</div>';
-    }
-
-    // Already inscrit — show my values
-    if (isInscrit && champs.length > 0) {
-        html += '<div class="border-top pt-3 mb-3"><h6 class="small fw-semibold mb-2"><i class="bi bi-check-circle text-success"></i> Mon inscription</h6>';
-        champs.forEach(c => {
-            let val = mesValeurs[c.id] || '—';
-            if (c.type === 'checkbox' && val !== '—') {
-                try { val = JSON.parse(val).join(', '); } catch(e) {}
-            }
-            html += `<div class="ev-modal-field"><label>${escapeHtml(c.label)}</label><div class="small">${escapeHtml(val)}</div></div>`;
-        });
-        html += '</div>';
-    }
-
-    // Inscrits list
+    // ── Tableau des inscrits ──
+    html += '<div class="border-top pt-3 mb-3">';
+    html += `<h6 class="small fw-semibold mb-2"><i class="bi bi-people"></i> Participants (${inscrits.length})</h6>`;
     if (inscrits.length > 0) {
-        html += '<div class="border-top pt-3"><h6 class="small fw-semibold mb-2"><i class="bi bi-people"></i> Participants (' + inscrits.length + ')</h6>';
-        html += '<div class="ev-inscrits-list">';
-        inscrits.forEach(i => {
-            html += `<span class="ev-inscrit-chip"><i class="bi bi-person-fill"></i> ${escapeHtml(i.prenom)} ${escapeHtml(i.nom)}</span>`;
+        html += '<div class="table-responsive" style="max-height:250px;overflow-y:auto">';
+        html += '<table class="table table-sm table-hover mb-0 align-middle">';
+        html += '<thead class="sticky-top" style="background:var(--cl-surface,#fff)"><tr><th class="small" style="width:40px">#</th><th class="small">Nom</th><th class="small">Inscrit le</th></tr></thead>';
+        html += '<tbody>';
+        inscrits.forEach((ins, idx) => {
+            const d = new Date(ins.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            html += `<tr>
+                <td class="small text-muted">${idx + 1}</td>
+                <td class="small"><i class="bi bi-person-fill me-1 text-muted"></i>${escapeHtml(ins.prenom)} ${escapeHtml(ins.nom)}</td>
+                <td class="small text-muted">${d}</td>
+            </tr>`;
         });
-        html += '</div></div>';
+        html += '</tbody></table></div>';
+    } else {
+        html += '<div class="text-center text-muted py-3 small"><i class="bi bi-people" style="font-size:1.3rem;opacity:.3"></i><div class="mt-1">Aucune inscription pour le moment</div></div>';
+    }
+    html += '</div>';
+
+    // ── Mon inscription (si déjà inscrit) ──
+    if (isInscrit) {
+        html += '<div class="border-top pt-3 mb-3">';
+        html += '<div class="d-flex justify-content-between align-items-center mb-2">';
+        html += '<h6 class="small fw-semibold mb-0"><i class="bi bi-check-circle-fill text-success"></i> Vous êtes inscrit</h6>';
+        if (isOpen) {
+            html += `<button class="btn btn-sm btn-outline-danger" id="btnDesinscrire"><i class="bi bi-x-lg"></i> Se désinscrire</button>`;
+        }
+        html += '</div>';
+        if (champs.length > 0) {
+            html += '<div class="row g-2">';
+            champs.forEach(c => {
+                let val = mesValeurs[c.id] || '—';
+                if (c.type === 'checkbox' && val !== '—') {
+                    try { val = JSON.parse(val).join(', '); } catch(e) {}
+                }
+                html += `<div class="col-sm-6"><div class="ev-val-card"><div class="ev-val-label">${escapeHtml(c.label)}</div><div class="ev-val-value">${escapeHtml(val)}</div></div></div>`;
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+
+    // ── Formulaire d'inscription (si ouvert, pas inscrit, pas complet) ──
+    if (isOpen && !isInscrit && !isFull) {
+        html += '<div class="border-top pt-3">';
+        html += '<h6 class="small fw-semibold mb-2"><i class="bi bi-pencil-square"></i> Inscription</h6>';
+        if (champs.length > 0) {
+            champs.forEach(c => {
+                html += renderField(c, '');
+            });
+        }
+        html += `<div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscrire"><i class="bi bi-check-lg"></i> S'inscrire</button>
+        </div>`;
+        html += '</div>';
+    }
+
+    // ── Complet ──
+    if (isFull && !isInscrit) {
+        html += '<div class="border-top pt-3 text-center"><span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Complet</span></div>';
+    }
+
+    // ── Fermé ──
+    if (!isOpen && !isInscrit) {
+        html += '<div class="border-top pt-3 text-center"><span class="badge bg-secondary"><i class="bi bi-lock"></i> Inscriptions fermées</span></div>';
     }
 
     bodyEl.innerHTML = html;
 
-    // Footer buttons
-    let footerHtml = '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>';
-    if (isOpen && !isInscrit && !isFull) {
-        footerHtml += `<button type="button" class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscrire"><i class="bi bi-check-lg"></i> S'inscrire</button>`;
-    } else if (isOpen && isInscrit) {
-        footerHtml += `<button type="button" class="btn btn-sm btn-outline-danger" id="btnDesinscrire"><i class="bi bi-x-lg"></i> Se désinscrire</button>`;
-    } else if (isFull && !isInscrit) {
-        footerHtml += '<span class="text-muted small">Complet</span>';
-    }
-    footerEl.innerHTML = footerHtml;
-
-    // Attach button handlers
+    // ── Attach handlers ──
     const btnInscrire = document.getElementById('btnInscrire');
     if (btnInscrire) {
         btnInscrire.addEventListener('click', () => inscrire(ev.id, champs));
@@ -135,6 +159,7 @@ async function openDetail(id) {
     }
 }
 
+// ── Render un champ de formulaire ──
 function renderField(champ, value) {
     const req = champ.obligatoire ? ' <span class="text-danger">*</span>' : '';
     let input = '';
@@ -187,7 +212,6 @@ function renderField(champ, value) {
 
 function collectFormValues() {
     const valeurs = {};
-    // Text, textarea, number, select
     document.querySelectorAll('#evModalBody [data-champ-id]').forEach(el => {
         const id = el.dataset.champId;
         if (el.type === 'radio') {
@@ -212,14 +236,12 @@ async function inscrire(eventId, champs) {
 
     if (r.success) {
         detailModal.hide();
-        // Reload page to refresh SSR data
         location.reload();
     } else {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-lg"></i> S\'inscrire';
-        // Show error in modal
         const errEl = document.createElement('div');
-        errEl.className = 'alert alert-danger alert-sm small py-2 mt-2';
+        errEl.className = 'alert alert-danger small py-2 mt-2';
         errEl.textContent = r.message || 'Erreur';
         document.getElementById('evModalBody').appendChild(errEl);
         setTimeout(() => errEl.remove(), 4000);
