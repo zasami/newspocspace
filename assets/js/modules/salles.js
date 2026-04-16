@@ -138,10 +138,10 @@ function renderGrid() {
     grid.style.gridTemplateColumns = '50px repeat(' + cols + ', 1fr)';
     grid.style.gridTemplateRows = 'auto repeat(' + totalHours + ', ' + HOUR_H + 'px)';
 
-    let html = '<div style="padding:8px 4px;font-weight:700;font-size:.7rem;text-align:center;background:var(--cl-bg,#F7F5F2);border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:2"></div>';
+    let html = '<div style="padding:8px 4px;font-weight:700;font-size:.7rem;text-align:center;background:var(--cl-bg,#F7F5F2);border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:10"></div>';
     dates.forEach(d => {
         const isToday = fmtDate(d) === today;
-        html += '<div style="padding:8px 4px;font-weight:700;font-size:.72rem;text-align:center;background:' + (isToday ? '#e8f0ed' : 'var(--cl-bg,#F7F5F2)') + ';border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:2;' + (isToday ? 'color:#2d4a43' : '') + '">' + fmtDateFr(d) + '</div>';
+        html += '<div style="padding:8px 4px;font-weight:700;font-size:.72rem;text-align:center;background:' + (isToday ? '#e8f0ed' : 'var(--cl-bg,#F7F5F2)') + ';border-bottom:1.5px solid var(--cl-border-light,#F0EDE8);position:sticky;top:0;z-index:10;' + (isToday ? 'color:#2d4a43' : '') + '">' + fmtDateFr(d) + '</div>';
     });
 
     for (let h = HOURS_START; h < HOURS_END; h++) {

@@ -28,9 +28,9 @@ $users = Db::fetchAll(
 .sl-grid-wrap { overflow-x: auto; background: var(--cl-surface, #fff); border-radius: 12px; border: 1.5px solid var(--cl-border-light, #F0EDE8); }
 .sl-grid { display: grid; min-width: 800px; }
 .sl-grid-header { display: contents; }
-.sl-grid-header > div { padding: 10px 8px; font-weight: 700; font-size: .78rem; text-align: center; background: var(--cl-bg, #F7F5F2); border-bottom: 1.5px solid var(--cl-border-light); position: sticky; top: 0; z-index: 2; }
+.sl-grid-header > div { padding: 10px 8px; font-weight: 700; font-size: .78rem; text-align: center; background: var(--cl-bg, #F7F5F2); border-bottom: 1.5px solid var(--cl-border-light); position: sticky; top: 0; z-index: 10; }
 .sl-grid-header > div:first-child { text-align: left; padding-left: 14px; }
-.sl-time-col { padding: 0 10px; font-size: .72rem; color: var(--cl-text-muted); text-align: right; border-right: 1.5px solid var(--cl-border-light); min-width: 60px; position: sticky; left: 0; background: var(--cl-surface, #fff); z-index: 1; }
+.sl-time-col { padding: 0 10px; font-size: .72rem; color: var(--cl-text-muted); text-align: right; border-right: 1.5px solid var(--cl-border-light); min-width: 60px; position: sticky; left: 0; background: var(--cl-surface, #fff); z-index: 5; }
 .sl-day-col { position: relative; min-height: 50px; border-right: 1px solid var(--cl-border-light, #F0EDE8); border-bottom: 1px solid var(--cl-border-light, #F0EDE8); cursor: pointer; }
 .sl-day-col:hover { background: rgba(45,74,67,.03); }
 .sl-day-col.is-today { background: rgba(45,74,67,.05); }
