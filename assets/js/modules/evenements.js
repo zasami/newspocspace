@@ -36,7 +36,15 @@ async function openDetail(id) {
     const bodyEl = document.getElementById('evModalBody');
     const footerEl = document.getElementById('evModalFooter');
 
+    const headerEl = document.querySelector('#evDetailModal .modal-header');
+    // Reset header
+    headerEl.className = 'modal-header';
+    headerEl.style.cssText = '';
     titleEl.textContent = 'Chargement...';
+    titleEl.style.cssText = '';
+    const closeBtn = headerEl.querySelector('[data-bs-dismiss="modal"]');
+    if (closeBtn) closeBtn.className = 'btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close';
+
     bodyEl.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
     footerEl.innerHTML = '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>';
     detailModal.show();
@@ -56,14 +64,16 @@ async function openDetail(id) {
     const isInscrit = !!monInscription;
     const isFull = ev.max_participants && ev.nb_inscrits >= ev.max_participants;
 
+    // ── Header avec image hero ou simple ──
+    if (ev.image_url) {
+        headerEl.className = 'modal-header ev-hero-header';
+        headerEl.style.cssText = `background-image: url('${ev.image_url.replace(/'/g, "\\'")}')`;
+        titleEl.style.cssText = 'color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)';
+        if (closeBtn) closeBtn.className = 'btn btn-sm ms-auto d-flex align-items-center justify-content-center ev-hero-close';
+    }
     titleEl.textContent = ev.titre;
 
     let html = '';
-
-    // ── Image ──
-    if (ev.image_url) {
-        html += `<div class="ev-modal-cover"><img src="${escapeHtml(ev.image_url)}" alt=""></div>`;
-    }
 
     // ── Description ──
     if (ev.description) {

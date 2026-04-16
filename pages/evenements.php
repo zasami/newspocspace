@@ -191,9 +191,25 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-badge-complet { font-size: 0.75rem; font-weight: 500; color: #c0392b; }
 .ev-badge-open { font-size: 0.75rem; font-weight: 500; color: var(--cl-accent, #2d4a43); }
 
-/* ── Modal cover ── */
-.ev-modal-cover { margin: -1rem -1rem 1rem; }
-.ev-modal-cover img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
+/* ── Hero header with image ── */
+.ev-hero-header {
+    background-size: cover; background-position: center;
+    min-height: 180px; position: relative; align-items: flex-end;
+    border-radius: .5rem .5rem 0 0; padding: 16px 20px;
+}
+.ev-hero-header::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.15) 60%, rgba(0,0,0,.05) 100%);
+    border-radius: .5rem .5rem 0 0;
+}
+.ev-hero-header > * { position: relative; z-index: 1; }
+.ev-hero-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(4px);
+    color: #fff; border: 1px solid rgba(255,255,255,.25);
+    position: absolute; top: 12px; right: 12px;
+}
+.ev-hero-close:hover { background: rgba(255,255,255,.35); color: #fff; }
 
 /* ── Description ── */
 .ev-description-box {
