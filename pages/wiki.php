@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../init.php";
+require_once __DIR__ ."/../init.php";
 if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 
 $ssrCategories = Db::fetchAll("SELECT id, nom, slug, icone, couleur FROM wiki_categories WHERE actif = 1 ORDER BY ordre, nom");
@@ -18,13 +18,13 @@ $ssrData = ['categories' => $ssrCategories];
 
 <!-- Pages grid -->
 <div id="wikiGrid"></div>
-<div id="wikiEmpty" class="page-empty ss-hide">
+<div id="wikiEmpty" class="page-empty" style="display:none">
   <i class="bi bi-book wk-empty-icon"></i>
   Aucune page dans cette catégorie
 </div>
 
 <!-- Read view -->
-<div id="wikiReadView" class="ss-hide">
+<div id="wikiReadView" class="" style="display:none">
   <div class="mb-3">
     <button class="btn btn-light btn-sm" id="wikiBackBtn"><i class="bi bi-arrow-left"></i> Retour</button>
   </div>

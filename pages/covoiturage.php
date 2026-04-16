@@ -1,12 +1,12 @@
 <?php
-require_once __DIR__ . "/../init.php";
+require_once __DIR__ ."/../init.php";
 if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 
 $ztUser = $_SESSION["ss_user"];
 
 // SSR: buddy count
 $buddies = Db::fetchAll(
-    "SELECT cb.buddy_id FROM covoiturage_buddies cb WHERE cb.user_id = ?",
+"SELECT cb.buddy_id FROM covoiturage_buddies cb WHERE cb.user_id = ?",
     [$ztUser['id']]
 );
 $buddyIds = array_column($buddies, 'buddy_id');
@@ -30,10 +30,10 @@ foreach (array_keys($moisSet) as $mois) {
     $planning = Db::fetch("SELECT id FROM plannings WHERE mois_annee = ?", [$mois]);
     if (!$planning) continue;
     $myAssigns = Db::fetchAll(
-        "SELECT pa.date_jour, pa.horaire_type_id, ht.code AS horaire_code, ht.heure_debut, ht.heure_fin
+"SELECT pa.date_jour, pa.horaire_type_id, ht.code AS horaire_code, ht.heure_debut, ht.heure_fin
          FROM planning_assignations pa
          LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
-         WHERE pa.planning_id = ? AND pa.user_id = ? AND pa.date_jour IN (" . implode(',', array_fill(0, count($weekDays), '?')) . ")
+         WHERE pa.planning_id = ? AND pa.user_id = ? AND pa.date_jour IN (" . implode(',', array_fill(0, count($weekDays), '?')) .")
            AND pa.horaire_type_id IS NOT NULL",
         array_merge([$planning['id'], $ztUser['id']], $weekDays)
     );
@@ -42,7 +42,7 @@ foreach (array_keys($moisSet) as $mois) {
         if (!empty($buddyIds)) {
             $ph = implode(',', array_fill(0, count($buddyIds), '?'));
             $count = (int)Db::getOne(
-                "SELECT COUNT(*) FROM planning_assignations
+"SELECT COUNT(*) FROM planning_assignations
                  WHERE planning_id = ? AND date_jour = ? AND user_id IN ($ph)
                    AND horaire_type_id = ? AND statut IN ('present','entraide')",
                 array_merge([$planning['id'], $ma['date_jour']], $buddyIds, [$ma['horaire_type_id']])
@@ -75,7 +75,7 @@ $ssrData = [
 </div>
 
 <!-- Buddy Manager Panel (collapsible) -->
-<div id="covBuddyPanel" class="mb-3 ss-hide">
+<div id="covBuddyPanel" class="mb-3" style="display:none">
   <div class="card">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -87,7 +87,7 @@ $ssrData = [
         <span class="input-group-text cov-search-icon"><i class="bi bi-search"></i></span>
         <input type="text" class="form-control cov-search-input" id="covBuddySearch" placeholder="Rechercher un collègue...">
       </div>
-      <div id="covSearchResults" class="ss-hide mb-3"></div>
+      <div id="covSearchResults" class="mb-3" style="display:none"></div>
       <!-- Current buddies -->
       <div id="covBuddyList">
         <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
@@ -104,7 +104,7 @@ $ssrData = [
 </div>
 
 <!-- No buddies alert -->
-<div id="covNoBuddiesAlert" class="mb-3 ss-hide">
+<div id="covNoBuddiesAlert" class="mb-3" style="display:none">
   <div class="alert mb-0 d-flex align-items-center gap-3 cov-alert-hint">
     <i class="bi bi-people cov-alert-hint-icon"></i>
     <div>

@@ -205,6 +205,13 @@ return [
         'admin_save_annuaire', 'admin_delete_annuaire', 'admin_toggle_favori_annuaire',
         'admin_import_annuaire_csv', 'admin_export_annuaire_csv',
     ],
+    'backups' => [
+        'admin_create_backup', 'admin_list_backups', 'admin_compare_backup',
+        'admin_restore_backup', 'admin_delete_backup',
+        'admin_create_global_backup', 'admin_restore_global_backup',
+        'admin_set_backup_access_code', 'admin_check_backup_access_code',
+        'admin_download_backup',
+    ],
     'annonces' => [
         'admin_get_annonces', 'admin_get_annonce', 'admin_create_annonce',
         'admin_update_annonce', 'admin_delete_annonce', 'admin_upload_annonce_image',

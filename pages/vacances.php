@@ -5,12 +5,12 @@ require_once __DIR__ . '/_partials/helpers.php';
 
 $uid = $_SESSION['ss_user']['id'];
 $vacYear = (int) date('Y');
-$vacDebut = "$vacYear-01-01";
-$vacFin = "$vacYear-12-31";
+$vacDebut ="$vacYear-01-01";
+$vacFin ="$vacYear-12-31";
 
 // Collaborateurs actifs
 $vacUsers = Db::fetchAll(
-    "SELECT u.id, u.prenom, u.nom, u.taux, u.solde_vacances,
+"SELECT u.id, u.prenom, u.nom, u.taux, u.solde_vacances,
             f.code AS fonction_code, f.nom AS fonction_nom,
             m.id AS module_id, m.code AS module_code, m.nom AS module_nom, m.ordre AS module_ordre
      FROM users u
@@ -23,7 +23,7 @@ $vacUsers = Db::fetchAll(
 
 // Absences vacances de l'annee
 $vacAbsences = Db::fetchAll(
-    "SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.type, a.statut,
+"SELECT a.id, a.user_id, a.date_debut, a.date_fin, a.type, a.statut,
             u.prenom, u.nom
      FROM absences a
      JOIN users u ON u.id = a.user_id
@@ -36,7 +36,7 @@ $vacAbsences = Db::fetchAll(
 
 // Periodes bloquees
 $vacBloquees = Db::fetchAll(
-    "SELECT id, date_debut, date_fin, motif FROM periodes_bloquees
+"SELECT id, date_debut, date_fin, motif FROM periodes_bloquees
      WHERE date_debut <= ? AND date_fin >= ?
      ORDER BY date_debut",
     [$vacFin, $vacDebut]
@@ -49,7 +49,7 @@ $vacModules = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY or
 $vacMoi = Db::fetch("SELECT solde_vacances FROM users WHERE id = ?", [$uid]);
 $vacMonSolde = floatval($vacMoi['solde_vacances'] ?? 27);
 $vacJoursUtilises = (int) Db::getOne(
-    "SELECT COALESCE(SUM(DATEDIFF(LEAST(date_fin, ?), GREATEST(date_debut, ?)) + 1), 0)
+"SELECT COALESCE(SUM(DATEDIFF(LEAST(date_fin, ?), GREATEST(date_debut, ?)) + 1), 0)
      FROM absences
      WHERE user_id = ? AND type = 'vacances' AND statut IN ('valide', 'en_attente')
        AND date_debut <= ? AND date_fin >= ?",
@@ -118,7 +118,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
       <span class="vac-leg"><span class="vac-sw vac-sw-today"></span> Aujourd'hui</span>
     </div>
   </div>
-  <div class="vac-drag-info ss-hide" id="vacDragInfo">
+  <div class="vac-drag-info " id="vacDragInfo" style="display:none">
     <i class="bi bi-arrows-expand"></i> <span id="vacDragText"></span>
     <button class="btn btn-sm btn-outline-secondary ms-auto" id="vacDragCancel"><i class="bi bi-x-lg"></i></button>
   </div>
@@ -169,7 +169,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
           <label class="form-label small fw-bold">Date de fin</label>
           <input type="date" class="form-control form-control-sm" id="vacFormFin">
         </div>
-        <div class="alert alert-info py-1 px-2 small ss-hide" id="vacFormInfo"></div>
+        <div class="alert alert-info py-1 px-2 small " id="vacFormInfo" style="display:none"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
@@ -199,7 +199,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
             <input type="date" class="form-control form-control-sm" id="vacConfirmFin">
           </div>
         </div>
-        <div class="alert alert-info py-1 px-2 small ss-hide" id="vacConfirmInfo"></div>
+        <div class="alert alert-info py-1 px-2 small " id="vacConfirmInfo" style="display:none"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>

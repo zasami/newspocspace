@@ -64,9 +64,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="mur-composer-preview ss-hide" id="composerPreview"></div>
+                <div class="mur-composer-preview" style="display:none" id="composerPreview"></div>
                 <div class="mur-composer-bottom">
-                    <label class="mur-composer-anon ss-hide" id="composerAnonWrap">
+                    <label class="mur-composer-anon" style="display:none" id="composerAnonWrap">
                         <input type="checkbox" id="composerAnon"> Anonyme
                     </label>
                     <button class="mur-btn-post" id="btnPost"><i class="bi bi-send-fill"></i> Publier</button>
@@ -75,7 +75,7 @@
 
             <!-- Feed -->
             <div id="murFeed"><div class="mur-loading"><span class="spinner"></span></div></div>
-            <div id="murLoadMore" class="mur-load-more ss-hide">
+            <div id="murLoadMore" class="mur-load-more" style="display:none">
                 <button class="mur-btn-load-more" id="btnLoadMore">Voir plus</button>
             </div>
         </div>
@@ -99,7 +99,7 @@
 </div>
 
 <!-- Lightbox -->
-<div class="mur-lightbox ss-hide" id="murLightbox">
+<div class="mur-lightbox" style="display:none" id="murLightbox">
     <div class="mur-lightbox-overlay"></div>
     <button class="mur-lightbox-close" id="murLightboxClose"><i class="bi bi-x-lg"></i></button>
     <button class="mur-lightbox-prev" id="murLightboxPrev"><i class="bi bi-chevron-left"></i></button>

@@ -489,7 +489,7 @@
   background: rgba(0,0,0,.45);
   backdrop-filter: blur(3px);
   z-index: 9999;
-  display: flex;
+  display: none; /* caché par défaut — ouvert via JS style.display='flex' */
   align-items: center;
   justify-content: center;
   animation: desirConfirmFadeIn .2s ease-out;

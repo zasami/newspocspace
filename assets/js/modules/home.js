@@ -17,9 +17,7 @@ const CHOIX_LABELS = { menu: 'Menu', salade: 'Salade' };
 const PAIEMENT_LABELS = { salaire: 'Salaire', caisse: 'Cash', carte: 'Carte' };
 
 export async function init() {
-    const user = window.__SS__?.user;
-    const nameEl = document.getElementById('homeUserName');
-    if (nameEl && user) nameEl.textContent = user.prenom || '';
+    // Les stats sont déjà rendues en SSR par home.php — plus besoin de les remplir en JS
 
     currentDate = new Date();
     currentMonday = getMonday(currentDate);
@@ -33,19 +31,7 @@ export async function init() {
     const modalEl = document.getElementById('menuReservationModal');
     if (modalEl) resModal = new bootstrap.Modal(modalEl);
 
-    const ssrData = window.__SS_PAGE_DATA__ || {};
-    const desirCount = ssrData.desir_count || 0;
-    const maxDesirs = ssrData.max_desirs || 4;
-    document.getElementById('statDesirs').textContent = desirCount + '/' + maxDesirs;
-    if (user?.taux) document.getElementById('statVacances').textContent = '—';
-    const unread = ssrData.unread_count || 0;
-    document.getElementById('statMessages').textContent = unread;
-    if (unread > 0) {
-        const badge = document.getElementById('emailBadge');
-        if (badge) badge.style.display = '';
-    }
-
-    await Promise.all([loadWeek(), loadNextShift(), loadMenus()]);
+    await Promise.all([loadWeek(), loadMenus()]);
 
     // Auto-refresh menus every 60s so new menus from chef appear live
     menuRefreshInterval = setInterval(loadMenus, 60000);

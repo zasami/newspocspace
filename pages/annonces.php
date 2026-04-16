@@ -1,8 +1,8 @@
-<?php require_once __DIR__ . "/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
+<?php require_once __DIR__ ."/../init.php"; if (empty($_SESSION["ss_user"])) { http_response_code(401); exit; }
 $uid = $_SESSION['ss_user']['id'];
 
 $initAnnonces = Db::fetchAll(
-    "SELECT a.id, a.titre, a.slug, a.description, a.image_url, a.categorie,
+"SELECT a.id, a.titre, a.slug, a.description, a.image_url, a.categorie,
             a.epingle, a.requires_ack, a.published_at, a.created_at,
             cr.prenom AS auteur_prenom, cr.nom AS auteur_nom
      FROM annonces a
@@ -57,19 +57,19 @@ $catLabels = [
 
 <!-- LIST VIEW -->
 <div id="annListView">
-  <div id="annAckAlert" class="ann-ack-alert ss-hide">
+  <div id="annAckAlert" class="ann-ack-alert" style="display:none">
     <i class="bi bi-exclamation-triangle-fill"></i> <strong id="annAckCount">0</strong> annonce(s) nécessitent votre accusé de réception
   </div>
   <div class="ann-filters" id="annFilters"></div>
   <div class="ann-list" id="annList"></div>
-  <div class="ann-empty ss-hide" id="annEmpty">
+  <div class="ann-empty " id="annEmpty" style="display:none">
     <i class="bi bi-megaphone"></i>
     Aucune annonce pour le moment
   </div>
 </div>
 
 <!-- READ VIEW -->
-<div id="annReadView" class="ss-hide">
+<div id="annReadView" class="" style="display:none">
   <div class="ann-read-panel" id="annReadPanel"></div>
 </div>
 
