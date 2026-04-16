@@ -14,7 +14,6 @@ define('USER_BACKUP_TABLES', [
     'messages',
     'message_recipients',
     'message_attachments',
-    'email_externe_cache',
     'email_externe_contacts',
 ]);
 

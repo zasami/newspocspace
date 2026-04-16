@@ -36,6 +36,8 @@ function notif_icon($type) {
         'planning'              => ['bi-calendar3', 'green'],
         'desir'                 => ['bi-star', 'purple'],
         'alerte'                => ['bi-exclamation-triangle', 'red'],
+        'fiche_salaire'         => ['bi-receipt', 'teal'],
+        'document_ajoute'       => ['bi-file-earmark-plus', 'green'],
         default                 => ['bi-bell', 'neutral'],
     };
 }

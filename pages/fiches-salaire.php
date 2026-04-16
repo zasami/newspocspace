@@ -72,7 +72,7 @@ function fmt_size($bytes) {
                         <div class="fiche-period"><?= h($MOIS[$m]) ?> <?= $currentYear ?></div>
                         <div class="fiche-meta"><?= h($fiche['original_name']) ?> · <?= h(fmt_size($fiche['size'])) ?></div>
                     </div>
-                    <i class="bi bi-download text-primary"></i>
+                    <i class="bi bi-download fiche-dl-icon"></i>
                 </div>
             <?php else: ?>
                 <div class="fiche-empty-month">
