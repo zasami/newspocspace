@@ -11,21 +11,21 @@ $ssrData = ['categories' => $ssrCategories];
 </div>
 
 <!-- Category filters -->
-<div id="wikiCatFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+<div id="wikiCatFilters" class="wk-filters"></div>
 
 <!-- Tag filters + Favoris -->
-<div id="wikiTagFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center"></div>
+<div id="wikiTagFilters" class="wk-tag-filters"></div>
 
 <!-- Pages grid -->
 <div id="wikiGrid"></div>
-<div id="wikiEmpty" class="page-empty" style="display:none">
-  <i class="bi bi-book" style="font-size:2.5rem;display:block;margin-bottom:8px;opacity:.3"></i>
+<div id="wikiEmpty" class="page-empty ss-hide">
+  <i class="bi bi-book wk-empty-icon"></i>
   Aucune page dans cette catégorie
 </div>
 
 <!-- Read view -->
-<div id="wikiReadView" style="display:none">
-  <div style="margin-bottom:12px">
+<div id="wikiReadView" class="ss-hide">
+  <div class="mb-3">
     <button class="btn btn-light btn-sm" id="wikiBackBtn"><i class="bi bi-arrow-left"></i> Retour</button>
   </div>
   <div id="wikiReadPanel" class="wiki-read-panel"></div>

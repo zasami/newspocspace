@@ -47,7 +47,7 @@ $STATUT_BADGES = [
     <button class="ss-lightbox-close" type="button"><i class="bi bi-x-lg"></i></button>
     <div class="ss-lightbox-title" id="ztLbTitle"></div>
     <div class="ss-lightbox-stage" id="ztLbStage"></div>
-    <div class="ss-lightbox-toolbar" id="ztLbToolbar" style="display:none;">
+    <div class="ss-lightbox-toolbar d-none" id="ztLbToolbar">
       <button type="button" class="ss-lb-btn" id="ztLbZoomOut"><i class="bi bi-zoom-out"></i></button>
       <span class="ss-lb-zoom" id="ztLbZoomLevel">100%</span>
       <button type="button" class="ss-lb-btn" id="ztLbZoomIn"><i class="bi bi-zoom-in"></i></button>

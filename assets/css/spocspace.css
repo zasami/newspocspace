@@ -4609,3 +4609,182 @@ input[type="checkbox"]:not(.form-check-input):hover {
   .abs-layout { flex-direction: column; }
   .abs-form-card { flex: 1 1 auto; }
 }
+
+/* ═══════════════════════════════════════════════
+   Cuisine shared styles (modal, form, radio)
+   ═══════════════════════════════════════════════ */
+
+/* -- Modal layout -- */
+.cuis-modal-dialog-md   { max-width: 540px; }
+.cuis-modal-dialog-sm   { max-width: 520px; }
+.cuis-modal-dialog-xs   { max-width: 420px; }
+.cuis-modal-dialog-cf   { max-width: 480px; }
+.cuis-modal-flex         { display: flex; flex-direction: column; max-height: 85vh; }
+.cuis-modal-header-fix   { flex-shrink: 0; }
+.cuis-modal-body-scroll  { flex: 1; overflow-y: auto; }
+.cuis-modal-footer-fix   { flex-shrink: 0; }
+
+/* -- Modal close button (round X) -- */
+.cuis-modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--cl-border, #E8E5E0);
+}
+.cuis-modal-close .bi-x-lg { font-size: 0.85rem; }
+
+/* -- Card header title inline -- */
+.cuis-h3-inline { margin: 0; }
+
+/* -- Form label bold -- */
+.cuis-label-bold { font-weight: 600; }
+
+/* -- Form group spacing -- */
+.cuis-field-group { margin-bottom: 1rem; }
+.cuis-field-group-last { margin-bottom: 0; }
+.cuis-field-group-rel { margin-bottom: 1rem; position: relative; }
+
+/* -- Menu choice radio cards -- */
+.cuis-choix-row { display: flex; gap: 0.5rem; }
+.menu-choix-option {
+  flex: 1; display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 1rem; border: 2px solid var(--cl-border, #E8E5E0);
+  border-radius: 10px; cursor: pointer; transition: all 0.15s;
+}
+.menu-choix-option.active {
+  border-color: var(--ss-teal);
+  background: var(--ss-accent-bg);
+}
+.menu-choix-option input[type="radio"] { display: none; }
+.cuis-choix-icon { font-size: 1.2rem; }
+.cuis-choix-icon-menu { color: var(--ss-orange); }
+.cuis-choix-icon-salade { color: var(--cl-teal-fg, #2d4a43); }
+.cuis-choix-label { font-weight: 700; font-size: 0.9rem; }
+
+/* -- Payment radio pills -- */
+.cuis-pay-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.menu-pay-option {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.9rem; border: 1.5px solid var(--cl-border, #E8E5E0);
+  border-radius: 8px; cursor: pointer; transition: all 0.15s;
+}
+.menu-pay-option.active {
+  border-color: var(--ss-teal);
+  background: var(--ss-accent-bg);
+}
+.menu-pay-option input[type="radio"] { accent-color: var(--ss-teal); }
+
+/* -- Autocomplete results scrollable -- */
+.cuis-autocomplete-scroll { max-height: 200px; overflow-y: auto; }
+
+/* -- Quick tags row -- */
+.cuis-quick-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+/* -- Width-auto for inline selects -- */
+.cuis-w-auto { width: auto; }
+
+/* -- Card body scroll -- */
+.cuis-card-body-scroll { max-height: 400px; overflow-y: auto; }
+
+/* ── cuisine-home.php ── */
+.ch-week-label { font-weight: 600; min-width: 180px; text-align: center; }
+
+/* ── cuisine.php ── */
+.cu-week-label { font-size: 0.85rem; font-weight: 600; min-width: 160px; text-align: center; }
+
+/* ── cuisine-reservations.php ── */
+.cr-stat-icon-couverts { background: #bcd2cb; color: var(--cl-teal-fg, #2d4a43); }
+.cr-stat-icon-menu     { background: #B8C9D4; color: #3B4F6B; }
+.cr-stat-icon-salade   { background: #D0C4D8; color: #5B4B6B; }
+.cr-date-input {
+  max-width: 180px; border-radius: 8px;
+  border: 1.5px solid var(--cl-border, #E0DCD4);
+  height: 38px; font-size: 0.88rem;
+}
+.cr-print-btn { border-radius: 8px; height: 38px; padding: 0 16px; }
+
+/* ── cuisine-vip.php ── */
+.cv-page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.75rem;
+}
+.cv-hint-pill {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1.2rem; background: var(--cl-bg, #F0EDE8);
+  border-radius: 50px; font-size: 0.82rem; color: var(--cl-text-muted, #4A4840);
+}
+.cv-kbd {
+  background: var(--cl-border, #E8E5E0); padding: 1px 6px;
+  border-radius: 4px; font-size: 0.78rem; font-weight: 600;
+}
+.cv-new-session-btn { border-radius: 8px; }
+.cv-session-badge {
+  background: #bcd2cb; color: var(--cl-teal-fg, #2d4a43);
+  font-size: 0.8rem; padding: 6px 14px; border-radius: 8px;
+}
+#cvHistorySelect { width: 260px; }
+#crRepasSelect { width: 130px; }
+
+/* ── cuisine-menus.php ── */
+.cm-spinner-full { grid-column: 1 / -1; }
+
+/* ── cuisine-famille.php ── */
+.cf-date-input { max-width: 180px; }
+.cf-repas-select { max-width: 120px; }
+
+/* ── Inline-style replacements ─────────────────────────────────────────────── */
+.ss-loading-cell { padding: 2rem; }
+.sd-filter-select { max-width: 200px; }
+.doc-service-cards-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+/* ── Utility: JS-toggled hidden (no !important, overridable by inline style.display) ── */
+.ss-hide { display: none; }
+
+/* ── Covoiturage ── */
+.cov-page-header { display: flex; justify-content: space-between; align-items: center; }
+.cov-buddies-btn { background: var(--ss-accent-bg); color: var(--ss-text); font-weight: 500; }
+.cov-search-icon { background: var(--ss-bg-card); border-right: none; }
+.cov-search-input { border-left: none; }
+.cov-week-label { min-width: 180px; text-align: center; }
+.cov-alert-hint { background: var(--ss-bg); border: 1px solid var(--ss-border); border-left: 4px solid var(--ss-teal); }
+.cov-alert-hint-icon { font-size: 1.5rem; color: var(--ss-teal); }
+
+/* ── Desirs ── */
+.des-horaire-badge { color: #fff; }
+
+/* ── Wiki ── */
+.wk-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.wk-tag-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
+.wk-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; opacity: .3; }
+
+/* ── Repartition ── */
+.rep-page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+.rep-modal-sm { max-width: 480px; }
+.rep-modal-close-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--ss-border);
+  display: flex; align-items: center; justify-content: center;
+}
+.rep-modal-close-icon { font-size: .85rem; }
+.rep-modal-body { padding: 0; max-height: 60vh; overflow-y: auto; }
+
+/* ── Emails ── */
+.em-title { font-weight: 700; }
+.em-empty-detail { padding: 60px 20px; }
+.em-empty-icon { font-size: 2.5rem; opacity: .2; display: block; margin-bottom: 8px; }
+.em-empty-text { font-size: .88rem; }
+.em-search-wrap { position: relative; }
+
+/* ── Annonces ── */
+.ann-ack-alert {
+  margin-bottom: 1rem; padding: .7rem 1rem;
+  background: var(--ss-bg); border: 1px solid var(--ss-border);
+  border-radius: 10px; font-size: .85rem; color: var(--ss-red);
+}
+
+/* ── Login ── */
+.lgn-pwd-wrap { position: relative; }
+.lgn-pwd-input { padding-right: 42px; }
+.lgn-pwd-eye {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  cursor: pointer; color: var(--ss-text-muted); font-size: 1.1rem;
+  line-height: 1; padding: 4px; user-select: none; z-index: 5;
+}

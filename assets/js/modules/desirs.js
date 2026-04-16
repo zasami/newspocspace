@@ -88,6 +88,9 @@ export function init() {
     buildCalendar();
     renderDesirs(ssrData.desirs || [], ssrData.max_desirs || 4);
     renderPermanents(ssrData.permanents || []);
+
+    // Apply dynamic DB colors from data-bg attributes
+    document.querySelectorAll('[data-bg]').forEach(el => { el.style.background = el.dataset.bg; });
 }
 
 // ── Calendar ──

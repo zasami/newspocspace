@@ -57,19 +57,19 @@ $catLabels = [
 
 <!-- LIST VIEW -->
 <div id="annListView">
-  <div id="annAckAlert" style="display:none;margin-bottom:1rem;padding:.7rem 1rem;background:#FFF8F4;border:1px solid #E2B8AE;border-radius:10px;font-size:.85rem;color:#7B3B2C">
+  <div id="annAckAlert" class="ann-ack-alert ss-hide">
     <i class="bi bi-exclamation-triangle-fill"></i> <strong id="annAckCount">0</strong> annonce(s) nécessitent votre accusé de réception
   </div>
   <div class="ann-filters" id="annFilters"></div>
   <div class="ann-list" id="annList"></div>
-  <div class="ann-empty" id="annEmpty" style="display:none">
+  <div class="ann-empty ss-hide" id="annEmpty">
     <i class="bi bi-megaphone"></i>
     Aucune annonce pour le moment
   </div>
 </div>
 
 <!-- READ VIEW -->
-<div id="annReadView" style="display:none">
+<div id="annReadView" class="ss-hide">
   <div class="ann-read-panel" id="annReadPanel"></div>
 </div>
 

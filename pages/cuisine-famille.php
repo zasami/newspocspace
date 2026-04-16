@@ -3,8 +3,8 @@
 </div>
 
 <div class="d-flex align-items-center gap-2 mb-3">
-  <input type="date" class="form-control form-control-sm" id="cfDate" style="max-width:180px">
-  <select class="form-select form-select-sm" id="cfRepas" style="max-width:120px">
+  <input type="date" class="form-control form-control-sm cf-date-input" id="cfDate">
+  <select class="form-select form-select-sm cf-repas-select" id="cfRepas">
     <option value="midi">Midi</option>
     <option value="soir">Soir</option>
   </select>
@@ -17,7 +17,7 @@
 
 <!-- Modal ajout réservation famille -->
 <div class="modal fade" id="cfModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-cf">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Nouvelle réservation famille</h5>
@@ -49,7 +49,7 @@
           <input type="text" class="form-control" id="cfVisiteurSearch" placeholder="Nom du visiteur..." autocomplete="off">
           <input type="hidden" id="cfVisiteurId">
           <div class="cuis-autocomplete-list" id="cfVisiteurResults"></div>
-          <div class="form-check mt-1" id="cfSaveVisiteurWrap" style="display:none">
+          <div class="form-check mt-1 d-none" id="cfSaveVisiteurWrap">
             <input type="checkbox" class="form-check-input" id="cfSaveVisiteur">
             <label class="form-check-label small" for="cfSaveVisiteur">Enregistrer ce visiteur</label>
           </div>

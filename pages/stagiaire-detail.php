@@ -185,7 +185,7 @@ $pageTitle = $stag['prenom'] . ' ' . $stag['nom'];
         <div class="tab-pane fade" id="sdTabReports">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <small class="text-muted">Reports rédigés par le stagiaire — valide ou demande une correction.</small>
-                <select class="form-select form-select-sm" id="sdReportFilter" style="max-width:200px">
+                <select class="form-select form-select-sm sd-filter-select" id="sdReportFilter">
                     <option value="">Tous les statuts</option>
                     <option value="soumis">À valider</option>
                     <option value="valide">Validés</option>

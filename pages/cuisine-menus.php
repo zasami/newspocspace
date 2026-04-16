@@ -16,21 +16,21 @@
 </div>
 
 <div class="cm-week-grid" id="cmBody">
-  <div class="text-center py-4" style="grid-column:1/-1"><span class="spinner"></span></div>
+  <div class="text-center py-4 cm-spinner-full"><span class="spinner"></span></div>
 </div>
 
 <!-- Modal saisie menu -->
 <div class="modal fade" id="cmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
-    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
-      <div class="modal-header" style="flex-shrink:0">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-sm">
+    <div class="modal-content cuis-modal-flex">
+      <div class="modal-header cuis-modal-header-fix">
         <div>
           <h5 class="modal-title" id="cmModalTitle">Menu</h5>
           <small class="text-muted" id="cmModalSub"></small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="modal-body cuis-modal-body-scroll">
         <input type="hidden" id="cmDate">
         <input type="hidden" id="cmRepas">
         <div class="mb-2">
@@ -60,12 +60,11 @@
           <textarea class="form-control" id="cmRemarques" rows="2" placeholder="Allergènes, options végé..."></textarea>
         </div>
       </div>
-      <div class="modal-footer d-flex" style="flex-shrink:0">
+      <div class="modal-footer d-flex cuis-modal-footer-fix">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-sm btn-primary ms-auto" id="cmSaveBtn"><i class="bi bi-check-lg"></i> Enregistrer</button>
       </div>
     </div>
   </div>
 </div>
-
 

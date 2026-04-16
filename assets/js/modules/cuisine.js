@@ -338,7 +338,7 @@ function openFamilleModal() {
     document.getElementById('cuisFamilleRemarques').value = '';
     document.getElementById('cuisResidentResults').innerHTML = '';
     document.getElementById('cuisVisiteurResults').innerHTML = '';
-    document.getElementById('cuisSaveVisiteurWrap').style.display = 'none';
+    document.getElementById('cuisSaveVisiteurWrap').classList.add('d-none');
     familleModal?.show();
 }
 
@@ -385,14 +385,14 @@ async function searchVisiteurs() {
             document.getElementById('cuisFamilleVisiteurSearch').value = v.prenom + ' ' + v.nom;
             document.getElementById('cuisFamilleVisiteurId').value = v.id;
             list.innerHTML = '';
-            if (saveWrap) saveWrap.style.display = 'none';
+            if (saveWrap) saveWrap.classList.add('d-none');
         });
         list.appendChild(item);
     });
 
     // Show save option if user typed something not matching
     if (q.length >= 2 && !(res.visiteurs || []).some(v => (v.prenom + ' ' + v.nom).toLowerCase() === q.toLowerCase())) {
-        if (saveWrap) saveWrap.style.display = 'block';
+        if (saveWrap) saveWrap.classList.remove('d-none');
         document.getElementById('cuisFamilleVisiteurId').value = '';
     }
 }

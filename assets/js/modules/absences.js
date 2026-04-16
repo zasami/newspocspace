@@ -155,13 +155,13 @@ function openFileViewer(url, name, type) {
     if (type === 'image') {
         stage.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" draggable="false">`;
         imgEl = stage.querySelector('img');
-        toolbar.style.display = '';
+        toolbar.classList.remove('d-none');
     } else if (type === 'pdf') {
         stage.innerHTML = `<iframe src="${url}#toolbar=1"></iframe>`;
-        toolbar.style.display = 'none';
+        toolbar.classList.add('d-none');
     } else {
         stage.innerHTML = `<div class="abs-lb-download"><i class="bi bi-file-earmark abs-lb-download-icon"></i><br><a href="${url}" target="_blank" class="abs-lb-download-link">Télécharger le fichier</a></div>`;
-        toolbar.style.display = 'none';
+        toolbar.classList.add('d-none');
     }
 
     function apply() {

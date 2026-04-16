@@ -33,10 +33,10 @@
   <div class="tab-pane fade" id="pane-saisie" role="tabpanel">
     <div class="card mt-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h3 style="margin:0"><i class="bi bi-calendar-week"></i> Menus de la semaine</h3>
+        <h3 class="cuis-h3-inline"><i class="bi bi-calendar-week"></i> Menus de la semaine</h3>
         <div class="d-flex align-items-center gap-2">
           <button class="btn btn-sm btn-outline-secondary" id="cuisMenuPrev"><i class="bi bi-chevron-left"></i></button>
-          <span id="cuisMenuWeekLabel" style="font-size:0.85rem;font-weight:600;min-width:160px;text-align:center"></span>
+          <span id="cuisMenuWeekLabel" class="cu-week-label"></span>
           <button class="btn btn-sm btn-outline-secondary" id="cuisMenuNext"><i class="bi bi-chevron-right"></i></button>
         </div>
       </div>
@@ -50,10 +50,10 @@
   <div class="tab-pane fade" id="pane-collab" role="tabpanel">
     <div class="card mt-3">
       <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <h3 style="margin:0"><i class="bi bi-people"></i> Réservations collaborateurs</h3>
+        <h3 class="cuis-h3-inline"><i class="bi bi-people"></i> Réservations collaborateurs</h3>
         <div class="d-flex align-items-center gap-2">
-          <input type="date" class="form-control form-control-sm" id="cuisCollabDate" style="width:auto">
-          <select class="form-select form-select-sm" id="cuisCollabRepas" style="width:auto">
+          <input type="date" class="form-control form-control-sm cuis-w-auto" id="cuisCollabDate">
+          <select class="form-select form-select-sm cuis-w-auto" id="cuisCollabRepas">
             <option value="midi">Midi</option>
             <option value="soir">Soir</option>
           </select>
@@ -70,10 +70,10 @@
   <div class="tab-pane fade" id="pane-famille" role="tabpanel">
     <div class="card mt-3">
       <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <h3 style="margin:0"><i class="bi bi-house-heart"></i> Réservations famille</h3>
+        <h3 class="cuis-h3-inline"><i class="bi bi-house-heart"></i> Réservations famille</h3>
         <div class="d-flex align-items-center gap-2">
-          <input type="date" class="form-control form-control-sm" id="cuisFamilleDate" style="width:auto">
-          <select class="form-select form-select-sm" id="cuisFamilleRepas" style="width:auto">
+          <input type="date" class="form-control form-control-sm cuis-w-auto" id="cuisFamilleDate">
+          <select class="form-select form-select-sm cuis-w-auto" id="cuisFamilleRepas">
             <option value="midi">Midi</option>
             <option value="soir">Soir</option>
           </select>
@@ -90,7 +90,7 @@
   <div class="tab-pane fade" id="pane-vip" role="tabpanel">
     <div class="card mt-3">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h3 style="margin:0"><i class="bi bi-star"></i> Table VIP — Résidents</h3>
+        <h3 class="cuis-h3-inline"><i class="bi bi-star"></i> Table VIP — Résidents</h3>
         <button class="btn btn-sm btn-outline-primary" id="cuisVipAddBtn"><i class="bi bi-plus-lg"></i> Ajouter un résident VIP</button>
       </div>
       <div class="card-body" id="cuisVipBody">
@@ -102,11 +102,11 @@
 
 <!-- Modal réservation famille -->
 <div class="modal fade" id="cuisFamilleModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:540px">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-md">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="cuisFamilleModalTitle">Nouvelle réservation famille</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <form id="cuisFamilleForm">
@@ -135,7 +135,7 @@
             <input type="text" class="form-control" id="cuisFamilleVisiteurSearch" placeholder="Rechercher ou saisir un nom..." autocomplete="off">
             <input type="hidden" id="cuisFamilleVisiteurId">
             <div class="cuis-autocomplete-list" id="cuisVisiteurResults"></div>
-            <div class="form-check mt-1" id="cuisSaveVisiteurWrap" style="display:none">
+            <div class="form-check mt-1 d-none" id="cuisSaveVisiteurWrap">
               <input type="checkbox" class="form-check-input" id="cuisSaveVisiteur">
               <label class="form-check-label small" for="cuisSaveVisiteur">Enregistrer ce visiteur pour la prochaine fois</label>
             </div>
@@ -162,11 +162,11 @@
 
 <!-- Modal ajout VIP -->
 <div class="modal fade" id="cuisVipModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-xs">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Ajouter un résident VIP</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <input type="text" class="form-control" id="cuisVipResidentSearch" placeholder="Rechercher un résident..." autocomplete="off">

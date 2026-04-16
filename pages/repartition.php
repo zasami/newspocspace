@@ -76,12 +76,12 @@ for ($repI = 0; $repI < 7; $repI++) {
     ];
 }
 ?>
-<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+<div class="page-header rep-page-header">
   <div>
     <h1><i class="bi bi-grid-3x3-gap"></i> Répartition</h1>
-    <p id="repWeekLabel" class="text-muted" style="margin:0">Chargement...</p>
+    <p id="repWeekLabel" class="text-muted mb-0">Chargement...</p>
   </div>
-  <div style="display:flex;align-items:center;gap:0.5rem">
+  <div class="d-flex align-items-center gap-2">
     <div class="btn-group btn-group-sm" id="repViewToggle">
       <button class="btn btn-outline-secondary active" data-view="week" title="Vue semaine"><i class="bi bi-calendar-week"></i></button>
       <button class="btn btn-outline-secondary" data-view="day" title="Vue jour"><i class="bi bi-calendar-day"></i></button>
@@ -95,13 +95,13 @@ for ($repI = 0; $repI < 7; $repI++) {
 
 <!-- Horaires modal -->
 <div class="modal fade" id="repHorairesModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
+  <div class="modal-dialog modal-dialog-centered rep-modal-sm">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-clock me-1"></i>Horaires types</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border);display:flex;align-items:center;justify-content:center" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto rep-modal-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg rep-modal-close-icon"></i></button>
       </div>
-      <div class="modal-body" style="padding:0;max-height:60vh;overflow-y:auto" id="repHorairesBody"></div>
+      <div class="modal-body rep-modal-body" id="repHorairesBody"></div>
       <div class="modal-footer"><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button></div>
     </div>
   </div>

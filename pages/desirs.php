@@ -117,7 +117,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
           </label>
           <div class="desir-calendar" id="desirCalendar"></div>
         </div>
-        <div class="alert alert-info desir-banner-readonly" id="desirReadOnlyBanner" style="display:none">
+        <div class="alert alert-info desir-banner-readonly ss-hide" id="desirReadOnlyBanner">
           <i class="bi bi-eye"></i> <strong>Consultation historique</strong> -- les desirs ne peuvent etre crees que pour le mois courant + 1
         </div>
         <div class="alert alert-info desir-banner-info">
@@ -126,7 +126,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
       </div>
 
       <!-- PERMANENT: Jour semaine -->
-      <div id="permanentFields" style="display:none">
+      <div id="permanentFields" class="ss-hide">
         <div class="form-group">
           <label class="form-label">Jour de la semaine</label>
           <select class="form-control" id="desirJourSemaine">
@@ -154,7 +154,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
       </div>
 
       <!-- Horaire visual picker -->
-      <div class="form-group" id="desirHoraireGroup" style="display:none">
+      <div class="form-group ss-hide" id="desirHoraireGroup">
         <label class="form-label">Horaire souhaite</label>
         <div id="horairesList" class="horaires-grid">
           <?php foreach ($horaires as $hor):
@@ -163,7 +163,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
               $fmtF = substr($hor['heure_fin'] ?? '', 0, 5);
           ?>
             <button type="button" class="horaire-chip" data-id="<?= h($hor['id']) ?>" data-tooltip="<?= h($hor['nom'] ?? '') ?>">
-                <span class="horaire-chip-code" style="background:<?= $c ?>"><?= h($hor['code'] ?? '') ?></span>
+                <span class="horaire-chip-code" data-bg="<?= $c ?>"><?= h($hor['code'] ?? '') ?></span>
                 <span class="horaire-chip-time"><?= h($fmtD) ?><br><?= h($fmtF) ?></span>
             </button>
           <?php endforeach ?>
@@ -172,7 +172,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
       </div>
 
       <!-- Detail -->
-      <div class="form-group" id="desirDetailGroup" style="display:none">
+      <div class="form-group ss-hide" id="desirDetailGroup">
         <label class="form-label">Commentaire (optionnel)</label>
         <textarea class="form-control" id="desirDetail" placeholder="Ex: rendez-vous medical..." rows="2"></textarea>
       </div>
@@ -190,7 +190,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
         <h3 id="desirsListTitle">Desirs -- <?= h($moisLabel) ?></h3>
       </div>
       <!-- Detail du desir selectionne -->
-      <div id="desirDetailPanel" class="desir-detail-panel" style="display:none"></div>
+      <div id="desirDetailPanel" class="desir-detail-panel ss-hide"></div>
       <div class="card-body p-0">
         <div class="table-wrap">
           <table class="table">
@@ -220,7 +220,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
                   $horaireCell = '';
                   if ($d['horaire_code']) {
                       $c = h($d['horaire_couleur'] ?: '#9B51E0');
-                      $horaireCell = '<span class="badge" style="background:' . $c . ';color:#fff">' . h($d['horaire_code']) . '</span>';
+                      $horaireCell = '<span class="badge des-horaire-badge" data-bg="' . $c . '">' . h($d['horaire_code']) . '</span>';
                   }
               ?>
                 <tr class="desir-table-row" data-date-row="<?= h($d['date_souhaitee']) ?>">
@@ -273,7 +273,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
                   $horaireCell = '';
                   if ($p['horaire_code']) {
                       $c = h($p['horaire_couleur'] ?: '#9B51E0');
-                      $horaireCell = '<span class="badge" style="background:' . $c . ';color:#fff">' . h($p['horaire_code']) . '</span>';
+                      $horaireCell = '<span class="badge des-horaire-badge" data-bg="' . $c . '">' . h($p['horaire_code']) . '</span>';
                   }
                   $detailCell = $p['detail'] ? '<small>' . h($p['detail']) . '</small>' : '<small class="text-muted">--</small>';
 
@@ -322,7 +322,7 @@ $moisLabel = $monthNames[(int)$moisCurNum - 1] . ' ' . $anneeCur;
 </div>
 
 <!-- Modal confirmation suppression -->
-<div class="desir-confirm-overlay" id="desirConfirmModal" style="display:none">
+<div class="desir-confirm-overlay ss-hide" id="desirConfirmModal">
   <div class="desir-confirm-box">
     <div class="desir-confirm-header">
       <div class="desir-confirm-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>

@@ -66,7 +66,7 @@ async function loadBuddyCount() {
 
 function toggleBuddyPanel() {
     const panel = document.getElementById('covBuddyPanel');
-    const visible = panel.style.display !== 'none';
+    const visible = getComputedStyle(panel).display !== 'none';
     panel.style.display = visible ? 'none' : 'block';
     if (!visible) loadBuddies();
 }

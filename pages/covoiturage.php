@@ -64,10 +64,10 @@ $ssrData = [
     'days' => $weekResults,
 ];
 ?>
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center">
+<div class="page-header cov-page-header">
   <h1><i class="bi bi-car-front"></i> Covoiturage</h1>
   <div class="d-flex gap-2">
-    <button class="btn btn-sm" id="covBuddiesBtn" style="background:var(--ss-accent-bg);color:var(--ss-text);font-weight:500;">
+    <button class="btn btn-sm cov-buddies-btn" id="covBuddiesBtn">
       <i class="bi bi-people"></i> Mes collègues <span class="badge bg-dark ms-1" id="covBuddyCount">0</span>
     </button>
     <button class="btn btn-sm btn-outline-secondary" id="covPrintBtn"><i class="bi bi-printer"></i></button>
@@ -75,7 +75,7 @@ $ssrData = [
 </div>
 
 <!-- Buddy Manager Panel (collapsible) -->
-<div id="covBuddyPanel" class="mb-3" style="display:none;">
+<div id="covBuddyPanel" class="mb-3 ss-hide">
   <div class="card">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -84,10 +84,10 @@ $ssrData = [
       </div>
       <!-- Search to add -->
       <div class="input-group input-group-sm mb-3">
-        <span class="input-group-text" style="background:#fff;border-right:none;"><i class="bi bi-search"></i></span>
-        <input type="text" class="form-control" id="covBuddySearch" placeholder="Rechercher un collègue..." style="border-left:none;">
+        <span class="input-group-text cov-search-icon"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control cov-search-input" id="covBuddySearch" placeholder="Rechercher un collègue...">
       </div>
-      <div id="covSearchResults" style="display:none;" class="mb-3"></div>
+      <div id="covSearchResults" class="ss-hide mb-3"></div>
       <!-- Current buddies -->
       <div id="covBuddyList">
         <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
@@ -98,15 +98,15 @@ $ssrData = [
 
 <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
   <button class="btn btn-sm btn-outline-secondary" id="covPrevWeek"><i class="bi bi-chevron-left"></i></button>
-  <span class="fw-bold" id="covWeekLabel" style="min-width:180px;text-align:center"></span>
+  <span class="fw-bold cov-week-label" id="covWeekLabel"></span>
   <button class="btn btn-sm btn-outline-secondary" id="covNextWeek"><i class="bi bi-chevron-right"></i></button>
   <button class="btn btn-sm btn-outline-primary ms-2" id="covTodayBtn">Aujourd'hui</button>
 </div>
 
 <!-- No buddies alert -->
-<div id="covNoBuddiesAlert" class="mb-3" style="display:none;">
-  <div class="alert mb-0 d-flex align-items-center gap-3" style="background:#FFF8F4;border:1px solid #E8E5E0;border-left:4px solid var(--ss-teal);">
-    <i class="bi bi-people" style="font-size:1.5rem;color:var(--ss-teal);"></i>
+<div id="covNoBuddiesAlert" class="mb-3 ss-hide">
+  <div class="alert mb-0 d-flex align-items-center gap-3 cov-alert-hint">
+    <i class="bi bi-people cov-alert-hint-icon"></i>
     <div>
       <strong>Ajoutez vos collègues de covoiturage</strong>
       <div class="small text-muted">Cliquez sur « Mes collègues » pour ajouter les personnes avec qui vous faites du covoiturage. Les croisements d'horaires s'afficheront ensuite ici.</div>

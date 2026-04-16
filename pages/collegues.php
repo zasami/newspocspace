@@ -19,7 +19,7 @@ $colleguesAbsences = Db::fetchAll(
 </div>
 
 <div class="card">
-  <div class="card-body" style="padding:0;">
+  <div class="card-body p-0">
     <div class="table-wrap">
       <table class="table">
         <thead>
@@ -33,7 +33,7 @@ $colleguesAbsences = Db::fetchAll(
           </tr>
         </thead>
         <tbody id="colleguesTableBody">
-          <tr><td colspan="6" class="text-center text-muted" style="padding:2rem">Chargement...</td></tr>
+          <tr><td colspan="6" class="text-center text-muted ss-loading-cell">Chargement...</td></tr>
         </tbody>
       </table>
     </div>

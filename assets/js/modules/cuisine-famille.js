@@ -81,7 +81,7 @@ function openModal() {
     document.getElementById('cfRemarques').value = '';
     document.getElementById('cfResidentResults').innerHTML = '';
     document.getElementById('cfVisiteurResults').innerHTML = '';
-    document.getElementById('cfSaveVisiteurWrap').style.display = 'none';
+    document.getElementById('cfSaveVisiteurWrap').classList.add('d-none');
     modal?.show();
 }
 
@@ -124,14 +124,14 @@ async function searchVisiteurs() {
             document.getElementById('cfVisiteurSearch').value = v.prenom + ' ' + v.nom;
             document.getElementById('cfVisiteurId').value = v.id;
             list.innerHTML = '';
-            document.getElementById('cfSaveVisiteurWrap').style.display = 'none';
+            document.getElementById('cfSaveVisiteurWrap').classList.add('d-none');
         });
         list.appendChild(item);
     });
 
     const saveWrap = document.getElementById('cfSaveVisiteurWrap');
     if (q.length >= 2 && !(res.visiteurs || []).some(v => (v.prenom + ' ' + v.nom).toLowerCase() === q.toLowerCase())) {
-        if (saveWrap) saveWrap.style.display = 'block';
+        if (saveWrap) saveWrap.classList.remove('d-none');
         document.getElementById('cfVisiteurId').value = '';
     }
 }

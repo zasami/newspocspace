@@ -235,7 +235,7 @@ function setupLightbox() {
     document.getElementById('murLightboxNext')?.addEventListener('click', () => navigateLightbox(1));
     document.addEventListener('keydown', (e) => {
         const lb = document.getElementById('murLightbox');
-        if (!lb || lb.style.display === 'none') return;
+        if (!lb || getComputedStyle(lb).display === 'none') return;
         if (e.key === 'Escape') closeLightbox();
         if (e.key === 'ArrowLeft') navigateLightbox(-1);
         if (e.key === 'ArrowRight') navigateLightbox(1);

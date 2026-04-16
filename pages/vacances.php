@@ -118,7 +118,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
       <span class="vac-leg"><span class="vac-sw vac-sw-today"></span> Aujourd'hui</span>
     </div>
   </div>
-  <div class="vac-drag-info" id="vacDragInfo" style="display:none">
+  <div class="vac-drag-info ss-hide" id="vacDragInfo">
     <i class="bi bi-arrows-expand"></i> <span id="vacDragText"></span>
     <button class="btn btn-sm btn-outline-secondary ms-auto" id="vacDragCancel"><i class="bi bi-x-lg"></i></button>
   </div>
@@ -169,7 +169,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
           <label class="form-label small fw-bold">Date de fin</label>
           <input type="date" class="form-control form-control-sm" id="vacFormFin">
         </div>
-        <div class="alert alert-info py-1 px-2 small" id="vacFormInfo" style="display:none"></div>
+        <div class="alert alert-info py-1 px-2 small ss-hide" id="vacFormInfo"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>
@@ -199,7 +199,7 @@ $monNom = $meUser ? h($meUser['prenom']) . ' ' . h($meUser['nom']) . ' -- ' . h(
             <input type="date" class="form-control form-control-sm" id="vacConfirmFin">
           </div>
         </div>
-        <div class="alert alert-info py-1 px-2 small" id="vacConfirmInfo" style="display:none"></div>
+        <div class="alert alert-info py-1 px-2 small ss-hide" id="vacConfirmInfo"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Annuler</button>

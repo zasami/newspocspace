@@ -92,10 +92,10 @@ $ssrData = [
 
 <!-- Menu semaine cards -->
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h3 style="margin:0"><i class="bi bi-journal-text"></i> Menus de la semaine</h3>
+  <h3 class="cuis-h3-inline"><i class="bi bi-journal-text"></i> Menus de la semaine</h3>
   <div class="d-flex align-items-center gap-2">
     <button class="btn btn-sm btn-outline-secondary" id="chMenuPrev"><i class="bi bi-chevron-left"></i></button>
-    <span id="chMenuWeekLabel" style="font-weight:600;min-width:180px;text-align:center"></span>
+    <span id="chMenuWeekLabel" class="ch-week-label"></span>
     <button class="btn btn-sm btn-outline-secondary" id="chMenuNext"><i class="bi bi-chevron-right"></i></button>
     <div class="dropdown ms-2">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-printer"></i> Imprimer</button>
@@ -112,9 +112,9 @@ $ssrData = [
 <!-- Commandes du jour -->
 <div class="card mt-3">
   <div class="card-header d-flex align-items-center justify-content-between">
-    <h3 style="margin:0"><i class="bi bi-receipt"></i> Commandes du jour</h3>
+    <h3 class="cuis-h3-inline"><i class="bi bi-receipt"></i> Commandes du jour</h3>
     <div class="d-flex align-items-center gap-2">
-      <select class="form-select form-select-sm" id="chRepas" style="width:auto">
+      <select class="form-select form-select-sm cuis-w-auto" id="chRepas">
         <option value="midi">Midi</option>
         <option value="soir">Soir</option>
       </select>
@@ -122,23 +122,23 @@ $ssrData = [
       <button class="btn btn-sm btn-outline-secondary" id="chPrintCommandes" title="Imprimer commandes"><i class="bi bi-printer"></i></button>
     </div>
   </div>
-  <div class="card-body" id="chCommandesBody" style="max-height:400px;overflow-y:auto">
+  <div class="card-body cuis-card-body-scroll" id="chCommandesBody">
     <div class="empty-state"><i class="bi bi-receipt"></i><p>Chargement...</p></div>
   </div>
 </div>
 
 <!-- Modal saisie/édition menu -->
 <div class="modal fade" id="chMenuModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:520px">
-    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
-      <div class="modal-header" style="flex-shrink:0">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-sm">
+    <div class="modal-content cuis-modal-flex">
+      <div class="modal-header cuis-modal-header-fix">
         <div>
           <h5 class="modal-title" id="chModalTitle">Menu</h5>
           <small class="text-muted" id="chModalSubtitle"></small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="modal-body cuis-modal-body-scroll">
         <input type="hidden" id="chEditDate">
         <input type="hidden" id="chEditRepas">
         <div class="mb-2">
@@ -168,7 +168,7 @@ $ssrData = [
           <textarea class="form-control" id="chEditRemarques" rows="2" placeholder="Allergènes, options végé..."></textarea>
         </div>
       </div>
-      <div class="modal-footer d-flex" style="flex-shrink:0">
+      <div class="modal-footer d-flex cuis-modal-footer-fix">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-sm btn-primary ms-auto" id="chEditSaveBtn"><i class="bi bi-check-lg"></i> Enregistrer</button>
       </div>
@@ -179,15 +179,15 @@ $ssrData = [
 <!-- Modal "Réutiliser ce menu" — choix du jour cible -->
 <div class="modal fade" id="chReuseModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
-      <div class="modal-header" style="flex-shrink:0">
+    <div class="modal-content cuis-modal-flex">
+      <div class="modal-header cuis-modal-header-fix">
         <div>
           <h5 class="modal-title"><i class="bi bi-arrow-repeat"></i> Réutiliser ce menu</h5>
           <small class="text-muted">Copier le menu vers un autre jour</small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="modal-body cuis-modal-body-scroll">
         <div class="mb-2">
           <label class="form-label small fw-bold">Date cible</label>
           <input type="date" class="form-control" id="chReuseDate">
@@ -200,7 +200,7 @@ $ssrData = [
           </select>
         </div>
       </div>
-      <div class="modal-footer d-flex" style="flex-shrink:0">
+      <div class="modal-footer d-flex cuis-modal-footer-fix">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-sm btn-primary ms-auto" id="chReuseSaveBtn"><i class="bi bi-check-lg"></i> Copier</button>
       </div>
@@ -210,66 +210,66 @@ $ssrData = [
 
 <!-- Modal ajouter commande -->
 <div class="modal fade" id="chCmdModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:540px">
-    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
-      <div class="modal-header" style="flex-shrink:0">
+  <div class="modal-dialog modal-dialog-centered cuis-modal-dialog-md">
+    <div class="modal-content cuis-modal-flex">
+      <div class="modal-header cuis-modal-header-fix">
         <div>
           <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Ajouter une commande</h5>
           <small class="text-muted" id="chCmdSubtitle">Saisir une commande pour un collaborateur</small>
         </div>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--ss-border)" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="modal-body cuis-modal-body-scroll">
         <!-- Recherche collaborateur -->
-        <div style="margin-bottom:1rem;position:relative">
-          <label class="form-label" style="font-weight:600">Collaborateur</label>
+        <div class="cuis-field-group-rel">
+          <label class="form-label cuis-label-bold">Collaborateur</label>
           <input type="text" class="form-control" id="chCmdUserSearch" placeholder="Chercher par nom ou prénom..." autocomplete="off">
           <input type="hidden" id="chCmdUserId">
-          <div class="cuis-autocomplete-list" id="chCmdUserResults" style="max-height:200px;overflow-y:auto"></div>
+          <div class="cuis-autocomplete-list cuis-autocomplete-scroll" id="chCmdUserResults"></div>
         </div>
         <!-- Choix menu/salade -->
-        <div style="margin-bottom:1rem">
-          <label class="form-label" style="font-weight:600">Choix du repas</label>
-          <div style="display:flex;gap:0.5rem">
-            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-teal);border-radius:10px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
-              <input type="radio" name="chCmdChoix" value="menu" checked style="display:none">
-              <i class="bi bi-egg-fried" style="font-size:1.2rem;color:var(--ss-orange)"></i>
-              <div><div style="font-weight:700;font-size:0.9rem">Menu du jour</div></div>
+        <div class="cuis-field-group">
+          <label class="form-label cuis-label-bold">Choix du repas</label>
+          <div class="cuis-choix-row">
+            <label class="menu-choix-option active">
+              <input type="radio" name="chCmdChoix" value="menu" checked>
+              <i class="bi bi-egg-fried cuis-choix-icon cuis-choix-icon-menu"></i>
+              <div><div class="cuis-choix-label">Menu du jour</div></div>
             </label>
-            <label class="menu-choix-option" style="flex:1;display:flex;align-items:center;gap:0.5rem;padding:0.7rem 1rem;border:2px solid var(--ss-border);border-radius:10px;cursor:pointer;transition:all 0.15s">
-              <input type="radio" name="chCmdChoix" value="salade" style="display:none">
-              <i class="bi bi-flower1" style="font-size:1.2rem;color:#16A34A"></i>
-              <div><div style="font-weight:700;font-size:0.9rem">Salade</div></div>
+            <label class="menu-choix-option">
+              <input type="radio" name="chCmdChoix" value="salade">
+              <i class="bi bi-flower1 cuis-choix-icon cuis-choix-icon-salade"></i>
+              <div><div class="cuis-choix-label">Salade</div></div>
             </label>
           </div>
         </div>
         <!-- Nb personnes -->
-        <div style="margin-bottom:1rem">
-          <label class="form-label" style="font-weight:600">Nombre de personnes</label>
+        <div class="cuis-field-group">
+          <label class="form-label cuis-label-bold">Nombre de personnes</label>
           <select class="form-select" id="chCmdNb">
             <option value="1">1 personne</option><option value="2">2 personnes</option><option value="3">3 personnes</option><option value="4">4 personnes</option><option value="5">5 personnes</option>
           </select>
         </div>
         <!-- Paiement -->
-        <div style="margin-bottom:1rem">
-          <label class="form-label" style="font-weight:600">Mode de paiement</label>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-teal);border-radius:8px;cursor:pointer;transition:all 0.15s;background:var(--ss-accent-bg)">
-              <input type="radio" name="chCmdPaiement" value="salaire" checked style="accent-color:var(--ss-teal)"> <i class="bi bi-wallet2"></i> Retenue salaire
+        <div class="cuis-field-group">
+          <label class="form-label cuis-label-bold">Mode de paiement</label>
+          <div class="cuis-pay-row">
+            <label class="menu-pay-option active">
+              <input type="radio" name="chCmdPaiement" value="salaire" checked> <i class="bi bi-wallet2"></i> Retenue salaire
             </label>
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-              <input type="radio" name="chCmdPaiement" value="caisse" style="accent-color:var(--ss-teal)"> <i class="bi bi-cash-coin"></i> Cash caisse
+            <label class="menu-pay-option">
+              <input type="radio" name="chCmdPaiement" value="caisse"> <i class="bi bi-cash-coin"></i> Cash caisse
             </label>
-            <label class="menu-pay-option" style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;border:1.5px solid var(--ss-border);border-radius:8px;cursor:pointer;transition:all 0.15s">
-              <input type="radio" name="chCmdPaiement" value="carte" style="accent-color:var(--ss-teal)"> <i class="bi bi-credit-card"></i> Carte
+            <label class="menu-pay-option">
+              <input type="radio" name="chCmdPaiement" value="carte"> <i class="bi bi-credit-card"></i> Carte
             </label>
           </div>
         </div>
         <!-- Remarques -->
-        <div style="margin-bottom:0">
-          <label class="form-label" style="font-weight:600">Demande spéciale <small class="text-muted">(optionnel)</small></label>
+        <div class="cuis-field-group-last">
+          <label class="form-label cuis-label-bold">Demande spéciale <small class="text-muted">(optionnel)</small></label>
           <input type="text" class="form-control" id="chCmdRemarques" placeholder="Ex: sans viande, allergie noix..." maxlength="500">
-          <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.5rem">
+          <div class="cuis-quick-tags">
             <button type="button" class="btn btn-sm btn-outline-secondary ch-quick-tag" data-tag="Sans viande">Sans viande</button>
             <button type="button" class="btn btn-sm btn-outline-secondary ch-quick-tag" data-tag="Sans porc">Sans porc</button>
             <button type="button" class="btn btn-sm btn-outline-secondary ch-quick-tag" data-tag="Sans gluten">Sans gluten</button>
@@ -278,7 +278,7 @@ $ssrData = [
           </div>
         </div>
       </div>
-      <div class="modal-footer d-flex" style="flex-shrink:0">
+      <div class="modal-footer d-flex cuis-modal-footer-fix">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
         <button type="button" class="btn btn-sm btn-dark ms-auto" id="chCmdSaveBtn"><i class="bi bi-check-lg"></i> Confirmer la commande</button>
       </div>

@@ -18,7 +18,7 @@ $ssrData = ['services' => $ssrServices];
 </div>
 
 <!-- Service filter cards -->
-<div id="docServiceCards" class="doc-service-cards-row" style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;"></div>
+<div id="docServiceCards" class="doc-service-cards-row"></div>
 
 <!-- Documents grid -->
 <div id="docGrid" class="doc-grid">

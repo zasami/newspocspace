@@ -23,7 +23,7 @@ $emailContacts = Db::fetchAll(
     <div class="adm-email-left-header">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <div>
-          <h6 class="mb-0" style="font-weight:700"><i class="bi bi-chat-dots"></i> Messagerie interne</h6>
+          <h6 class="mb-0 em-title"><i class="bi bi-chat-dots"></i> Messagerie interne</h6>
         </div>
         <button class="btn btn-sm btn-primary" id="btnCompose" title="Nouveau message">
           <i class="bi bi-pencil-square"></i>
@@ -50,9 +50,9 @@ $emailContacts = Db::fetchAll(
   <!-- RIGHT: Email Detail -->
   <div class="adm-email-right">
     <div id="emailDetailPanel" class="adm-email-detail">
-      <div class="adm-email-empty" style="padding:60px 20px">
-        <i class="bi bi-envelope-open" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:8px"></i>
-        <p class="mb-0" style="font-size:.88rem">Sélectionnez un email pour le lire</p>
+      <div class="adm-email-empty em-empty-detail">
+        <i class="bi bi-envelope-open em-empty-icon"></i>
+        <p class="mb-0 em-empty-text">Sélectionnez un email pour le lire</p>
       </div>
     </div>
   </div>
@@ -72,7 +72,7 @@ $emailContacts = Db::fetchAll(
   <div class="compose-panel-body" id="composePanelBody">
     <div class="compose-field">
       <label>À (collègues)</label>
-      <div class="colleague-search-wrap" style="position:relative">
+      <div class="colleague-search-wrap em-search-wrap">
         <input type="text" class="form-control form-control-sm" id="composeToSearch" placeholder="Rechercher un collègue..." autocomplete="off">
         <div class="colleague-dropdown" id="composeToDropdown"></div>
       </div>
@@ -80,7 +80,7 @@ $emailContacts = Db::fetchAll(
     </div>
     <div class="compose-field">
       <label>Cc (collègues)</label>
-      <div class="colleague-search-wrap" style="position:relative">
+      <div class="colleague-search-wrap em-search-wrap">
         <input type="text" class="form-control form-control-sm" id="composeCcSearch" placeholder="Rechercher un collègue..." autocomplete="off">
         <div class="colleague-dropdown" id="composeCcDropdown"></div>
       </div>
