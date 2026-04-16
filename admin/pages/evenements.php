@@ -218,7 +218,54 @@ $initList = Db::fetchAll(
   </div>
 </div>
 
+<!-- ── Modal Liste Inscriptions ── -->
+<div class="modal fade" id="evInscritsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="evInscritsTitle">Inscriptions</h5>
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" id="evInscritsBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsPdf"><i class="bi bi-file-earmark-pdf"></i> Exporter PDF</button>
+        <button type="button" class="btn btn-sm btn-outline-dark" id="btnInscritsShare"><i class="bi bi-share"></i> Partager</button>
+        <button type="button" class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscritsEmail"><i class="bi bi-envelope"></i> Envoyer par email</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+/* ── Admin stat cards ── */
+.ev-admin-stat-card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border-radius: 14px; border: 1px solid var(--cl-border);
+  background: var(--cl-surface, #fff); transition: all .2s;
+}
+.ev-admin-stat-clickable { cursor: pointer; }
+.ev-admin-stat-clickable:hover { border-color: var(--cl-accent); box-shadow: 0 2px 8px rgba(0,0,0,.06); transform: translateY(-1px); }
+.ev-admin-stat-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff;
+}
+.ev-admin-stat-icon.bg-teal { background: #2d4a43; }
+.ev-admin-stat-icon.bg-purple { background: #7C5B8E; }
+.ev-admin-stat-value { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+.ev-admin-stat-label { font-size: .75rem; color: var(--cl-text-muted); font-weight: 500; }
+.ev-admin-stat-arrow { margin-left: auto; color: var(--cl-text-muted); font-size: .9rem; }
+.ev-admin-desc { font-size: .88rem; line-height: 1.6; white-space: pre-wrap; color: var(--cl-text-secondary); padding: 12px 16px; border-radius: 12px; background: var(--cl-accent-bg, #f4f1ec); border: 1px solid rgba(0,0,0,.04); max-height: 120px; overflow-y: auto; }
+
+/* ── Inscrits modal table ── */
+.ev-inscrits-table { width: 100%; }
+.ev-inscrits-table th { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--cl-text-muted); padding: 8px 12px; border-bottom: 2px solid var(--cl-border); }
+.ev-inscrits-table td { padding: 10px 12px; border-bottom: 1px solid var(--cl-border); font-size: .88rem; vertical-align: middle; }
+.ev-inscrits-table tr:hover td { background: var(--cl-accent-bg, #f8f6f3); }
+.ev-inscrits-table tr:last-child td { border-bottom: none; }
+.ev-inscrits-avatar { width: 32px; height: 32px; border-radius: 50%; background: #D0C4D8; color: #5B4B6B; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .6rem; overflow: hidden; vertical-align: middle; margin-right: 8px; }
+.ev-inscrits-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
 /* ── Cover image zone ── */
 .ev-cover-zone {
   border: 2px dashed var(--cl-border); border-radius: 10px; cursor: pointer;
@@ -324,9 +371,13 @@ $initList = Db::fetchAll(
     document.addEventListener('DOMContentLoaded', () => {
         formModal = new bootstrap.Modal(document.getElementById('evFormModal'));
         imagePickerModal = new bootstrap.Modal(document.getElementById('evImagePickerModal'));
+        window._inscritsModal = new bootstrap.Modal(document.getElementById('evInscritsModal'));
         renderList(initData);
 
         document.getElementById('btnNewEvent').addEventListener('click', openNewForm);
+        document.getElementById('btnInscritsPdf').addEventListener('click', exportPdf);
+        document.getElementById('btnInscritsShare').addEventListener('click', shareInscrits);
+        document.getElementById('btnInscritsEmail').addEventListener('click', emailInscrits);
         document.getElementById('btnAddField').addEventListener('click', addField);
         document.getElementById('btnSaveEvent').addEventListener('click', saveEvent);
 
@@ -342,6 +393,7 @@ $initList = Db::fetchAll(
             else if (a === 'toggle') toggleEvent(btn.dataset.statut);
             else if (a === 'delete') deleteEvent();
             else if (a === 'export') exportInscriptions();
+            else if (a === 'openInscrits') openInscritsModal();
         });
 
         // Sliding pill toggle
@@ -448,45 +500,35 @@ $initList = Db::fetchAll(
                 </div></div>`;
         }
 
-        // Inscriptions table
-        let inscritsHtml = '';
         const inscritsActifs = inscriptions.filter(i => i.statut === 'inscrit');
-        if (inscritsActifs.length > 0) {
-            // Build header
-            let thExtra = champs.map(c => `<th class="small">${escapeHtml(c.label)}</th>`).join('');
-            let rows = inscritsActifs.map(ins => {
-                let tdExtra = champs.map(c => {
-                    const v = (ins.valeurs || []).find(val => val.champ_id === c.id);
-                    let display = v ? v.valeur : '—';
-                    // Checkbox: parse JSON array
-                    if (v && c.type === 'checkbox') {
-                        try { display = JSON.parse(display).join(', '); } catch(e) {}
-                    }
-                    return `<td class="small">${escapeHtml(display)}</td>`;
-                }).join('');
-                const d = new Date(ins.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-                return `<tr>
-                    <td class="small fw-medium">${escapeHtml(ins.prenom)} ${escapeHtml(ins.nom)}</td>
-                    <td class="small text-muted">${escapeHtml(ins.email)}</td>
-                    <td class="small text-muted">${d}</td>
-                    ${tdExtra}
-                </tr>`;
-            }).join('');
+        const pctFull = ev.max_participants ? Math.round(inscritsActifs.length / ev.max_participants * 100) : 0;
 
-            inscritsHtml = `
-                <h6 class="text-muted small fw-semibold mb-2"><i class="bi bi-people"></i> Inscriptions (${inscritsActifs.length})</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead><tr>
-                            <th class="small">Nom</th><th class="small">Email</th><th class="small">Date</th>
-                            ${thExtra}
-                        </tr></thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>`;
-        } else {
-            inscritsHtml = '<div class="text-center text-muted py-3 small"><i class="bi bi-people" style="font-size:1.3rem;opacity:.3"></i><div class="mt-1">Aucune inscription</div></div>';
-        }
+        // Store for modal
+        window._evInscritsData = { ev, champs, inscriptions: inscritsActifs };
+
+        // Info cards row
+        let statsCards = `
+            <div class="row g-2 mb-3">
+                <div class="col-sm-6">
+                    <div class="ev-admin-stat-card ev-admin-stat-clickable" data-ev-action="openInscrits">
+                        <div class="ev-admin-stat-icon bg-teal"><i class="bi bi-people-fill"></i></div>
+                        <div>
+                            <div class="ev-admin-stat-value">${inscritsActifs.length}${ev.max_participants ? '<small class="text-muted"> / ' + ev.max_participants + '</small>' : ''}</div>
+                            <div class="ev-admin-stat-label">Inscriptions</div>
+                        </div>
+                        <i class="bi bi-chevron-right ev-admin-stat-arrow"></i>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ev-admin-stat-card">
+                        <div class="ev-admin-stat-icon bg-purple"><i class="bi bi-ui-checks-grid"></i></div>
+                        <div>
+                            <div class="ev-admin-stat-value">${champs.length}</div>
+                            <div class="ev-admin-stat-label">Champs formulaire</div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
 
         card.innerHTML = `
             <div class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -498,9 +540,9 @@ $initList = Db::fetchAll(
             </div>
             <div class="card-body ev-detail-body">
                 ${ev.image_url ? '<div class="mb-3"><img src="' + escapeHtml(ev.image_url) + '" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px"></div>' : ''}
-                ${ev.description ? '<div class="mb-3" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">' + escapeHtml(ev.description) + '</div>' : ''}
+                ${ev.description ? '<div class="ev-admin-desc mb-3">' + escapeHtml(ev.description) + '</div>' : ''}
+                ${statsCards}
                 ${champsHtml}
-                ${inscritsHtml}
             </div>`;
     }
 
@@ -922,6 +964,151 @@ $initList = Db::fetchAll(
         } else {
             toast(r.message || 'Erreur', 'error');
         }
+    }
+
+    // ─── Modal inscriptions ───
+    function openInscritsModal() {
+        const data = window._evInscritsData;
+        if (!data) return;
+        const { ev, champs, inscriptions } = data;
+
+        document.getElementById('evInscritsTitle').textContent = `Inscriptions — ${ev.titre} (${inscriptions.length})`;
+        const body = document.getElementById('evInscritsBody');
+
+        if (!inscriptions.length) {
+            body.innerHTML = '<div class="text-center text-muted py-5"><i class="bi bi-people" style="font-size:2rem;opacity:.3"></i><p class="mt-2">Aucune inscription</p></div>';
+            window._inscritsModal.show();
+            return;
+        }
+
+        let thExtra = champs.map(c => `<th>${escapeHtml(c.label)}</th>`).join('');
+        let rows = inscriptions.map((ins, idx) => {
+            const initials = ((ins.prenom || '')[0] || '') + ((ins.nom || '')[0] || '');
+            let tdExtra = champs.map(c => {
+                const v = (ins.valeurs || []).find(val => val.champ_id === c.id);
+                let display = v ? v.valeur : '—';
+                if (v && c.type === 'checkbox') { try { display = JSON.parse(display).join(', '); } catch(e) {} }
+                return `<td>${escapeHtml(display)}</td>`;
+            }).join('');
+            const d = new Date(ins.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `<tr>
+                <td class="text-muted">${idx + 1}</td>
+                <td>
+                    <span class="ev-inscrits-avatar">${escapeHtml(initials)}</span>
+                    <strong>${escapeHtml(ins.prenom)} ${escapeHtml(ins.nom)}</strong>
+                </td>
+                <td class="text-muted">${escapeHtml(ins.email)}</td>
+                <td class="text-muted">${d}</td>
+                ${tdExtra}
+            </tr>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="table-responsive">
+                <table class="ev-inscrits-table">
+                    <thead><tr>
+                        <th style="width:40px">#</th><th>Participant</th><th>Email</th><th>Inscrit le</th>
+                        ${thExtra}
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+
+        window._inscritsModal.show();
+    }
+
+    function exportPdf() {
+        const data = window._evInscritsData;
+        if (!data || !data.inscriptions.length) { toast('Aucune inscription', 'error'); return; }
+        const { ev, champs, inscriptions } = data;
+
+        const headers = ['#', 'Prénom', 'Nom', 'Email', 'Inscrit le', ...champs.map(c => c.label)];
+        let tableRows = inscriptions.map((ins, idx) => {
+            const vals = champs.map(c => {
+                const v = (ins.valeurs || []).find(val => val.champ_id === c.id);
+                let d = v ? v.valeur : '';
+                if (v && c.type === 'checkbox') { try { d = JSON.parse(d).join(', '); } catch(e) {} }
+                return d;
+            });
+            const date = new Date(ins.created_at).toLocaleDateString('fr-FR');
+            return [idx + 1, ins.prenom, ins.nom, ins.email, date, ...vals];
+        });
+
+        // Build printable HTML
+        const printWin = window.open('', '_blank');
+        printWin.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inscriptions — ${ev.titre}</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 30px; color: #333; }
+                h1 { font-size: 18px; margin-bottom: 4px; }
+                .meta { font-size: 13px; color: #888; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                th { background: #f4f1ec; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; }
+                td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+                tr:hover td { background: #fafafa; }
+                @media print { body { padding: 10px; } }
+            </style></head><body>
+            <h1>${ev.titre}</h1>
+            <div class="meta">${ev.date_debut}${ev.lieu ? ' · ' + ev.lieu : ''} · ${inscriptions.length} inscrit(s)</div>
+            <table><thead><tr>${headers.map(h => '<th>' + h + '</th>').join('')}</tr></thead>
+            <tbody>${tableRows.map(r => '<tr>' + r.map(c => '<td>' + (c || '—') + '</td>').join('') + '</tr>').join('')}</tbody></table>
+            </body></html>`);
+        printWin.document.close();
+        setTimeout(() => { printWin.print(); }, 300);
+    }
+
+    async function shareInscrits() {
+        const data = window._evInscritsData;
+        if (!data || !data.inscriptions.length) { toast('Aucune inscription', 'error'); return; }
+        const { ev, champs, inscriptions } = data;
+
+        // Build CSV content for internal share
+        const csvData = await adminApiPost('admin_export_evenement_inscriptions', { id: ev.id });
+        if (!csvData.success) { toast('Erreur', 'error'); return; }
+
+        // Compose internal message
+        let body = `<strong>Liste des inscriptions — ${ev.titre}</strong><br>`;
+        body += `${ev.date_debut}${ev.lieu ? ' · ' + ev.lieu : ''}<br><br>`;
+        body += `<table style="border-collapse:collapse;width:100%"><tr style="background:#f4f1ec"><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #ddd">Nom</th>`;
+        champs.forEach(c => { body += `<th style="padding:6px 8px;text-align:left;border-bottom:2px solid #ddd">${c.label}</th>`; });
+        body += '</tr>';
+        inscriptions.forEach(ins => {
+            body += `<tr><td style="padding:5px 8px;border-bottom:1px solid #eee">${ins.prenom} ${ins.nom}</td>`;
+            champs.forEach(c => {
+                const v = (ins.valeurs || []).find(val => val.champ_id === c.id);
+                let d = v ? v.valeur : '—';
+                if (v && c.type === 'checkbox') { try { d = JSON.parse(d).join(', '); } catch(e) {} }
+                body += `<td style="padding:5px 8px;border-bottom:1px solid #eee">${d}</td>`;
+            });
+            body += '</tr>';
+        });
+        body += '</table>';
+
+        // Open admin internal message
+        window._inscritsModal.hide();
+        AdminURL.go('messages');
+        setTimeout(() => {
+            window.__SS_ADMIN_COMPOSE__ = { subject: `Inscriptions — ${ev.titre}`, body };
+        }, 500);
+        toast('Redirigé vers la messagerie', 'success');
+    }
+
+    function emailInscrits() {
+        const data = window._evInscritsData;
+        if (!data || !data.inscriptions.length) { toast('Aucune inscription', 'error'); return; }
+        const { ev, inscriptions } = data;
+
+        // Generate mailto with summary
+        const names = inscriptions.map(i => i.prenom + ' ' + i.nom).join(', ');
+        const subject = encodeURIComponent(`Inscriptions — ${ev.titre}`);
+        const body = encodeURIComponent(
+            `Bonjour,\n\nVoici la liste des inscrits pour l'événement "${ev.titre}" du ${ev.date_debut}` +
+            `${ev.lieu ? ' à ' + ev.lieu : ''}:\n\n` +
+            inscriptions.map((i, idx) => `${idx + 1}. ${i.prenom} ${i.nom} (${i.email})`).join('\n') +
+            `\n\nTotal: ${inscriptions.length} inscrit(s).\n\nCordialement`
+        );
+
+        window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+        toast('Client email ouvert', 'success');
     }
 
     function debounce(fn, delay) {
