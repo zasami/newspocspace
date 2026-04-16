@@ -292,11 +292,11 @@ $users = Db::fetchAll(
 <div class="modal fade" id="slDetailModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-info">
     <div class="modal-content">
-      <div class="modal-header d-flex align-items-center" id="slDetailHeader">
+      <div class="modal-header">
         <h5 class="modal-title mb-0" id="slDetailTitle"></h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center btn-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" id="slDetailBody"></div>
+      <div class="modal-body pt-0" id="slDetailBody"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-danger btn-sm" id="slDetailDeleteBtn"><i class="bi bi-trash"></i> Annuler réservation</button>
         <button type="button" class="btn btn-dark btn-sm" id="slDetailEditBtn"><i class="bi bi-pencil"></i> Modifier</button>
@@ -732,14 +732,43 @@ $users = Db::fetchAll(
 
         const dateFr = new Date(r.date_jour + 'T00:00:00').toLocaleDateString('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
+        const color = salle?.couleur || '#888';
 
-        let html = '<table class="table table-sm mb-0" style="font-size:.88rem">'
-            + '<tr><td class="text-muted" style="width:32px"><i class="bi bi-door-open"></i></td><td><span class="d-inline-block rounded" style="width:10px;height:10px;background:' + escapeHtml(salle?.couleur || '#888') + '"></span> <strong>' + escapeHtml(salle?.nom || '?') + '</strong></td></tr>'
-            + '<tr><td class="text-muted"><i class="bi bi-calendar3"></i></td><td>' + escapeHtml(dateFr) + '</td></tr>'
-            + '<tr><td class="text-muted"><i class="bi bi-clock"></i></td><td>' + timeStr + '</td></tr>'
-            + '<tr><td class="text-muted"><i class="bi bi-person"></i></td><td>' + escapeHtml(r.prenom + ' ' + r.user_nom) + (r.fonction_nom ? ' <span class="text-muted">(' + escapeHtml(r.fonction_nom) + ')</span>' : '') + '</td></tr>';
-        if (r.description) html += '<tr><td class="text-muted"><i class="bi bi-text-left"></i></td><td class="text-muted">' + escapeHtml(r.description) + '</td></tr>';
-        html += '</table>';
+        let html = '<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">';
+
+        // Salle card
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cl-bg,#F7F5F2);border-radius:10px;border:1px solid var(--cl-border-light,#F0EDE8)">'
+            + '<div style="width:36px;height:36px;border-radius:8px;background:' + color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="bi bi-door-open" style="color:#fff;font-size:.9rem"></i></div>'
+            + '<div><div style="font-weight:700;font-size:.9rem">' + escapeHtml(salle?.nom || '?') + '</div>'
+            + '<div style="font-size:.75rem;color:var(--cl-text-muted,#9B9B9B)">' + (salle?.capacite ? salle.capacite + ' pers.' : '') + '</div></div>'
+            + '</div>';
+
+        // Date + Time row
+        html += '<div style="display:flex;gap:8px">'
+            + '<div style="flex:1;padding:10px 14px;background:var(--cl-bg,#F7F5F2);border-radius:10px;border:1px solid var(--cl-border-light,#F0EDE8)">'
+            + '<div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-text-muted,#9B9B9B);margin-bottom:4px"><i class="bi bi-calendar3"></i> Date</div>'
+            + '<div style="font-weight:600;font-size:.88rem">' + escapeHtml(dateFr) + '</div></div>'
+            + '<div style="flex:1;padding:10px 14px;background:var(--cl-bg,#F7F5F2);border-radius:10px;border:1px solid var(--cl-border-light,#F0EDE8)">'
+            + '<div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-text-muted,#9B9B9B);margin-bottom:4px"><i class="bi bi-clock"></i> Horaire</div>'
+            + '<div style="font-weight:600;font-size:.88rem">' + timeStr + '</div></div>'
+            + '</div>';
+
+        // User card
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cl-bg,#F7F5F2);border-radius:10px;border:1px solid var(--cl-border-light,#F0EDE8)">'
+            + '<div style="width:36px;height:36px;border-radius:50%;background:#bcd2cb;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.78rem;color:#2d4a43">'
+            + escapeHtml((r.prenom?.[0] || '') + (r.user_nom?.[0] || '')) + '</div>'
+            + '<div><div style="font-weight:600;font-size:.88rem">' + escapeHtml(r.prenom + ' ' + r.user_nom) + '</div>'
+            + (r.fonction_nom ? '<div style="font-size:.75rem;color:var(--cl-text-muted,#9B9B9B)">' + escapeHtml(r.fonction_nom) + '</div>' : '') + '</div>'
+            + '</div>';
+
+        // Description
+        if (r.description) {
+            html += '<div style="padding:10px 14px;background:var(--cl-bg,#F7F5F2);border-radius:10px;border:1px solid var(--cl-border-light,#F0EDE8)">'
+                + '<div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cl-text-muted,#9B9B9B);margin-bottom:4px"><i class="bi bi-text-left"></i> Description</div>'
+                + '<div style="font-size:.85rem;color:var(--cl-text-secondary,#6B6B6B)">' + escapeHtml(r.description) + '</div></div>';
+        }
+
+        html += '</div>';
 
         document.getElementById('slDetailBody').innerHTML = html;
 
