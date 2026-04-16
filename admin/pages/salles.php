@@ -61,6 +61,13 @@ $users = Db::fetchAll(
 .sl-legend-item { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--cl-text-muted); }
 .sl-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
 
+/* ── Color picker ── */
+.sl-color-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 4px 0; }
+.sl-color-swatch { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2.5px solid transparent; transition: transform .15s, border-color .15s, box-shadow .15s; position: relative; }
+.sl-color-swatch:hover { transform: scale(1.18); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+.sl-color-swatch.selected { border-color: var(--cl-text, #1a1a1a); transform: scale(1.1); }
+.sl-color-swatch.selected::after { content: '\f26e'; font-family: 'bootstrap-icons'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+
 /* ── Modal ── */
 .sl-modal-field { margin-bottom: 14px; }
 .sl-modal-field label { font-weight: 600; font-size: .82rem; margin-bottom: 4px; display: block; }
@@ -228,7 +235,8 @@ $users = Db::fetchAll(
           </div>
           <div class="col-sm-6 sl-modal-field">
             <label>Couleur</label>
-            <input type="color" class="form-control form-control-sm" id="slRoomCouleur" value="#2D9CDB" style="height:34px">
+            <input type="hidden" id="slRoomCouleur" value="#2D9CDB">
+            <div class="sl-color-picker" id="slColorPicker"></div>
           </div>
         </div>
         <div class="sl-modal-field">
@@ -278,6 +286,26 @@ $users = Db::fetchAll(
     resaModal = new bootstrap.Modal(document.getElementById('slResaModal'));
     roomModal = new bootstrap.Modal(document.getElementById('slRoomModal'));
     detailModal = new bootstrap.Modal(document.getElementById('slDetailModal'));
+
+    // ── Color picker ──
+    const PALETTE_COLORS = [
+        '#2D9CDB', '#27AE60', '#E67E22', '#E74C3C', '#9B59B6', '#1ABC9C', '#3498DB',
+        '#bcd2cb', '#B8C9D4', '#D4C4A8', '#E2B8AE', '#D0C4D8', '#C8D4C0', '#F0C27F',
+    ];
+    const pickerEl = document.getElementById('slColorPicker');
+    const couleurInput = document.getElementById('slRoomCouleur');
+    PALETTE_COLORS.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className = 'sl-color-swatch' + (couleurInput.value === c ? ' selected' : '');
+        sw.style.background = c;
+        sw.dataset.color = c;
+        sw.addEventListener('click', () => {
+            pickerEl.querySelectorAll('.sl-color-swatch').forEach(s => s.classList.remove('selected'));
+            sw.classList.add('selected');
+            couleurInput.value = c;
+        });
+        pickerEl.appendChild(sw);
+    });
 
     // Tabs
     document.querySelectorAll('.sl-tab').forEach(tab => {
@@ -577,7 +605,11 @@ $users = Db::fetchAll(
         document.getElementById('slRoomNom').value = room ? room.nom : '';
         document.getElementById('slRoomDesc').value = room ? (room.description || '') : '';
         document.getElementById('slRoomCapacite').value = room ? room.capacite : 10;
-        document.getElementById('slRoomCouleur').value = room ? room.couleur : '#2D9CDB';
+        const selectedColor = room ? room.couleur : '#2D9CDB';
+        couleurInput.value = selectedColor;
+        pickerEl.querySelectorAll('.sl-color-swatch').forEach(s => {
+            s.classList.toggle('selected', s.dataset.color === selectedColor);
+        });
         document.getElementById('slRoomEquip').value = room ? (room.equipements || '') : '';
         roomModal.show();
     }
