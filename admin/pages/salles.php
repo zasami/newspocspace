@@ -615,6 +615,10 @@ $users = Db::fetchAll(
         chev.style.transform = isOpen ? '' : 'rotate(180deg)';
     });
 
+    // Also check on time change
+    document.getElementById('slResaDebut').addEventListener('change', checkExistingReservations);
+    document.getElementById('slResaFin').addEventListener('change', checkExistingReservations);
+
     async function checkExistingReservations() {
         const salleId = document.getElementById('slResaSalle').value;
         const dateVal = document.getElementById('slResaDate').value;
@@ -625,13 +629,24 @@ $users = Db::fetchAll(
 
         if (!salleId || !dateVal) { alertWrap.style.display = 'none'; return; }
 
-        // Check from loaded reservations first, or fetch
-        const existing = reservations.filter(r => r.salle_id === salleId && r.date_jour === dateVal);
-        // Also exclude current reservation being edited
-        const editId = document.getElementById('slResaId').value;
-        const filtered = existing.filter(r => r.id !== editId);
+        // Determine the time range of the new/edited reservation
+        const isJournee = slJourneeCheck.checked;
+        const myDebut = isJournee ? '00:00' : document.getElementById('slResaDebut').value;
+        const myFin = isJournee ? '23:59' : document.getElementById('slResaFin').value;
+        if (!myDebut || !myFin) { alertWrap.style.display = 'none'; return; }
 
-        if (!filtered.length) {
+        // Exclude current reservation being edited
+        const editId = document.getElementById('slResaId').value;
+        const sameDaySalle = reservations.filter(r => r.salle_id === salleId && r.date_jour === dateVal && r.id !== editId);
+
+        // Only keep reservations that actually overlap with chosen time
+        const conflicts = sameDaySalle.filter(r => {
+            const rDebut = parseInt(r.journee_entiere) ? '00:00' : r.heure_debut.substring(0,5);
+            const rFin = parseInt(r.journee_entiere) ? '23:59' : r.heure_fin.substring(0,5);
+            return rDebut < myFin && rFin > myDebut;
+        });
+
+        if (!conflicts.length) {
             alertWrap.style.display = 'none';
             return;
         }
@@ -639,24 +654,10 @@ $users = Db::fetchAll(
         const salleObj = salles.find(s => s.id === salleId);
         const salleName = salleObj ? salleObj.nom : 'cette salle';
 
-        // Calculate total hours booked
-        let totalMin = 0;
-        filtered.forEach(r => {
-            if (parseInt(r.journee_entiere)) { totalMin += (20 - 7) * 60; }
-            else {
-                const [h1,m1] = r.heure_debut.split(':').map(Number);
-                const [h2,m2] = r.heure_fin.split(':').map(Number);
-                totalMin += (h2 * 60 + m2) - (h1 * 60 + m1);
-            }
-        });
-        const totalH = Math.floor(totalMin / 60);
-        const totalM = totalMin % 60;
-        const durLabel = totalH > 0 ? totalH + 'h' + (totalM > 0 ? String(totalM).padStart(2,'0') : '') : totalM + 'min';
-
-        alertTitle.textContent = filtered.length + ' réservation' + (filtered.length > 1 ? 's' : '') + ' existante' + (filtered.length > 1 ? 's' : '') + ' (' + durLabel + ' occupées) — ' + salleName;
+        alertTitle.textContent = conflicts.length + ' conflit' + (conflicts.length > 1 ? 's' : '') + ' — ' + salleName;
 
         let listHtml = '';
-        filtered.forEach(r => {
+        conflicts.forEach(r => {
             const isJE = parseInt(r.journee_entiere);
             const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
             listHtml += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)">'
@@ -667,7 +668,6 @@ $users = Db::fetchAll(
         });
         alertList.innerHTML = listHtml;
 
-        // Show alert expanded
         alertWrap.style.display = 'block';
         alertBody.style.display = 'block';
         document.getElementById('slResaAlertChevron').style.transform = 'rotate(180deg)';

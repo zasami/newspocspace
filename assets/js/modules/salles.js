@@ -55,6 +55,8 @@ export async function init() {
     // Check existing reservations on date/salle/journée change
     document.getElementById('slResaSalle')?.addEventListener('change', checkExistingReservations);
     document.getElementById('slResaDate')?.addEventListener('change', checkExistingReservations);
+    document.getElementById('slResaDebut')?.addEventListener('change', checkExistingReservations);
+    document.getElementById('slResaFin')?.addEventListener('change', checkExistingReservations);
     if (slJourneeCheck) slJourneeCheck.addEventListener('change', checkExistingReservations);
 
     // Alert collapse toggle
@@ -281,30 +283,27 @@ function checkExistingReservations() {
 
     if (!alertWrap || !salleId || !dateVal) { if (alertWrap) alertWrap.style.display = 'none'; return; }
 
-    const filtered = reservations.filter(r => r.salle_id === salleId && r.date_jour === dateVal);
+    const isJournee = document.getElementById('slResaJournee')?.checked || false;
+    const myDebut = isJournee ? '00:00' : (document.getElementById('slResaDebut')?.value || '');
+    const myFin = isJournee ? '23:59' : (document.getElementById('slResaFin')?.value || '');
+    if (!myDebut || !myFin) { alertWrap.style.display = 'none'; return; }
 
-    if (!filtered.length) { alertWrap.style.display = 'none'; return; }
+    // Only keep reservations that actually overlap with chosen time
+    const conflicts = reservations.filter(r => {
+        if (r.salle_id !== salleId || r.date_jour !== dateVal) return false;
+        const rDebut = parseInt(r.journee_entiere) ? '00:00' : r.heure_debut.substring(0, 5);
+        const rFin = parseInt(r.journee_entiere) ? '23:59' : r.heure_fin.substring(0, 5);
+        return rDebut < myFin && rFin > myDebut;
+    });
+
+    if (!conflicts.length) { alertWrap.style.display = 'none'; return; }
 
     const salleObj = salles.find(s => s.id === salleId);
-    const salleName = salleObj ? salleObj.nom : 'cette salle';
 
-    let totalMin = 0;
-    filtered.forEach(r => {
-        if (parseInt(r.journee_entiere)) { totalMin += 13 * 60; }
-        else {
-            const [h1, m1] = r.heure_debut.split(':').map(Number);
-            const [h2, m2] = r.heure_fin.split(':').map(Number);
-            totalMin += (h2 * 60 + m2) - (h1 * 60 + m1);
-        }
-    });
-    const totalH = Math.floor(totalMin / 60);
-    const totalM = totalMin % 60;
-    const durLabel = totalH > 0 ? totalH + 'h' + (totalM > 0 ? String(totalM).padStart(2, '0') : '') : totalM + 'min';
-
-    alertTitle.textContent = filtered.length + ' réservation' + (filtered.length > 1 ? 's' : '') + ' (' + durLabel + ') — ' + salleName;
+    alertTitle.textContent = conflicts.length + ' conflit' + (conflicts.length > 1 ? 's' : '') + ' — ' + (salleObj?.nom || 'cette salle');
 
     let html = '';
-    filtered.forEach(r => {
+    conflicts.forEach(r => {
         const isJE = parseInt(r.journee_entiere);
         const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + ' — ' + r.heure_fin.substring(0, 5);
         html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)">'
