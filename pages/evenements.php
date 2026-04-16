@@ -92,7 +92,7 @@ $mesInscriptions = array_filter($events, fn($e) => $e['mon_inscription_id']);
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="evModalTitle">Événement</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center cuis-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body" id="evModalBody">
         <div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>
@@ -120,7 +120,8 @@ function renderEventCard($ev, $now, $isPast = false) {
         <?php else: ?>
             <div class="ev-card-date">
                 <div class="ev-card-day"><?= date('d', strtotime($ev['date_debut'])) ?></div>
-                <div class="ev-card-month"><?= strftime('%b', strtotime($ev['date_debut'])) ?: date('M', strtotime($ev['date_debut'])) ?></div>
+                <?php $moisFr = ['','JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC']; ?>
+            <div class="ev-card-month"><?= $moisFr[(int)date('n', strtotime($ev['date_debut']))] ?></div>
             </div>
         <?php endif; ?>
         <div class="ev-card-body">
@@ -185,7 +186,7 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
 .ev-card-count { font-size: 0.8rem; color: var(--cl-text-muted, #999); }
 
-.ev-badge-inscrit { font-size: 0.75rem; font-weight: 600; color: #16A34A; }
+.ev-badge-inscrit { font-size: 0.72rem; font-weight: 600; color: #16A34A; background: rgba(22,163,74,0.1); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; }
 .ev-badge-ferme { font-size: 0.75rem; font-weight: 500; color: #999; }
 .ev-badge-complet { font-size: 0.75rem; font-weight: 500; color: #c0392b; }
 .ev-badge-open { font-size: 0.75rem; font-weight: 500; color: var(--cl-accent, #2d4a43); }
