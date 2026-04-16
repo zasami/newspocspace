@@ -34,9 +34,11 @@ async function openDetail(id) {
 
     const titleEl = document.getElementById('evModalTitle');
     const bodyEl = document.getElementById('evModalBody');
+    const footerEl = document.getElementById('evModalFooter');
 
     titleEl.textContent = 'Chargement...';
     bodyEl.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+    footerEl.innerHTML = '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>';
     detailModal.show();
 
     const r = await apiPost('get_evenement_detail', { id });
@@ -58,110 +60,105 @@ async function openDetail(id) {
 
     let html = '';
 
-    // ── Infos événement ──
-    // Image
+    // ── Image ──
     if (ev.image_url) {
-        html += `<div class="mb-3"><img src="${escapeHtml(ev.image_url)}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px"></div>`;
+        html += `<div class="ev-modal-cover"><img src="${escapeHtml(ev.image_url)}" alt=""></div>`;
     }
 
-    html += '<div class="mb-3">';
+    // ── Description ──
     if (ev.description) {
-        html += `<div class="mb-2" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">${escapeHtml(ev.description)}</div>`;
+        html += `<div class="mb-3" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">${escapeHtml(ev.description)}</div>`;
     }
-    html += '<div class="d-flex flex-wrap gap-3 text-muted small">';
+
+    // ── Infos en cartes ──
+    html += '<div class="row g-2 mb-3">';
     if (ev.date_debut) {
         let dateStr = fmtDate(ev.date_debut);
         if (ev.date_fin && ev.date_fin !== ev.date_debut) dateStr += ' → ' + fmtDate(ev.date_fin);
-        html += `<span><i class="bi bi-calendar3"></i> ${dateStr}</span>`;
+        html += `<div class="col-sm-6"><div class="ev-info-card"><i class="bi bi-calendar3"></i><div><div class="ev-info-label">Date</div><div class="ev-info-value">${dateStr}</div></div></div></div>`;
     }
     if (ev.heure_debut) {
-        html += `<span><i class="bi bi-clock"></i> ${ev.heure_debut.substring(0,5)}${ev.heure_fin ? ' - ' + ev.heure_fin.substring(0,5) : ''}</span>`;
+        const heure = ev.heure_debut.substring(0,5) + (ev.heure_fin ? ' - ' + ev.heure_fin.substring(0,5) : '');
+        html += `<div class="col-sm-6"><div class="ev-info-card"><i class="bi bi-clock"></i><div><div class="ev-info-label">Horaire</div><div class="ev-info-value">${heure}</div></div></div></div>`;
     }
-    if (ev.lieu) html += `<span><i class="bi bi-geo-alt"></i> ${escapeHtml(ev.lieu)}</span>`;
-    html += `<span><i class="bi bi-people-fill"></i> ${ev.nb_inscrits}${ev.max_participants ? '/' + ev.max_participants : ''} inscrits</span>`;
-    html += '</div></div>';
+    if (ev.lieu) {
+        html += `<div class="col-sm-6"><div class="ev-info-card"><i class="bi bi-geo-alt"></i><div><div class="ev-info-label">Lieu</div><div class="ev-info-value">${escapeHtml(ev.lieu)}</div></div></div></div>`;
+    }
+    html += `<div class="col-sm-6"><div class="ev-info-card"><i class="bi bi-people-fill"></i><div><div class="ev-info-label">Inscrits</div><div class="ev-info-value">${ev.nb_inscrits}${ev.max_participants ? ' / ' + ev.max_participants : ''}</div></div></div></div>`;
+    html += '</div>';
 
-    // ── Tableau des inscrits ──
-    html += '<div class="border-top pt-3 mb-3">';
-    html += `<h6 class="small fw-semibold mb-2"><i class="bi bi-people"></i> Participants (${inscrits.length})</h6>`;
-    if (inscrits.length > 0) {
-        html += '<div class="table-responsive" style="max-height:250px;overflow-y:auto">';
-        html += '<table class="table table-sm table-hover mb-0 align-middle">';
-        html += '<thead class="sticky-top" style="background:var(--cl-surface,#fff)"><tr><th class="small" style="width:40px">#</th><th class="small">Nom</th><th class="small">Inscrit le</th></tr></thead>';
-        html += '<tbody>';
-        inscrits.forEach((ins, idx) => {
-            const d = new Date(ins.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-            html += `<tr>
-                <td class="small text-muted">${idx + 1}</td>
-                <td class="small"><i class="bi bi-person-fill me-1 text-muted"></i>${escapeHtml(ins.prenom)} ${escapeHtml(ins.nom)}</td>
-                <td class="small text-muted">${d}</td>
-            </tr>`;
+    // ── Mon inscription — valeurs remplies ──
+    if (isInscrit && champs.length > 0) {
+        html += '<div class="ev-section"><h6 class="ev-section-title"><i class="bi bi-check-circle-fill text-success"></i> Mes réponses</h6>';
+        html += '<div class="row g-2">';
+        champs.forEach(c => {
+            let val = mesValeurs[c.id] || '—';
+            if (c.type === 'checkbox' && val !== '—') {
+                try { val = JSON.parse(val).join(', '); } catch(e) {}
+            }
+            html += `<div class="col-sm-6"><div class="ev-val-card"><div class="ev-val-label">${escapeHtml(c.label)}</div><div class="ev-val-value">${escapeHtml(val)}</div></div></div>`;
         });
-        html += '</tbody></table></div>';
+        html += '</div></div>';
+    }
+
+    // ── Formulaire d'inscription ──
+    if (isOpen && !isInscrit && !isFull) {
+        html += '<div class="ev-section"><h6 class="ev-section-title"><i class="bi bi-pencil-square"></i> Inscription</h6>';
+        if (champs.length > 0) {
+            champs.forEach(c => { html += renderField(c, ''); });
+        } else {
+            html += '<p class="small text-muted mb-0">Cliquez sur "S\'inscrire" pour confirmer votre participation.</p>';
+        }
+        html += '</div>';
+    }
+
+    // ── Complet / Fermé ──
+    if (isFull && !isInscrit) {
+        html += '<div class="ev-section text-center"><span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Complet</span></div>';
+    }
+    if (!isOpen && !isInscrit) {
+        html += '<div class="ev-section text-center"><span class="badge bg-secondary"><i class="bi bi-lock"></i> Inscriptions fermées</span></div>';
+    }
+
+    // ── Liste des participants ──
+    html += '<div class="ev-section">';
+    html += `<h6 class="ev-section-title"><i class="bi bi-people"></i> Participants (${inscrits.length})</h6>`;
+    if (inscrits.length > 0) {
+        html += '<div class="ev-participants-list">';
+        inscrits.forEach((ins, idx) => {
+            const initials = ((ins.prenom || '')[0] || '') + ((ins.nom || '')[0] || '');
+            const d = new Date(ins.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            html += `<div class="ev-participant">
+                <div class="ev-participant-rank">${idx + 1}</div>
+                <div class="ev-participant-avatar">${ins.photo
+                    ? `<img src="${escapeHtml(ins.photo)}" alt="">`
+                    : escapeHtml(initials)
+                }</div>
+                <div class="ev-participant-name">${escapeHtml(ins.prenom)} ${escapeHtml(ins.nom)}</div>
+                <div class="ev-participant-date">${d}</div>
+            </div>`;
+        });
+        html += '</div>';
     } else {
         html += '<div class="text-center text-muted py-3 small"><i class="bi bi-people" style="font-size:1.3rem;opacity:.3"></i><div class="mt-1">Aucune inscription pour le moment</div></div>';
     }
     html += '</div>';
 
-    // ── Mon inscription (si déjà inscrit) ──
-    if (isInscrit) {
-        html += '<div class="border-top pt-3 mb-3">';
-        html += '<div class="d-flex justify-content-between align-items-center mb-2">';
-        html += '<h6 class="small fw-semibold mb-0"><i class="bi bi-check-circle-fill text-success"></i> Vous êtes inscrit</h6>';
-        if (isOpen) {
-            html += `<button class="btn btn-sm btn-outline-danger" id="btnDesinscrire"><i class="bi bi-x-lg"></i> Se désinscrire</button>`;
-        }
-        html += '</div>';
-        if (champs.length > 0) {
-            html += '<div class="row g-2">';
-            champs.forEach(c => {
-                let val = mesValeurs[c.id] || '—';
-                if (c.type === 'checkbox' && val !== '—') {
-                    try { val = JSON.parse(val).join(', '); } catch(e) {}
-                }
-                html += `<div class="col-sm-6"><div class="ev-val-card"><div class="ev-val-label">${escapeHtml(c.label)}</div><div class="ev-val-value">${escapeHtml(val)}</div></div></div>`;
-            });
-            html += '</div>';
-        }
-        html += '</div>';
-    }
-
-    // ── Formulaire d'inscription (si ouvert, pas inscrit, pas complet) ──
-    if (isOpen && !isInscrit && !isFull) {
-        html += '<div class="border-top pt-3">';
-        html += '<h6 class="small fw-semibold mb-2"><i class="bi bi-pencil-square"></i> Inscription</h6>';
-        if (champs.length > 0) {
-            champs.forEach(c => {
-                html += renderField(c, '');
-            });
-        }
-        html += `<div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscrire"><i class="bi bi-check-lg"></i> S'inscrire</button>
-        </div>`;
-        html += '</div>';
-    }
-
-    // ── Complet ──
-    if (isFull && !isInscrit) {
-        html += '<div class="border-top pt-3 text-center"><span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Complet</span></div>';
-    }
-
-    // ── Fermé ──
-    if (!isOpen && !isInscrit) {
-        html += '<div class="border-top pt-3 text-center"><span class="badge bg-secondary"><i class="bi bi-lock"></i> Inscriptions fermées</span></div>';
-    }
-
     bodyEl.innerHTML = html;
 
+    // ── Footer ──
+    let footerHtml = '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>';
+    if (isOpen && !isInscrit && !isFull) {
+        footerHtml += ` <button type="button" class="btn btn-sm" style="background:#bcd2cb;color:#2d4a43" id="btnInscrire"><i class="bi bi-check-lg"></i> S'inscrire</button>`;
+    }
+    if (isOpen && isInscrit) {
+        footerHtml += ` <button type="button" class="btn btn-sm btn-outline-danger" id="btnDesinscrire"><i class="bi bi-x-lg"></i> Se désinscrire</button>`;
+    }
+    footerEl.innerHTML = footerHtml;
+
     // ── Attach handlers ──
-    const btnInscrire = document.getElementById('btnInscrire');
-    if (btnInscrire) {
-        btnInscrire.addEventListener('click', () => inscrire(ev.id, champs));
-    }
-    const btnDesinscrire = document.getElementById('btnDesinscrire');
-    if (btnDesinscrire) {
-        btnDesinscrire.addEventListener('click', () => desinscrire(ev.id));
-    }
+    document.getElementById('btnInscrire')?.addEventListener('click', () => inscrire(ev.id, champs));
+    document.getElementById('btnDesinscrire')?.addEventListener('click', () => desinscrire(ev.id));
 }
 
 // ── Render un champ de formulaire ──

@@ -92,10 +92,13 @@ $mesInscriptions = array_filter($events, fn($e) => $e['mon_inscription_id']);
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="evModalTitle">Événement</h5>
-        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body" id="evModalBody">
         <div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+      <div class="modal-footer" id="evModalFooter">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
       </div>
     </div>
   </div>
@@ -187,6 +190,42 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-badge-complet { font-size: 0.75rem; font-weight: 500; color: #c0392b; }
 .ev-badge-open { font-size: 0.75rem; font-weight: 500; color: var(--cl-accent, #2d4a43); }
 
+/* ── Modal cover ── */
+.ev-modal-cover { margin: -1rem -1rem 1rem; }
+.ev-modal-cover img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
+
+/* ── Info cards ── */
+.ev-info-card {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-radius: 10px; background: var(--cl-accent-bg, #eef5f2); font-size: 0.85rem;
+}
+.ev-info-card > i { font-size: 1.1rem; color: var(--cl-accent, #2d4a43); flex-shrink: 0; }
+.ev-info-label { font-size: 0.7rem; color: var(--cl-text-muted, #999); font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
+.ev-info-value { font-weight: 600; font-size: 0.88rem; }
+
+/* ── Modal sections ── */
+.ev-section { border-top: 1px solid var(--cl-border, #e5e5e5); padding-top: 14px; margin-top: 14px; }
+.ev-section-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+/* ── Participants list ── */
+.ev-participants-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--cl-border, #e5e5e5); border-radius: 10px; }
+.ev-participant {
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+    border-bottom: 1px solid var(--cl-border, #e5e5e5); transition: background .15s;
+}
+.ev-participant:last-child { border-bottom: none; }
+.ev-participant:hover { background: var(--cl-accent-bg, #f7f5f2); }
+.ev-participant-rank { width: 22px; font-size: 0.75rem; font-weight: 700; color: var(--cl-text-muted, #999); text-align: center; flex-shrink: 0; }
+.ev-participant-avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: var(--cl-accent-bg, #D0C4D8); color: var(--cl-accent, #5B4B6B);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.65rem; overflow: hidden;
+}
+.ev-participant-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.ev-participant-name { flex: 1; font-size: 0.88rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-participant-date { font-size: 0.75rem; color: var(--cl-text-muted, #999); flex-shrink: 0; }
+
 /* ── Modal form fields ── */
 .ev-modal-field { margin-bottom: 12px; }
 .ev-modal-field label { font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; display: block; }
@@ -197,6 +236,9 @@ function renderEventCard($ev, $now, $isPast = false) {
     padding: 8px 12px; border-radius: 8px;
     background: var(--cl-accent-bg, #eef5f2); font-size: 0.85rem;
 }
-.ev-val-label { font-size: 0.75rem; color: var(--cl-text-muted, #999); font-weight: 500; }
-.ev-val-value { font-weight: 500; }
+.ev-val-label { font-size: 0.7rem; color: var(--cl-text-muted, #999); font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
+.ev-val-value { font-weight: 600; }
+
+/* ── Modal footer ── */
+#evDetailModal .modal-footer { border-top: 1px solid var(--cl-border, #e5e5e5); }
 </style>

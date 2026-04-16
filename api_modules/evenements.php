@@ -58,9 +58,9 @@ function get_evenement_detail() {
         foreach ($vals as $v) $mesValeurs[$v['champ_id']] = $v['valeur'];
     }
 
-    // Liste des inscrits (prénom + nom seulement)
+    // Liste des inscrits
     $inscrits = Db::fetchAll(
-        "SELECT u.prenom, u.nom, ei.created_at
+        "SELECT u.prenom, u.nom, u.photo, ei.created_at
          FROM evenement_inscriptions ei
          JOIN users u ON u.id = ei.user_id
          WHERE ei.evenement_id = ? AND ei.statut = 'inscrit'
