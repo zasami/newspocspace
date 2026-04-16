@@ -282,7 +282,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             const created = new Date(c.created_at); created.setHours(0,0,0,0);
             const days = Math.floor((today - created) / 86400000);
             const timerTxt = days === 0 ? "aujourd'hui" : days + 'j';
-            html += `<tr>
+            html += `<tr data-view="${c.id}" style="cursor:pointer">
                 <td>${formatDate(c.created_at)}</td>
                 <td><strong>${escapeHtml(c.nom || '')} ${escapeHtml(c.prenom || '')}</strong></td>
                 <td>${escapeHtml(c.email || '-')}</td>
@@ -306,7 +306,9 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
     });
 
     document.getElementById('rhcBody')?.addEventListener('click', e => {
-        const btn = e.target.closest('[data-view]');
+        const row = e.target.closest('tr[data-view]');
+        if (row) { openDetail(row.dataset.view); return; }
+        const btn = e.target.closest('button[data-view]');
         if (btn) openDetail(btn.dataset.view);
     });
 

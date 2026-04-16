@@ -266,6 +266,29 @@ $initList = Db::fetchAll(
 .ev-inscrits-avatar { width: 32px; height: 32px; border-radius: 50%; background: #D0C4D8; color: #5B4B6B; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .6rem; overflow: hidden; vertical-align: middle; margin-right: 8px; }
 .ev-inscrits-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+/* ── PDF Lightbox ── */
+.ev-lightbox {
+  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.85);
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+.ev-lightbox-close {
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: none; color: #fff; font-size: 1.2rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.ev-lightbox-close:hover { background: rgba(255,255,255,.3); }
+.ev-lightbox-content { border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.ev-lightbox-content iframe { width: 70vw; height: 80vh; border: none; background: #fff; }
+.ev-lightbox-actions {
+  position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px;
+}
+.ev-lightbox-btn {
+  padding: 8px 16px; border-radius: 8px; background: rgba(255,255,255,.15); border: none;
+  color: #fff; font-size: .85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.ev-lightbox-btn:hover { background: rgba(255,255,255,.3); }
+
 /* ── Cover image zone ── */
 .ev-cover-zone {
   border: 2px dashed var(--cl-border); border-radius: 10px; cursor: pointer;
@@ -1043,9 +1066,7 @@ $initList = Db::fetchAll(
             return [idx + 1, ins.prenom, ins.nom, ins.email, date, ...vals];
         });
 
-        // Build printable HTML
-        const printWin = window.open('', '_blank');
-        printWin.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inscriptions — ${ev.titre}</title>
+        const htmlContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inscriptions — ${ev.titre}</title>
             <style>
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 30px; color: #333; }
                 h1 { font-size: 18px; margin-bottom: 4px; }
@@ -1053,16 +1074,45 @@ $initList = Db::fetchAll(
                 table { width: 100%; border-collapse: collapse; font-size: 13px; }
                 th { background: #f4f1ec; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; }
                 td { padding: 7px 10px; border-bottom: 1px solid #eee; }
-                tr:hover td { background: #fafafa; }
                 @media print { body { padding: 10px; } }
             </style></head><body>
             <h1>${ev.titre}</h1>
             <div class="meta">${ev.date_debut}${ev.lieu ? ' · ' + ev.lieu : ''} · ${inscriptions.length} inscrit(s)</div>
             <table><thead><tr>${headers.map(h => '<th>' + h + '</th>').join('')}</tr></thead>
             <tbody>${tableRows.map(r => '<tr>' + r.map(c => '<td>' + (c || '—') + '</td>').join('') + '</tr>').join('')}</tbody></table>
-            </body></html>`);
-        printWin.document.close();
-        setTimeout(() => { printWin.print(); }, 300);
+            </body></html>`;
+
+        openPdfLightbox(htmlContent);
+    }
+
+    function openPdfLightbox(htmlContent) {
+        document.getElementById('evPdfLightbox')?.remove();
+        const lb = document.createElement('div');
+        lb.id = 'evPdfLightbox';
+        lb.className = 'ev-lightbox';
+        lb.innerHTML = `
+            <button class="ev-lightbox-close" title="Fermer"><i class="bi bi-x-lg"></i></button>
+            <div class="ev-lightbox-content">
+                <iframe id="evPdfIframe"></iframe>
+            </div>
+            <div class="ev-lightbox-actions">
+                <button class="ev-lightbox-btn" id="evLbPrint" title="Imprimer / PDF"><i class="bi bi-printer"></i> Imprimer</button>
+            </div>
+        `;
+        document.body.appendChild(lb);
+
+        const iframe = document.getElementById('evPdfIframe');
+        iframe.srcdoc = htmlContent;
+
+        const closeLb = () => lb.remove();
+        lb.querySelector('.ev-lightbox-close').addEventListener('click', closeLb);
+        lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { closeLb(); document.removeEventListener('keydown', esc); }
+        });
+        document.getElementById('evLbPrint').addEventListener('click', () => {
+            if (iframe?.contentWindow) iframe.contentWindow.print();
+        });
     }
 
     async function shareInscrits() {
