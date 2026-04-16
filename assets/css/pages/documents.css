@@ -50,8 +50,21 @@
 }
 .doc-card .doc-action-btn:hover { background:var(--ss-accent); color:#fff; border-color:var(--ss-accent); }
 
+.doc-card-desc-empty { opacity:.4; }
+
 .doc-empty-state { grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--ss-text-muted); }
 .doc-empty-state i { font-size:3rem; display:block; margin-bottom:.5rem; opacity:.4; }
+
+/* ─── Document highlight (depuis notification) ─── */
+.doc-highlight {
+    outline: 2px solid var(--cl-teal-fg, #2d4a43);
+    outline-offset: 3px;
+    animation: docHighlightPulse 1.5s ease-in-out 2;
+}
+@keyframes docHighlightPulse {
+    0%, 100% { outline-color: var(--cl-teal-fg, #2d4a43); }
+    50% { outline-color: transparent; }
+}
 
 /* ─── Lightbox viewer (copié de l'admin) ─── */
 .doc-lb { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; animation: docLbIn .2s ease; }
