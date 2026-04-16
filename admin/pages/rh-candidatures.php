@@ -115,27 +115,71 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 }
 .rhc-doc-actions i { font-size: .95rem; }
 
-/* ── Lightbox ── */
+/* ── Lightbox with navigation ── */
 .rhc-lightbox {
-    position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.85);
-    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88);
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px);
+    animation: rhcLbIn .2s ease;
 }
-.rhc-lightbox-close {
+@keyframes rhcLbIn { from { opacity: 0; } to { opacity: 1; } }
+.rhc-lb-close {
     position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
-    background: rgba(255,255,255,.15); border: none; color: #fff; font-size: 1.2rem;
+    background: rgba(255,255,255,.12); border: none; color: #fff; font-size: 1.1rem;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background .15s;
+    transition: background .15s; z-index: 10;
 }
-.rhc-lightbox-close:hover { background: rgba(255,255,255,.3); }
-.rhc-lightbox-content { max-width: 90vw; max-height: 85vh; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-.rhc-lightbox-content img { max-width: 90vw; max-height: 85vh; object-fit: contain; display: block; }
-.rhc-lightbox-content iframe { width: 80vw; height: 85vh; border: none; background: #fff; }
-.rhc-lightbox-download {
-    position: absolute; bottom: 20px; right: 20px; padding: 8px 16px; border-radius: 8px;
-    background: rgba(255,255,255,.15); border: none; color: #fff; font-size: .85rem;
-    cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px;
+.rhc-lb-close:hover { background: rgba(255,255,255,.25); }
+.rhc-lb-counter {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,.6); font-size: .8rem; font-weight: 600; z-index: 10;
 }
-.rhc-lightbox-download:hover { background: rgba(255,255,255,.3); color: #fff; }
+.rhc-lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,.1); border: none; color: #fff; font-size: 1.3rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; backdrop-filter: blur(4px);
+}
+.rhc-lb-nav:hover { background: rgba(255,255,255,.25); transform: translateY(-50%) scale(1.08); }
+.rhc-lb-prev { left: 16px; }
+.rhc-lb-next { right: 16px; }
+.rhc-lb-stage {
+    display: flex; align-items: center; justify-content: center;
+    max-width: 90vw; max-height: 82vh;
+    animation: rhcLbSlide .25s ease;
+}
+@keyframes rhcLbSlide { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.rhc-lb-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(transparent, rgba(0,0,0,.6));
+    z-index: 10;
+}
+.rhc-lb-name { color: rgba(255,255,255,.8); font-size: .82rem; display: flex; align-items: center; gap: 6px; }
+.rhc-lb-dl {
+    color: #fff; text-decoration: none; font-size: .82rem;
+    background: rgba(255,255,255,.12); padding: 6px 14px; border-radius: 6px;
+    display: flex; align-items: center; gap: 6px; transition: background .15s;
+}
+.rhc-lb-dl:hover { background: rgba(255,255,255,.25); color: #fff; }
+/* Word preview inside lightbox */
+.rhc-lb-word-wrap {
+    width: 85vw; max-width: 900px; height: 80vh;
+    background: #fff; border-radius: 10px; overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.rhc-lb-word-body {
+    flex: 1; overflow-y: auto; padding: 0;
+}
+.rhc-lb-word-body .docx-wrapper,
+.rhc-lb-word-body > div { background: var(--cl-bg, #F7F5F2) !important; padding: 20px !important; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.rhc-lb-word-body .docx-wrapper > section,
+.rhc-lb-word-body .docx-wrapper section.docx,
+.rhc-lb-word-body section[style] {
+    max-width: 800px; width: 100%; background: #fff !important;
+    border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 40px !important;
+}
 
 /* ── Action buttons ── */
 .rhc-row-btn { background: none; border: none; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; color: var(--cl-text-muted); font-size: .88rem; transition: all .12s; display: flex; align-items: center; justify-content: center; }
@@ -416,37 +460,119 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
         });
     }
 
+    let lbDocs = [];
+    let lbIndex = 0;
+
     function openDocLightbox(url, ext, name) {
+        // Collect all documents from the detail modal for navigation
+        lbDocs = [...document.querySelectorAll('.rhc-doc-item')].map(el => ({
+            url: el.dataset.docUrl,
+            ext: el.dataset.docExt,
+            name: el.dataset.docName,
+        }));
+        lbIndex = lbDocs.findIndex(d => d.url === url && d.name === name);
+        if (lbIndex < 0) lbIndex = 0;
+
+        renderLightbox();
+    }
+
+    function renderLightbox() {
         document.getElementById('rhcLightbox')?.remove();
-
-        const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
-        const isPdf = ext === 'pdf';
-
-        let content;
-        if (isImage) {
-            content = '<img src="' + escapeHtml(url) + '" alt="' + escapeHtml(name) + '">';
-        } else if (isPdf) {
-            content = '<iframe src="' + escapeHtml(url) + '#toolbar=1" sandbox="allow-same-origin allow-scripts"></iframe>';
-        } else {
-            // Word/other: direct download
-            window.open(url, '_blank');
-            return;
-        }
+        const doc = lbDocs[lbIndex];
+        if (!doc) return;
 
         const lb = document.createElement('div');
         lb.id = 'rhcLightbox';
         lb.className = 'rhc-lightbox';
+
+        const hasPrev = lbIndex > 0;
+        const hasNext = lbIndex < lbDocs.length - 1;
+
         lb.innerHTML = `
-            <button class="rhc-lightbox-close" title="Fermer"><i class="bi bi-x-lg"></i></button>
-            <div class="rhc-lightbox-content">${content}</div>
-            <a href="${escapeHtml(url)}" download="${escapeHtml(name)}" class="rhc-lightbox-download"><i class="bi bi-download"></i> Télécharger</a>
+            <button class="rhc-lb-close" title="Fermer"><i class="bi bi-x-lg"></i></button>
+            <div class="rhc-lb-counter">${lbIndex + 1} / ${lbDocs.length}</div>
+            ${hasPrev ? '<button class="rhc-lb-nav rhc-lb-prev" title="Précédent"><i class="bi bi-chevron-left"></i></button>' : ''}
+            ${hasNext ? '<button class="rhc-lb-nav rhc-lb-next" title="Suivant"><i class="bi bi-chevron-right"></i></button>' : ''}
+            <div class="rhc-lb-stage" id="rhcLbStage"></div>
+            <div class="rhc-lb-bar">
+                <span class="rhc-lb-name"><i class="bi bi-file-earmark"></i> ${escapeHtml(doc.name)}</span>
+                <a href="${escapeHtml(doc.url)}" download="${escapeHtml(doc.name)}" class="rhc-lb-dl"><i class="bi bi-download"></i> Télécharger</a>
+            </div>
         `;
 
         document.body.appendChild(lb);
 
-        lb.querySelector('.rhc-lightbox-close').addEventListener('click', () => lb.remove());
-        lb.addEventListener('click', e => { if (e.target === lb) lb.remove(); });
-        document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', esc); } });
+        // Render content
+        const stage = document.getElementById('rhcLbStage');
+        const isImage = ['jpg','jpeg','png','gif','webp','bmp'].includes(doc.ext);
+        const isPdf = doc.ext === 'pdf';
+        const isWord = ['doc','docx','odt','rtf'].includes(doc.ext);
+
+        if (isImage) {
+            stage.innerHTML = `<img src="${escapeHtml(doc.url)}" alt="${escapeHtml(doc.name)}" draggable="false" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:8px">`;
+        } else if (isPdf) {
+            stage.innerHTML = `<iframe src="${escapeHtml(doc.url)}#view=FitH" sandbox="allow-same-origin allow-scripts" style="width:85vw;height:80vh;border:none;border-radius:8px;background:#fff"></iframe>`;
+        } else if (isWord) {
+            stage.innerHTML = `<div class="rhc-lb-word-wrap">
+                <div class="rhc-lb-word-body" id="rhcLbWordBody">
+                    <div style="text-align:center;padding:40px;color:#999"><span class="spinner-border spinner-border-sm"></span> Chargement du document...</div>
+                </div>
+            </div>`;
+            loadWordPreview(doc.url);
+        } else {
+            stage.innerHTML = `<div style="text-align:center;padding:60px;color:#fff">
+                <i class="bi bi-file-earmark" style="font-size:3rem;opacity:.5"></i>
+                <p style="margin-top:12px">Aperçu non disponible</p>
+                <a href="${escapeHtml(doc.url)}" download class="btn btn-sm btn-light"><i class="bi bi-download"></i> Télécharger</a>
+            </div>`;
+        }
+
+        // Events
+        lb.querySelector('.rhc-lb-close').addEventListener('click', closeLb);
+        lb.querySelector('.rhc-lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIndex--; renderLightbox(); });
+        lb.querySelector('.rhc-lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIndex++; renderLightbox(); });
+        lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('rhc-lb-stage')) closeLb(); });
+
+        document.addEventListener('keydown', lbKeyHandler);
+    }
+
+    function lbKeyHandler(e) {
+        if (e.key === 'Escape') closeLb();
+        else if (e.key === 'ArrowLeft' && lbIndex > 0) { lbIndex--; renderLightbox(); }
+        else if (e.key === 'ArrowRight' && lbIndex < lbDocs.length - 1) { lbIndex++; renderLightbox(); }
+    }
+
+    function closeLb() {
+        document.getElementById('rhcLightbox')?.remove();
+        document.removeEventListener('keydown', lbKeyHandler);
+    }
+
+    async function loadWordPreview(url) {
+        const container = document.getElementById('rhcLbWordBody');
+        if (!container) return;
+        try {
+            if (!window.JSZip) {
+                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+            }
+            if (!window.docx) {
+                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+            }
+            const resp = await fetch(url);
+            const blob = await resp.blob();
+            container.innerHTML = '';
+            await window.docx.renderAsync(blob, container, null, {
+                className: 'docx-preview',
+                inWrapper: true,
+                ignoreWidth: false,
+                ignoreHeight: false,
+                ignoreFonts: false,
+                breakPages: true,
+                useBase64URL: true,
+            });
+        } catch (e) {
+            console.error('docx-preview error:', e);
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:#dc3545"><i class="bi bi-exclamation-triangle"></i> Erreur de rendu — <a href="${escapeHtml(url)}" target="_blank" style="color:#fff">Télécharger</a></div>`;
+        }
     }
 
     document.getElementById('btnSaveCand')?.addEventListener('click', () => {
