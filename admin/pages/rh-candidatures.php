@@ -143,12 +143,18 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 .rhc-lb-nav:hover { background: rgba(255,255,255,.25); transform: translateY(-50%) scale(1.08); }
 .rhc-lb-prev { left: 16px; }
 .rhc-lb-next { right: 16px; }
-.rhc-lb-stage {
-    display: flex; align-items: center; justify-content: center;
-    max-width: 90vw; max-height: 82vh;
-    animation: rhcLbSlide .25s ease;
+.rhc-lb-track {
+    display: flex; width: 100%; height: calc(100vh - 60px);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
 }
-@keyframes rhcLbSlide { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.rhc-lb-slide {
+    flex: 0 0 100%; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 70px;
+    box-sizing: border-box;
+}
+.rhc-lb-slide img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; }
+.rhc-lb-slide iframe { width: 85vw; max-width: 1000px; height: 80vh; border: none; border-radius: 8px; background: #fff; }
 .rhc-lb-bar {
     position: absolute; bottom: 0; left: 0; right: 0;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -462,9 +468,10 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 
     let lbDocs = [];
     let lbIndex = 0;
+    let lbEl = null;
 
     function openDocLightbox(url, ext, name) {
-        // Collect all documents from the detail modal for navigation
+        // Collect all documents
         lbDocs = [...document.querySelectorAll('.rhc-doc-item')].map(el => ({
             url: el.dataset.docUrl,
             ext: el.dataset.docExt,
@@ -473,82 +480,119 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
         lbIndex = lbDocs.findIndex(d => d.url === url && d.name === name);
         if (lbIndex < 0) lbIndex = 0;
 
-        renderLightbox();
+        buildLightbox();
     }
 
-    function renderLightbox() {
-        document.getElementById('rhcLightbox')?.remove();
-        const doc = lbDocs[lbIndex];
-        if (!doc) return;
+    function buildLightbox() {
+        closeLb();
 
         const lb = document.createElement('div');
         lb.id = 'rhcLightbox';
         lb.className = 'rhc-lightbox';
+        lbEl = lb;
 
-        const hasPrev = lbIndex > 0;
-        const hasNext = lbIndex < lbDocs.length - 1;
+        // Build all slides at once
+        const slidesHtml = lbDocs.map((doc, i) => {
+            const isImage = ['jpg','jpeg','png','gif','webp','bmp'].includes(doc.ext);
+            const isPdf = doc.ext === 'pdf';
+            const isWord = ['doc','docx','odt','rtf'].includes(doc.ext);
+
+            let content;
+            if (isImage) {
+                content = `<img src="${escapeHtml(doc.url)}" alt="${escapeHtml(doc.name)}" draggable="false">`;
+            } else if (isPdf) {
+                content = `<iframe src="${escapeHtml(doc.url)}#view=FitH" sandbox="allow-same-origin allow-scripts"></iframe>`;
+            } else if (isWord) {
+                content = `<div class="rhc-lb-word-wrap"><div class="rhc-lb-word-body" data-word-idx="${i}">
+                    <div style="text-align:center;padding:40px;color:#999"><span class="spinner-border spinner-border-sm"></span> Chargement...</div>
+                </div></div>`;
+            } else {
+                content = `<div style="text-align:center;padding:60px;color:#fff">
+                    <i class="bi bi-file-earmark" style="font-size:3rem;opacity:.4"></i>
+                    <p style="margin-top:12px">Aperçu non disponible</p>
+                    <a href="${escapeHtml(doc.url)}" download class="btn btn-sm btn-light"><i class="bi bi-download"></i> Télécharger</a>
+                </div>`;
+            }
+            return `<div class="rhc-lb-slide" data-slide="${i}">${content}</div>`;
+        }).join('');
 
         lb.innerHTML = `
-            <button class="rhc-lb-close" title="Fermer"><i class="bi bi-x-lg"></i></button>
-            <div class="rhc-lb-counter">${lbIndex + 1} / ${lbDocs.length}</div>
-            ${hasPrev ? '<button class="rhc-lb-nav rhc-lb-prev" title="Précédent"><i class="bi bi-chevron-left"></i></button>' : ''}
-            ${hasNext ? '<button class="rhc-lb-nav rhc-lb-next" title="Suivant"><i class="bi bi-chevron-right"></i></button>' : ''}
-            <div class="rhc-lb-stage" id="rhcLbStage"></div>
+            <button class="rhc-lb-close" title="Fermer (Esc)"><i class="bi bi-x-lg"></i></button>
+            <div class="rhc-lb-counter" id="rhcLbCounter"></div>
+            <button class="rhc-lb-nav rhc-lb-prev" id="rhcLbPrev"><i class="bi bi-chevron-left"></i></button>
+            <button class="rhc-lb-nav rhc-lb-next" id="rhcLbNext"><i class="bi bi-chevron-right"></i></button>
+            <div class="rhc-lb-track" id="rhcLbTrack">${slidesHtml}</div>
             <div class="rhc-lb-bar">
-                <span class="rhc-lb-name"><i class="bi bi-file-earmark"></i> ${escapeHtml(doc.name)}</span>
-                <a href="${escapeHtml(doc.url)}" download="${escapeHtml(doc.name)}" class="rhc-lb-dl"><i class="bi bi-download"></i> Télécharger</a>
+                <span class="rhc-lb-name" id="rhcLbName"></span>
+                <a href="#" id="rhcLbDl" class="rhc-lb-dl"><i class="bi bi-download"></i> Télécharger</a>
             </div>
         `;
 
         document.body.appendChild(lb);
 
-        // Render content
-        const stage = document.getElementById('rhcLbStage');
-        const isImage = ['jpg','jpeg','png','gif','webp','bmp'].includes(doc.ext);
-        const isPdf = doc.ext === 'pdf';
-        const isWord = ['doc','docx','odt','rtf'].includes(doc.ext);
+        // Load all word docs in background
+        lbDocs.forEach((doc, i) => {
+            if (['doc','docx','odt','rtf'].includes(doc.ext)) {
+                loadWordSlide(doc.url, i);
+            }
+        });
 
-        if (isImage) {
-            stage.innerHTML = `<img src="${escapeHtml(doc.url)}" alt="${escapeHtml(doc.name)}" draggable="false" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:8px">`;
-        } else if (isPdf) {
-            stage.innerHTML = `<iframe src="${escapeHtml(doc.url)}#view=FitH" sandbox="allow-same-origin allow-scripts" style="width:85vw;height:80vh;border:none;border-radius:8px;background:#fff"></iframe>`;
-        } else if (isWord) {
-            stage.innerHTML = `<div class="rhc-lb-word-wrap">
-                <div class="rhc-lb-word-body" id="rhcLbWordBody">
-                    <div style="text-align:center;padding:40px;color:#999"><span class="spinner-border spinner-border-sm"></span> Chargement du document...</div>
-                </div>
-            </div>`;
-            loadWordPreview(doc.url);
-        } else {
-            stage.innerHTML = `<div style="text-align:center;padding:60px;color:#fff">
-                <i class="bi bi-file-earmark" style="font-size:3rem;opacity:.5"></i>
-                <p style="margin-top:12px">Aperçu non disponible</p>
-                <a href="${escapeHtml(doc.url)}" download class="btn btn-sm btn-light"><i class="bi bi-download"></i> Télécharger</a>
-            </div>`;
+        // Bind events (once)
+        lb.querySelector('.rhc-lb-close').addEventListener('click', closeLb);
+        document.getElementById('rhcLbPrev').addEventListener('click', (e) => { e.stopPropagation(); goSlide(lbIndex - 1); });
+        document.getElementById('rhcLbNext').addEventListener('click', (e) => { e.stopPropagation(); goSlide(lbIndex + 1); });
+        lb.addEventListener('click', e => {
+            if (e.target === lb || e.target.id === 'rhcLbTrack') closeLb();
+        });
+        document.addEventListener('keydown', lbKeyHandler);
+
+        // Show initial slide
+        goSlide(lbIndex, true);
+    }
+
+    function goSlide(idx, instant) {
+        if (idx < 0 || idx >= lbDocs.length) return;
+        lbIndex = idx;
+        const doc = lbDocs[idx];
+
+        // Move track
+        const track = document.getElementById('rhcLbTrack');
+        if (track) {
+            track.style.transition = instant ? 'none' : 'transform .3s cubic-bezier(.4,0,.2,1)';
+            track.style.transform = `translateX(-${idx * 100}%)`;
         }
 
-        // Events
-        lb.querySelector('.rhc-lb-close').addEventListener('click', closeLb);
-        lb.querySelector('.rhc-lb-prev')?.addEventListener('click', (e) => { e.stopPropagation(); lbIndex--; renderLightbox(); });
-        lb.querySelector('.rhc-lb-next')?.addEventListener('click', (e) => { e.stopPropagation(); lbIndex++; renderLightbox(); });
-        lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('rhc-lb-stage')) closeLb(); });
+        // Update info
+        const counter = document.getElementById('rhcLbCounter');
+        if (counter) counter.textContent = `${idx + 1} / ${lbDocs.length}`;
 
-        document.addEventListener('keydown', lbKeyHandler);
+        const nameEl = document.getElementById('rhcLbName');
+        if (nameEl) nameEl.innerHTML = `<i class="bi bi-file-earmark"></i> ${escapeHtml(doc.name)}`;
+
+        const dlEl = document.getElementById('rhcLbDl');
+        if (dlEl) { dlEl.href = doc.url; dlEl.setAttribute('download', doc.name); }
+
+        // Nav buttons visibility
+        const prev = document.getElementById('rhcLbPrev');
+        const next = document.getElementById('rhcLbNext');
+        if (prev) prev.style.display = idx > 0 ? '' : 'none';
+        if (next) next.style.display = idx < lbDocs.length - 1 ? '' : 'none';
     }
 
     function lbKeyHandler(e) {
         if (e.key === 'Escape') closeLb();
-        else if (e.key === 'ArrowLeft' && lbIndex > 0) { lbIndex--; renderLightbox(); }
-        else if (e.key === 'ArrowRight' && lbIndex < lbDocs.length - 1) { lbIndex++; renderLightbox(); }
+        else if (e.key === 'ArrowLeft') goSlide(lbIndex - 1);
+        else if (e.key === 'ArrowRight') goSlide(lbIndex + 1);
     }
 
     function closeLb() {
         document.getElementById('rhcLightbox')?.remove();
         document.removeEventListener('keydown', lbKeyHandler);
+        lbEl = null;
     }
 
-    async function loadWordPreview(url) {
-        const container = document.getElementById('rhcLbWordBody');
+    async function loadWordSlide(url, slideIdx) {
+        const container = document.querySelector(`.rhc-lb-word-body[data-word-idx="${slideIdx}"]`);
         if (!container) return;
         try {
             if (!window.JSZip) {
@@ -561,17 +605,12 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
             const blob = await resp.blob();
             container.innerHTML = '';
             await window.docx.renderAsync(blob, container, null, {
-                className: 'docx-preview',
-                inWrapper: true,
-                ignoreWidth: false,
-                ignoreHeight: false,
-                ignoreFonts: false,
-                breakPages: true,
-                useBase64URL: true,
+                className: 'docx-preview', inWrapper: true, ignoreWidth: false,
+                ignoreHeight: false, ignoreFonts: false, breakPages: true, useBase64URL: true,
             });
         } catch (e) {
             console.error('docx-preview error:', e);
-            container.innerHTML = `<div style="text-align:center;padding:40px;color:#dc3545"><i class="bi bi-exclamation-triangle"></i> Erreur de rendu — <a href="${escapeHtml(url)}" target="_blank" style="color:#fff">Télécharger</a></div>`;
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:#dc3545"><i class="bi bi-exclamation-triangle"></i> Erreur — <a href="${escapeHtml(url)}" target="_blank">Télécharger</a></div>`;
         }
     }
 
