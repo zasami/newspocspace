@@ -429,21 +429,19 @@ $users = Db::fetchAll(
                 const salle = salles.find(s => s.id === r.salle_id);
                 const color = salle ? salle.couleur : '#888';
 
+                const isJE = parseInt(r.journee_entiere);
                 const [hd, md] = r.heure_debut.split(':').map(Number);
                 const [hf, mf] = r.heure_fin.split(':').map(Number);
-                const startMin = (hd - HOURS_START) * 60 + md;
-                const endMin = (hf - HOURS_START) * 60 + mf;
-                const topPx = startMin * HOUR_H / 60;
-                const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 18);
+                // Clamp to visible grid range
+                const clampedStartMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
+                const clampedEndMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
+                const topPx = clampedStartMin * HOUR_H / 60;
+                const heightPx = Math.max((clampedEndMin - clampedStartMin) * HOUR_H / 60, 18);
 
-                // Find the parent cell (first hour row for this day column)
-                const colIdx = di + 2;
                 const block = document.createElement('div');
-                const isJEBlock = parseInt(r.journee_entiere);
-                block.className = 'sl-block' + (isJEBlock ? ' sl-block-journee' : '');
+                block.className = 'sl-block' + (isJE ? ' sl-block-journee' : '');
                 block.style.cssText = 'background:' + color + ';top:' + topPx + 'px;height:' + heightPx + 'px';
                 block.dataset.id = r.id;
-                const isJE = parseInt(r.journee_entiere);
                 const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
                 block.innerHTML = '<div class="sl-block-title">' + escapeHtml(r.titre) + '</div>'
                     + (heightPx > 30 ? '<div class="sl-block-time">' + timeLabel + '</div>' : '')

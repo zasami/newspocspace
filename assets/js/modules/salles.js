@@ -171,17 +171,18 @@ function renderGrid() {
             const color = salle ? salle.couleur : '#888';
             const isMine = r.user_id === userId;
 
+            const isJE = parseInt(r.journee_entiere);
             const [hd, md] = r.heure_debut.split(':').map(Number);
             const [hf, mf] = r.heure_fin.split(':').map(Number);
-            const startMin = (hd - HOURS_START) * 60 + md;
-            const endMin = (hf - HOURS_START) * 60 + mf;
-            const topPx = startMin * HOUR_H / 60;
-            const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 16);
+            // Clamp to visible grid range
+            const clampedStartMin = isJE ? 0 : Math.max((hd - HOURS_START) * 60 + md, 0);
+            const clampedEndMin = isJE ? (HOURS_END - HOURS_START) * 60 : Math.min((hf - HOURS_START) * 60 + mf, (HOURS_END - HOURS_START) * 60);
+            const topPx = clampedStartMin * HOUR_H / 60;
+            const heightPx = Math.max((clampedEndMin - clampedStartMin) * HOUR_H / 60, 16);
 
             const block = document.createElement('div');
             const hatchStyle = isJE ? 'background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(255,255,255,.18) 4px,rgba(255,255,255,.18) 8px);border:2px solid rgba(255,255,255,.35);' : '';
             block.style.cssText = 'position:absolute;left:2px;right:2px;top:' + topPx + 'px;height:' + heightPx + 'px;background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s;' + hatchStyle;
-            const isJE = parseInt(r.journee_entiere);
             const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5);
             block.innerHTML = '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
                 + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + timeLabel + '</div>' : '')
