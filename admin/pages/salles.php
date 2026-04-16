@@ -61,12 +61,22 @@ $users = Db::fetchAll(
 .sl-legend-item { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--cl-text-muted); }
 .sl-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
 
-/* ── Color picker ── */
-.sl-color-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 4px 0; }
-.sl-color-swatch { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2.5px solid transparent; transition: transform .15s, border-color .15s, box-shadow .15s; position: relative; }
-.sl-color-swatch:hover { transform: scale(1.18); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
-.sl-color-swatch.selected { border-color: var(--cl-text, #1a1a1a); transform: scale(1.1); }
-.sl-color-swatch.selected::after { content: '\f26e'; font-family: 'bootstrap-icons'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+/* ── Color picker dropdown ── */
+.sl-color-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1.5px solid var(--cl-border, #e0dcd7); border-radius: 8px; cursor: pointer; background: var(--cl-surface, #fff); transition: border-color .15s, box-shadow .15s; user-select: none; }
+.sl-color-trigger:hover { border-color: var(--cl-border-hover, #ccc); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.sl-color-trigger-dot { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.sl-color-trigger-label { font-size: .78rem; color: var(--cl-text-secondary, #6B6B6B); }
+.sl-color-trigger-chevron { font-size: .65rem; color: var(--cl-text-muted, #9B9B9B); transition: transform .2s; }
+.sl-color-trigger.open .sl-color-trigger-chevron { transform: rotate(180deg); }
+.sl-color-dropdown-wrap { position: relative; display: inline-block; }
+.sl-color-dropdown { position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; background: var(--cl-surface, #fff); border: 1.5px solid var(--cl-border-light, #F0EDE8); border-radius: 12px; padding: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: none; min-width: 260px; }
+.sl-color-dropdown.show { display: block; animation: slDropFade .15s ease-out; }
+@keyframes slDropFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.sl-color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.sl-color-swatch { width: 30px; height: 30px; border-radius: 8px; cursor: pointer; border: 2.5px solid transparent; transition: all .15s; position: relative; }
+.sl-color-swatch:hover { transform: scale(1.22); box-shadow: 0 4px 12px rgba(0,0,0,.18); z-index: 1; }
+.sl-color-swatch.selected { border-color: var(--cl-text, #1a1a1a); transform: scale(1.08); }
+.sl-color-swatch.selected::after { content: '\f26e'; font-family: 'bootstrap-icons'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
 
 /* ── Modal ── */
 .sl-modal-field { margin-bottom: 14px; }
@@ -236,7 +246,16 @@ $users = Db::fetchAll(
           <div class="col-sm-6 sl-modal-field">
             <label>Couleur</label>
             <input type="hidden" id="slRoomCouleur" value="#2D9CDB">
-            <div class="sl-color-picker" id="slColorPicker"></div>
+            <div class="sl-color-dropdown-wrap">
+              <div class="sl-color-trigger" id="slColorTrigger">
+                <div class="sl-color-trigger-dot" id="slColorTriggerDot" style="background:#2D9CDB"></div>
+                <span class="sl-color-trigger-label">Choisir</span>
+                <i class="bi bi-chevron-down sl-color-trigger-chevron"></i>
+              </div>
+              <div class="sl-color-dropdown" id="slColorDropdown">
+                <div class="sl-color-grid" id="slColorPicker"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="sl-modal-field">
@@ -294,6 +313,10 @@ $users = Db::fetchAll(
     ];
     const pickerEl = document.getElementById('slColorPicker');
     const couleurInput = document.getElementById('slRoomCouleur');
+    const colorTrigger = document.getElementById('slColorTrigger');
+    const colorDot = document.getElementById('slColorTriggerDot');
+    const colorDropdown = document.getElementById('slColorDropdown');
+
     PALETTE_COLORS.forEach(c => {
         const sw = document.createElement('div');
         sw.className = 'sl-color-swatch' + (couleurInput.value === c ? ' selected' : '');
@@ -303,8 +326,26 @@ $users = Db::fetchAll(
             pickerEl.querySelectorAll('.sl-color-swatch').forEach(s => s.classList.remove('selected'));
             sw.classList.add('selected');
             couleurInput.value = c;
+            colorDot.style.background = c;
+            colorDropdown.classList.remove('show');
+            colorTrigger.classList.remove('open');
         });
         pickerEl.appendChild(sw);
+    });
+
+    // Toggle dropdown
+    colorTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = colorDropdown.classList.toggle('show');
+        colorTrigger.classList.toggle('open', isOpen);
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sl-color-dropdown-wrap')) {
+            colorDropdown.classList.remove('show');
+            colorTrigger.classList.remove('open');
+        }
     });
 
     // Tabs
@@ -607,6 +648,9 @@ $users = Db::fetchAll(
         document.getElementById('slRoomCapacite').value = room ? room.capacite : 10;
         const selectedColor = room ? room.couleur : '#2D9CDB';
         couleurInput.value = selectedColor;
+        colorDot.style.background = selectedColor;
+        colorDropdown.classList.remove('show');
+        colorTrigger.classList.remove('open');
         pickerEl.querySelectorAll('.sl-color-swatch').forEach(s => {
             s.classList.toggle('selected', s.dataset.color === selectedColor);
         });
