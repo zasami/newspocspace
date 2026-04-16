@@ -67,7 +67,7 @@ async function openDetail(id) {
 
     // ── Description ──
     if (ev.description) {
-        html += `<div class="mb-3" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">${escapeHtml(ev.description)}</div>`;
+        html += `<div class="ev-description-box">${escapeHtml(ev.description)}</div>`;
     }
 
     // ── Infos en cartes ──

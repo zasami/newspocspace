@@ -195,6 +195,14 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-modal-cover { margin: -1rem -1rem 1rem; }
 .ev-modal-cover img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
 
+/* ── Description ── */
+.ev-description-box {
+    font-size: .9rem; line-height: 1.7; white-space: pre-wrap;
+    padding: 12px 16px; border-radius: 10px; margin-bottom: 14px;
+    background: var(--cl-surface, #fff); border-left: 3px solid var(--cl-accent, #2d4a43);
+    max-height: 160px; overflow-y: auto; color: var(--cl-text, #333);
+}
+
 /* ── Info cards ── */
 .ev-info-card {
     display: flex; align-items: center; gap: 10px; padding: 10px 14px;
