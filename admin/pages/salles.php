@@ -163,7 +163,7 @@ $users = Db::fetchAll(
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="slResaModalTitle">Nouvelle réservation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="slResaId">
@@ -243,7 +243,7 @@ $users = Db::fetchAll(
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="slRoomModalTitle">Nouvelle salle</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="slRoomId">
