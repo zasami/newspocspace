@@ -6,7 +6,7 @@ function get_evenements() {
 
     $list = Db::fetchAll(
         "SELECT e.id, e.titre, e.description, e.date_debut, e.date_fin, e.heure_debut, e.heure_fin,
-                e.lieu, e.max_participants, e.statut, e.inscription_obligatoire,
+                e.lieu, e.image_url, e.max_participants, e.statut, e.inscription_obligatoire,
                 (SELECT COUNT(*) FROM evenement_inscriptions WHERE evenement_id = e.id AND statut = 'inscrit') AS nb_inscrits,
                 (SELECT COUNT(*) FROM evenement_champs WHERE evenement_id = e.id) AS nb_champs,
                 (SELECT id FROM evenement_inscriptions WHERE evenement_id = e.id AND user_id = ? AND statut = 'inscrit' LIMIT 1) AS mon_inscription_id

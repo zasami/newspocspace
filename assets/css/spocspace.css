@@ -3884,6 +3884,14 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-ev-date { min-width: 36px; text-align: center; padding: 4px; border-radius: 8px; background: var(--ss-bg, #F7F5F2); flex-shrink: 0; }
 .mur-ev-day { font-size: 1rem; font-weight: 700; line-height: 1; color: var(--ss-accent, #2d4a43); }
 .mur-ev-month { font-size: .6rem; font-weight: 600; text-transform: uppercase; color: var(--ss-muted, #888); }
+.mur-ev-vote-hint { font-size: .68rem; font-weight: 600; color: var(--ss-orange, #EA9D3D); margin-top: 2px; }
+.mur-ev-banner { display: block; border-radius: 10px; overflow: hidden; border: 1px solid var(--ss-border, #E8E5E0); transition: box-shadow .2s, transform .2s; margin-bottom: 8px; }
+.mur-ev-banner:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); transform: translateY(-1px); }
+.mur-ev-banner-img { width: 100%; height: 90px; object-fit: cover; display: block; }
+.mur-ev-banner-body { padding: 10px 12px; }
+.mur-ev-banner-title { font-size: .85rem; font-weight: 700; margin-bottom: 2px; }
+.mur-ev-banner-reminder { font-size: .75rem; font-weight: 600; color: var(--ss-orange, #EA9D3D); margin-bottom: 3px; }
+.mur-ev-banner-meta { font-size: .7rem; color: var(--ss-muted, #888); }
 
 /* ── Empty + Loading ── */
 .mur-loading { text-align: center; padding: 30px; }

@@ -232,23 +232,48 @@ async function loadMurEvents() {
     const res = await apiPost('get_evenements');
     if (!res.success) return;
 
-    const upcoming = (res.list || []).filter(e => e.statut === 'ouvert' && e.date_debut >= new Date().toISOString().slice(0, 10));
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = (res.list || []).filter(e => e.statut === 'ouvert' && e.date_debut >= today);
     if (!upcoming.length) return;
 
-    el.innerHTML = upcoming.slice(0, 4).map(ev => {
+    let html = '';
+
+    upcoming.slice(0, 4).forEach(ev => {
         const d = new Date(ev.date_debut + 'T00:00:00');
         const day = d.getDate();
         const month = d.toLocaleDateString('fr-FR', { month: 'short' });
         const isInscrit = !!ev.mon_inscription_id;
-        return `<a href="/spocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
-            <div class="mur-ev-date"><div class="mur-ev-day">${day}</div><div class="mur-ev-month">${escapeHtml(month)}</div></div>
-            <div style="flex:1;min-width:0">
-                <div class="mur-widget-text" style="font-weight:600;font-size:.82rem">${escapeHtml(ev.titre)}</div>
-                <div class="mur-widget-meta">${ev.lieu ? escapeHtml(ev.lieu) + ' · ' : ''}${ev.nb_inscrits} inscrit${ev.nb_inscrits > 1 ? 's' : ''}</div>
-            </div>
-            ${isInscrit ? '<span style="color:#16A34A;font-size:.75rem"><i class="bi bi-check-circle-fill"></i></span>' : ''}
-        </a>`;
-    }).join('');
+
+        // Image + rappel pour les événements non inscrits
+        if (ev.image_url && !isInscrit) {
+            html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-ev-banner" style="text-decoration:none;color:inherit">
+                <img src="${escapeHtml(ev.image_url)}" alt="" class="mur-ev-banner-img">
+                <div class="mur-ev-banner-body">
+                    <div class="mur-ev-banner-title">${escapeHtml(ev.titre)}</div>
+                    <div class="mur-ev-banner-reminder"><i class="bi bi-hand-index-thumb"></i> N'oubliez pas de voter !</div>
+                    <div class="mur-ev-banner-meta">${fmtDateShort(ev.date_debut)}${ev.lieu ? ' · ' + escapeHtml(ev.lieu) : ''} · ${ev.nb_inscrits} inscrit${ev.nb_inscrits > 1 ? 's' : ''}</div>
+                </div>
+            </a>`;
+        } else {
+            // Item compact (avec ou sans image)
+            html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
+                <div class="mur-ev-date"><div class="mur-ev-day">${day}</div><div class="mur-ev-month">${escapeHtml(month)}</div></div>
+                <div style="flex:1;min-width:0">
+                    <div class="mur-widget-text" style="font-weight:600;font-size:.82rem">${escapeHtml(ev.titre)}</div>
+                    <div class="mur-widget-meta">${ev.lieu ? escapeHtml(ev.lieu) + ' · ' : ''}${ev.nb_inscrits} inscrit${ev.nb_inscrits > 1 ? 's' : ''}</div>
+                    ${!isInscrit ? '<div class="mur-ev-vote-hint"><i class="bi bi-hand-index-thumb"></i> N\'oubliez pas de voter !</div>' : ''}
+                </div>
+                ${isInscrit ? '<span style="color:#16A34A;font-size:.75rem"><i class="bi bi-check-circle-fill"></i></span>' : ''}
+            </a>`;
+        }
+    });
+
+    el.innerHTML = html;
+}
+
+function fmtDateShort(d) {
+    try { return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); }
+    catch(e) { return d; }
 }
 
 // ══════════════════════════════════════
