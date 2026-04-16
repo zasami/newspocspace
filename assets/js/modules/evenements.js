@@ -1,6 +1,7 @@
 import { apiPost, escapeHtml, ssConfirm } from '../helpers.js';
 
 let detailModal = null;
+let countdownInterval = null;
 
 export async function init() {
     const modalEl = document.getElementById('evDetailModal');
@@ -23,11 +24,52 @@ export async function init() {
     document.querySelectorAll('.ev-card').forEach(card => {
         card.addEventListener('click', () => openDetail(card.dataset.eventId));
     });
+
+    // Start live countdowns
+    startCountdowns();
 }
 
 export function destroy() {
     detailModal = null;
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
 }
+
+function startCountdowns() {
+    updateCountdowns();
+    countdownInterval = setInterval(updateCountdowns, 1000);
+}
+
+function updateCountdowns() {
+    document.querySelectorAll('[data-deadline]').forEach(el => {
+        const dl = new Date(el.dataset.deadline.replace(' ', 'T')).getTime();
+        const diff = dl - Date.now();
+        if (diff <= 0) {
+            el.classList.add('expired');
+            el.innerHTML = '<i class="bi bi-lock"></i> Clôturé';
+            delete el.dataset.deadline;
+            return;
+        }
+        const j = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+
+        let txt = '';
+        if (j > 0) txt = `${j}j ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+        else if (h > 0) txt = `${h}h ${pad(m)}m ${pad(s)}s`;
+        else txt = `${m}m ${pad(s)}s`;
+
+        // For timer overlay on image
+        if (el.classList.contains('ev-card-timer')) {
+            el.innerHTML = `<i class="bi bi-hourglass-split"></i> ${txt}`;
+        }
+        // For text countdown in card body
+        const span = el.querySelector('span');
+        if (span) span.textContent = txt;
+    });
+}
+
+function pad(n) { return n < 10 ? '0' + n : n; }
 
 async function openDetail(id) {
     if (!detailModal) return;

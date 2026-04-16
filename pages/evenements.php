@@ -134,7 +134,14 @@ function renderEventCard($ev, $now, $isPast = false) {
     ?>
     <div class="ev-card <?= $isPast ? 'ev-card-past' : '' ?> <?= !empty($ev['image_url']) ? 'ev-card-has-img' : '' ?>" data-event-id="<?= h($ev['id']) ?>">
         <?php if (!empty($ev['image_url'])): ?>
-            <div class="ev-card-img"><img src="<?= h($ev['image_url']) ?>" alt=""></div>
+            <div class="ev-card-img">
+                <img src="<?= h($ev['image_url']) ?>" alt="">
+                <?php if (!empty($ev['date_limite_inscription']) && $isOpen && !$isInscrit && !$deadlineExpired): ?>
+                    <div class="ev-card-timer" data-deadline="<?= h($ev['date_limite_inscription']) ?>"></div>
+                <?php elseif ($deadlineExpired && !$isInscrit): ?>
+                    <div class="ev-card-timer expired"><i class="bi bi-lock"></i> Clôturé</div>
+                <?php endif; ?>
+            </div>
         <?php else: ?>
             <div class="ev-card-date">
                 <div class="ev-card-day"><?= date('d', strtotime($ev['date_debut'])) ?></div>
@@ -149,9 +156,13 @@ function renderEventCard($ev, $now, $isPast = false) {
             <?php if ($ev['heure_debut']): ?>
                 <div class="ev-card-meta"><i class="bi bi-clock"></i> <?= h(substr($ev['heure_debut'], 0, 5)) ?><?= $ev['heure_fin'] ? ' - ' . h(substr($ev['heure_fin'], 0, 5)) : '' ?></div>
             <?php endif; ?>
-            <?php if ($countdown): ?>
-                <div class="ev-card-countdown <?= $deadlineExpired ? 'expired' : '' ?>">
-                    <i class="bi bi-<?= $deadlineExpired ? 'lock' : 'hourglass-split' ?>"></i> <?= h($countdown) ?>
+            <?php if (!empty($ev['date_limite_inscription']) && $isOpen && !$isInscrit && !$deadlineExpired): ?>
+                <div class="ev-card-countdown" data-deadline="<?= h($ev['date_limite_inscription']) ?>">
+                    <i class="bi bi-hourglass-split"></i> <span><?= h($countdown) ?></span>
+                </div>
+            <?php elseif ($deadlineExpired && !$isInscrit): ?>
+                <div class="ev-card-countdown expired">
+                    <i class="bi bi-lock"></i> <?= h($countdown) ?>
                 </div>
             <?php endif; ?>
             <div class="ev-card-footer">
@@ -194,8 +205,19 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-card:hover { border-color: var(--cl-accent, #2d4a43); box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
 .ev-card-past { opacity: 0.6; }
 .ev-card-has-img { flex-direction: column; gap: 0; }
-.ev-card-img { border-radius: 10px 10px 0 0; overflow: hidden; margin: -16px -16px 12px; }
+.ev-card-img { border-radius: 10px 10px 0 0; overflow: hidden; margin: -16px -16px 12px; position: relative; }
 .ev-card-img img { width: 100%; height: 120px; object-fit: cover; display: block; }
+
+/* ── Timer overlay on image ── */
+.ev-card-timer {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    color: #fff; font-size: .7rem; font-weight: 700; letter-spacing: .5px;
+    padding: 4px 10px; border-radius: 8px;
+    display: flex; align-items: center; gap: 5px;
+    font-variant-numeric: tabular-nums;
+}
+.ev-card-timer.expired { background: rgba(192,57,43,.7); }
 .ev-card-date {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-width: 52px; padding: 8px; border-radius: 10px;
