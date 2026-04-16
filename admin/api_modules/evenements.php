@@ -98,8 +98,8 @@ function admin_create_evenement() {
     $statut = in_array($params['statut'] ?? '', $allowedStatuts) ? $params['statut'] : 'brouillon';
 
     Db::exec(
-        "INSERT INTO evenements (id, titre, description, date_debut, date_fin, heure_debut, heure_fin, lieu, max_participants, statut, inscription_obligatoire, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO evenements (id, titre, description, date_debut, date_fin, heure_debut, heure_fin, lieu, image_url, max_participants, statut, inscription_obligatoire, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
             $id,
             $titre,
@@ -109,6 +109,7 @@ function admin_create_evenement() {
             ($params['heure_debut'] ?? null) ?: null,
             ($params['heure_fin'] ?? null) ?: null,
             $params['lieu'] ?? null,
+            $params['image_url'] ?? null,
             !empty($params['max_participants']) ? (int)$params['max_participants'] : null,
             $statut,
             (int)($params['inscription_obligatoire'] ?? 1),
@@ -138,7 +139,7 @@ function admin_update_evenement() {
     $statut = in_array($params['statut'] ?? '', $allowedStatuts) ? $params['statut'] : $ev['statut'];
 
     Db::exec(
-        "UPDATE evenements SET titre=?, description=?, date_debut=?, date_fin=?, heure_debut=?, heure_fin=?, lieu=?, max_participants=?, statut=?, inscription_obligatoire=? WHERE id=?",
+        "UPDATE evenements SET titre=?, description=?, date_debut=?, date_fin=?, heure_debut=?, heure_fin=?, lieu=?, image_url=?, max_participants=?, statut=?, inscription_obligatoire=? WHERE id=?",
         [
             $titre,
             array_key_exists('description', $params) ? $params['description'] : $ev['description'],
@@ -147,6 +148,7 @@ function admin_update_evenement() {
             array_key_exists('heure_debut', $params) ? ($params['heure_debut'] ?: null) : $ev['heure_debut'],
             array_key_exists('heure_fin', $params) ? ($params['heure_fin'] ?: null) : $ev['heure_fin'],
             array_key_exists('lieu', $params) ? $params['lieu'] : $ev['lieu'],
+            array_key_exists('image_url', $params) ? ($params['image_url'] ?: null) : $ev['image_url'],
             array_key_exists('max_participants', $params) ? ($params['max_participants'] ? (int)$params['max_participants'] : null) : $ev['max_participants'],
             $statut,
             array_key_exists('inscription_obligatoire', $params) ? (int)$params['inscription_obligatoire'] : $ev['inscription_obligatoire'],

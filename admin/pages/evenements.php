@@ -492,6 +492,7 @@ $initList = Db::fetchAll(
                 <div class="d-flex flex-wrap gap-1">${actions}</div>
             </div>
             <div class="card-body ev-detail-body">
+                ${ev.image_url ? '<div class="mb-3"><img src="' + escapeHtml(ev.image_url) + '" alt="" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px"></div>' : ''}
                 ${ev.description ? '<div class="mb-3" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">' + escapeHtml(ev.description) + '</div>' : ''}
                 ${champsHtml}
                 ${inscritsHtml}
@@ -747,6 +748,172 @@ $initList = Db::fetchAll(
         if (!d) return '—';
         try { return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); }
         catch(e) { return d; }
+    }
+
+    // ─── Image cover helpers ───
+    function setCoverImage(url) {
+        document.getElementById('evImageUrl').value = url || '';
+        const placeholder = document.getElementById('evCoverPlaceholder');
+        const preview = document.getElementById('evCoverPreview');
+        const img = document.getElementById('evCoverImg');
+        if (url) {
+            img.src = url;
+            placeholder.classList.add('d-none');
+            preview.classList.remove('d-none');
+        } else {
+            img.src = '';
+            placeholder.classList.remove('d-none');
+            preview.classList.add('d-none');
+        }
+    }
+
+    function initImagePicker() {
+        // Open picker on cover zone click
+        document.getElementById('evCoverZone').addEventListener('click', (e) => {
+            if (e.target.closest('.ev-cover-remove')) return;
+            imagePickerModal.show();
+        });
+
+        // Remove cover
+        document.getElementById('evCoverRemove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            setCoverImage('');
+        });
+
+        // Tabs switch
+        document.querySelectorAll('[data-img-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-img-tab]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('imgPanelUpload').classList.toggle('d-none', btn.dataset.imgTab !== 'upload');
+                document.getElementById('imgPanelPixabay').classList.toggle('d-none', btn.dataset.imgTab !== 'pixabay');
+            });
+        });
+
+        // ── Upload ──
+        const uploadZone = document.getElementById('evUploadZone');
+        const uploadInput = document.getElementById('evUploadInput');
+
+        uploadZone.addEventListener('click', () => uploadInput.click());
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = 'var(--cl-accent)'; });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '';
+            if (e.dataTransfer.files.length) previewUpload(e.dataTransfer.files[0]);
+        });
+        uploadInput.addEventListener('change', () => {
+            if (uploadInput.files.length) previewUpload(uploadInput.files[0]);
+        });
+
+        document.getElementById('evUploadBtn').addEventListener('click', doUpload);
+
+        // ── Pixabay ──
+        document.getElementById('evPixabaySearchBtn').addEventListener('click', searchPixabay);
+        document.getElementById('evPixabayInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') searchPixabay();
+        });
+    }
+
+    function previewUpload(file) {
+        if (!file || !file.type.startsWith('image/')) { toast('Fichier non valide', 'error'); return; }
+        if (file.size > 5 * 1024 * 1024) { toast('Image trop volumineuse (max 5 Mo)', 'error'); return; }
+        pendingUploadFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('evUploadPlaceholder').classList.add('d-none');
+            document.getElementById('evUploadPreviewWrap').classList.remove('d-none');
+            document.getElementById('evUploadPreviewImg').src = e.target.result;
+            document.getElementById('evUploadBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function doUpload() {
+        if (!pendingUploadFile) return;
+        const btn = document.getElementById('evUploadBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const formData = new FormData();
+        formData.append('file', pendingUploadFile);
+        formData.append('action', 'admin_upload_evenement_image');
+
+        try {
+            const resp = await fetch('/spocspace/admin/api.php', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
+                body: formData
+            });
+            const res = await resp.json();
+            if (res.success) {
+                setCoverImage(res.url);
+                imagePickerModal.hide();
+                resetUploadPanel();
+                toast('Image ajoutée', 'success');
+            } else {
+                toast(res.message || 'Erreur upload', 'error');
+            }
+        } catch {
+            toast('Erreur upload', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Utiliser cette image';
+    }
+
+    function resetUploadPanel() {
+        pendingUploadFile = null;
+        document.getElementById('evUploadPlaceholder').classList.remove('d-none');
+        document.getElementById('evUploadPreviewWrap').classList.add('d-none');
+        document.getElementById('evUploadPreviewImg').src = '';
+        document.getElementById('evUploadBtn').disabled = true;
+        document.getElementById('evUploadInput').value = '';
+    }
+
+    async function searchPixabay() {
+        const query = document.getElementById('evPixabayInput').value.trim();
+        const category = document.getElementById('evPixabayCat').value;
+        if (!query && !category) { toast('Entrez un terme de recherche', 'error'); return; }
+
+        const grid = document.getElementById('evPixabayGrid');
+        const loading = document.getElementById('evPixabayLoading');
+        grid.innerHTML = '';
+        loading.classList.remove('d-none');
+
+        const r = await adminApiPost('admin_search_pixabay', { query, category });
+        loading.classList.add('d-none');
+
+        if (!r.success || !r.hits?.length) {
+            grid.innerHTML = '<div class="text-center text-muted py-4 small" style="grid-column:1/-1">Aucun résultat</div>';
+            return;
+        }
+
+        grid.innerHTML = r.hits.map(h =>
+            `<div class="ev-pixabay-thumb" data-url="${escapeHtml(h.largeImageURL || h.webformatURL)}">
+                <img src="${escapeHtml(h.previewURL)}" alt="" loading="lazy">
+            </div>`
+        ).join('');
+
+        grid.querySelectorAll('.ev-pixabay-thumb').forEach(thumb => {
+            thumb.addEventListener('click', () => selectPixabayImage(thumb.dataset.url));
+        });
+    }
+
+    async function selectPixabayImage(url) {
+        const loading = document.getElementById('evPixabayLoading');
+        loading.classList.remove('d-none');
+
+        const r = await adminApiPost('admin_save_pixabay_evenement', { image_url: url });
+        loading.classList.add('d-none');
+
+        if (r.success) {
+            setCoverImage(r.url);
+            imagePickerModal.hide();
+            toast('Image Pixabay ajoutée', 'success');
+        } else {
+            toast(r.message || 'Erreur', 'error');
+        }
     }
 
     function debounce(fn, delay) {

@@ -94,6 +94,12 @@
                     <div class="mur-widget-empty">—</div>
                 </div>
             </div>
+            <div class="mur-sidebar-card">
+                <div class="mur-sidebar-title"><i class="bi bi-calendar-event"></i> Événements</div>
+                <div class="mur-widget-list" id="murEvents">
+                    <div class="mur-widget-empty">Aucun événement</div>
+                </div>
+            </div>
         </aside>
     </div>
 </div>
