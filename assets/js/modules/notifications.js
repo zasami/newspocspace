@@ -8,6 +8,15 @@ export function init() {
     document.addEventListener('click', handleClick);
 }
 
+function updateTopbarBadge() {
+    const remaining = document.querySelectorAll('.notif-item.unread').length;
+    const badge = document.querySelector('.fe-topbar-notif');
+    if (badge) {
+        if (remaining > 0) { badge.textContent = remaining; badge.style.display = ''; }
+        else { badge.style.display = 'none'; }
+    }
+}
+
 async function handleClick(e) {
     const item = e.target.closest('[data-notif-id]');
     if (item) {
@@ -16,6 +25,7 @@ async function handleClick(e) {
         if (item.classList.contains('unread')) {
             await apiPost('mark_notification_read', { id });
             item.classList.remove('unread');
+            updateTopbarBadge();
         }
         if (url) {
             history.pushState({}, '', `/spocspace/${url}`);
@@ -30,6 +40,7 @@ async function handleClick(e) {
             document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
             const btn = document.getElementById('markAllRead');
             if (btn) btn.disabled = true;
+            updateTopbarBadge();
         }
     }
 }

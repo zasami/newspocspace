@@ -162,6 +162,47 @@ require_once __DIR__ . '/_partials/helpers.php';
 2. **Phase 2 moyennes** : mes-stagiaires, stagiaire-detail, collegues, covoiturage, desirs, vacances, absences, changements, votes, sondages, pv
 3. **Phase 3 complexes** : planning, emails, mur, wiki, report-edit (garde TipTap), repartition, cuisine-*, home
 
+### Sauvegardes & Restauration
+
+Système de backup/restore à deux niveaux : per-user (admin) et global.
+
+**Table DB** : `backups` (id, user_id NULL=global, type ENUM user/global, filename, file_size, tables_included JSON, row_counts JSON, checksum_sha256, created_at, created_by)
+
+**Stockage** : `data/backups/users/{user_id}/` et `data/backups/global/` — protégé par `.htaccess` Deny from all
+
+**Format** : ZIP via `ZipArchive` natif PHP. Chaque ZIP contient :
+- `manifest.json` (métadonnées, date, version, checksums)
+- `*.sql` (INSERT statements par table)
+- `files/` (documents uploadés)
+- `checksum.sha256` (intégrité)
+
+**Per-user** (admin) :
+- Déclenchement manuel (bouton)
+- Max 5 par user (rotation auto)
+- Scope : documents, messages, emails de l'utilisateur
+
+**Global** :
+- Automatique : cron quotidien 3h (`scripts/backup_daily.php`)
+- Manuel : bouton admin
+- Rétention : 14 jours quotidiens + 8 hebdomadaires
+- Restauration protégée par code spécial (hashé dans `ems_config`, rate-limited 3 tentatives/h)
+
+**API admin** (`admin/api_modules/backups.php`) :
+- `admin_create_backup` — créer ZIP per-user
+- `admin_list_backups` — lister par user ou global
+- `admin_compare_backup` — diff backup vs état actuel
+- `admin_restore_backup` — restauration (merge ou écrasement)
+- `admin_delete_backup` — suppression manuelle
+- `admin_create_global_backup` — dump complet
+- `admin_restore_global_backup` — restauration totale (code spécial requis)
+
+**Page admin** : `sauvegardes` — 2 onglets (Mes sauvegardes / Global 🔒)
+
+**Restauration UX** :
+- Comparer : affiche diff (+ajoutés, -supprimés, ~modifiés) → restaurer seulement les différences
+- Écraser : avertissement DANGER rouge, confirmation par saisie "RESTAURER"
+- Global : double confirmation (code spécial + saisie "RESTAURER")
+
 ## Travail en cours
 
 _(section vidée quand toutes les tâches sont terminées)_

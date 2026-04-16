@@ -4,7 +4,6 @@
  * Support échange croisé multi-jours
  */
 import { apiPost, toast, escapeHtml, formatDate } from '../helpers.js';
-import { loadPage } from '../app.js';
 
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MOIS_NOMS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -1054,8 +1053,8 @@ function renderCalendar(containerId, mois, assignations, onDayClick, selectedDat
 
 /* ═══ Changements list ═══ */
 async function loadChangements() {
-    // Reload full page for fresh SSR
-    loadPage('changements');
+    // Reload full page for fresh SSR (pas d'import circulaire app.js)
+    window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 function renderChangements(items) {

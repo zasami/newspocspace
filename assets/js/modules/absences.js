@@ -2,7 +2,6 @@
  * Absences module — SSR rendered, JS handles interactions only
  */
 import { apiPost, toast, escapeHtml } from '../helpers.js';
-import { loadPage } from '../app.js';
 
 let _lbListeners = [];
 function _lbAdd(el, evt, fn, opts) { if (!el) return; el.addEventListener(evt, fn, opts); _lbListeners.push({ el, evt, fn, opts }); }
@@ -35,7 +34,7 @@ export function init() {
             document.getElementById('absenceForm').reset();
             clearDropZone();
             // Reload page to get fresh SSR
-            loadPage('absences');
+            window.dispatchEvent(new PopStateEvent('popstate'));
         } else {
             toast(res.message || 'Erreur');
         }

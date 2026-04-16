@@ -30,12 +30,12 @@ $restVac = max(0, $soldeVac - $prisVac);
 
 // Prochain service (assignation prévue)
 $nextShift = Db::fetch(
-    "SELECT pa.date, ht.code AS horaire_code, ht.couleur, ht.nom AS horaire_nom
+    "SELECT pa.date_jour, ht.code AS horaire_code, ht.couleur, ht.nom AS horaire_nom
      FROM planning_assignations pa
      JOIN plannings p ON p.id = pa.planning_id
-     JOIN horaires_types ht ON ht.id = pa.horaire_id
-     WHERE pa.user_id = ? AND pa.date >= CURDATE() AND p.statut IN ('provisoire','final','publie')
-     ORDER BY pa.date ASC LIMIT 1",
+     LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+     WHERE pa.user_id = ? AND pa.date_jour >= CURDATE() AND p.statut IN ('provisoire','final','publie')
+     ORDER BY pa.date_jour ASC LIMIT 1",
     [$uid]
 );
 ?>
@@ -53,7 +53,7 @@ $nextShift = Db::fetch(
                 <div class="flex-grow-1 min-width-0">
                     <div class="stat-value">
                         <?php if ($nextShift): ?>
-                            <?= h(fmt_date_fr($nextShift['date'], 'd.m')) ?>
+                            <?= h(fmt_date_fr($nextShift['date_jour'], 'd.m')) ?>
                             <small class="stat-sub">· <?= h($nextShift['horaire_code']) ?></small>
                         <?php else: ?>
                             —
