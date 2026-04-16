@@ -42,6 +42,16 @@ export async function init() {
     // Filter
     document.getElementById('slSalleFilter')?.addEventListener('change', (e) => { filterSalle = e.target.value; renderGrid(); });
 
+    // Journée entière toggle
+    const slJourneeCheck = document.getElementById('slResaJournee');
+    if (slJourneeCheck) {
+        slJourneeCheck.addEventListener('change', () => {
+            const hide = slJourneeCheck.checked;
+            document.getElementById('slResaDebutWrap').style.display = hide ? 'none' : '';
+            document.getElementById('slResaFinWrap').style.display = hide ? 'none' : '';
+        });
+    }
+
     // New reservation
     document.getElementById('slNewBtn')?.addEventListener('click', () => openResaModal());
     document.getElementById('slResaSaveBtn')?.addEventListener('click', saveResa);
@@ -169,9 +179,12 @@ function renderGrid() {
             const heightPx = Math.max((endMin - startMin) * HOUR_H / 60, 16);
 
             const block = document.createElement('div');
-            block.style.cssText = 'position:absolute;left:2px;right:2px;top:' + topPx + 'px;height:' + heightPx + 'px;background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s';
+            const hatchStyle = isJE ? 'background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(255,255,255,.18) 4px,rgba(255,255,255,.18) 8px);border:2px solid rgba(255,255,255,.35);' : '';
+            block.style.cssText = 'position:absolute;left:2px;right:2px;top:' + topPx + 'px;height:' + heightPx + 'px;background:' + color + ';border-radius:5px;padding:3px 6px;font-size:.68rem;color:#fff;overflow:hidden;cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.12);line-height:1.3;transition:transform .1s;' + hatchStyle;
+            const isJE = parseInt(r.journee_entiere);
+            const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5);
             block.innerHTML = '<div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(r.titre) + '</div>'
-                + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + r.heure_debut.substring(0, 5) + '–' + r.heure_fin.substring(0, 5) + '</div>' : '')
+                + (heightPx > 28 ? '<div style="opacity:.8;font-size:.6rem">' + timeLabel + '</div>' : '')
                 + (heightPx > 42 ? '<div style="opacity:.7;font-size:.6rem">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (isMine ? ' (moi)' : '') + '</div>' : '');
 
             block.addEventListener('click', (e) => { e.stopPropagation(); showDetail(r); });
@@ -200,19 +213,27 @@ function openResaModal(date, debut, fin) {
     document.getElementById('slResaTitre').value = '';
     document.getElementById('slResaDesc').value = '';
     document.getElementById('slResaDate').value = date || fmtDate(new Date());
+    const jCheck = document.getElementById('slResaJournee');
+    if (jCheck) {
+        jCheck.checked = false;
+        document.getElementById('slResaDebutWrap').style.display = '';
+        document.getElementById('slResaFinWrap').style.display = '';
+    }
     document.getElementById('slResaDebut').value = debut || '08:00';
     document.getElementById('slResaFin').value = fin || '09:00';
     resaModal.show();
 }
 
 async function saveResa() {
+    const isJournee = document.getElementById('slResaJournee')?.checked || false;
     const data = {
         salle_id: document.getElementById('slResaSalle').value,
         titre: document.getElementById('slResaTitre').value.trim(),
         description: document.getElementById('slResaDesc').value.trim(),
         date_jour: document.getElementById('slResaDate').value,
-        heure_debut: document.getElementById('slResaDebut').value,
-        heure_fin: document.getElementById('slResaFin').value,
+        journee_entiere: isJournee ? 1 : 0,
+        heure_debut: isJournee ? '00:00' : document.getElementById('slResaDebut').value,
+        heure_fin: isJournee ? '23:59' : document.getElementById('slResaFin').value,
     };
 
     if (!data.titre) { toast('Titre requis', 'error'); return; }
@@ -240,7 +261,7 @@ function showDetail(r) {
         + '<span style="width:12px;height:12px;border-radius:3px;background:' + escapeHtml(salle?.couleur || '#888') + ';display:inline-block"></span>'
         + '<strong>' + escapeHtml(salle?.nom || '?') + '</strong></div>'
         + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-calendar3"></i> ' + escapeHtml(dateFr) + '</p>'
-        + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-clock"></i> ' + r.heure_debut.substring(0, 5) + ' — ' + r.heure_fin.substring(0, 5) + '</p>'
+        + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-clock"></i> ' + (parseInt(r.journee_entiere) ? 'Journée entière' : r.heure_debut.substring(0, 5) + ' — ' + r.heure_fin.substring(0, 5)) + '</p>'
         + '<p style="margin:0 0 6px;font-size:.85rem"><i class="bi bi-person"></i> ' + escapeHtml(r.prenom + ' ' + r.user_nom) + '</p>';
     if (r.description) html += '<p style="margin:10px 0 0;font-size:.82rem;color:var(--cl-text-muted)">' + escapeHtml(r.description) + '</p>';
 

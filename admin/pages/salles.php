@@ -38,6 +38,7 @@ $users = Db::fetchAll(
 /* ── Reservation blocks ── */
 .sl-block { position: absolute; left: 3px; right: 3px; border-radius: 6px; padding: 4px 7px; font-size: .72rem; overflow: hidden; cursor: pointer; z-index: 3; color: #fff; line-height: 1.3; box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: transform .1s; }
 .sl-block:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.sl-block.sl-block-journee { background-image: repeating-linear-gradient(135deg, transparent, transparent 4px, rgba(255,255,255,.18) 4px, rgba(255,255,255,.18) 8px) !important; border: 2px solid rgba(255,255,255,.35); }
 .sl-block-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sl-block-time { opacity: .85; font-size: .65rem; }
 .sl-block-user { opacity: .75; font-size: .65rem; }
@@ -165,16 +166,22 @@ $users = Db::fetchAll(
           <label>Description</label>
           <textarea class="form-control form-control-sm" id="slResaDesc" rows="2" placeholder="Détails (optionnel)"></textarea>
         </div>
+        <div class="sl-modal-field">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="slResaJournee">
+            <label class="form-check-label fw-semibold" for="slResaJournee" style="font-size:.82rem">Journée entière</label>
+          </div>
+        </div>
         <div class="row g-2">
           <div class="col-sm-4 sl-modal-field">
             <label>Date *</label>
             <input type="date" class="form-control form-control-sm" id="slResaDate">
           </div>
-          <div class="col-sm-4 sl-modal-field">
+          <div class="col-sm-4 sl-modal-field" id="slResaDebutWrap">
             <label>Début *</label>
             <input type="time" class="form-control form-control-sm" id="slResaDebut" value="08:00" step="900">
           </div>
-          <div class="col-sm-4 sl-modal-field">
+          <div class="col-sm-4 sl-modal-field" id="slResaFinWrap">
             <label>Fin *</label>
             <input type="time" class="form-control form-control-sm" id="slResaFin" value="09:00" step="900">
           </div>
@@ -432,11 +439,14 @@ $users = Db::fetchAll(
                 // Find the parent cell (first hour row for this day column)
                 const colIdx = di + 2;
                 const block = document.createElement('div');
-                block.className = 'sl-block';
+                const isJEBlock = parseInt(r.journee_entiere);
+                block.className = 'sl-block' + (isJEBlock ? ' sl-block-journee' : '');
                 block.style.cssText = 'background:' + color + ';top:' + topPx + 'px;height:' + heightPx + 'px';
                 block.dataset.id = r.id;
+                const isJE = parseInt(r.journee_entiere);
+                const timeLabel = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
                 block.innerHTML = '<div class="sl-block-title">' + escapeHtml(r.titre) + '</div>'
-                    + (heightPx > 30 ? '<div class="sl-block-time">' + r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5) + '</div>' : '')
+                    + (heightPx > 30 ? '<div class="sl-block-time">' + timeLabel + '</div>' : '')
                     + (heightPx > 45 ? '<div class="sl-block-user">' + escapeHtml(r.prenom + ' ' + r.user_nom) + (filteredSalles.length > 1 ? ' · ' + escapeHtml(r.salle_nom) : '') + '</div>' : '');
                 block.addEventListener('click', () => showDetail(r));
 
@@ -464,6 +474,14 @@ $users = Db::fetchAll(
 
     // ── Reservation modal ──
 
+    // Toggle journée entière
+    const slJourneeCheck = document.getElementById('slResaJournee');
+    slJourneeCheck.addEventListener('change', () => {
+        const hide = slJourneeCheck.checked;
+        document.getElementById('slResaDebutWrap').style.display = hide ? 'none' : '';
+        document.getElementById('slResaFinWrap').style.display = hide ? 'none' : '';
+    });
+
     function openResaModal(resa, date, debut, fin) {
         document.getElementById('slResaId').value = resa ? resa.id : '';
         document.getElementById('slResaModalTitle').textContent = resa ? 'Modifier la réservation' : 'Nouvelle réservation';
@@ -471,21 +489,27 @@ $users = Db::fetchAll(
         document.getElementById('slResaTitre').value = resa ? resa.titre : '';
         document.getElementById('slResaDesc').value = resa ? (resa.description || '') : '';
         document.getElementById('slResaDate').value = resa ? resa.date_jour : (date || fmtDate(new Date()));
-        document.getElementById('slResaDebut').value = resa ? resa.heure_debut.substring(0,5) : (debut || '08:00');
-        document.getElementById('slResaFin').value = resa ? resa.heure_fin.substring(0,5) : (fin || '09:00');
+        const isJournee = resa ? !!parseInt(resa.journee_entiere) : false;
+        slJourneeCheck.checked = isJournee;
+        document.getElementById('slResaDebutWrap').style.display = isJournee ? 'none' : '';
+        document.getElementById('slResaFinWrap').style.display = isJournee ? 'none' : '';
+        document.getElementById('slResaDebut').value = resa && !isJournee ? resa.heure_debut.substring(0,5) : (debut || '08:00');
+        document.getElementById('slResaFin').value = resa && !isJournee ? resa.heure_fin.substring(0,5) : (fin || '09:00');
         if (resa) document.getElementById('slResaUser').value = resa.user_id;
         resaModal.show();
     }
 
     async function saveResa() {
         const id = document.getElementById('slResaId').value;
+        const isJournee = slJourneeCheck.checked;
         const data = {
             salle_id: document.getElementById('slResaSalle').value,
             titre: document.getElementById('slResaTitre').value.trim(),
             description: document.getElementById('slResaDesc').value.trim(),
             date_jour: document.getElementById('slResaDate').value,
-            heure_debut: document.getElementById('slResaDebut').value,
-            heure_fin: document.getElementById('slResaFin').value,
+            journee_entiere: isJournee ? 1 : 0,
+            heure_debut: isJournee ? '00:00' : document.getElementById('slResaDebut').value,
+            heure_fin: isJournee ? '23:59' : document.getElementById('slResaFin').value,
             user_id: document.getElementById('slResaUser').value,
         };
 
@@ -517,7 +541,7 @@ $users = Db::fetchAll(
             + '<div style="width:12px;height:12px;border-radius:3px;background:' + escapeHtml(salle?.couleur || '#888') + '"></div>'
             + '<strong>' + escapeHtml(salle?.nom || '?') + '</strong></div>'
             + '<p style="margin:0 0 6px"><i class="bi bi-calendar3"></i> ' + escapeHtml(dateFr) + '</p>'
-            + '<p style="margin:0 0 6px"><i class="bi bi-clock"></i> ' + r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5) + '</p>'
+            + '<p style="margin:0 0 6px"><i class="bi bi-clock"></i> ' + (parseInt(r.journee_entiere) ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5)) + '</p>'
             + '<p style="margin:0 0 6px"><i class="bi bi-person"></i> ' + escapeHtml(r.prenom + ' ' + r.user_nom) + (r.fonction_nom ? ' <span style="color:var(--cl-text-muted)">(' + escapeHtml(r.fonction_nom) + ')</span>' : '') + '</p>';
         if (r.description) html += '<p style="margin:10px 0 0;font-size:.85rem;color:var(--cl-text-muted)">' + escapeHtml(r.description) + '</p>';
 

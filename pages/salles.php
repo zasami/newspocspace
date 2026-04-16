@@ -83,7 +83,7 @@ $mesResas = Db::fetchAll(
       <div style="width:8px;height:36px;border-radius:4px;background:<?= h($r['salle_couleur']) ?>;flex-shrink:0"></div>
       <div class="flex-grow-1">
         <div style="font-weight:600;font-size:.85rem"><?= h($r['titre']) ?></div>
-        <div style="font-size:.75rem;color:var(--cl-text-muted)"><?= h($r['salle_nom']) ?> · <?= fmt_date_fr($r['date_jour'], 'D d.m') ?> · <?= h(substr($r['heure_debut'],0,5)) ?> — <?= h(substr($r['heure_fin'],0,5)) ?></div>
+        <div style="font-size:.75rem;color:var(--cl-text-muted)"><?= h($r['salle_nom']) ?> · <?= fmt_date_fr($r['date_jour'], 'D d.m') ?> · <?= $r['journee_entiere'] ? 'Journée entière' : h(substr($r['heure_debut'],0,5)) . ' — ' . h(substr($r['heure_fin'],0,5)) ?></div>
       </div>
       <button class="btn btn-sm btn-outline-danger sl-cancel-resa" data-id="<?= h($r['id']) ?>" title="Annuler"><i class="bi bi-x-lg"></i></button>
     </div>
@@ -117,16 +117,22 @@ $mesResas = Db::fetchAll(
           <label class="form-label fw-semibold" style="font-size:.82rem">Description</label>
           <textarea class="form-control form-control-sm" id="slResaDesc" rows="2" placeholder="Détails (optionnel)"></textarea>
         </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="slResaJournee">
+            <label class="form-check-label fw-semibold" for="slResaJournee" style="font-size:.82rem">Journée entière</label>
+          </div>
+        </div>
         <div class="row g-2 mb-3">
           <div class="col-sm-4">
             <label class="form-label fw-semibold" style="font-size:.82rem">Date *</label>
             <input type="date" class="form-control form-control-sm" id="slResaDate">
           </div>
-          <div class="col-sm-4">
+          <div class="col-sm-4" id="slResaDebutWrap">
             <label class="form-label fw-semibold" style="font-size:.82rem">Début *</label>
             <input type="time" class="form-control form-control-sm" id="slResaDebut" value="08:00" step="900">
           </div>
-          <div class="col-sm-4">
+          <div class="col-sm-4" id="slResaFinWrap">
             <label class="form-label fw-semibold" style="font-size:.82rem">Fin *</label>
             <input type="time" class="form-control form-control-sm" id="slResaFin" value="09:00" step="900">
           </div>

@@ -124,19 +124,20 @@ function admin_create_reservation_salle()
     global $params;
     require_responsable();
 
-    $salle_id    = $params['salle_id'] ?? '';
-    $titre       = Sanitize::text($params['titre'] ?? '', 200);
-    $description = Sanitize::text($params['description'] ?? '', 1000);
-    $date_jour   = Sanitize::date($params['date_jour'] ?? '');
-    $heure_debut = Sanitize::time($params['heure_debut'] ?? '');
-    $heure_fin   = Sanitize::time($params['heure_fin'] ?? '');
-    $user_id     = $params['user_id'] ?? $_SESSION['ss_user']['id'];
+    $salle_id        = $params['salle_id'] ?? '';
+    $titre           = Sanitize::text($params['titre'] ?? '', 200);
+    $description     = Sanitize::text($params['description'] ?? '', 1000);
+    $date_jour       = Sanitize::date($params['date_jour'] ?? '');
+    $journee_entiere = !empty($params['journee_entiere']) ? 1 : 0;
+    $heure_debut     = $journee_entiere ? '00:00' : Sanitize::time($params['heure_debut'] ?? '');
+    $heure_fin       = $journee_entiere ? '23:59' : Sanitize::time($params['heure_fin'] ?? '');
+    $user_id         = $params['user_id'] ?? $_SESSION['ss_user']['id'];
 
     if (!$salle_id || !$titre || !$date_jour || !$heure_debut || !$heure_fin) {
         bad_request('Champs requis manquants');
     }
 
-    if ($heure_fin <= $heure_debut) {
+    if (!$journee_entiere && $heure_fin <= $heure_debut) {
         bad_request('L\'heure de fin doit être après l\'heure de début');
     }
 
@@ -154,9 +155,9 @@ function admin_create_reservation_salle()
 
     $id = Uuid::v4();
     Db::exec(
-        "INSERT INTO reservations_salles (id, salle_id, user_id, titre, description, date_jour, heure_debut, heure_fin)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [$id, $salle_id, $user_id, $titre, $description, $date_jour, $heure_debut, $heure_fin]
+        "INSERT INTO reservations_salles (id, salle_id, user_id, titre, description, date_jour, heure_debut, heure_fin, journee_entiere)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [$id, $salle_id, $user_id, $titre, $description, $date_jour, $heure_debut, $heure_fin, $journee_entiere]
     );
 
     respond(['success' => true, 'id' => $id]);
@@ -167,19 +168,24 @@ function admin_update_reservation_salle()
     global $params;
     require_responsable();
 
-    $id          = $params['id'] ?? '';
-    $titre       = Sanitize::text($params['titre'] ?? '', 200);
-    $description = Sanitize::text($params['description'] ?? '', 1000);
-    $date_jour   = Sanitize::date($params['date_jour'] ?? '');
-    $heure_debut = Sanitize::time($params['heure_debut'] ?? '');
-    $heure_fin   = Sanitize::time($params['heure_fin'] ?? '');
-    $salle_id    = $params['salle_id'] ?? '';
+    $id              = $params['id'] ?? '';
+    $titre           = Sanitize::text($params['titre'] ?? '', 200);
+    $description     = Sanitize::text($params['description'] ?? '', 1000);
+    $date_jour       = Sanitize::date($params['date_jour'] ?? '');
+    $journee_entiere = !empty($params['journee_entiere']) ? 1 : 0;
+    $heure_debut     = $journee_entiere ? '00:00' : Sanitize::time($params['heure_debut'] ?? '');
+    $heure_fin       = $journee_entiere ? '23:59' : Sanitize::time($params['heure_fin'] ?? '');
+    $salle_id        = $params['salle_id'] ?? '';
 
-    if (!$id || !$titre || !$date_jour || !$heure_debut || !$heure_fin || !$salle_id) {
+    if (!$id || !$titre || !$date_jour || !$salle_id) {
         bad_request('Champs requis manquants');
     }
 
-    if ($heure_fin <= $heure_debut) {
+    if (!$journee_entiere && (!$heure_debut || !$heure_fin)) {
+        bad_request('Heures requises');
+    }
+
+    if (!$journee_entiere && $heure_fin <= $heure_debut) {
         bad_request('L\'heure de fin doit être après l\'heure de début');
     }
 
@@ -196,9 +202,9 @@ function admin_update_reservation_salle()
     }
 
     Db::exec(
-        "UPDATE reservations_salles SET salle_id=?, titre=?, description=?, date_jour=?, heure_debut=?, heure_fin=?
+        "UPDATE reservations_salles SET salle_id=?, titre=?, description=?, date_jour=?, heure_debut=?, heure_fin=?, journee_entiere=?
          WHERE id=?",
-        [$salle_id, $titre, $description, $date_jour, $heure_debut, $heure_fin, $id]
+        [$salle_id, $titre, $description, $date_jour, $heure_debut, $heure_fin, $journee_entiere, $id]
     );
 
     respond(['success' => true]);
