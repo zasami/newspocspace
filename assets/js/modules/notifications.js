@@ -1,8 +1,7 @@
 /**
  * Notifications — JS minimal (page SSR).
- * Le HTML est rendu par pages/notifications.php.
  */
-import { apiPost } from '../helpers.js';
+import { apiPost, toast } from '../helpers.js';
 
 export function init() {
     document.addEventListener('click', handleClick);
@@ -17,7 +16,37 @@ function updateTopbarBadge() {
     }
 }
 
+function reload() {
+    window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
 async function handleClick(e) {
+    // Filtre navigation
+    const filterBtn = e.target.closest('[data-filter]');
+    if (filterBtn) {
+        e.preventDefault();
+        const filter = filterBtn.dataset.filter;
+        history.pushState({}, '', `/spocspace/notifications?filter=${filter}`);
+        reload();
+        return;
+    }
+
+    // Archiver une notification
+    const archiveBtn = e.target.closest('[data-archive]');
+    if (archiveBtn) {
+        e.stopPropagation();
+        const id = archiveBtn.dataset.archive;
+        const r = await apiPost('archive_notification', { id });
+        if (r.success) {
+            const item = archiveBtn.closest('.notif-item');
+            if (item) item.remove();
+            updateTopbarBadge();
+            toast('Notification archivée');
+        }
+        return;
+    }
+
+    // Clic sur une notification → marquer lu + navigation
     const item = e.target.closest('[data-notif-id]');
     if (item) {
         const id = item.dataset.notifId;
@@ -29,11 +58,12 @@ async function handleClick(e) {
         }
         if (url) {
             history.pushState({}, '', `/spocspace/${url}`);
-            window.dispatchEvent(new PopStateEvent('popstate'));
+            reload();
         }
         return;
     }
 
+    // Tout marquer comme lu
     if (e.target.closest('#markAllRead')) {
         const r = await apiPost('mark_all_notifications_read', {});
         if (r.success) {
@@ -41,6 +71,16 @@ async function handleClick(e) {
             const btn = document.getElementById('markAllRead');
             if (btn) btn.disabled = true;
             updateTopbarBadge();
+        }
+        return;
+    }
+
+    // Archiver toutes les lues
+    if (e.target.closest('#archiveAllRead')) {
+        const r = await apiPost('archive_all_read_notifications', {});
+        if (r.success) {
+            toast(r.message || 'Archivées');
+            reload();
         }
     }
 }

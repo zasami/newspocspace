@@ -46,6 +46,23 @@ function mark_all_notifications_read()
     respond(['success' => true, 'message' => 'Toutes les notifications marquées comme lues']);
 }
 
+function archive_notification()
+{
+    $user = require_auth();
+    global $params;
+    $id = $params['id'] ?? '';
+    if (!$id) bad_request('ID requis');
+    Db::exec("UPDATE notifications SET is_archived = 1, is_read = 1 WHERE id = ? AND user_id = ?", [$id, $user['id']]);
+    respond(['success' => true]);
+}
+
+function archive_all_read_notifications()
+{
+    $user = require_auth();
+    Db::exec("UPDATE notifications SET is_archived = 1 WHERE user_id = ? AND is_read = 1 AND is_archived = 0", [$user['id']]);
+    respond(['success' => true, 'message' => 'Notifications lues archivées']);
+}
+
 /**
  * Single poll endpoint — returns all badge counts + new alerts in one request
  */

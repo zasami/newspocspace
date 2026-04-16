@@ -48,6 +48,7 @@ return [
     'notifications' => [
         'get_notifications', 'get_notifications_count',
         'mark_notification_read', 'mark_all_notifications_read',
+        'archive_notification', 'archive_all_read_notifications',
         'get_poll_data',
     ],
     'changements' => [
