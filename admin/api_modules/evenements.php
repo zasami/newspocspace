@@ -234,6 +234,82 @@ function admin_export_evenement_inscriptions() {
     respond(['success' => true, 'titre' => $ev['titre'], 'rows' => $rows, 'champs' => array_column($champs, 'label')]);
 }
 
+// ─── Upload image événement ───
+function admin_upload_evenement_image() {
+    require_responsable();
+
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        bad_request('Image manquante');
+    }
+
+    $file = $_FILES['file'];
+    $maxSize = 5 * 1024 * 1024;
+    if ($file['size'] > $maxSize) bad_request('Image trop volumineuse (max 5 Mo)');
+
+    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!in_array($file['type'], $allowed, true)) bad_request('Type de fichier non autorisé');
+
+    $storageDir = __DIR__ . '/../../assets/uploads/evenements/';
+    if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+    $filename = bin2hex(random_bytes(16)) . '.' . $ext;
+
+    if (!move_uploaded_file($file['tmp_name'], $storageDir . $filename)) {
+        bad_request('Erreur lors de la sauvegarde');
+    }
+
+    $url = '/spocspace/assets/uploads/evenements/' . $filename;
+    respond(['success' => true, 'url' => $url]);
+}
+
+// ─── Pixabay → image événement ───
+function admin_save_pixabay_evenement() {
+    require_responsable();
+    global $params;
+
+    $imageUrl = $params['image_url'] ?? '';
+    if (!$imageUrl) bad_request('URL manquante');
+
+    $parsed = parse_url($imageUrl);
+    if (!$parsed || !preg_match('/pixabay\.(com|net)$/', $parsed['host'] ?? '')) {
+        bad_request('Source non autorisée');
+    }
+    if (($parsed['scheme'] ?? '') !== 'https') bad_request('HTTPS requis');
+
+    $ch = curl_init($imageUrl);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_FOLLOWLOCATION => true, CURLOPT_SSL_VERIFYPEER => true]);
+    $imgData = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || !$imgData) bad_request('Téléchargement échoué');
+
+    $storageDir = __DIR__ . '/../../assets/uploads/evenements/';
+    if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'pxb_');
+    file_put_contents($tmpFile, $imgData);
+
+    $mime = mime_content_type($tmpFile);
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($tmpFile),
+        'image/png'  => imagecreatefrompng($tmpFile),
+        'image/webp' => imagecreatefromwebp($tmpFile),
+        default => null,
+    };
+    unlink($tmpFile);
+    if (!$img) bad_request('Format image non supporté');
+
+    $filename = 'ev_' . bin2hex(random_bytes(8)) . '.webp';
+    imagewebp($img, $storageDir . $filename, 82);
+    imagedestroy($img);
+
+    $url = '/spocspace/assets/uploads/evenements/' . $filename;
+    respond(['success' => true, 'url' => $url]);
+}
+
 // ─── Helper: sauvegarder les champs ───
 function _save_champs(string $evenementId, array $champs): void {
     foreach ($champs as $i => $c) {

@@ -216,6 +216,7 @@ return [
         'admin_get_evenements', 'admin_get_evenement', 'admin_create_evenement',
         'admin_update_evenement', 'admin_toggle_evenement', 'admin_delete_evenement',
         'admin_export_evenement_inscriptions',
+        'admin_upload_evenement_image', 'admin_save_pixabay_evenement',
     ],
     'salles' => [
         'admin_get_salles', 'admin_create_salle', 'admin_update_salle',
