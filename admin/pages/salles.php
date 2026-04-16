@@ -290,16 +290,16 @@ $users = Db::fetchAll(
 
 <!-- ═══ Modal Détail ═══ -->
 <div class="modal fade" id="slDetailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border-radius:14px;overflow:hidden">
-      <div class="modal-header" id="slDetailHeader" style="border-bottom:none;padding:16px 20px 8px">
-        <h5 class="modal-title fw-bold" id="slDetailTitle" style="font-size:1.05rem"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" style="opacity:.6"></button>
+  <div class="modal-dialog modal-dialog-centered modal-info">
+    <div class="modal-content">
+      <div class="modal-header d-flex align-items-center" id="slDetailHeader">
+        <h5 class="modal-title mb-0" id="slDetailTitle"></h5>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center btn-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="modal-body" id="slDetailBody" style="padding:4px 20px 16px"></div>
-      <div class="modal-footer" style="padding:12px 20px;border-top:1px solid var(--cl-border-light,#F0EDE8);display:flex;gap:8px;justify-content:flex-end">
-        <button type="button" class="btn btn-sm btn-outline-danger" id="slDetailDeleteBtn" style="flex:1"><i class="bi bi-trash"></i> Annuler</button>
-        <button type="button" class="btn btn-sm btn-outline-dark" id="slDetailEditBtn" style="flex:1"><i class="bi bi-pencil"></i> Modifier</button>
+      <div class="modal-body" id="slDetailBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger btn-sm" id="slDetailDeleteBtn"><i class="bi bi-trash"></i> Annuler réservation</button>
+        <button type="button" class="btn btn-dark btn-sm" id="slDetailEditBtn"><i class="bi bi-pencil"></i> Modifier</button>
       </div>
     </div>
   </div>
@@ -730,22 +730,16 @@ $users = Db::fetchAll(
 
         document.getElementById('slDetailTitle').textContent = r.titre;
 
-        // Color banner
-        const headerEl = document.getElementById('slDetailHeader');
-        headerEl.style.borderTop = '4px solid ' + (salle?.couleur || '#888');
-
         const dateFr = new Date(r.date_jour + 'T00:00:00').toLocaleDateString('fr-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        const timeStr = isJE ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-size:.78rem;font-weight:600">Journée entière</span>' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
+        const timeStr = isJE ? 'Journée entière' : r.heure_debut.substring(0,5) + ' — ' + r.heure_fin.substring(0,5);
 
-        let html = '<div style="display:flex;flex-direction:column;gap:10px">'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<div style="width:14px;height:14px;border-radius:4px;background:' + escapeHtml(salle?.couleur || '#888') + ';flex-shrink:0"></div>'
-            + '<strong style="font-size:.9rem">' + escapeHtml(salle?.nom || '?') + '</strong></div>'
-            + '<div style="display:flex;align-items:center;gap:8px;font-size:.88rem"><i class="bi bi-calendar3" style="color:var(--cl-text-muted)"></i> ' + escapeHtml(dateFr) + '</div>'
-            + '<div style="display:flex;align-items:center;gap:8px;font-size:.88rem"><i class="bi bi-clock" style="color:var(--cl-text-muted)"></i> ' + timeStr + '</div>'
-            + '<div style="display:flex;align-items:center;gap:8px;font-size:.88rem"><i class="bi bi-person" style="color:var(--cl-text-muted)"></i> ' + escapeHtml(r.prenom + ' ' + r.user_nom) + (r.fonction_nom ? ' <span style="color:var(--cl-text-muted);font-size:.82rem">(' + escapeHtml(r.fonction_nom) + ')</span>' : '') + '</div>';
-        if (r.description) html += '<div style="font-size:.85rem;color:var(--cl-text-secondary,#6B6B6B);padding:8px 12px;background:var(--cl-bg,#F7F5F2);border-radius:8px">' + escapeHtml(r.description) + '</div>';
-        html += '</div>';
+        let html = '<table class="table table-sm mb-0" style="font-size:.88rem">'
+            + '<tr><td class="text-muted" style="width:32px"><i class="bi bi-door-open"></i></td><td><span class="d-inline-block rounded" style="width:10px;height:10px;background:' + escapeHtml(salle?.couleur || '#888') + '"></span> <strong>' + escapeHtml(salle?.nom || '?') + '</strong></td></tr>'
+            + '<tr><td class="text-muted"><i class="bi bi-calendar3"></i></td><td>' + escapeHtml(dateFr) + '</td></tr>'
+            + '<tr><td class="text-muted"><i class="bi bi-clock"></i></td><td>' + timeStr + '</td></tr>'
+            + '<tr><td class="text-muted"><i class="bi bi-person"></i></td><td>' + escapeHtml(r.prenom + ' ' + r.user_nom) + (r.fonction_nom ? ' <span class="text-muted">(' + escapeHtml(r.fonction_nom) + ')</span>' : '') + '</td></tr>';
+        if (r.description) html += '<tr><td class="text-muted"><i class="bi bi-text-left"></i></td><td class="text-muted">' + escapeHtml(r.description) + '</td></tr>';
+        html += '</table>';
 
         document.getElementById('slDetailBody').innerHTML = html;
 

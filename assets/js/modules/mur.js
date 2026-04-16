@@ -88,6 +88,7 @@ export async function init() {
     loadFeed(false);
     loadGallery();
     loadContributors();
+    loadMurEvents();
 }
 
 export function destroy() {
@@ -221,6 +222,32 @@ async function loadContributors() {
             <div class="mur-widget-text">${escapeHtml(name)}</div>
             <div class="mur-widget-meta">${u.count} post${u.count > 1 ? 's' : ''}</div>
         </div>`;
+    }).join('');
+}
+
+async function loadMurEvents() {
+    const el = document.getElementById('murEvents');
+    if (!el) return;
+
+    const res = await apiPost('get_evenements');
+    if (!res.success) return;
+
+    const upcoming = (res.list || []).filter(e => e.statut === 'ouvert' && e.date_debut >= new Date().toISOString().slice(0, 10));
+    if (!upcoming.length) return;
+
+    el.innerHTML = upcoming.slice(0, 4).map(ev => {
+        const d = new Date(ev.date_debut + 'T00:00:00');
+        const day = d.getDate();
+        const month = d.toLocaleDateString('fr-FR', { month: 'short' });
+        const isInscrit = !!ev.mon_inscription_id;
+        return `<a href="/spocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
+            <div class="mur-ev-date"><div class="mur-ev-day">${day}</div><div class="mur-ev-month">${escapeHtml(month)}</div></div>
+            <div style="flex:1;min-width:0">
+                <div class="mur-widget-text" style="font-weight:600;font-size:.82rem">${escapeHtml(ev.titre)}</div>
+                <div class="mur-widget-meta">${ev.lieu ? escapeHtml(ev.lieu) + ' · ' : ''}${ev.nb_inscrits} inscrit${ev.nb_inscrits > 1 ? 's' : ''}</div>
+            </div>
+            ${isInscrit ? '<span style="color:#16A34A;font-size:.75rem"><i class="bi bi-check-circle-fill"></i></span>' : ''}
+        </a>`;
     }).join('');
 }
 

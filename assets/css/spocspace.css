@@ -3881,6 +3881,9 @@ input[type="checkbox"]:not(.form-check-input):hover {
 .mur-widget-text { flex: 1; min-width: 0; font-size: .8rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mur-widget-meta { font-size: .7rem; color: var(--ss-muted, #888); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .mur-widget-empty { font-size: .8rem; color: var(--ss-muted, #888); text-align: center; padding: 12px 0; }
+.mur-ev-date { min-width: 36px; text-align: center; padding: 4px; border-radius: 8px; background: var(--ss-bg, #F7F5F2); flex-shrink: 0; }
+.mur-ev-day { font-size: 1rem; font-weight: 700; line-height: 1; color: var(--ss-accent, #2d4a43); }
+.mur-ev-month { font-size: .6rem; font-weight: 600; text-transform: uppercase; color: var(--ss-muted, #888); }
 
 /* ── Empty + Loading ── */
 .mur-loading { text-align: center; padding: 30px; }

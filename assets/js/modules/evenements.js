@@ -59,6 +59,11 @@ async function openDetail(id) {
     let html = '';
 
     // ── Infos événement ──
+    // Image
+    if (ev.image_url) {
+        html += `<div class="mb-3"><img src="${escapeHtml(ev.image_url)}" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px"></div>`;
+    }
+
     html += '<div class="mb-3">';
     if (ev.description) {
         html += `<div class="mb-2" style="font-size:.9rem;line-height:1.6;white-space:pre-wrap">${escapeHtml(ev.description)}</div>`;

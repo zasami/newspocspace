@@ -9,7 +9,7 @@ $uid  = $user['id'];
 // ─── Événements ouverts ou fermés (visibles) ───
 $events = Db::fetchAll(
     "SELECT e.id, e.titre, e.description, e.date_debut, e.date_fin, e.heure_debut, e.heure_fin,
-            e.lieu, e.max_participants, e.statut, e.inscription_obligatoire,
+            e.lieu, e.image_url, e.max_participants, e.statut, e.inscription_obligatoire,
             (SELECT COUNT(*) FROM evenement_inscriptions WHERE evenement_id = e.id AND statut = 'inscrit') AS nb_inscrits,
             (SELECT COUNT(*) FROM evenement_champs WHERE evenement_id = e.id) AS nb_champs,
             (SELECT id FROM evenement_inscriptions WHERE evenement_id = e.id AND user_id = ? AND statut = 'inscrit' LIMIT 1) AS mon_inscription_id
@@ -111,11 +111,15 @@ function renderEventCard($ev, $now, $isPast = false) {
         $dateStr .= ' → ' . fmt_date_fr($ev['date_fin'], 'd M Y');
     }
     ?>
-    <div class="ev-card <?= $isPast ? 'ev-card-past' : '' ?>" data-event-id="<?= h($ev['id']) ?>">
-        <div class="ev-card-date">
-            <div class="ev-card-day"><?= date('d', strtotime($ev['date_debut'])) ?></div>
-            <div class="ev-card-month"><?= strftime('%b', strtotime($ev['date_debut'])) ?: date('M', strtotime($ev['date_debut'])) ?></div>
-        </div>
+    <div class="ev-card <?= $isPast ? 'ev-card-past' : '' ?> <?= !empty($ev['image_url']) ? 'ev-card-has-img' : '' ?>" data-event-id="<?= h($ev['id']) ?>">
+        <?php if (!empty($ev['image_url'])): ?>
+            <div class="ev-card-img"><img src="<?= h($ev['image_url']) ?>" alt=""></div>
+        <?php else: ?>
+            <div class="ev-card-date">
+                <div class="ev-card-day"><?= date('d', strtotime($ev['date_debut'])) ?></div>
+                <div class="ev-card-month"><?= strftime('%b', strtotime($ev['date_debut'])) ?: date('M', strtotime($ev['date_debut'])) ?></div>
+            </div>
+        <?php endif; ?>
         <div class="ev-card-body">
             <h6 class="ev-card-title"><?= h($ev['titre']) ?></h6>
             <?php if ($ev['lieu']): ?>
@@ -161,6 +165,9 @@ function renderEventCard($ev, $now, $isPast = false) {
 }
 .ev-card:hover { border-color: var(--cl-accent, #2d4a43); box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
 .ev-card-past { opacity: 0.6; }
+.ev-card-has-img { flex-direction: column; gap: 0; }
+.ev-card-img { border-radius: 10px 10px 0 0; overflow: hidden; margin: -16px -16px 12px; }
+.ev-card-img img { width: 100%; height: 120px; object-fit: cover; display: block; }
 .ev-card-date {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-width: 52px; padding: 8px; border-radius: 10px;
