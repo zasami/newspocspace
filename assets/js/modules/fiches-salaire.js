@@ -1,20 +1,84 @@
 /**
  * Fiches de salaire — JS minimal (page SSR).
- * Le HTML est rendu par pages/fiches-salaire.php.
- * Ce module gère uniquement l'ouverture du PDF.
+ * - Ouvrir le PDF en lightbox
+ * - Navigation entre années
+ * - Highlight scroll si ?highlight=id
  */
 const BASE = '/spocspace';
 
 export function init() {
     document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKey);
+
+    // Highlight scroll
+    const hl = document.getElementById('ficheHighlight');
+    if (hl) {
+        setTimeout(() => {
+            hl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => hl.classList.remove('fiche-highlight'), 3000);
+        }, 300);
+    }
 }
 
 function handleClick(e) {
+    // Fermer lightbox
+    const closeLb = e.target.closest('.ss-lightbox-close');
+    if (closeLb) { closeLb.closest('.ss-lightbox')?.remove(); return; }
+    // Clic sur fond sombre
+    if (e.target.classList.contains('ss-lightbox')) { e.target.remove(); return; }
+
+    // Navigation année
+    const yearBtn = e.target.closest('[data-fs-year]');
+    if (yearBtn) {
+        const year = yearBtn.dataset.fsYear;
+        history.pushState({}, '', `${BASE}/fiches-salaire?annee=${year}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        return;
+    }
+
+    // Ouvrir fiche en lightbox
     const card = e.target.closest('[data-fiche-id]');
-    if (!card) return;
-    window.open(`${BASE}/api.php?action=serve_fiche_salaire&id=${card.dataset.ficheId}`, '_blank');
+    if (card) {
+        openPdfLightbox(card.dataset.ficheId, card.querySelector('.fiche-period')?.textContent?.trim());
+    }
+}
+
+function handleKey(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('ssLightbox')?.remove();
+    }
+}
+
+function openPdfLightbox(id, title) {
+    // Supprimer lightbox existante
+    document.getElementById('ssLightbox')?.remove();
+
+    const url = `${BASE}/api.php?action=serve_fiche_salaire&id=${encodeURIComponent(id)}`;
+
+    const lb = document.createElement('div');
+    lb.id = 'ssLightbox';
+    lb.className = 'ss-lightbox';
+    lb.innerHTML = `
+        <span class="ss-lightbox-title"><i class="bi bi-file-pdf"></i> ${escapeHtml(title || 'Fiche de salaire')}</span>
+        <button class="ss-lightbox-close" title="Fermer (Échap)"><i class="bi bi-x-lg"></i></button>
+        <div class="ss-lightbox-content">
+            <iframe src="${escapeHtml(url)}#toolbar=1&navpanes=0"></iframe>
+        </div>
+        <div class="ss-lightbox-toolbar">
+            <a href="${escapeHtml(url)}" target="_blank" class="ss-lightbox-btn"><i class="bi bi-box-arrow-up-right"></i> Ouvrir</a>
+            <a href="${escapeHtml(url)}" download class="ss-lightbox-btn"><i class="bi bi-download"></i> Télécharger</a>
+        </div>
+    `;
+
+    document.body.appendChild(lb);
+}
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
 export function destroy() {
     document.removeEventListener('click', handleClick);
+    document.removeEventListener('keydown', handleKey);
+    document.getElementById('ssLightbox')?.remove();
 }

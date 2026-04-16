@@ -4837,3 +4837,63 @@ input[type="checkbox"]:not(.form-check-input):hover {
     background: var(--cl-bg, #F7F5F2);
     color: var(--cl-accent, #191918);
 }
+
+/* ═══ Fiche highlight (depuis notification) ═══ */
+.fiche-highlight {
+    outline: 2px solid var(--cl-teal-fg, #2d4a43);
+    outline-offset: 3px;
+    animation: ficheHighlightPulse 1.5s ease-in-out 2;
+}
+@keyframes ficheHighlightPulse {
+    0%, 100% { outline-color: var(--cl-teal-fg, #2d4a43); }
+    50% { outline-color: transparent; }
+}
+
+/* ═══ PDF Lightbox (réutilisable) ═══ */
+.ss-lightbox {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.85);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: ssLbFadeIn .2s ease-out;
+}
+@keyframes ssLbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.ss-lightbox-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: none;
+    color: #fff; font-size: 1.2rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+}
+.ss-lightbox-close:hover { background: rgba(255,255,255,.3); }
+.ss-lightbox-content {
+    max-width: 90vw; max-height: 85vh;
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.ss-lightbox-content iframe {
+    width: 80vw; height: 85vh;
+    border: none; background: #fff;
+}
+.ss-lightbox-content img {
+    max-width: 90vw; max-height: 85vh;
+    object-fit: contain; display: block;
+}
+.ss-lightbox-toolbar {
+    position: absolute; bottom: 20px;
+    display: flex; gap: 10px; align-items: center;
+}
+.ss-lightbox-btn {
+    padding: 8px 16px; border-radius: 8px;
+    background: rgba(255,255,255,.15); border: none;
+    color: #fff; font-size: .85rem;
+    cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    transition: background .15s;
+}
+.ss-lightbox-btn:hover { background: rgba(255,255,255,.3); color: #fff; }
+.ss-lightbox-title {
+    position: absolute; top: 18px; left: 20px;
+    color: rgba(255,255,255,.7); font-size: .85rem;
+}

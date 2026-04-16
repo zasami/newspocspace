@@ -4,7 +4,9 @@ if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
 require_once __DIR__ . '/_partials/helpers.php';
 
 $uid = $_SESSION['ss_user']['id'];
-$filter = $_GET['filter'] ?? 'active'; // active | unread | archived
+// Filtre via slug URL (/notifications/unread) ou query param fallback
+$filter = $_GET['slug'] ?? $_GET['filter'] ?? 'active';
+if (!in_array($filter, ['active', 'unread', 'archived'])) $filter = 'active';
 
 $where = "WHERE user_id = ?";
 $args = [$uid];
@@ -49,15 +51,15 @@ if ($filter !== 'archived') {
 
     <!-- Filtres -->
     <div class="notif-filters mb-3">
-        <a class="notif-filter-btn <?= $filter === 'active' ? 'active' : '' ?>" href="?filter=active" data-filter="active">
+        <a class="notif-filter-btn <?= $filter === 'active' ? 'active' : '' ?>" href="/spocspace/notifications" data-filter="active">
             <i class="bi bi-bell"></i> Toutes
             <?php if ($countAll): ?><span class="notif-filter-count"><?= $countAll ?></span><?php endif ?>
         </a>
-        <a class="notif-filter-btn <?= $filter === 'unread' ? 'active' : '' ?>" href="?filter=unread" data-filter="unread">
+        <a class="notif-filter-btn <?= $filter === 'unread' ? 'active' : '' ?>" href="/spocspace/notifications/unread" data-filter="unread">
             <i class="bi bi-bell-fill"></i> Non lues
             <?php if ($countUnread): ?><span class="notif-filter-count notif-filter-count-unread"><?= $countUnread ?></span><?php endif ?>
         </a>
-        <a class="notif-filter-btn <?= $filter === 'archived' ? 'active' : '' ?>" href="?filter=archived" data-filter="archived">
+        <a class="notif-filter-btn <?= $filter === 'archived' ? 'active' : '' ?>" href="/spocspace/notifications/archived" data-filter="archived">
             <i class="bi bi-archive"></i> Archivées
             <?php if ($countArchived): ?><span class="notif-filter-count"><?= $countArchived ?></span><?php endif ?>
         </a>

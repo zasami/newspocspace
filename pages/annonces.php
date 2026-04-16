@@ -30,8 +30,9 @@ $catLabels = [
 ?>
 
 
-<!-- HERO -->
+<!-- HERO with animated dot wave -->
 <div class="page-header ann-page-header">
+  <canvas class="ann-dots-canvas" id="annDotsCanvas"></canvas>
   <div class="ann-page-header-icon"><i class="bi bi-megaphone"></i></div>
   <div class="ann-page-header-text">
     <h1>Annonces officielles</h1>

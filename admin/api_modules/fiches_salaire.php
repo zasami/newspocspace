@@ -129,7 +129,7 @@ function admin_upload_fiche_salaire()
                  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     $moisNom = $moisNoms[$mois] ?? $mois;
     Notification::create($userId, 'fiche_salaire', 'Fiche de salaire',
-        "Votre fiche de salaire de $moisNom $annee est disponible.", 'documents');
+        "Votre fiche de salaire de $moisNom $annee est disponible.", 'fiches-salaire?highlight=' . $id);
 
     respond(['success' => true, 'message' => 'Fiche de salaire téléversée', 'id' => $id]);
 }
@@ -229,7 +229,7 @@ function admin_bulk_upload_fiches()
         );
 
         Notification::create($matchedUser['id'], 'fiche_salaire', 'Fiche de salaire',
-            "Votre fiche de salaire de $moisNom $annee est disponible.", 'documents');
+            "Votre fiche de salaire de $moisNom $annee est disponible.", 'fiches-salaire?highlight=' . $id);
 
         $uploaded++;
     }

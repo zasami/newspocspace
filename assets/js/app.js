@@ -72,7 +72,11 @@ async function loadPage(pageId, params = {}) {
     content.innerHTML = '<div class="page-loading"><span class="spinner"></span></div>';
 
     try {
-        const res = await fetch(`${BASE}/pages/${pageId}.php?v=${Date.now()}`);
+        // Forward query params + slug to PHP fragment for SSR
+        const qs = new URLSearchParams(window.location.search);
+        qs.set('v', Date.now());
+        if (params.slug) qs.set('slug', params.slug);
+        const res = await fetch(`${BASE}/pages/${pageId}.php?${qs.toString()}`);
         if (!res.ok) {
             content.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Page introuvable</p></div>';
             return;

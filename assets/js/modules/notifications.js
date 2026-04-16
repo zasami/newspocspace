@@ -21,12 +21,13 @@ function reload() {
 }
 
 async function handleClick(e) {
-    // Filtre navigation
+    // Filtre navigation — URL propre /notifications/unread
     const filterBtn = e.target.closest('[data-filter]');
     if (filterBtn) {
         e.preventDefault();
         const filter = filterBtn.dataset.filter;
-        history.pushState({}, '', `/spocspace/notifications?filter=${filter}`);
+        const url = filter === 'active' ? '/spocspace/notifications' : `/spocspace/notifications/${filter}`;
+        history.pushState({}, '', url);
         reload();
         return;
     }

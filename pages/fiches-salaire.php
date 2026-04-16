@@ -4,6 +4,7 @@ if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
 require_once __DIR__ . '/_partials/helpers.php';
 
 $uid = $_SESSION['ss_user']['id'];
+$highlightId = $_GET['highlight'] ?? null;
 
 $fiches = Db::fetchAll(
     "SELECT id, annee, mois, original_name, size, created_at
@@ -13,16 +14,17 @@ $fiches = Db::fetchAll(
     [$uid]
 );
 
-// Année affichée : ?annee= ou année courante
+// Si highlight → trouver l'année de la fiche pour y naviguer automatiquement
 $currentYear = isset($_GET['annee']) ? (int) $_GET['annee'] : (int) date('Y');
+if ($highlightId) {
+    foreach ($fiches as $f) {
+        if ($f['id'] === $highlightId) { $currentYear = (int) $f['annee']; break; }
+    }
+}
 
-// Années disponibles (pour navigation)
-$yearsAvailable = array_unique(array_map(fn($f) => (int) $f['annee'], $fiches));
-rsort($yearsAvailable);
 $prevYear = $currentYear - 1;
 $nextYear = $currentYear + 1;
 
-// Filtre sur l'année courante
 $fichesYear = array_filter($fiches, fn($f) => (int) $f['annee'] === $currentYear);
 $byMonth = [];
 foreach ($fichesYear as $f) $byMonth[(int) $f['mois']] = $f;
@@ -44,13 +46,13 @@ function fmt_size($bytes) {
     </div>
 
     <div class="d-flex gap-2 align-items-center mb-3">
-        <a class="btn btn-sm btn-outline-secondary" data-link="fiches-salaire" data-params="annee=<?= $prevYear ?>" href="?annee=<?= $prevYear ?>">
+        <button class="btn btn-sm btn-outline-secondary" data-fs-year="<?= $prevYear ?>">
             <i class="bi bi-chevron-left"></i>
-        </a>
+        </button>
         <span class="fw-bold fs-year-label"><?= $currentYear ?></span>
-        <a class="btn btn-sm btn-outline-secondary" data-link="fiches-salaire" data-params="annee=<?= $nextYear ?>" href="?annee=<?= $nextYear ?>">
+        <button class="btn btn-sm btn-outline-secondary" data-fs-year="<?= $nextYear ?>">
             <i class="bi bi-chevron-right"></i>
-        </a>
+        </button>
     </div>
 
     <div class="row g-3">
@@ -58,10 +60,13 @@ function fmt_size($bytes) {
         <div class="col-12"><?= render_empty_state('Aucune fiche de salaire', 'bi-receipt') ?></div>
     <?php else: for ($m = $maxMonth; $m >= 1; $m--):
         $fiche = $byMonth[$m] ?? null;
+        $isHighlight = $fiche && $highlightId && $fiche['id'] === $highlightId;
     ?>
         <div class="col-12 col-sm-6 col-md-4">
             <?php if ($fiche): ?>
-                <div class="fiche-card" data-fiche-id="<?= h($fiche['id']) ?>">
+                <div class="fiche-card<?= $isHighlight ? ' fiche-highlight' : '' ?>"
+                     data-fiche-id="<?= h($fiche['id']) ?>"
+                     <?= $isHighlight ? 'id="ficheHighlight"' : '' ?>>
                     <div class="fiche-icon"><i class="bi bi-file-pdf-fill"></i></div>
                     <div class="fiche-info">
                         <div class="fiche-period"><?= h($MOIS[$m]) ?> <?= $currentYear ?></div>

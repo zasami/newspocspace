@@ -7,6 +7,7 @@ import { apiPost, escapeHtml, toast } from '../helpers.js';
 let allAnnonces = [];
 let CAT_LABELS = {};
 let currentFilter = '';
+let dotWaveRAF = null;
 
 function fmtDate(d) {
     return d ? new Date(d).toLocaleDateString('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -220,6 +221,7 @@ export async function init(pageId, params = {}) {
     renderFilters();
     renderList();
     updateStats();
+    initDotWave();
 
     // Search
     const searchInput = document.getElementById('feSearchInput');
@@ -235,6 +237,65 @@ export async function init(pageId, params = {}) {
 export function destroy() {
     allAnnonces = [];
     currentFilter = '';
+    if (dotWaveRAF) { cancelAnimationFrame(dotWaveRAF); dotWaveRAF = null; }
     const searchInput = document.getElementById('feSearchInput');
     if (searchInput) searchInput.value = '';
+}
+
+/* ── Animated dot wave (like Claude Cowork) ── */
+function initDotWave() {
+    const canvas = document.getElementById('annDotsCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const SP = 20;
+    const R = 0.7;
+    const SPEED = 0.003;
+    const WL = 350;
+    const COL = '140,132,120';
+
+    let t = 0;
+
+    function draw() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.clearRect(0, 0, w, h);
+
+        const cols = Math.ceil(w / SP) + 1;
+        const rows = Math.ceil(h / SP) + 1;
+        const ox = (w % SP) / 2;
+        const oy = (h % SP) / 2;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = ox + c * SP;
+                const y = oy + r * SP;
+
+                const phase = (w - x + y * 0.3) / WL * Math.PI * 2 - t;
+                const wave = (Math.sin(phase) + 1) / 2;
+
+                const a = 0.12 + wave * 0.16;
+
+                ctx.fillStyle = `rgba(${COL},${a})`;
+                ctx.fillRect(x - R, y - R, R * 2, R * 2);
+            }
+        }
+
+        t += SPEED;
+        dotWaveRAF = requestAnimationFrame(draw);
+    }
+
+    draw();
 }
