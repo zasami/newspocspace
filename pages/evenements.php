@@ -335,5 +335,12 @@ function renderEventCard($ev, $now, $isPast = false) {
 .ev-closed-text p { color: var(--cl-text-secondary, #666); }
 
 /* ── Modal footer ── */
-#evDetailModal .modal-footer { border-top: 1px solid var(--cl-border, #e5e5e5); }
+#evDetailModal .modal-footer { border-top: 1px solid var(--cl-border, #e5e5e5); flex-wrap: wrap; }
+.ev-footer-error {
+    width: 100%; font-size: .82rem; font-weight: 500; color: #c0392b;
+    background: rgba(192,57,43,.08); padding: 6px 12px; border-radius: 8px;
+    display: flex; align-items: center; gap: 6px;
+    animation: evErrIn .25s ease;
+}
+@keyframes evErrIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>

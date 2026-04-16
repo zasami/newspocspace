@@ -351,11 +351,7 @@ async function inscrire(eventId, champs) {
     } else {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-lg"></i> S\'inscrire';
-        const errEl = document.createElement('div');
-        errEl.className = 'alert alert-danger small py-2 mt-2';
-        errEl.textContent = r.message || 'Erreur';
-        document.getElementById('evModalBody').appendChild(errEl);
-        setTimeout(() => errEl.remove(), 4000);
+        showFooterError(r.message || 'Erreur');
     }
 }
 
@@ -411,6 +407,17 @@ function contactOrganisateur(ev) {
         history.pushState({}, '', '/spocspace/emails');
         window.dispatchEvent(new PopStateEvent('popstate'));
     }
+}
+
+function showFooterError(msg) {
+    const footer = document.getElementById('evModalFooter');
+    if (!footer) return;
+    footer.querySelectorAll('.ev-footer-error').forEach(e => e.remove());
+    const errEl = document.createElement('div');
+    errEl.className = 'ev-footer-error';
+    errEl.innerHTML = `<i class="bi bi-exclamation-circle"></i> ${escapeHtml(msg)}`;
+    footer.insertBefore(errEl, footer.firstChild);
+    setTimeout(() => errEl.remove(), 5000);
 }
 
 function fmtDate(d) {
