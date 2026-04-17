@@ -295,13 +295,20 @@ function admin_download_candidature_doc()
 
 function admin_delete_candidature()
 {
-    require_admin();
+    $admin = require_admin();
     global $params;
 
     $id = $params['id'] ?? '';
     if (!$id) bad_request('ID requis');
 
-    $candidature = Db::fetch("SELECT id FROM candidatures WHERE id = ?", [$id]);
+    // Fetch full candidature info + offre titre BEFORE deletion (for email)
+    $candidature = Db::fetch(
+        "SELECT c.id, c.prenom, c.nom, c.email, c.code_suivi, o.titre AS offre_titre
+         FROM candidatures c
+         LEFT JOIN offres_emploi o ON o.id = c.offre_id
+         WHERE c.id = ?",
+        [$id]
+    );
     if (!$candidature) not_found('Candidature introuvable');
 
     // Delete documents from disk
@@ -316,7 +323,104 @@ function admin_delete_candidature()
     Db::exec("DELETE FROM candidature_documents WHERE candidature_id = ?", [$id]);
     Db::exec("DELETE FROM candidatures WHERE id = ?", [$id]);
 
-    respond(['success' => true, 'message' => 'Candidature supprimée']);
+    // Send LPD notification email (non-critical)
+    $emailSent = false;
+    if (!empty($candidature['email'])) {
+        try {
+            require_once __DIR__ . '/../../core/Mailer.php';
+            $emailConfig = Db::fetch(
+                "SELECT * FROM email_externe_config WHERE user_id = ? AND is_active = 1",
+                [$admin['id']]
+            );
+            if ($emailConfig) {
+                $password = Mailer::decryptPassword($emailConfig['encrypted_password'], $emailConfig['password_iv']);
+                $mailer = new Mailer([
+                    'imap_host' => $emailConfig['imap_host'],
+                    'imap_port' => $emailConfig['imap_port'],
+                    'imap_encryption' => $emailConfig['imap_encryption'],
+                    'smtp_host' => $emailConfig['smtp_host'],
+                    'smtp_port' => $emailConfig['smtp_port'],
+                    'smtp_encryption' => $emailConfig['smtp_encryption'],
+                    'username' => $emailConfig['username'],
+                    'password' => $password,
+                    'email_address' => $emailConfig['email_address'],
+                    'display_name' => $emailConfig['display_name'] ?? 'Recrutement',
+                ]);
+
+                $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'EMS La Terrassière';
+                $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
+                $logoUrl = $emsLogo ? 'https://www.zkriva.com' . $emsLogo : '';
+                $prenom = htmlspecialchars($candidature['prenom'] ?? '');
+                $nom = htmlspecialchars($candidature['nom'] ?? '');
+                $offreTitre = htmlspecialchars($candidature['offre_titre'] ?? '');
+                $codeSuivi = htmlspecialchars($candidature['code_suivi'] ?? '');
+                $date = date('d.m.Y');
+
+                $subject = 'Suppression de votre dossier de candidature - ' . $emsNom;
+                $htmlBody = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;max-width:620px;margin:0 auto;padding:20px">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#2d4a43;border-radius:10px 10px 0 0">
+        <tr>
+            <td style="padding:20px 24px">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                        ' . ($logoUrl ? '<td style="padding-right:14px;vertical-align:middle"><img src="' . htmlspecialchars($logoUrl) . '" alt="Logo" style="width:52px;height:52px;border-radius:10px;background:#fff;padding:4px;object-fit:contain;display:block"></td>' : '') . '
+                        <td style="vertical-align:middle;color:#fff">
+                            <h2 style="margin:0;font-size:18px;color:#fff;font-family:Arial,sans-serif">' . htmlspecialchars($emsNom) . '</h2>
+                            <p style="margin:4px 0 0;font-size:13px;color:#fff;opacity:.85;font-family:Arial,sans-serif">Service Ressources Humaines</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <div style="background:#fff;border:1px solid #e9ecef;border-top:none;padding:24px;border-radius:0 0 10px 10px">
+        <p>Madame, Monsieur ' . $prenom . ' ' . $nom . ',</p>
+
+        <p>Nous vous informons que votre dossier de candidature' . ($offreTitre ? ' pour le poste de « <strong>' . $offreTitre . '</strong> »' : '') . ' a été supprimé de nos systèmes en date du <strong>' . $date . '</strong>.</p>
+
+        <div style="background:#f4f9f6;border-left:3px solid #2d4a43;padding:12px 16px;border-radius:4px;margin:16px 0">
+            <strong>Conformité — Loi fédérale sur la protection des données (nLPD)</strong><br>
+            Conformément à la nouvelle Loi fédérale suisse sur la protection des données (nLPD, entrée en vigueur le 1er septembre 2023) et au principe de <em>minimisation des données</em>, vos données personnelles et documents transmis (CV, lettre de motivation, diplômes, etc.) ont été effacés de manière définitive de notre base.
+        </div>
+
+        <p><strong>Ce que cela signifie concrètement :</strong></p>
+        <ul style="padding-left:20px">
+            <li>Toutes vos données personnelles ont été supprimées de nos serveurs</li>
+            <li>Les pièces jointes (CV, lettre, documents) ont été effacées du stockage</li>
+            <li>Aucune copie n\'est conservée ' . ($codeSuivi ? '(code de suivi ' . $codeSuivi . ' désormais inactif)' : '') . '</li>
+        </ul>
+
+        <p><strong>Vos droits :</strong> En vertu de la nLPD (art. 25-32), vous disposez d\'un droit d\'accès, de rectification et d\'effacement de vos données. Cette suppression fait suite à l\'exercice naturel de votre droit à l\'oubli ou à la fin du processus de recrutement.</p>
+
+        <p>Nous vous remercions sincèrement de l\'intérêt que vous avez porté à notre établissement et vous souhaitons plein succès dans la suite de vos démarches professionnelles.</p>
+
+        <p>Si vous souhaitez postuler à nouveau à l\'avenir, n\'hésitez pas à consulter nos offres d\'emploi ouvertes.</p>
+
+        <p style="margin-top:24px">Avec nos meilleures salutations,</p>
+        <p style="margin:0"><strong>Service Ressources Humaines</strong><br>
+        ' . htmlspecialchars($emsNom) . '</p>
+
+        <hr style="border:none;border-top:1px solid #e9ecef;margin:20px 0">
+        <p style="font-size:11px;color:#999;margin:0">Cet email est une notification automatique envoyée conformément à l\'art. 19 nLPD (devoir d\'information). Pour toute question relative au traitement de vos données, contactez le responsable de la protection des données de notre établissement.</p>
+    </div>
+</body></html>';
+
+                $mailer->sendEmail([$candidature['email']], [], $subject, $htmlBody);
+                $emailSent = true;
+            }
+        } catch (\Throwable $e) {
+            error_log('[delete_candidature] email error: ' . $e->getMessage());
+        }
+    }
+
+    respond([
+        'success' => true,
+        'message' => $emailSent
+            ? 'Candidature supprimée et candidat notifié par email (nLPD)'
+            : 'Candidature supprimée',
+        'email_sent' => $emailSent,
+    ]);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

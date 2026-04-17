@@ -53,10 +53,32 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 .rhc-badge-archivee  { background: var(--cl-border-light, #E8E4DE); color: var(--cl-text-muted); }
 .rhc-timer { font-size: .72rem; color: var(--cl-text-muted); }
 
+/* ── Statut card selector ── */
+.rhc-statut-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+@media (max-width: 768px) { .rhc-statut-cards { grid-template-columns: repeat(3, 1fr); } }
+.rhc-statut-card {
+    position: relative; text-align: center; padding: 10px 4px 8px;
+    border: 1.5px solid var(--cl-border-light, #E8E4DE); border-radius: 10px;
+    background: var(--cl-surface, #fff); cursor: pointer;
+    transition: all .15s; display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.rhc-statut-card:hover { border-color: var(--sc-color); background: #F7F5F2; }
+.rhc-statut-card.active { border-color: var(--sc-color); border-width: 2px; background: color-mix(in srgb, var(--sc-bg) 20%, #fff); }
+.rhc-sc-icon { font-size: 1rem; color: var(--sc-color); }
+.rhc-sc-label { font-size: .68rem; font-weight: 600; color: var(--cl-text, #1A1A1A); }
+.rhc-sc-check {
+    position: absolute; top: 4px; right: 4px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--sc-color); color: #fff;
+    display: none; align-items: center; justify-content: center;
+    font-size: .6rem;
+}
+.rhc-statut-card.active .rhc-sc-check { display: flex; }
+
 /* ── Detail sections ── */
 .rhc-detail-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); margin-bottom: 4px; }
 .rhc-detail-val { font-size: .88rem; }
-.rhc-detail-box { white-space: pre-wrap; background: var(--cl-bg); padding: 10px; border-radius: 8px; font-size: .85rem; }
+.rhc-detail-box { white-space: pre-wrap; background: var(--cl-bg); padding: 14px; border-radius: 8px; font-size: .92rem; line-height: 1.6; }
 /* ── Documents grouped by type ── */
 .rhc-docs-wrap { margin-top: 6px; display: flex; flex-direction: column; gap: 14px; }
 .rhc-docs-group {
@@ -265,14 +287,14 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="rhcDetailTitle">Candidature</h5>
-        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body" id="rhcDetailBody">
         <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm"></span></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-danger me-auto" id="btnDeleteCand"><i class="bi bi-trash"></i> Supprimer</button>
-        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
         <button type="button" class="btn btn-sm btn-primary" id="btnSaveCand"><i class="bi bi-check-lg"></i> Enregistrer</button>
       </div>
     </div>
@@ -285,7 +307,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
     <div class="modal-content">
       <div class="modal-header">
         <h6 class="modal-title">Supprimer la candidature ?</h6>
-        <button type="button" class="confirm-close-btn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
       <div class="modal-body">
         <p class="mb-0 small text-muted">Cette action supprimera la candidature et tous ses documents.</p>
@@ -439,20 +461,37 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
                 html += '</div></div>';
             }
 
-            html += `<div class="col-md-6"><div class="rhc-detail-label">Statut</div>
-                <select class="form-select form-select-sm mt-1" id="rhcStatutSelect">
-                    <option value="recue" ${c.statut==='recue'?'selected':''}>Reçue</option>
-                    <option value="en_cours" ${c.statut==='en_cours'?'selected':''}>En cours</option>
-                    <option value="entretien" ${c.statut==='entretien'?'selected':''}>Entretien</option>
-                    <option value="acceptee" ${c.statut==='acceptee'?'selected':''}>Acceptée</option>
-                    <option value="refusee" ${c.statut==='refusee'?'selected':''}>Refusée</option>
-                    <option value="archivee" ${c.statut==='archivee'?'selected':''}>Archivée</option>
-                </select></div>`;
-            html += `<div class="col-md-6"><div class="rhc-detail-label" style="margin-bottom:8px">Timer</div><span class="rhc-timer"><i class="bi bi-clock"></i> Reçue il y a ${days} jour${days > 1 ? 's' : ''}</span></div>`;
+            const statuts = [
+                { key: 'recue',     label: 'Recue',     icon: 'bi-inbox',           bg: '#D4C4A8', color: '#6B5B3E' },
+                { key: 'en_cours',  label: 'En cours',  icon: 'bi-arrow-repeat',    bg: '#B8C9D4', color: '#3B4F6B' },
+                { key: 'entretien', label: 'Entretien',icon: 'bi-calendar-event',  bg: '#D0C4D8', color: '#5B4B6B' },
+                { key: 'acceptee',  label: 'Acceptee', icon: 'bi-check-circle',    bg: '#bcd2cb', color: '#2d4a43' },
+                { key: 'refusee',   label: 'Refusee',  icon: 'bi-x-circle',        bg: '#E2B8AE', color: '#7B3B2C' },
+                { key: 'archivee',  label: 'Archivee', icon: 'bi-archive',         bg: '#E8E4DE', color: '#6c757d' },
+            ];
+            html += `<div class="col-12"><div class="rhc-detail-label">Statut</div>
+                <div class="rhc-statut-cards" id="rhcStatutCards">
+                    ${statuts.map(s => `
+                        <div class="rhc-statut-card ${c.statut === s.key ? 'active' : ''}" data-statut="${s.key}" style="--sc-bg:${s.bg};--sc-color:${s.color}">
+                            <div class="rhc-sc-check"><i class="bi bi-check-lg"></i></div>
+                            <i class="bi ${s.icon} rhc-sc-icon"></i>
+                            <span class="rhc-sc-label">${s.label}</span>
+                        </div>
+                    `).join('')}
+                </div></div>`;
+            html += `<div class="col-12"><div class="d-flex align-items-center gap-2 mt-1"><span class="rhc-timer"><i class="bi bi-clock"></i> Recue il y a ${days} jour${days > 1 ? 's' : ''}</span></div></div>`;
             html += `<div class="col-12"><div class="rhc-detail-label">Notes admin</div>
                 <textarea class="form-control form-control-sm mt-1" id="rhcNotesAdmin" rows="3">${escapeHtml(c.notes_admin || '')}</textarea></div>`;
             html += '</div>';
             document.getElementById('rhcDetailBody').innerHTML = html;
+
+            // Bind statut card clicks
+            document.querySelectorAll('.rhc-statut-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.rhc-statut-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                });
+            });
 
             // Bind doc item clicks
             document.querySelectorAll('.rhc-doc-item').forEach(card => {
@@ -616,7 +655,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
 
     document.getElementById('btnSaveCand')?.addEventListener('click', () => {
         if (!currentCandId) return;
-        const statut = document.getElementById('rhcStatutSelect')?.value;
+        const statut = document.querySelector('.rhc-statut-card.active')?.dataset.statut || 'recue';
         const notes = document.getElementById('rhcNotesAdmin')?.value || '';
         adminApiPost('admin_update_candidature_status', { id: currentCandId, statut, notes_admin: notes }).then(r => {
             if (r.success) {
