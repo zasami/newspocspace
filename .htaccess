@@ -14,6 +14,13 @@ RewriteBase /spocspace/
   </IfModule>
 </FilesMatch>
 
+# Block any URL path that traverses a VCS folder (.git, .svn, .hg, .bzr)
+# even for non-dot files inside (e.g. .git/config is a "file" named config).
+RewriteRule (^|/)\.(git|svn|hg|bzr)(/|$) - [F,L]
+
+# Block common sensitive filenames regardless of directory
+RewriteRule (^|/)(composer\.(json|lock)|package(-lock)?\.json|yarn\.lock|\.env.*|Dockerfile|docker-compose\.ya?ml)$ - [F,L,NC]
+
 # Block .env* variants explicitly
 <FilesMatch "^\.env($|\..*)">
   <IfModule mod_authz_core.c>
