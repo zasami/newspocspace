@@ -137,7 +137,7 @@ require_responsable();
                 <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
             </div>
             <div class="modal-body p-0" style="max-height:75vh;overflow:hidden">
-                <iframe id="etPreviewFrame" style="width:100%;height:75vh;border:none"></iframe>
+                <iframe id="etPreviewFrame" sandbox="allow-same-origin" referrerpolicy="no-referrer" style="width:100%;height:75vh;border:none"></iframe>
             </div>
         </div>
     </div>

@@ -119,12 +119,16 @@ function update_password()
 
     $hash = password_hash($newPass, PASSWORD_BCRYPT, ['cost' => 12]);
     Db::exec(
-        "UPDATE users SET password = ?, password_temp_hash = NULL, password_temp_expires = NULL WHERE id = ?",
+        "UPDATE users SET password = ?, password_temp_hash = NULL, password_temp_expires = NULL, password_changed_at = NOW() WHERE id = ?",
         [$hash, $user['id']]
     );
 
-    // Clear session flags
+    // Clear temp-password flags and rotate session id (defeat fixation + old cookies)
     unset($_SESSION['ss_must_change_password'], $_SESSION['ss_temp_password_expires']);
+    session_regenerate_id(true);
+    // Mark this session as issued AFTER the password change so require_auth()
+    // kills concurrent (old) sessions that still carry an older ss_login_at.
+    $_SESSION['ss_login_at'] = time();
 
     respond(['success' => true, 'message' => 'Mot de passe mis à jour']);
 }

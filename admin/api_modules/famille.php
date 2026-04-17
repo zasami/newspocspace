@@ -4,6 +4,39 @@
  * Upload activités, médical, galerie (staff only — famille is read-only)
  */
 
+/**
+ * Resolve a file_path from DB to an absolute path inside uploads/famille/,
+ * rejecting any traversal attempt. Returns absolute path or null.
+ * Accepted input shape: "uploads/famille/<resident>/<sub>/<uuid>.enc".
+ */
+function _famille_resolve_path(?string $filePath): ?string
+{
+    if (!$filePath || !is_string($filePath)) return null;
+    if (strpos($filePath, "\0") !== false) return null;
+    if (strpos($filePath, '\\') !== false) return null;
+    // Must start exactly with the expected relative prefix
+    if (strpos($filePath, 'uploads/famille/') !== 0) return null;
+    // Reject traversal
+    $parts = explode('/', $filePath);
+    foreach ($parts as $p) {
+        if ($p === '..' || $p === '.' || $p === '') return null;
+    }
+    $absBase = realpath(__DIR__ . '/../../uploads/famille');
+    if ($absBase === false) return null;
+    $absBase = rtrim(str_replace('\\', '/', $absBase), '/');
+
+    $abs = __DIR__ . '/../../' . $filePath;
+    // Resolve highest existing ancestor (file may or may not exist)
+    $dir = dirname($abs);
+    if (!is_dir($dir)) return null;
+    $dirReal = realpath($dir);
+    if ($dirReal === false) return null;
+    $dirReal = rtrim(str_replace('\\', '/', $dirReal), '/');
+    if (strpos($dirReal . '/', $absBase . '/') !== 0) return null;
+
+    return $dirReal . '/' . basename($abs);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Encryption key management
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -115,11 +148,11 @@ function admin_famille_delete_activite()
     $id = $params['id'] ?? '';
     if (!$id) bad_request('id requis');
 
-    // Delete photos files
+    // Delete photos files (path-safe)
     $photos = Db::fetchAll("SELECT file_path FROM famille_activite_photos WHERE activite_id = ?", [$id]);
     foreach ($photos as $p) {
-        $path = __DIR__ . '/../../' . $p['file_path'];
-        if (file_exists($path)) unlink($path);
+        $path = _famille_resolve_path($p['file_path'] ?? null);
+        if ($path && is_file($path)) @unlink($path);
     }
 
     Db::exec("DELETE FROM famille_activites WHERE id = ?", [$id]);
@@ -179,8 +212,8 @@ function admin_famille_delete_photo()
     $row = Db::fetch("SELECT file_path FROM $table WHERE id = ?", [$id]);
     if (!$row) not_found('Fichier introuvable');
 
-    $path = __DIR__ . '/../../' . $row['file_path'];
-    if (file_exists($path)) unlink($path);
+    $path = _famille_resolve_path($row['file_path'] ?? null);
+    if ($path && is_file($path)) @unlink($path);
 
     Db::exec("DELETE FROM $table WHERE id = ?", [$id]);
 
@@ -270,8 +303,8 @@ function admin_famille_delete_medical()
 
     $fichiers = Db::fetchAll("SELECT file_path FROM famille_medical_fichiers WHERE medical_id = ?", [$id]);
     foreach ($fichiers as $f) {
-        $path = __DIR__ . '/../../' . $f['file_path'];
-        if (file_exists($path)) unlink($path);
+        $path = _famille_resolve_path($f['file_path'] ?? null);
+        if ($path && is_file($path)) @unlink($path);
     }
 
     Db::exec("DELETE FROM famille_medical WHERE id = ?", [$id]);
@@ -387,8 +420,8 @@ function admin_famille_delete_album()
 
     $photos = Db::fetchAll("SELECT file_path FROM famille_galerie_photos WHERE galerie_id = ?", [$id]);
     foreach ($photos as $p) {
-        $path = __DIR__ . '/../../' . $p['file_path'];
-        if (file_exists($path)) unlink($path);
+        $path = _famille_resolve_path($p['file_path'] ?? null);
+        if ($path && is_file($path)) @unlink($path);
     }
 
     Db::exec("DELETE FROM famille_galerie WHERE id = ?", [$id]);
@@ -397,6 +430,7 @@ function admin_famille_delete_album()
 
 function admin_famille_serve_galerie_photo()
 {
+    require_responsable();
     global $params;
     $id = $params['id'] ?? '';
     if (!$id) bad_request('id requis');
@@ -404,11 +438,12 @@ function admin_famille_serve_galerie_photo()
     $row = Db::fetch("SELECT file_path FROM famille_galerie_photos WHERE id = ?", [$id]);
     if (!$row || !$row['file_path']) not_found();
 
-    $path = __DIR__ . '/../../' . $row['file_path'];
-    if (!file_exists($path)) not_found();
+    $path = _famille_resolve_path($row['file_path'] ?? null);
+    if (!$path || !is_file($path)) not_found();
 
     // Serve raw encrypted file
     header('Content-Type: application/octet-stream');
+    header('X-Content-Type-Options: nosniff');
     header('Cache-Control: private, max-age=3600');
     readfile($path);
     exit;

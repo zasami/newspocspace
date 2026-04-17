@@ -26,16 +26,66 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Server-side session timeout (30 min idle)
+// ── Session hardening ──
+// 1. Server-side idle timeout (30 min)
+// 2. Absolute lifetime (4h since login)
+// 3. Bind session to IP + User-Agent hash (cookie theft mitigation)
+// 4. Kill sessions older than password_changed_at for the current user
 $sessionIdleTimeout = 1800;
+$sessionAbsoluteMax = 4 * 3600;
+
+$_killSession = function (): void {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), '', [
+            'expires'  => time() - 42000,
+            'path'     => $p['path'],
+            'domain'   => $p['domain'],
+            'secure'   => $p['secure'],
+            'httponly' => $p['httponly'],
+            'samesite' => $p['samesite'] ?? 'Strict',
+        ]);
+    }
+    @session_destroy();
+    @session_start();
+    session_regenerate_id(true);
+};
+
 if (!empty($_SESSION['ss_user'])) {
+    $now = time();
     $lastActivity = $_SESSION['ss_last_activity'] ?? 0;
-    if ($lastActivity && (time() - $lastActivity) > $sessionIdleTimeout) {
-        session_unset();
-        session_destroy();
-        session_start();
+    $loginAt      = $_SESSION['ss_login_at'] ?? $lastActivity;
+
+    $expire = false;
+
+    if ($lastActivity && ($now - $lastActivity) > $sessionIdleTimeout)  $expire = true;
+    if ($loginAt      && ($now - $loginAt)      > $sessionAbsoluteMax)  $expire = true;
+
+    // IP pinning — allow /24 fluctuation for mobile networks would be fragile;
+    // prefer strict comparison, users re-login on IP change.
+    $currentIp = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!empty($_SESSION['ss_ip']) && $_SESSION['ss_ip'] !== $currentIp) $expire = true;
+
+    // User-Agent pinning (hashed, first 32 chars of sha256)
+    $currentUaHash = substr(hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 32);
+    if (!empty($_SESSION['ss_ua']) && $_SESSION['ss_ua'] !== $currentUaHash) $expire = true;
+
+    if ($expire) {
+        $_killSession();
     } else {
-        $_SESSION['ss_last_activity'] = time();
+        // Kill session if password was changed after this session was issued
+        try {
+            $pwChangedAt = \Db::getOne("SELECT password_changed_at FROM users WHERE id = ?", [$_SESSION['ss_user']['id']]);
+            if ($pwChangedAt && $loginAt && strtotime($pwChangedAt) > $loginAt) {
+                $_killSession();
+            }
+        } catch (\Throwable $e) {
+            // DB unavailable — do nothing, fail-open on check
+        }
+        if (!empty($_SESSION['ss_user'])) {
+            $_SESSION['ss_last_activity'] = $now;
+        }
     }
 }
 
@@ -105,6 +155,29 @@ function check_offline_conflict(string $table, string $id, ?string $queuedAt): b
 function h(?string $val): string
 {
     return htmlspecialchars($val ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Build a RFC6266-compliant Content-Disposition header value that neutralizes
+ * CRLF/quote injection. Always emit X-Content-Type-Options: nosniff alongside.
+ *
+ * Usage:
+ *   header('Content-Disposition: ' . safe_content_disposition($name, 'inline'));
+ *   header('X-Content-Type-Options: nosniff');
+ */
+function safe_content_disposition(?string $filename, string $disposition = 'inline'): string
+{
+    $disposition = ($disposition === 'attachment') ? 'attachment' : 'inline';
+    $name = basename((string) ($filename ?? ''));
+    // Strip CR/LF/null/quotes/backslash — neutralise HTTP header injection
+    $name = preg_replace('/[\r\n\0"\\\\]/', '', $name);
+    $name = trim($name);
+    if ($name === '') $name = 'file';
+    $asciiName = preg_replace('/[^\x20-\x7E]/', '_', $name);
+    $encoded = rawurlencode($name);
+    return $disposition
+        . '; filename="' . $asciiName . '"'
+        . "; filename*=UTF-8''" . $encoded;
 }
 
 function require_auth(): array

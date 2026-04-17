@@ -97,31 +97,28 @@ function admin_upload_document()
     }
 
     $file = $_FILES['file'];
-    $maxSize = 20 * 1024 * 1024; // 20 MB
-    if ($file['size'] > $maxSize) bad_request('Fichier trop volumineux (max 20 Mo)');
 
-    $allowed = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-        'text/plain', 'text/csv',
-    ];
-    if (!in_array($file['type'], $allowed, true)) bad_request('Type de fichier non autorisé');
+    // Hardened validation: whitelist extension + magic bytes (SVG rejected)
+    require_once __DIR__ . '/../../core/FileSecurity.php';
+    $err = FileSecurity::validateUpload($file, 'Document', FileSecurity::ALLOW_DOCUMENT, 20 * 1024 * 1024);
+    if ($err) bad_request($err);
 
     $storageDir = __DIR__ . '/../../storage/documents/';
     if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, FileSecurity::ALLOW_DOCUMENT, true)) bad_request('Extension non autorisée');
     $filename = bin2hex(random_bytes(16)) . '.' . $ext;
 
     if (!move_uploaded_file($file['tmp_name'], $storageDir . $filename)) {
         bad_request('Erreur lors de la sauvegarde du fichier');
+    }
+
+    // Re-encode images to strip EXIF/steg payloads
+    $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
+    if ($sanErr) {
+        @unlink($storageDir . $filename);
+        bad_request($sanErr);
     }
 
     $originalName = mb_substr(basename($file['name']), 0, 255);
@@ -341,7 +338,8 @@ function admin_serve_document_version()
     if ($realPath === false || strpos($realPath, $storageDir) !== 0) forbidden('Accès interdit');
 
     header('Content-Type: ' . $v['mime_type']);
-    header('Content-Disposition: inline; filename="' . addslashes($v['original_name']) . '"');
+    header('Content-Disposition: ' . safe_content_disposition(addslashes($v['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($filePath));
     readfile($filePath);
     exit;
@@ -369,7 +367,8 @@ function admin_convert_document_pdf()
         $filePath = __DIR__ . '/../../storage/documents/' . $doc['filename'];
         if (!file_exists($filePath)) not_found('Fichier introuvable');
         header('Content-Type: ' . $doc['mime_type']);
-        header('Content-Disposition: inline; filename="' . addslashes($doc['original_name']) . '"');
+        header('Content-Disposition: ' . safe_content_disposition(addslashes($doc['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
         readfile($filePath);
         exit;
     }
@@ -384,7 +383,8 @@ function admin_convert_document_pdf()
     if (file_exists($cacheFile)) {
         // Serve cached PDF
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="' . addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf') . '"');
+        header('Content-Disposition: ' . safe_content_disposition(addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf'), 'inline'));
+    header('X-Content-Type-Options: nosniff');
         header('Content-Length: ' . filesize($cacheFile));
         header('Cache-Control: private, max-age=86400');
         readfile($cacheFile);
@@ -435,7 +435,8 @@ function admin_convert_document_pdf()
 
         // Serve
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="' . addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf') . '"');
+        header('Content-Disposition: ' . safe_content_disposition(addslashes(pathinfo($doc['original_name'], PATHINFO_FILENAME) . '.pdf'), 'inline'));
+    header('X-Content-Type-Options: nosniff');
         header('Content-Length: ' . strlen($pdfContent));
         header('Cache-Control: private, max-age=86400');
         echo $pdfContent;
@@ -598,7 +599,8 @@ function admin_serve_document()
     }
 
     header('Content-Type: ' . $doc['mime_type']);
-    header('Content-Disposition: inline; filename="' . addslashes($doc['original_name']) . '"');
+    header('Content-Disposition: ' . safe_content_disposition(addslashes($doc['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, max-age=3600');
     readfile($filePath);

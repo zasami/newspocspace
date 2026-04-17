@@ -684,6 +684,98 @@ function admin_compare_backup()
     ]);
 }
 
+/* ─────────────── Safe restore helpers ─────────────── */
+
+/**
+ * Validate a ZIP entry filename for safe extraction into $baseDir.
+ * - Must start with $requiredPrefix (e.g. 'files/')
+ * - No '..' components, no absolute paths, no backslashes, no null bytes
+ * - No known-dangerous extensions (php/phtml/phar/htaccess/...)
+ * - Resolved path must live inside $baseDir after normalization
+ * Returns absolute destination path, or null if rejected.
+ */
+function safe_zip_entry_path(string $entryName, string $requiredPrefix, string $baseDir): ?string
+{
+    if ($entryName === '' || $entryName === $requiredPrefix) return null;
+    if (strpos($entryName, $requiredPrefix) !== 0) return null;
+    if (strpos($entryName, "\0") !== false) return null;
+    if (strpos($entryName, '\\') !== false) return null;
+
+    $rel = substr($entryName, strlen($requiredPrefix));
+    // Normalize forward slashes and reject traversal/absolute markers
+    if ($rel === '' || $rel[0] === '/' || $rel[0] === '.') return null;
+    $parts = explode('/', $rel);
+    foreach ($parts as $part) {
+        if ($part === '' || $part === '.' || $part === '..') return null;
+    }
+
+    // Reject dangerous extensions (defense in depth; .htaccess also caught)
+    $lower = strtolower($rel);
+    if (preg_match('/\.(php[0-9]?|phtml|phar|phps|pl|py|cgi|sh|asp|aspx|jsp|htaccess|htpasswd)$/i', $lower)) {
+        return null;
+    }
+    if (preg_match('/(^|\/)\.ht/i', $lower)) return null;
+
+    $baseReal = rtrim(str_replace('\\', '/', realpath($baseDir) ?: $baseDir), '/');
+    if ($baseReal === '') return null;
+
+    $dest = $baseReal . '/' . $rel;
+    $destDirReal = realpath(dirname($dest));
+    // Parent dir may not exist yet; resolve highest existing ancestor
+    $check = dirname($dest);
+    while ($check && $check !== $baseReal && !is_dir($check)) {
+        $check = dirname($check);
+    }
+    $checkReal = realpath($check);
+    if ($checkReal === false) return null;
+    $checkReal = rtrim(str_replace('\\', '/', $checkReal), '/');
+    if (strpos($checkReal . '/', $baseReal . '/') !== 0) return null;
+
+    return $dest;
+}
+
+/**
+ * Validate a SQL fragment from a backup dump before pdo->exec.
+ * Only allow a single INSERT [IGNORE] INTO `<whitelisted_table>` statement.
+ * Rejects multi-statements, comments injecting DDL/DML of other kinds,
+ * and unknown table names.
+ * Returns the cleaned SQL or null if rejected.
+ */
+function safe_backup_insert_sql(string $sql, string $expectedTable, array $allowedTables): ?string
+{
+    if (!in_array($expectedTable, $allowedTables, true)) return null;
+    $sql = trim($sql);
+    if ($sql === '') return null;
+
+    // Must start with INSERT [IGNORE] INTO `table`
+    if (!preg_match('/^INSERT\s+(IGNORE\s+)?INTO\s+`([A-Za-z0-9_]+)`\s*\(/i', $sql, $m)) {
+        return null;
+    }
+    $declaredTable = $m[2];
+    if ($declaredTable !== $expectedTable) return null;
+    if (!in_array($declaredTable, $allowedTables, true)) return null;
+
+    // Reject obvious multi-statement payloads: the statement must end with
+    // exactly one terminating ';' (and no stray ';' outside of string literals).
+    // We do a light scan: count ';' outside single-quoted strings.
+    $len = strlen($sql);
+    $inStr = false;
+    $stmtCount = 0;
+    for ($i = 0; $i < $len; $i++) {
+        $c = $sql[$i];
+        if ($inStr) {
+            if ($c === '\\' && $i + 1 < $len) { $i++; continue; }
+            if ($c === "'") $inStr = false;
+        } else {
+            if ($c === "'") $inStr = true;
+            elseif ($c === ';') $stmtCount++;
+        }
+    }
+    if ($stmtCount > 1) return null;
+
+    return $sql;
+}
+
 /**
  * Restore a per-user backup (merge or overwrite)
  */
@@ -766,7 +858,8 @@ function admin_restore_backup()
             }
         }
 
-        // Import SQL from backup (with schema adaptation)
+        // Import SQL from backup (with schema adaptation + strict validation)
+        $allowedTables = USER_BACKUP_TABLES;
         foreach ($tables as $table) {
             $sqlContent = $zip->getFromName($table . '.sql');
             if (!$sqlContent) continue;
@@ -788,21 +881,30 @@ function admin_restore_backup()
             }
 
             if ($mode === 'merge') {
-                $insertSql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $insertSql);
+                $insertSql = preg_replace('/^INSERT\s+INTO\b/i', 'INSERT IGNORE INTO', $insertSql, 1);
             }
 
-            $pdo->exec($insertSql);
+            $safeSql = safe_backup_insert_sql($insertSql, $table, $allowedTables);
+            if ($safeSql === null) {
+                throw new \Exception("SQL de restauration rejeté pour la table `$table` (non conforme)");
+            }
+            $pdo->exec($safeSql);
         }
 
-        // Restore files
+        // Restore files (ZipSlip-safe)
+        $baseStorage = __DIR__ . '/../../storage';
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if (strpos($name, 'files/') === 0 && $name !== 'files/') {
-                $destPath = __DIR__ . '/../../storage/' . substr($name, 6);
-                $destDir = dirname($destPath);
-                if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-                file_put_contents($destPath, $zip->getFromIndex($i));
+            if (strpos($name, 'files/') !== 0 || $name === 'files/') continue;
+
+            $destPath = safe_zip_entry_path($name, 'files/', $baseStorage);
+            if ($destPath === null) {
+                // Silently skip unsafe entries (do not log raw name)
+                continue;
             }
+            $destDir = dirname($destPath);
+            if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+            file_put_contents($destPath, $zip->getFromIndex($i));
         }
 
         $pdo->commit();
@@ -966,6 +1068,12 @@ function admin_restore_global_backup()
             $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
         }
 
+        // Allowed tables = all real tables in the current DB (global restore)
+        $allowedTablesGlobal = array_map(
+            fn($t) => (string)reset($t),
+            Db::fetchAll("SHOW TABLES")
+        );
+
         foreach ($tables as $table) {
             $sqlContent = $zip->getFromName($table . '.sql');
             if (!$sqlContent) continue;
@@ -986,21 +1094,27 @@ function admin_restore_global_backup()
             }
 
             if ($mode === 'merge') {
-                $insertSql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $insertSql);
+                $insertSql = preg_replace('/^INSERT\s+INTO\b/i', 'INSERT IGNORE INTO', $insertSql, 1);
             }
 
-            $pdo->exec($insertSql);
+            $safeSql = safe_backup_insert_sql($insertSql, $table, $allowedTablesGlobal);
+            if ($safeSql === null) {
+                throw new \Exception("SQL de restauration globale rejeté pour `$table` (non conforme)");
+            }
+            $pdo->exec($safeSql);
         }
 
-        // Restore files
+        // Restore files (ZipSlip-safe)
+        $baseStorage = __DIR__ . '/../../storage';
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if (strpos($name, 'files/') === 0 && $name !== 'files/') {
-                $destPath = __DIR__ . '/../../storage/' . substr($name, 6);
-                $destDir = dirname($destPath);
-                if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-                file_put_contents($destPath, $zip->getFromIndex($i));
-            }
+            if (strpos($name, 'files/') !== 0 || $name === 'files/') continue;
+
+            $destPath = safe_zip_entry_path($name, 'files/', $baseStorage);
+            if ($destPath === null) continue;
+            $destDir = dirname($destPath);
+            if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+            file_put_contents($destPath, $zip->getFromIndex($i));
         }
 
         $pdo->commit();
@@ -1078,7 +1192,8 @@ function admin_download_backup()
     if (!file_exists($zipPath)) not_found('Fichier introuvable');
 
     header('Content-Type: application/zip');
-    header('Content-Disposition: attachment; filename="' . $backup['filename'] . '"');
+    header('Content-Disposition: ' . safe_content_disposition($backup['filename'], 'attachment'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($zipPath));
     readfile($zipPath);
     exit;

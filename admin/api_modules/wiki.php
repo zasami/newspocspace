@@ -806,16 +806,21 @@ function admin_upload_wiki_image()
     if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) bad_request('Image manquante');
 
     $file = $_FILES['file'];
-    if ($file['size'] > 5 * 1024 * 1024) bad_request('Max 5 Mo');
-    if (!in_array($file['type'], ['image/jpeg','image/png','image/webp','image/gif'], true)) bad_request('Format non autorisé');
+
+    require_once __DIR__ . '/../../core/FileSecurity.php';
+    $err = FileSecurity::validateUpload($file, 'Image wiki', FileSecurity::ALLOW_IMAGE, 5 * 1024 * 1024);
+    if ($err) bad_request($err);
 
     $storageDir = __DIR__ . '/../../assets/uploads/wiki/';
     if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
 
-    $ext = preg_replace('/[^a-zA-Z0-9]/', '', pathinfo($file['name'], PATHINFO_EXTENSION));
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, FileSecurity::ALLOW_IMAGE, true)) bad_request('Extension non autorisée');
     $filename = bin2hex(random_bytes(16)) . '.' . $ext;
 
     if (!move_uploaded_file($file['tmp_name'], $storageDir . $filename)) bad_request('Erreur sauvegarde');
+    $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
+    if ($sanErr) { @unlink($storageDir . $filename); bad_request($sanErr); }
 
     respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
 }

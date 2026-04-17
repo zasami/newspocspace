@@ -89,6 +89,10 @@ class Auth
             'denied_perms' => Permission::getDenied($user['id']),
         ];
         $_SESSION['ss_last_activity'] = time();
+        // Bind session to IP + User-Agent hash (see require_auth())
+        $_SESSION['ss_ip']    = $_SERVER['REMOTE_ADDR']    ?? '';
+        $_SESSION['ss_ua']    = substr(hash('sha256', $_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 32);
+        $_SESSION['ss_login_at'] = time();
 
         if ($mustChangePassword) {
             $_SESSION['ss_must_change_password'] = true;
@@ -105,7 +109,26 @@ class Auth
 
     public static function logout(): void
     {
-        unset($_SESSION['ss_user'], $_SESSION['ss_last_activity']);
+        // Clear session data
+        $_SESSION = [];
+        // Expire the session cookie on the client
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', [
+                'expires'  => time() - 42000,
+                'path'     => $params['path'],
+                'domain'   => $params['domain'],
+                'secure'   => $params['secure'],
+                'httponly' => $params['httponly'],
+                'samesite' => $params['samesite'] ?? 'Lax',
+            ]);
+        }
+        @session_destroy();
+        // Start a fresh empty session so subsequent code doesn't fail
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            @session_start();
+        }
+        session_regenerate_id(true);
     }
 
     public static function me(): ?array
@@ -168,7 +191,7 @@ class Auth
 
         $hash = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
         Db::exec(
-            "UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?",
+            "UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL, password_changed_at = NOW() WHERE id = ?",
             [$hash, $user['id']]
         );
 

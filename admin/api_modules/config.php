@@ -130,13 +130,13 @@ function admin_upload_logo()
     }
 
     $file = $_FILES['logo'];
-    $maxSize = 5 * 1024 * 1024; // 5 MB
-    if ($file['size'] > $maxSize) bad_request('Fichier trop volumineux (max 5 Mo)');
+
+    // Hardened validation — SVG rejected (XSS vector)
+    require_once __DIR__ . '/../../core/FileSecurity.php';
+    $err = FileSecurity::validateUpload($file, 'Logo', FileSecurity::ALLOW_IMAGE, 5 * 1024 * 1024);
+    if ($err) bad_request($err);
 
     $mime = mime_content_type($file['tmp_name']);
-    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'])) {
-        bad_request('Format non supporté (JPG, PNG, GIF, WebP, SVG)');
-    }
 
     $uploadDir = __DIR__ . '/../../storage/logos/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
@@ -144,24 +144,17 @@ function admin_upload_logo()
     $filename = 'ems_logo_' . time() . '.webp';
     $destPath = $uploadDir . $filename;
 
-    if ($mime === 'image/svg+xml') {
-        // SVG: just copy as-is
-        $filename = 'ems_logo_' . time() . '.svg';
-        $destPath = $uploadDir . $filename;
-        move_uploaded_file($file['tmp_name'], $destPath);
-    } else {
-        // Convert to WebP
-        $img = match ($mime) {
-            'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
-            'image/png' => imagecreatefrompng($file['tmp_name']),
-            'image/gif' => imagecreatefromgif($file['tmp_name']),
-            'image/webp' => imagecreatefromwebp($file['tmp_name']),
-            default => null,
-        };
-        if (!$img) bad_request('Impossible de lire l\'image');
-        imagewebp($img, $destPath, 85);
-        imagedestroy($img);
-    }
+    // Always convert to WebP (no SVG accepted)
+    $img = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+        'image/png' => imagecreatefrompng($file['tmp_name']),
+        'image/gif' => imagecreatefromgif($file['tmp_name']),
+        'image/webp' => imagecreatefromwebp($file['tmp_name']),
+        default => null,
+    };
+    if (!$img) bad_request('Impossible de lire l\'image');
+    imagewebp($img, $destPath, 85);
+    imagedestroy($img);
 
     // Save URL in config
     $logoUrl = '/spocspace/storage/logos/' . $filename;

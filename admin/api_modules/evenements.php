@@ -247,22 +247,23 @@ function admin_upload_evenement_image() {
     }
 
     $file = $_FILES['file'];
-    $maxSize = 5 * 1024 * 1024;
-    if ($file['size'] > $maxSize) bad_request('Image trop volumineuse (max 5 Mo)');
 
-    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!in_array($file['type'], $allowed, true)) bad_request('Type de fichier non autorisé');
+    require_once __DIR__ . '/../../core/FileSecurity.php';
+    $err = FileSecurity::validateUpload($file, 'Évènement', FileSecurity::ALLOW_IMAGE, 5 * 1024 * 1024);
+    if ($err) bad_request($err);
 
     $storageDir = __DIR__ . '/../../assets/uploads/evenements/';
     if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, FileSecurity::ALLOW_IMAGE, true)) bad_request('Extension non autorisée');
     $filename = bin2hex(random_bytes(16)) . '.' . $ext;
 
     if (!move_uploaded_file($file['tmp_name'], $storageDir . $filename)) {
         bad_request('Erreur lors de la sauvegarde');
     }
+    $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
+    if ($sanErr) { @unlink($storageDir . $filename); bad_request($sanErr); }
 
     $url = '/spocspace/assets/uploads/evenements/' . $filename;
     respond(['success' => true, 'url' => $url]);

@@ -44,7 +44,8 @@ function serve_fiche_salaire()
     }
 
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="' . addslashes($fiche['original_name']) . '"');
+    header('Content-Disposition: ' . safe_content_disposition(addslashes($fiche['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, max-age=3600');
     readfile($filePath);

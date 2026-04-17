@@ -411,7 +411,10 @@ function save_my_report()
     $type = in_array($params['type'] ?? 'quotidien', ['quotidien','hebdo']) ? $params['type'] : 'quotidien';
     $dateReport = Sanitize::date($params['date_report'] ?? date('Y-m-d'));
     $titre = Sanitize::text($params['titre'] ?? '', 200);
-    $contenu = Sanitize::text($params['contenu'] ?? '', 10000);
+    // Rich-text content: allow a safe subset of HTML (TipTap output), strip scripts/handlers.
+    $rawContenu = (string) ($params['contenu'] ?? '');
+    if (mb_strlen($rawContenu) > 50000) $rawContenu = mb_substr($rawContenu, 0, 50000);
+    $contenu = HtmlSanitize::clean($rawContenu);
     // 'mode' évite de collisionner avec le champ 'action' de l'API
     $action = $params['mode'] ?? $params['action_mode'] ?? 'save';
 

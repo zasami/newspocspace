@@ -118,7 +118,8 @@ $nuitColor = '#B1A0C7'; // Nuit - purple
 // ── Build Excel XML ──
 $filename = "Planning_hebdo_Sem_{$weekNum}_du_{$dateFrom}_au_{$dateTo}.xls";
 header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Disposition: ' . safe_content_disposition($filename, 'attachment'));
+    header('X-Content-Type-Options: nosniff');
 header('Cache-Control: max-age=0');
 
 // Helper to output XML cell

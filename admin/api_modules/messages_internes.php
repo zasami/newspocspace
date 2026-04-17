@@ -314,9 +314,11 @@ function admin_download_message_attachment()
 
     header('Content-Type: ' . ($att['mime_type'] ?: 'application/octet-stream'));
     if (!str_starts_with($att['mime_type'] ?? '', 'image/')) {
-        header('Content-Disposition: attachment; filename="' . basename($att['original_name']) . '"');
+        header('Content-Disposition: ' . safe_content_disposition(basename($att['original_name']), 'attachment'));
+    header('X-Content-Type-Options: nosniff');
     } else {
-        header('Content-Disposition: inline; filename="' . basename($att['original_name']) . '"');
+        header('Content-Disposition: ' . safe_content_disposition(basename($att['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     }
     header('Content-Length: ' . filesize($path));
     header('Cache-Control: no-cache');

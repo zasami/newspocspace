@@ -28,9 +28,22 @@ function admin_save_mur_config() {
     $updates = $params['config'] ?? [];
     if (!is_array($updates)) bad_request('Invalid config');
 
+    // Whitelist of keys that must be strict hex colors (rendered in CSS style=)
+    $hexColorKeys = ['hero_color', 'accent_color'];
+
     foreach ($updates as $key => $value) {
         if (!in_array($key, $allowed)) continue;
-        $val = Sanitize::text($value);
+
+        if (in_array($key, $hexColorKeys, true)) {
+            // Reject anything that isn't a plain #rgb/#rrggbb/#rrggbbaa hex color
+            if (!preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', (string)$value)) {
+                bad_request("Couleur invalide pour $key (attendu format #RRGGBB)");
+            }
+            $val = strtolower((string)$value);
+        } else {
+            $val = Sanitize::text($value);
+        }
+
         Db::exec(
             "INSERT INTO mur_config (config_key, config_value) VALUES (?, ?)
              ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)",

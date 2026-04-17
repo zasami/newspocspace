@@ -104,7 +104,8 @@ function serve_document()
     }
 
     header('Content-Type: ' . $doc['mime_type']);
-    header('Content-Disposition: inline; filename="' . addslashes($doc['original_name']) . '"');
+    header('Content-Disposition: ' . safe_content_disposition(addslashes($doc['original_name']), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, max-age=3600');
     readfile($filePath);

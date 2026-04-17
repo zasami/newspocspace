@@ -51,7 +51,8 @@ function admin_get_email_template()
 
 function admin_save_email_template()
 {
-    $user = require_responsable();
+    // Template changes affect every outbound email → admin only
+    $user = require_admin();
     global $params;
 
     $key = $params['key'] ?? '';
@@ -61,8 +62,13 @@ function admin_save_email_template()
     if (!isset($defs[$key])) not_found('Template inconnu');
 
     $subject = Sanitize::text($params['subject'] ?? '', 255);
-    $headerColor = Sanitize::text($params['header_color'] ?? '#2d4a43', 10);
-    $headerTextColor = Sanitize::text($params['header_text_color'] ?? '#ffffff', 10);
+    $hexRe = '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/';
+    $headerColorRaw     = (string)($params['header_color'] ?? '#2d4a43');
+    $headerTextColorRaw = (string)($params['header_text_color'] ?? '#ffffff');
+    if (!preg_match($hexRe, $headerColorRaw))     bad_request('header_color doit être un code hexadécimal (#RRGGBB)');
+    if (!preg_match($hexRe, $headerTextColorRaw)) bad_request('header_text_color doit être un code hexadécimal (#RRGGBB)');
+    $headerColor     = strtolower($headerColorRaw);
+    $headerTextColor = strtolower($headerTextColorRaw);
     $showLogo = !empty($params['show_logo']) ? 1 : 0;
     $headerTitle = Sanitize::text($params['header_title'] ?? '', 255);
     $headerSubtitle = Sanitize::text($params['header_subtitle'] ?? '', 255);
@@ -259,13 +265,10 @@ function _render_preview_block(array $block, array $vars): string
 
 function _sanitize_block_html(string $html): string
 {
-    // Strip script/style tags, allow safe formatting
-    $html = preg_replace('#<(script|style|iframe|object|embed)[^>]*>.*?</\1>#is', '', $html);
-    $html = preg_replace('#<(script|style|iframe|object|embed)[^>]*/?>#is', '', $html);
-    // Remove on* event handlers
-    $html = preg_replace('#\son\w+\s*=\s*"[^"]*"#i', '', $html);
-    $html = preg_replace("#\son\w+\s*=\s*'[^']*'#i", '', $html);
-    return $html;
+    // DOM-based allowlist sanitizer — far safer than regex.
+    // Images are allowed here because email templates can legitimately embed
+    // https/data:image/* illustrations.
+    return HtmlSanitize::clean($html, ['allow_images' => true]);
 }
 
 /**
@@ -273,12 +276,14 @@ function _sanitize_block_html(string $html): string
  */
 function admin_send_test_email_template()
 {
-    $user = require_responsable();
+    $user = require_admin();
     global $params;
     $key = $params['key'] ?? '';
-    $toEmail = Sanitize::email($params['to'] ?? $user['email']);
+    // Test emails are always sent to the current admin's own address, never
+    // to an arbitrary recipient (anti-phishing-abuse).
+    $toEmail = Sanitize::email($user['email'] ?? '');
     if (!$key) bad_request('key requis');
-    if (!$toEmail) bad_request('Email destinataire invalide');
+    if (!$toEmail) bad_request('Adresse email administrateur introuvable');
 
     // Use sample data
     $samples = [

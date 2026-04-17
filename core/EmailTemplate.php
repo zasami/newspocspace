@@ -240,12 +240,18 @@ class EmailTemplate
     }
 
     /**
-     * Remplace les variables {{var}} par leurs valeurs
+     * Remplace les variables {{var}} par leurs valeurs.
+     * Les valeurs sont HTML-escapées par défaut (les templates sont servis en
+     * HTML email). Les variables explicitement destinées à contenir des URLs
+     * (reset_link, url_*, etc.) passent par la même échappe — acceptable car
+     * l'href environnant est lui-même échappé.
      */
     public static function interpolate(string $text, array $vars): string
     {
         return preg_replace_callback('/\{\{(\w+)\}\}/', function($m) use ($vars) {
-            return isset($vars[$m[1]]) ? $vars[$m[1]] : $m[0];
+            if (!isset($vars[$m[1]])) return $m[0];
+            $val = (string) $vars[$m[1]];
+            return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
         }, $text);
     }
 

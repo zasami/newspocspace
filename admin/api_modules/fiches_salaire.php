@@ -296,7 +296,8 @@ function admin_serve_fiche_salaire()
     $downloadName = "Fiche_{$fiche['nom']}_{$fiche['prenom']}_{$fiche['annee']}_" . str_pad($fiche['mois'], 2, '0', STR_PAD_LEFT) . '.pdf';
 
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="' . addslashes($downloadName) . '"');
+    header('Content-Disposition: ' . safe_content_disposition(addslashes($downloadName), 'inline'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($filePath));
     header('Cache-Control: private, max-age=3600');
     readfile($filePath);

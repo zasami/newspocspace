@@ -199,7 +199,8 @@ function admin_email_ext_download_attachment()
     $att = $mailer->downloadAttachment($folder, $uid, $partIndex);
 
     header('Content-Type: ' . $att['mime']);
-    header('Content-Disposition: attachment; filename="' . $att['filename'] . '"');
+    header('Content-Disposition: ' . safe_content_disposition($att['filename'], 'attachment'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . $att['size']);
     echo $att['data'];
     exit;

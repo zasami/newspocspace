@@ -276,7 +276,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 <div class="installer">
   <div class="installer-header">
-    <img src="/spocspace/logo.png" alt="SpocSpace">
+    <img src="/spocspace/ss-logo.png" alt="SpocSpace">
     <h1>SpocSpace</h1>
     <p>Assistant d'installation</p>
   </div>

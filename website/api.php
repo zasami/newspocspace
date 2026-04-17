@@ -714,12 +714,18 @@ case 'livre_or_submit':
         [$id, $nom, $email ?: null, $lien ?: null, $note, $titre ?: null, $message, $cible, $_SERVER['REMOTE_ADDR'] ?? '']
     );
 
-    // Notif admin
+    // Notif admin (hardened headers)
     $adminEmail = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_email'");
-    if ($adminEmail && function_exists('mail')) {
-        $headers = "From: noreply@ems-la-terrassiere.ch\r\nContent-Type: text/plain; charset=UTF-8";
-        $body = "Nouveau témoignage à modérer.\n\nDe: $nom\nNote: $note/5\nCible: $cible\n\n$message";
-        @mail($adminEmail, "[Livre d'or] Nouveau témoignage de $nom", $body, $headers);
+    if ($adminEmail && filter_var($adminEmail, FILTER_VALIDATE_EMAIL) && function_exists('mail')) {
+        $stripHeader = fn($s) => preg_replace('/[\r\n\0]/', '', (string)$s);
+        $safeNom   = mb_substr($stripHeader($nom), 0, 100);
+        $safeCible = mb_substr($stripHeader($cible), 0, 100);
+        $domain    = parse_url('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST) ?: 'localhost';
+        $fromAddr  = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $domain);
+        $headers   = "From: $fromAddr\r\nContent-Type: text/plain; charset=UTF-8\r\nX-Mailer: SpocSpace\r\n";
+        $body      = "Nouveau témoignage à modérer.\n\nDe: $safeNom\nNote: $note/5\nCible: $safeCible\n\n$message";
+        $subject   = "[Livre d'or] Nouveau témoignage de " . $safeNom;
+        @mail($adminEmail, $subject, $body, $headers);
     }
 
     respond(['success' => true, 'message' => 'Merci ! Votre témoignage a été envoyé. Il sera publié après modération.']);
@@ -824,11 +830,26 @@ case 'contact_submit':
         [$id, $nom, $email, $sujet, $message, $_SERVER['REMOTE_ADDR'] ?? '']
     );
 
-    // Send notification email to admin
+    // Send notification email to admin (with hardened headers to prevent injection)
     $adminEmail = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_email'");
-    if ($adminEmail && function_exists('mail')) {
-        $headers = "From: $email\r\nReply-To: $email\r\nContent-Type: text/plain; charset=UTF-8";
-        @mail($adminEmail, "[EMS Contact] $sujet — $nom", "Nom: $nom\nEmail: $email\nSujet: $sujet\n\n$message", $headers);
+    if ($adminEmail && filter_var($adminEmail, FILTER_VALIDATE_EMAIL) && function_exists('mail')) {
+        // Strip CR/LF from anything that ends up in a header
+        $stripHeader = fn($s) => preg_replace('/[\r\n\0]/', '', (string)$s);
+        $safeEmail   = $stripHeader($email);
+        $safeSujet   = mb_substr($stripHeader($sujet), 0, 100);
+        $safeNom     = mb_substr($stripHeader($nom), 0, 100);
+        $domain      = parse_url('https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST) ?: 'localhost';
+        $fromAddr    = 'no-reply@' . preg_replace('/[^a-z0-9.\-]/i', '', $domain);
+
+        $headers  = "From: $fromAddr\r\n";
+        $headers .= "Reply-To: $safeEmail\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $headers .= "X-Mailer: SpocSpace\r\n";
+
+        $subject = "[EMS Contact] " . $safeSujet . " — " . $safeNom;
+        $body    = "Nom: $safeNom\nEmail: $safeEmail\nSujet: $safeSujet\n\n" . $message;
+
+        @mail($adminEmail, $subject, $body, $headers);
     }
 
     respond(['success' => true, 'message' => 'Votre message a été envoyé.']);
