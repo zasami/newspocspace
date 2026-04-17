@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -157,6 +157,7 @@ $pageLabels = [
     'annonces'         => 'Annonces officielles',
     'wiki-analytics'   => 'Analytics Wiki',
     'securite'         => 'Sécurité & Antivirus',
+    'email-templates'  => 'Templates d\'email',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -249,6 +250,7 @@ $sidebarCategories = [
             'affichage-planning' => ['label' => 'Affichage planning',  'icon' => 'sliders'],
             'config-ia'          => ['label' => 'Config IA',           'icon' => 'cpu'],
             'email-config'       => ['label' => 'Config Email',        'icon' => 'envelope-at'],
+            'email-templates'    => ['label' => "Templates d'email",    'icon' => 'envelope-paper'],
             'securite'           => ['label' => 'Sécurité',            'icon' => 'shield-check'],
             'sauvegardes'        => ['label' => 'Sauvegardes',          'icon' => 'database-down'],
         ],

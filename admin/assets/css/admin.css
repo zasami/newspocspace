@@ -1072,36 +1072,78 @@ input[type="checkbox"]:not(.form-check-input):hover {
   align-items: center;
 }
 
-/* ── Standard close button for all modals ── */
-.confirm-close-btn,
-.pv-modal-close,
-.modal-header .btn-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  color: #6b7280;
-  transition: all .2s;
-  flex-shrink: 0;
-  font-size: .85rem;
-  line-height: 1;
+/* ══════════════════════════════════════
+   STANDARD MODAL CLOSE BUTTON (Claude-style)
+   Unifie tous les patterns existants : .btn-close, .confirm-close-btn,
+   .ss-modal-close, et tout button[data-bs-dismiss="modal"] dans .modal-header
+   (couvre aussi .pv-modal-close, .abs-modal-close, .ap-modal-close,
+    .rep-modal-close-btn, .modal-close-btn, .sd-close-btn, etc.)
+   ══════════════════════════════════════ */
+.modal-header .btn-close,
+.modal-header .confirm-close-btn,
+.modal-header button[data-bs-dismiss="modal"],
+.ss-modal-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0;
+  color: var(--cl-text-muted, #6b7280) !important;
+  opacity: 1 !important;
+  transition: background-color .15s ease, color .15s ease !important;
   cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: none !important;
 }
-.confirm-close-btn:hover,
-.pv-modal-close:hover,
-.modal-header .btn-close:hover {
-  background: #f3f2ee;
-  color: #1a1a1a;
-  border-color: #d1cfc5;
+.modal-header .btn-close:hover,
+.modal-header .confirm-close-btn:hover,
+.modal-header button[data-bs-dismiss="modal"]:hover,
+.ss-modal-close:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: var(--cl-text, #1a1a1a) !important;
+  border-color: transparent !important;
 }
-.confirm-close-btn i,
-.pv-modal-close i {
-  font-size: .85rem;
+.modal-header .btn-close:focus,
+.modal-header .confirm-close-btn:focus,
+.modal-header button[data-bs-dismiss="modal"]:focus,
+.ss-modal-close:focus,
+.ss-modal-close:focus-visible {
+  box-shadow: none !important;
+  outline: none !important;
+}
+.modal-header .btn-close:active,
+.modal-header button[data-bs-dismiss="modal"]:active,
+.ss-modal-close:active {
+  background-color: rgba(0, 0, 0, 0.10) !important;
+}
+/* Remplace le SVG natif Bootstrap par l'icône bi-x-lg (\f659) */
+.modal-header .btn-close::before {
+  content: "\f659";
+  font-family: "bootstrap-icons" !important;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+}
+/* Normalise la taille de l'icône <i.bi> interne (bi-x-lg / bi-x) */
+.modal-header .confirm-close-btn .bi,
+.modal-header button[data-bs-dismiss="modal"] .bi,
+.ss-modal-close .bi {
+  font-size: 1.05rem !important;
+  line-height: 1 !important;
 }
 
 /* Modal type: success (green) */

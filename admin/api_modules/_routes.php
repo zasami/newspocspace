@@ -230,6 +230,11 @@ return [
         'admin_save_pixabay_annonce',
         'admin_ack_annonce', 'admin_get_annonce_acks',
     ],
+    'email_templates' => [
+        'admin_list_email_templates', 'admin_get_email_template',
+        'admin_save_email_template', 'admin_reset_email_template',
+        'admin_preview_email_template', 'admin_send_test_email_template',
+    ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',
         'admin_get_wiki_pages', 'admin_get_wiki_page', 'admin_create_wiki_page',
