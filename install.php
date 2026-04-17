@@ -11,12 +11,39 @@
  *   6. Lock installer
  */
 
-// Prevent access if already installed
+// --- Installer access control ---
+// 1. If already installed -> redirect to login
+// 2. Installer requires an explicit "enable" token: storage/.install-enabled
+//    The token must also be passed in the URL (?key=...). See scripts/enable-install.php
 $lockFile = __DIR__ . '/storage/.installed';
+$enableFile = __DIR__ . '/storage/.install-enabled';
+
 if (file_exists($lockFile)) {
     header('Location: /spocspace/login');
     exit;
 }
+
+if (!file_exists($enableFile)) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "Installation désactivée.\n\n";
+    echo "Pour activer l'installeur, exécuter en SSH :\n";
+    echo "  php scripts/enable-install.php\n\n";
+    echo "Le script affichera une URL d'accès sécurisée (token aléatoire).\n";
+    exit;
+}
+
+$expectedToken = trim(@file_get_contents($enableFile));
+$providedToken = $_GET['key'] ?? ($_POST['_install_key'] ?? '');
+if (!$expectedToken || !is_string($providedToken) || !hash_equals($expectedToken, (string)$providedToken)) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "Token d'installation invalide ou absent.\n";
+    echo "Utiliser l'URL complète fournie par scripts/enable-install.php.\n";
+    exit;
+}
+
+$INSTALL_KEY = $expectedToken;
 
 $step = intval($_GET['step'] ?? 1);
 $error = '';
@@ -171,6 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             file_put_contents($lockFile, date('Y-m-d H:i:s') . "\nInstalled by: $email\n");
             chmod($lockFile, 0600);
 
+            // Disable installer (remove enable token)
+            if (file_exists($enableFile)) {
+                @unlink($enableFile);
+            }
+
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
         } catch (Exception $e) {
@@ -275,6 +307,13 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 let currentStep = 1;
 const checks = <?= json_encode($checks) ?>;
 const allPassed = <?= $allPassed ? 'true' : 'false' ?>;
+const INSTALL_KEY = <?= json_encode($INSTALL_KEY) ?>;
+
+// Helper: attach install key to any FormData before POST
+function installFetch(fd) {
+    fd.append('_install_key', INSTALL_KEY);
+    return fetch('?key=' + encodeURIComponent(INSTALL_KEY), { method: 'POST', body: fd }).then(r => r.json());
+}
 
 function showStep(step) {
     currentStep = step;
@@ -405,7 +444,7 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
         fd.append('db_name', document.getElementById('dbName').value);
         fd.append('db_user', document.getElementById('dbUser').value);
         fd.append('db_pass', document.getElementById('dbPass').value);
-        const res = await fetch('', { method: 'POST', body: fd }).then(r => r.json());
+        const res = await installFetch(fd);
         btn.disabled = false;
         const div = document.getElementById('dbResult');
         if (res.success) {
@@ -423,7 +462,7 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px"></span> Installation...';
         const fd = new FormData();
         fd.append('action', 'run_migrations');
-        const res = await fetch('', { method: 'POST', body: fd }).then(r => r.json());
+        const res = await installFetch(fd);
         btn.disabled = false;
         const div = document.getElementById('migResult');
         if (res.success) {
@@ -451,7 +490,7 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
         fd.append('ems_email', document.getElementById('emsEmail').value);
         fd.append('ems_type', document.getElementById('emsType').value);
         fd.append('ems_nb_lits', document.getElementById('emsLits').value);
-        const res = await fetch('', { method: 'POST', body: fd }).then(r => r.json());
+        const res = await installFetch(fd);
         btn.disabled = false;
         if (res.success) { showStep(5); }
         else { document.getElementById('emsResult').innerHTML = `<div class="alert alert-danger">${res.error}</div>`; }
@@ -479,7 +518,7 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
         fd.append('admin_nom', nom);
         fd.append('admin_email', email);
         fd.append('admin_password', pass);
-        const res = await fetch('', { method: 'POST', body: fd }).then(r => r.json());
+        const res = await installFetch(fd);
         btn.disabled = false;
         if (res.success) { showStep(6); }
         else {

@@ -1,1 +1,11 @@
-Deny from all
+# Direct access forbidden. Backups served via authenticated admin API only.
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order deny,allow
+  Deny from all
+</IfModule>
+
+Options -Indexes -ExecCGI -MultiViews

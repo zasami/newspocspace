@@ -1,6 +1,61 @@
 RewriteEngine On
 RewriteBase /spocspace/
 
+# --- Security hardening ---
+
+# Block access to dotfiles (.env, .git, .htaccess, .gitignore, .DS_Store, etc.)
+<FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Block .env* variants explicitly
+<FilesMatch "^\.env($|\..*)">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Block composer/git/lock/sql/md files from direct download
+<FilesMatch "\.(lock|sql|md|json|log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Allow manifest.json (PWA) + raw_gemini.json should be deleted, but just in case
+<Files "manifest.json">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+  </IfModule>
+</Files>
+
+# Disable directory listing globally
+Options -Indexes
+
+# Disable MultiViews (prevents content negotiation attacks)
+Options -MultiViews
+
+# Prevent server signature in responses
+ServerSignature Off
+
 # Service Worker must never be cached by browser
 <Files "sw.js">
   Header set Cache-Control "no-cache, no-store, must-revalidate"

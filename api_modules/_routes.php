@@ -3,7 +3,6 @@ return [
     'auth' => [
         'login', 'logout', 'me', 'request_reset', 'reset_password',
         'update_profile', 'update_password', 'upload_avatar',
-        'demo_unlock_rate_limit',
     ],
     'sync' => [
         'sync_delta',

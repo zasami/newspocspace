@@ -111,6 +111,15 @@ function admin_create_user()
     $typeContrat = $params['type_contrat'] ?? 'CDI';
     $telephone = Sanitize::phone($params['telephone'] ?? '');
 
+    $validRoles = ['collaborateur', 'responsable', 'admin', 'direction'];
+    if (!in_array($role, $validRoles, true)) {
+        bad_request('Rôle invalide');
+    }
+    $validTypes = ['CDI', 'CDD', 'stagiaire', 'civiliste', 'interim'];
+    if (!in_array($typeContrat, $validTypes, true)) {
+        bad_request('Type de contrat invalide');
+    }
+
     if (!$email || !$nom || !$prenom) {
         bad_request('Email, nom et prénom requis');
     }
@@ -227,6 +236,27 @@ function admin_update_user()
 
     // Capture previous fonction_id to detect changes
     $prevFonctionId = Db::getOne("SELECT fonction_id FROM users WHERE id = ?", [$id]);
+
+    // Security: validate role whitelist + block self-modification of own role
+    if (isset($params['role'])) {
+        $validRoles = ['collaborateur', 'responsable', 'admin', 'direction'];
+        if (!in_array($params['role'], $validRoles, true)) {
+            bad_request('Rôle invalide');
+        }
+        $currentUserId = $_SESSION['ss_user']['id'] ?? '';
+        if ($currentUserId && $id === $currentUserId) {
+            $currentRole = Db::getOne("SELECT role FROM users WHERE id = ?", [$currentUserId]);
+            if ($params['role'] !== $currentRole) {
+                forbidden('Vous ne pouvez pas modifier votre propre rôle');
+            }
+        }
+    }
+    if (isset($params['type_contrat'])) {
+        $validTypes = ['CDI', 'CDD', 'stagiaire', 'civiliste', 'interim'];
+        if (!in_array($params['type_contrat'], $validTypes, true)) {
+            bad_request('Type de contrat invalide');
+        }
+    }
 
     $fields = [];
     $values = [];
