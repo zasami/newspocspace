@@ -200,6 +200,11 @@ function _render_preview(array $tpl, array $vars): array
     if ($tpl['show_logo']) {
         $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
         if ($emsLogo) {
+            $pngCandidate = preg_replace('/\.webp$/i', '.png', $emsLogo);
+            $pngPath = __DIR__ . '/../..' . $pngCandidate;
+            if ($pngCandidate !== $emsLogo && file_exists($pngPath)) {
+                $emsLogo = $pngCandidate;
+            }
             $host = $_SERVER['HTTP_HOST'] ?? 'www.zkriva.com';
             $logoUrl = 'https://' . $host . $emsLogo;
         }
@@ -279,11 +284,9 @@ function admin_send_test_email_template()
     $user = require_admin();
     global $params;
     $key = $params['key'] ?? '';
-    // Test emails are always sent to the current admin's own address, never
-    // to an arbitrary recipient (anti-phishing-abuse).
-    $toEmail = Sanitize::email($user['email'] ?? '');
+    $toEmail = Sanitize::email($params['to'] ?? '');
     if (!$key) bad_request('key requis');
-    if (!$toEmail) bad_request('Adresse email administrateur introuvable');
+    if (!$toEmail) bad_request('Adresse email destinataire invalide');
 
     // Use sample data
     $samples = [

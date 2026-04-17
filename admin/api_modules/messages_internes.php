@@ -14,20 +14,23 @@ function admin_get_all_messages()
     $limit = 50;
     $offset = ($page - 1) * $limit;
 
-    $where = "e.is_draft = 0";
     $binds = [];
 
-    if ($tab === 'trash') {
-        $where .= " AND ((e.sender_deleted = 1 AND e.from_user_id = ?) OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 1))";
+    if ($tab === 'drafts') {
+        $where = "e.is_draft = 1 AND e.from_user_id = ? AND e.sender_deleted = 0";
+        $binds[] = $adminId;
+    } elseif ($tab === 'trash') {
+        $where = "e.is_draft = 0 AND ((e.sender_deleted = 1 AND e.from_user_id = ?) OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 1))";
         $binds[] = $adminId;
         $binds[] = $adminId;
     } elseif ($tab === 'inbox') {
-        $where .= " AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
+        $where = "e.is_draft = 0 AND EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0)";
         $binds[] = $adminId;
     } elseif ($tab === 'sent') {
-        $where .= " AND e.from_user_id = ? AND e.sender_deleted = 0";
+        $where = "e.is_draft = 0 AND e.from_user_id = ? AND e.sender_deleted = 0";
         $binds[] = $adminId;
     } else {
+        $where = "e.is_draft = 0";
         // All: messages sent by me (not deleted) + messages received by me (not deleted)
         $where .= " AND ((e.from_user_id = ? AND e.sender_deleted = 0) OR EXISTS (SELECT 1 FROM message_recipients er WHERE er.email_id = e.id AND er.user_id = ? AND er.deleted = 0))";
         $binds[] = $adminId;
@@ -283,8 +286,14 @@ function admin_get_message_stats()
     $total = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
     $today = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
     $week = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-    $unread = (int)Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$userId]);
+    $unread = (int)Db::getOne(
+        "SELECT COUNT(DISTINCT mr.email_id) FROM message_recipients mr
+         JOIN messages m ON m.id = mr.email_id
+         WHERE mr.user_id = ? AND mr.lu = 0 AND mr.deleted = 0 AND m.is_draft = 0",
+        [$userId]
+    );
     $attachments = (int)Db::getOne("SELECT COUNT(*) FROM message_attachments");
+    $drafts = (int)Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 1 AND from_user_id = ? AND sender_deleted = 0", [$userId]);
     $trash = (int)Db::getOne(
         "SELECT COUNT(*) FROM messages e WHERE e.is_draft = 0 AND (
             (e.sender_deleted = 1 AND e.from_user_id = ?)
@@ -392,9 +401,11 @@ function admin_get_unread_counts()
     $user = require_auth();
     $userId = $user['id'];
 
-    // Internal messages (message_recipients table)
+    // Internal messages (message_recipients table) — exclude drafts
     $unreadMessages = (int) Db::getOne(
-        "SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0",
+        "SELECT COUNT(*) FROM message_recipients mr
+         JOIN messages m ON m.id = mr.email_id
+         WHERE mr.user_id = ? AND mr.lu = 0 AND mr.deleted = 0 AND m.is_draft = 0",
         [$userId]
     );
 

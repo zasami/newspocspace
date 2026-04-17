@@ -153,7 +153,10 @@ function admin_upload_logo()
         default => null,
     };
     if (!$img) bad_request('Impossible de lire l\'image');
+    imagesavealpha($img, true);
     imagewebp($img, $destPath, 85);
+    // Also save PNG version for email clients (WebP not supported in Outlook, older Apple Mail, etc.)
+    imagepng($img, str_replace('.webp', '.png', $destPath), 6);
     imagedestroy($img);
 
     // Save URL in config

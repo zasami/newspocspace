@@ -225,9 +225,11 @@ $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header d-flex align-items-center">
-        <h6 class="modal-title mb-0" id="alertDetailTitle"><i class="bi bi-megaphone"></i> Détail alerte</h6>
-        <button type="button" class="btn btn-sm ms-2 al-btn-icon" id="btnToggleAlertMsg" title="Voir le message"><i class="bi bi-info-lg al-icon-sm-muted"></i></button>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center al-btn-close-circle" data-bs-dismiss="modal"><i class="bi bi-x-lg al-icon-sm"></i></button>
+        <div class="d-flex align-items-center gap-2 me-auto">
+          <h6 class="modal-title mb-0" id="alertDetailTitle"><i class="bi bi-megaphone"></i> Détail alerte</h6>
+          <button type="button" class="btn btn-sm al-btn-icon" id="btnToggleAlertMsg" title="Voir le message"><i class="bi bi-info-lg al-icon-sm-muted"></i></button>
+        </div>
+        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center al-btn-close-circle" data-bs-dismiss="modal"><i class="bi bi-x-lg al-icon-sm"></i></button>
       </div>
       <div class="modal-body p-0 al-modal-scroll">
         <div id="alertDetailInfo" class="px-3 py-3 al-info-banner"></div>

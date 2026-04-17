@@ -1,7 +1,7 @@
 <div class="login-page">
   <div class="login-card">
     <div class="login-header">
-      <img src="/spocspace/logo.png" alt="SpocSpace" class="login-logo-img">
+      <img src="/spocspace/ss-logo.png" alt="SpocSpace" class="login-logo-img">
       <h1>Bienvenue</h1>
       <p>Connectez-vous à SpocSpace</p>
     </div>

@@ -14,7 +14,12 @@ $emailContacts = Db::fetchAll(
 
 $emailStatsTotal       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0");
 $emailStatsToday       = (int) Db::getOne("SELECT COUNT(*) FROM messages WHERE is_draft = 0 AND DATE(created_at) = CURDATE()");
-$emailStatsUnread      = (int) Db::getOne("SELECT COUNT(DISTINCT email_id) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$_SESSION['ss_user']['id'] ?? '']);
+$emailStatsUnread      = (int) Db::getOne(
+    "SELECT COUNT(DISTINCT mr.email_id) FROM message_recipients mr
+     JOIN messages m ON m.id = mr.email_id
+     WHERE mr.user_id = ? AND mr.lu = 0 AND mr.deleted = 0 AND m.is_draft = 0",
+    [$_SESSION['ss_user']['id'] ?? '']
+);
 $emailStatsAttachments = (int) Db::getOne("SELECT COUNT(*) FROM message_attachments");
 $emailStatsTrash       = (int) Db::getOne(
     "SELECT COUNT(*) FROM messages e WHERE e.is_draft = 0 AND (
@@ -433,6 +438,8 @@ $emailStatsTrash       = (int) Db::getOne(
         }
         // Refresh unread badges (message was just marked as read)
         if (window.__ztRefreshUnread) window.__ztRefreshUnread();
+        // Refresh page-level stats (Réception tab badge + stats line)
+        loadStats();
 
         const e = res.email;
         const recipients = res.recipients || [];

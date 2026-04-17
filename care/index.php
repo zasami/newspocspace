@@ -175,7 +175,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <?php if ($emsLogo): ?>
         <img src="<?= h($emsLogo) ?>" alt="" class="brand-logo">
       <?php else: ?>
-        <img src="/spocspace/logo.png" alt="" class="brand-logo">
+        <img src="/spocspace/ss-logo.png" alt="" class="brand-logo">
       <?php endif; ?>
       <span class="brand-text">SpocCare</span>
     </a>

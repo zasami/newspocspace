@@ -19,7 +19,7 @@ function get_mur_config() {
     require_auth();
     $cfg = _mur_config();
     // Get EMS logo as default hero avatar
-    $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/spocspace/logo.png';
+    $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/spocspace/ss-logo.png';
     $emsNom  = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'SpocSpace';
 
     respond([

@@ -253,7 +253,7 @@ if ($user && !empty($deniedPerms)) {
         <i class="bi bi-list"></i>
       </button>
       <a href="/spocspace/home" data-link="home" class="fe-topbar-brand" title="Accueil">
-        <img src="/spocspace/logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
+        <img src="/spocspace/ss-logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
         <span class="fe-conn-status" id="feConnStatus" title="En ligne">
           <span class="fe-conn-dot fe-conn-online"></span>
           <span class="fe-conn-count" id="feConnPending" style="display:none"></span>

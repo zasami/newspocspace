@@ -288,7 +288,7 @@ $activeSection = match($page) {
 <aside class="admin-sidebar" id="adminSidebar">
   <div class="sidebar-header">
     <a href="<?= admin_url() ?>" class="sidebar-brand-link">
-      <img src="/spocspace/logo.png" alt="" class="brand-logo">
+      <img src="/spocspace/ss-logo.png" alt="" class="brand-logo">
       <span class="brand-text"><?= h($emsNom) ?></span>
     </a>
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Réduire le menu">

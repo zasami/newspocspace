@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v36';
+const CACHE_VERSION = 'ss-v37';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -13,7 +13,7 @@ const SYNC_QUEUE = 'ss-sync-queue';
 const PRECACHE_URLS = [
   '/spocspace/',
   '/spocspace/login',
-  '/spocspace/logo.png',
+  '/spocspace/ss-logo.png',
   '/spocspace/manifest.json',
   '/spocspace/assets/css/vendor/bootstrap.min.css',
   '/spocspace/assets/css/vendor/bootstrap-icons.min.css',

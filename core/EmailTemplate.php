@@ -273,9 +273,14 @@ class EmailTemplate
         if ($tpl['show_logo']) {
             $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
             if ($emsLogo) {
-                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+                // Email clients (Outlook, Apple Mail older) don't support WebP → prefer PNG
+                $pngCandidate = preg_replace('/\.webp$/i', '.png', $emsLogo);
+                $pngPath = __DIR__ . '/..' . $pngCandidate;
+                if ($pngCandidate !== $emsLogo && file_exists($pngPath)) {
+                    $emsLogo = $pngCandidate;
+                }
                 $host = $_SERVER['HTTP_HOST'] ?? 'www.zkriva.com';
-                $logoUrl = $scheme . '://' . $host . $emsLogo;
+                $logoUrl = 'https://' . $host . $emsLogo;
             }
         }
 

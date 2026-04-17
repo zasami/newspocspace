@@ -16,11 +16,12 @@ require_responsable();
 }
 .et-list-item:last-child { border-bottom: none; }
 .et-list-item:hover { background: var(--cl-bg, #F7F5F2); }
-.et-list-item.active { background: #f4f9f6; border-left: 3px solid #2d4a43; padding-left: 11px; }
+.et-list-item.active { background: #F7F5F2; border-left: 3px solid #1A1A1A; padding-left: 11px; }
+.et-list-item.active .et-list-item-name { color: #1A1A1A; font-weight: 700; }
 .et-list-item-info { flex: 1; min-width: 0; }
 .et-list-item-name { font-size: .86rem; font-weight: 600; color: var(--cl-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .et-list-item-meta { font-size: .7rem; color: var(--cl-text-muted); margin-top: 2px; }
-.et-custom-dot { width: 8px; height: 8px; border-radius: 50%; background: #2d4a43; flex-shrink: 0; }
+.et-custom-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cl-accent, #1A1A1A); flex-shrink: 0; }
 
 /* ── Editor pane ── */
 .et-editor { background: #fff; border: 1px solid var(--cl-border-light, #E8E4DE); border-radius: 12px; padding: 20px; }
@@ -35,7 +36,10 @@ require_responsable();
     padding: 8px 12px; border: 1.5px solid var(--cl-border-light, #E8E4DE); border-radius: 8px;
     font-size: .88rem; width: 100%; font-family: inherit;
 }
-.et-input:focus, .et-select:focus { outline: none; border-color: #2d4a43; }
+.et-input:focus, .et-select:focus {
+    outline: none; border-color: #C4A882;
+    box-shadow: 0 0 0 3px rgba(196,168,130,.18);
+}
 .et-textarea { min-height: 80px; resize: vertical; }
 
 .et-color-row { display: flex; align-items: center; gap: 10px; }
@@ -80,8 +84,89 @@ require_responsable();
 .et-block-content textarea, .et-block-content input {
     background: #fff; border: 1.5px solid var(--cl-border-light); border-radius: 6px;
     padding: 6px 10px; width: 100%; font-size: .86rem; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
 }
+.et-block-content textarea:focus, .et-block-content input:focus {
+    outline: none; border-color: #C4A882;
+    box-shadow: 0 0 0 3px rgba(196,168,130,.18);
+}
+.et-block-content input[type="color"]:focus { box-shadow: none; }
 .et-block-content textarea { min-height: 60px; resize: vertical; }
+.et-block-content textarea[data-rich="1"] { border-top-left-radius: 0; border-top-right-radius: 0; border-top: none; }
+
+/* ── Rich editor wrapper (unified border when focused) ── */
+.et-rich-wrap {
+    border: 1.5px solid var(--cl-border-light, #E8E4DE);
+    border-radius: 8px;
+    overflow: visible;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+}
+.et-rich-wrap:focus-within {
+    border-color: #C4A882;
+    box-shadow: 0 0 0 3px rgba(196,168,130,.18);
+}
+
+/* ── Rich contenteditable editor ── */
+.et-rich-editor {
+    background: #fff; border: none;
+    border-radius: 0 0 7px 7px; padding: 10px 12px;
+    font-size: .9rem; line-height: 1.6; font-family: inherit;
+    outline: none; max-height: 280px; overflow-y: auto;
+    white-space: pre-wrap;
+}
+.et-rich-editor p { margin: 0 0 8px; }
+.et-rich-editor ul, .et-rich-editor ol { margin: 0 0 8px 24px; padding: 0; }
+.et-rich-editor strong { font-weight: 700; }
+.et-rich-editor em { font-style: italic; }
+.et-rich-editor a { color: #2d4a43; text-decoration: underline; }
+
+/* Variable pills inside rich editor */
+.et-var-token {
+    display: inline-block; background: #e3f2fd; color: #1565c0;
+    padding: 1px 7px; border-radius: 4px;
+    font-family: Monaco, monospace; font-size: .8rem; font-weight: 500;
+    user-select: all; cursor: default; border: 1px solid #bbdefb;
+    vertical-align: baseline;
+}
+
+/* ── Mini rich toolbar ── */
+.et-mini-toolbar {
+    display: flex; align-items: center; gap: 1px;
+    background: #fff; border: none; border-bottom: 1px solid var(--cl-border-light);
+    border-radius: 7px 7px 0 0; padding: 4px 6px;
+}
+.et-mini-toolbar > button {
+    width: 26px; height: 26px; border: none; background: none; border-radius: 4px;
+    color: var(--cl-text-muted, #6c757d); cursor: pointer; font-size: .82rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .1s, color .1s;
+}
+.et-mini-toolbar > button:hover { background: var(--cl-bg, #F7F5F2); color: var(--cl-text, #212529); }
+.et-mt-sep { width: 1px; height: 16px; background: var(--cl-border-light); margin: 0 3px; }
+
+/* Variable dropdown in toolbar */
+.et-mt-var-wrap { position: relative; }
+.et-mt-var-btn {
+    height: 26px; padding: 0 9px !important; width: auto !important;
+    background: none; border: none; border-radius: 4px;
+    color: var(--cl-text-muted, #6c757d); cursor: pointer;
+    font-size: .72rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.et-mt-var-btn:hover { background: var(--cl-bg, #F7F5F2); color: var(--cl-text); }
+.et-mt-var-menu {
+    display: none; position: absolute; top: 100%; left: 0; margin-top: 4px;
+    background: #fff; border: 1px solid var(--cl-border-light); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08); padding: 4px; z-index: 100; min-width: 160px;
+}
+.et-mt-var-wrap.open .et-mt-var-menu { display: block; }
+.et-mt-var-menu button {
+    display: block; width: 100%; text-align: left;
+    padding: 5px 10px; border: none; background: none; border-radius: 4px;
+    font-family: Monaco, monospace; font-size: .78rem; color: #1565c0; cursor: pointer;
+}
+.et-mt-var-menu button:hover { background: #e3f2fd; }
 
 .et-add-block {
     display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
@@ -189,7 +274,7 @@ require_responsable();
         Object.entries(byCat).forEach(([cat, items]) => {
             html += `<div class="et-list-cat">${esc(cat)}</div>`;
             items.forEach(t => {
-                html += `<div class="et-list-item ${current?.key === t.key ? 'active' : ''}" data-key="${t.key}">
+                html += `<div class="et-list-item ${current?.template_key === t.key ? 'active' : ''}" data-key="${t.key}">
                     <div class="et-list-item-info">
                         <div class="et-list-item-name">${esc(t.name)}</div>
                         <div class="et-list-item-meta">${esc(t.description || '')}</div>
@@ -312,11 +397,17 @@ require_responsable();
 
         // Bind events
         wrap.querySelectorAll('[data-block-field]').forEach(input => {
-            input.addEventListener('input', (e) => {
+            const evtName = input.dataset.rich === '1' ? 'input' : 'input';
+            input.addEventListener(evtName, (e) => {
                 const idx = parseInt(e.target.dataset.blockIdx);
                 const field = e.target.dataset.blockField;
-                if (field === 'items') return; // handled separately
-                current.blocks[idx][field] = e.target.value;
+                if (field === 'items') return;
+                // Rich editor → store detokenized HTML; plain input/textarea → store value
+                if (e.target.dataset.rich === '1') {
+                    current.blocks[idx][field] = detokenize(e.target.innerHTML);
+                } else {
+                    current.blocks[idx][field] = e.target.value;
+                }
             });
         });
 
@@ -343,14 +434,134 @@ require_responsable();
             current.blocks[bi].items.push('');
             renderBlocks();
         }));
+
+        // Mini rich toolbar (contenteditable)
+        wrap.querySelectorAll('.et-mini-toolbar button[data-fmt]').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => e.preventDefault());
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const toolbar = btn.closest('.et-mini-toolbar');
+                const idx = toolbar.dataset.toolbarFor;
+                const ed = wrap.querySelector(`.et-rich-editor[data-block-idx="${idx}"]`);
+                if (!ed) return;
+                ed.focus();
+                applyFormatOn(ed, btn.dataset.fmt);
+                const bi = parseInt(ed.dataset.blockIdx);
+                current.blocks[bi][ed.dataset.blockField] = detokenize(ed.innerHTML);
+            });
+        });
+
+        // Variable dropdown
+        let savedRange = null;
+        wrap.querySelectorAll('.et-rich-editor').forEach(ed => {
+            ed.addEventListener('blur', () => {
+                const sel = window.getSelection();
+                if (sel.rangeCount > 0 && ed.contains(sel.anchorNode)) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                }
+            });
+        });
+        wrap.querySelectorAll('.et-mt-var-btn').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => e.preventDefault());
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const wrapEl = btn.closest('.et-mt-var-wrap');
+                wrapEl.classList.toggle('open');
+            });
+        });
+        wrap.querySelectorAll('[data-insert-var]').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => e.preventDefault());
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const v = btn.dataset.insertVar;
+                const toolbar = btn.closest('.et-mini-toolbar');
+                const idx = toolbar.dataset.toolbarFor;
+                const ed = wrap.querySelector(`.et-rich-editor[data-block-idx="${idx}"]`);
+                if (!ed) return;
+                ed.focus();
+                // Restore saved range or insert at end
+                const sel = window.getSelection();
+                if (savedRange && ed.contains(savedRange.startContainer)) {
+                    sel.removeAllRanges();
+                    sel.addRange(savedRange);
+                }
+                const html = `<span class="et-var-token" contenteditable="false" data-var="${v}">{{${v}}}</span>&nbsp;`;
+                document.execCommand('insertHTML', false, html);
+                const bi = parseInt(ed.dataset.blockIdx);
+                current.blocks[bi][ed.dataset.blockField] = detokenize(ed.innerHTML);
+                // Close dropdown
+                btn.closest('.et-mt-var-wrap').classList.remove('open');
+            });
+        });
+
+        // Close var dropdowns on outside click
+        document.addEventListener('click', () => {
+            wrap.querySelectorAll('.et-mt-var-wrap.open').forEach(el => el.classList.remove('open'));
+        });
+    }
+
+    function applyFormatOn(ed, fmt) {
+        const cmdMap = { strong: 'bold', em: 'italic', u: 'underline', ul: 'insertUnorderedList', ol: 'insertOrderedList' };
+        if (cmdMap[fmt]) { document.execCommand(cmdMap[fmt], false, null); return; }
+        if (fmt === 'br') { document.execCommand('insertHTML', false, '<br>'); return; }
+        if (fmt === 'a') {
+            const url = prompt('URL du lien :', 'https://');
+            if (!url) return;
+            document.execCommand('createLink', false, url);
+            return;
+        }
+    }
+
+    /**
+     * Transform stored HTML into displayable HTML with {{vars}} shown as pills
+     */
+    function tokenize(html) {
+        if (!html) return '';
+        return String(html).replace(/\{\{(\w+)\}\}/g, (m, v) =>
+            `<span class="et-var-token" contenteditable="false" data-var="${v}">{{${v}}}</span>`
+        );
+    }
+
+    /**
+     * Transform displayable HTML back into stored HTML (pills → {{vars}})
+     */
+    function detokenize(html) {
+        if (!html) return '';
+        // Replace var token spans back to {{var}} text
+        html = html.replace(/<span[^>]*class="[^"]*et-var-token[^"]*"[^>]*data-var="(\w+)"[^>]*>[^<]*<\/span>/g, '{{$1}}');
+        // Strip other spans with no semantic meaning (from execCommand)
+        return html;
     }
 
     function renderBlockEditor(b, i) {
         const typeLabels = { paragraph: 'Paragraphe', highlight: 'Encart', list: 'Liste', button: 'Bouton', signature: 'Signature', divider: 'Séparateur', image: 'Image' };
         let body = '';
 
+        const vars = currentDef?.variables || [];
+        const toolbarFor = (idx) => `<div class="et-mini-toolbar" data-toolbar-for="${idx}">
+            <button type="button" data-fmt="strong" title="Gras"><i class="bi bi-type-bold"></i></button>
+            <button type="button" data-fmt="em" title="Italique"><i class="bi bi-type-italic"></i></button>
+            <button type="button" data-fmt="u" title="Souligné"><i class="bi bi-type-underline"></i></button>
+            <span class="et-mt-sep"></span>
+            <button type="button" data-fmt="ul" title="Liste à puces"><i class="bi bi-list-ul"></i></button>
+            <button type="button" data-fmt="ol" title="Liste numérotée"><i class="bi bi-list-ol"></i></button>
+            <span class="et-mt-sep"></span>
+            <button type="button" data-fmt="a" title="Lien"><i class="bi bi-link-45deg"></i></button>
+            <button type="button" data-fmt="br" title="Saut de ligne"><i class="bi bi-arrow-return-left"></i></button>
+            <span class="et-mt-sep"></span>
+            <div class="et-mt-var-wrap">
+                <button type="button" class="et-mt-var-btn" title="Insérer une variable"><i class="bi bi-code-slash"></i> Variable</button>
+                <div class="et-mt-var-menu">
+                    ${vars.map(v => `<button type="button" data-insert-var="${v}">${v}</button>`).join('')}
+                </div>
+            </div>
+        </div>`;
+
+        const richEditor = (idx, content, field, minH) =>
+            `<div class="et-rich-wrap">${toolbarFor(idx)}<div class="et-rich-editor" contenteditable="true" data-block-idx="${idx}" data-block-field="${field}" data-rich="1" style="min-height:${minH}px">${tokenize(content || '')}</div></div>`;
+
         if (b.type === 'paragraph' || b.type === 'signature') {
-            body = `<textarea data-block-idx="${i}" data-block-field="content" rows="3">${esc(b.content || '')}</textarea>`;
+            body = richEditor(i, b.content, 'content', 70);
         } else if (b.type === 'highlight') {
             body = `
                 <div class="et-grid-2" style="margin-bottom:6px">
@@ -361,7 +572,7 @@ require_responsable();
                         <input type="text" placeholder="#couleur" data-block-idx="${i}" data-block-field="color" value="${esc(b.color || '#2d4a43')}" style="flex:1;font-size:.75rem">
                     </div>
                 </div>
-                <textarea data-block-idx="${i}" data-block-field="content" rows="2">${esc(b.content || '')}</textarea>`;
+                ${richEditor(i, b.content, 'content', 50)}`;
         } else if (b.type === 'list') {
             const items = b.items || [];
             body = '<div class="et-list-items">' + items.map((item, ii) => `
