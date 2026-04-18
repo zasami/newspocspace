@@ -681,6 +681,24 @@ function admin_generate_planning()
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
 
+    // ─────────────────────────────────────────────────────────────
+    // PRECOMPUTE: date metadata (massively reduces strtotime/date calls)
+    // $dateCache[$d] = ['date' => 'Y-m-d', 'dow' => N(1..7), 'wk' => ISO week]
+    // $dateByStr[$dateStr] = index (1..daysInMonth) for reverse lookup
+    // ─────────────────────────────────────────────────────────────
+    $dateCache = [];
+    $dateByStr = [];
+    for ($d = 1; $d <= $daysInMonth; $d++) {
+        $ds  = $mois . '-' . ($d < 10 ? "0$d" : $d);
+        $ts  = strtotime($ds);
+        $dateCache[$d] = [
+            'date' => $ds,
+            'dow'  => (int) date('N', $ts),
+            'wk'   => (int) date('W', $ts),
+        ];
+        $dateByStr[$ds] = $d;
+    }
+
     // Helper: resolve groupe_id for an AS slot in a module
     $getGroupeId = function ($fonctionCode, $modId, $slotIndex) use (&$moduleSlotsAS) {
         if ($fonctionCode !== 'AS') return null;
@@ -697,17 +715,47 @@ function admin_generate_planning()
     $assigned = 0;
     $conflicts = [];
 
-    // ── Helper: get ISO week number for a date ──
-    $getWeekNum = function ($date) {
+    // ── Helper: get ISO week number for a date (cached) ──
+    $getWeekNum = function ($date) use (&$dateByStr, &$dateCache) {
+        if (isset($dateByStr[$date])) return $dateCache[$dateByStr[$date]]['wk'];
         return (int) date('W', strtotime($date));
     };
 
-    // ── Helper: compute weekly target hours for a user ──
-    // Monthly target / nb weeks in month ≈ weekly target
+    // ── PRECOMPUTE: per-user monthly/weekly targets (avoid recomputing in inner loops) ──
     $nbWeeksInMonth = $daysInMonth / 7;
-    $getWeeklyTarget = function ($user) use ($iaJoursOuvres, $iaHeuresJour, $nbWeeksInMonth) {
-        return round(($iaJoursOuvres * $iaHeuresJour * ($user['taux'] / 100)) / $nbWeeksInMonth, 1);
+    $userTargetMonthHours = [];
+    $userWeeklyTargetHours = [];
+    $userWeeklyDaysTarget = [];
+    foreach ($users as $u) {
+        $tauxRatio = $u['taux'] / 100;
+        $monthH = round($iaJoursOuvres * $iaHeuresJour * $tauxRatio);
+        $userTargetMonthHours[$u['id']] = $monthH;
+        $userWeeklyTargetHours[$u['id']] = round($monthH / $nbWeeksInMonth, 1);
+        $userWeeklyDaysTarget[$u['id']] = round(round($iaJoursOuvres * $tauxRatio) / $nbWeeksInMonth, 1);
+    }
+    $getWeeklyTarget = function ($user) use (&$userWeeklyTargetHours) {
+        return $userWeeklyTargetHours[$user['id']] ?? 0;
     };
+
+    // ── PRECOMPUTE: which structured rules can apply to each user (static filters) ──
+    // Module rules are kept and still filtered at runtime by the current module context.
+    $userApplicableRules = [];
+    foreach ($users as $u) {
+        $fCode = $u['fonction_code'] ?? '';
+        $uid = $u['id'];
+        $applicable = [];
+        foreach ($structuredRules as $rule) {
+            $tm = $rule['target_mode'];
+            if ($tm === 'all'
+                || ($tm === 'fonction' && $fCode === $rule['target_fonction_code'])
+                || ($tm === 'users' && isset($ruleUserMap[$rule['id']][$uid]))
+                || $tm === 'module'
+            ) {
+                $applicable[] = $rule;
+            }
+        }
+        $userApplicableRules[$uid] = $applicable;
+    }
 
     // ── Coverage shift patterns ──
     // For 2 positions per day, we alternate patterns to ensure 7h-20h30 coverage:
@@ -800,11 +848,15 @@ function admin_generate_planning()
         return !empty($fullDayShifts) ? $fullDayShifts[array_rand($fullDayShifts)] : $morningShifts[0];
     };
 
-    // ── Helper: check consecutive days ──
-    $getConsecutive = function ($userId, $date) use (&$userDays) {
+    // ── Helper: check consecutive days (cached, no strtotime) ──
+    // Days before the 1st of month aren't tracked in $userDays anyway, so stop at day 1.
+    $getConsecutive = function ($userId, $date) use (&$userDays, $mois) {
+        $dNum = (int) substr($date, -2);
         $count = 0;
         for ($back = 1; $back <= 7; $back++) {
-            $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+            $prev = $dNum - $back;
+            if ($prev < 1) break;
+            $prevDate = $mois . '-' . ($prev < 10 ? "0$prev" : $prev);
             if (isset($userDays[$userId][$prevDate])) $count++;
             else break;
         }
@@ -865,25 +917,19 @@ function admin_generate_planning()
 
     // ── Helper: check structured rules ──
     // $shiftCode can be null for early module-only checks (before shift is picked)
-    $checkRules = function ($u, $shiftCode, $modId, $date) use (&$structuredRules, &$ruleUserMap, &$userDays, $nightModuleId, &$nightShifts) {
+    // Uses $userApplicableRules for static pre-filter (rules by 'all'/'fonction'/'users' already matched).
+    // Module-scoped rules are still checked at runtime.
+    $nightCodes = array_map(fn($h) => $h['code'], $nightShifts);
+    $checkRules = function ($u, $shiftCode, $modId, $date) use (&$userApplicableRules, &$userDays, $nightModuleId, &$nightCodes, &$dateByStr, &$dateCache) {
         $isNightModule = ($modId === $nightModuleId);
-        $nightCodes = array_map(fn($h) => $h['code'], $nightShifts);
-        $dow = (int) date('N', strtotime($date));
+        $dow = isset($dateByStr[$date]) ? $dateCache[$dateByStr[$date]]['dow'] : (int) date('N', strtotime($date));
+        $rules = $userApplicableRules[$u['id']] ?? [];
 
-        foreach ($structuredRules as $rule) {
-            // Check if rule applies to this user/context
-            if ($rule['target_mode'] === 'all') {
-                // applies to everyone
-            } elseif ($rule['target_mode'] === 'module') {
-                // Only applies if current module is in the rule's target_module_ids
+        foreach ($rules as $rule) {
+            // Only module rules still need runtime filtering (module-specific targeting)
+            if ($rule['target_mode'] === 'module') {
                 $targetModIds = $rule['params']['target_module_ids'] ?? [];
                 if (empty($targetModIds) || !in_array($modId, $targetModIds)) continue;
-            } elseif ($rule['target_mode'] === 'fonction') {
-                if (($u['fonction_code'] ?? '') !== $rule['target_fonction_code']) continue;
-            } elseif ($rule['target_mode'] === 'users') {
-                if (!isset($ruleUserMap[$rule['id']][$u['id']])) continue;
-            } else {
-                continue;
             }
 
             $p = $rule['params'];
@@ -956,18 +1002,22 @@ function admin_generate_planning()
         return true;
     };
 
-    // ── Pre-compute target days per week for each user (for even distribution) ──
-    $getUserWeeklyDaysTarget = function ($u) use ($iaJoursOuvres, $daysInMonth) {
-        $monthlyDays = round($iaJoursOuvres * ($u['taux'] / 100));
-        $nbWeeks = $daysInMonth / 7;
-        return round($monthlyDays / $nbWeeks, 1);
+    // ── Target days per week for each user (use precomputed cache) ──
+    $getUserWeeklyDaysTarget = function ($u) use (&$userWeeklyDaysTarget) {
+        return $userWeeklyDaysTarget[$u['id']] ?? 0;
     };
     $userWeekDays = []; // [userId][weekNum] = count of days worked
 
+    // ── Begin transaction: massive speedup for batched INSERTs ──
+    $inTx = false;
+    if (!$pdo->inTransaction()) { $pdo->beginTransaction(); $inTx = true; }
+
     // ── PASS 1: Fill besoins_couverture (required positions) ──
     for ($d = 1; $d <= $daysInMonth; $d++) {
-        $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
-        $dow = (int) date('N', strtotime($date)); // 1=Mon 7=Sun
+        $dm = $dateCache[$d];
+        $date = $dm['date'];
+        $dow = $dm['dow']; // 1=Mon 7=Sun
+        $wk = $dm['wk'];
 
         // Shuffle module order each day to avoid first-module bias
         $moduleKeys = array_keys($besoinsIdx);
@@ -990,7 +1040,7 @@ function admin_generate_planning()
                     if (!$checkRules($u, null, $modId, $date)) continue; // early module/weekend/max_days check
 
                     // Skip if already over monthly target (+10% tolerance for coverage)
-                    $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                    $targetMonthHours = $userTargetMonthHours[$u['id']];
                     $currentHours = $userHours[$u['id']] ?? 0;
                     if ($currentHours >= $targetMonthHours * 1.1) continue;
 
@@ -1004,8 +1054,7 @@ function admin_generate_planning()
                     // AS: boost score based on weekly hours deficit (ensures weekly balance)
                     $weeklyBonus = 0;
                     if ($u['fonction_code'] === 'AS') {
-                        $wk = $getWeekNum($date);
-                        $weeklyTarget = $getWeeklyTarget($u);
+                        $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                         $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                         $weeklyBonus = round($weeklyTarget - $currentWeekHours);
                     }
@@ -1030,14 +1079,13 @@ function admin_generate_planning()
 
                     // Even weekly distribution: limit days/week based on taux
                     // (relaxed: +2 days tolerance for coverage pass)
-                    $weeklyDaysTarget = $getUserWeeklyDaysTarget($u);
-                    $currentWeekDays = $userWeekDays[$u['id']][$getWeekNum($date)] ?? 0;
+                    $weeklyDaysTarget = $userWeeklyDaysTarget[$u['id']];
+                    $currentWeekDays = $userWeekDays[$u['id']][$wk] ?? 0;
                     if ($currentWeekDays >= $weeklyDaysTarget + 2) continue;
 
                     // AS weekly hours cap: don't exceed weekly target (+5h tolerance)
                     if ($u['fonction_code'] === 'AS') {
-                        $wk = $getWeekNum($date);
-                        $weeklyTarget = $getWeeklyTarget($u);
+                        $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                         $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                         if ($currentWeekHours >= $weeklyTarget + 5) continue;
                     }
@@ -1060,8 +1108,7 @@ function admin_generate_planning()
                     // AS weekly hours: check if this shift would exceed weekly target
                     // Skip this check if it's an approved desir
                     if (!$isDesir && $u['fonction_code'] === 'AS') {
-                        $wk = $getWeekNum($date);
-                        $weeklyTarget = $getWeeklyTarget($u);
+                        $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                         $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                         if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 5) continue;
                     }
@@ -1083,7 +1130,6 @@ function admin_generate_planning()
                         $shift['id'], $modId, $groupeId, 'present', $desirNote
                     ]);
 
-                    $wk = $getWeekNum($date);
                     $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
                     $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                     $userDays[$u['id']][$date] = true;
@@ -1122,6 +1168,7 @@ function admin_generate_planning()
             $modId = $c['module_id'];
             $nbMissing = $c['requis'] - $c['assigne'];
             $filled = 0;
+            $wk = $dateCache[$dateByStr[$date]]['wk'];
 
             // Find AS from ANY module (not just this one) who are available
             $candidates = [];
@@ -1134,13 +1181,12 @@ function admin_generate_planning()
                 if ($getConsecutive($u['id'], $date) >= $iaConsecutifMaxAS) continue;
 
                 // Weekly hours check (relaxed: +8h tolerance for entraide)
-                $wk = $getWeekNum($date);
-                $weeklyTarget = $getWeeklyTarget($u);
+                $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                 $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                 if ($currentWeekHours >= $weeklyTarget + 8) continue;
 
                 // Monthly hours check
-                $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $targetMonthHours = $userTargetMonthHours[$u['id']];
                 $currentHours = $userHours[$u['id']] ?? 0;
                 $deficit = $targetMonthHours - $currentHours;
 
@@ -1175,9 +1221,8 @@ function admin_generate_planning()
                 }
 
                 // Final weekly check with shift duration — skip if approved desir
-                $wk = $getWeekNum($date);
                 if (!$isDesir1_5) {
-                    $weeklyTarget = $getWeeklyTarget($u);
+                    $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                     $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                     if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 8) continue;
                 }
@@ -1193,7 +1238,6 @@ function admin_generate_planning()
                     $shift['id'], $modId, $groupeId, 'entraide', $desirNote1_5
                 ]);
 
-                $wk = $getWeekNum($date);
                 $userWeekHours[$u['id']][$wk] = ($userWeekHours[$u['id']][$wk] ?? 0) + (float) $shift['duree_effective'];
                 $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                 $userDays[$u['id']][$date] = true;
@@ -1214,17 +1258,16 @@ function admin_generate_planning()
     // ── PASS 2: Fill remaining unassigned employees (balance hours) ──
     if (!$moduleFilter) {
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $date = $mois . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
-            $dow = (int) date('N', strtotime($date));
-            $wk = $getWeekNum($date);
+            $dm = $dateCache[$d];
+            $date = $dm['date'];
+            $dow = $dm['dow'];
+            $wk = $dm['wk'];
 
             // Sort users by hours deficit (most underworked first) for fair distribution
             $usersPass2 = $users;
-            usort($usersPass2, function ($a, $b) use (&$userHours, $iaJoursOuvres, $iaHeuresJour) {
-                $targetA = round($iaJoursOuvres * $iaHeuresJour * ($a['taux'] / 100));
-                $targetB = round($iaJoursOuvres * $iaHeuresJour * ($b['taux'] / 100));
-                $deficitA = $targetA - ($userHours[$a['id']] ?? 0);
-                $deficitB = $targetB - ($userHours[$b['id']] ?? 0);
+            usort($usersPass2, function ($a, $b) use (&$userHours, &$userTargetMonthHours) {
+                $deficitA = $userTargetMonthHours[$a['id']] - ($userHours[$a['id']] ?? 0);
+                $deficitB = $userTargetMonthHours[$b['id']] - ($userHours[$b['id']] ?? 0);
                 return $deficitB <=> $deficitA; // most deficit first
             });
 
@@ -1249,12 +1292,12 @@ function admin_generate_planning()
                 // Early structured rules check (module/weekend/max_days)
                 if ($principalMod && !$checkRules($u, null, $principalMod, $date)) continue;
 
-                $targetMonthHours = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+                $targetMonthHours = $userTargetMonthHours[$u['id']];
                 $currentHours = $userHours[$u['id']] ?? 0;
                 if ($currentHours >= $targetMonthHours) continue;
 
                 // ── Even distribution: limit days per week based on taux ──
-                $weeklyDaysTarget = $getUserWeeklyDaysTarget($u);
+                $weeklyDaysTarget = $userWeeklyDaysTarget[$u['id']];
                 $currentWeekDays = $userWeekDays[$u['id']][$wk] ?? 0;
                 if ($currentWeekDays >= $weeklyDaysTarget + 1) continue;
 
@@ -1265,7 +1308,7 @@ function admin_generate_planning()
 
                 // AS: weekly hours cap — don't exceed weekly target
                 if ($isAS) {
-                    $weeklyTarget = $getWeeklyTarget($u);
+                    $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                     $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                     if ($currentWeekHours >= $weeklyTarget) continue;
                 }
@@ -1288,7 +1331,9 @@ function admin_generate_planning()
                     // AS: only D1, D3, D4, S3, S4 — alternate morning/evening
                     $lastShiftCode = null;
                     for ($back = 1; $back <= 3; $back++) {
-                        $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+                        $pd = $d - $back;
+                        if ($pd < 1) break;
+                        $prevDate = $dateCache[$pd]['date'];
                         if (isset($userShifts[$u['id']][$prevDate])) { $lastShiftCode = $userShifts[$u['id']][$prevDate]; break; }
                     }
                     $wasMorning = $lastShiftCode && in_array($lastShiftCode, ['D1','D3','D4']);
@@ -1303,14 +1348,16 @@ function admin_generate_planning()
                     }
 
                     // AS: check shift won't exceed weekly target
-                    $weeklyTarget = $getWeeklyTarget($u);
+                    $weeklyTarget = $userWeeklyTargetHours[$u['id']];
                     $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                     if ($currentWeekHours + (float) $shift['duree_effective'] > $weeklyTarget + 2) continue;
                 } else {
                     // INF, ASSC, etc.
                     $lastShiftCode = null;
                     for ($back = 1; $back <= 3; $back++) {
-                        $prevDate = date('Y-m-d', strtotime("$date -$back days"));
+                        $pd = $d - $back;
+                        if ($pd < 1) break;
+                        $prevDate = $dateCache[$pd]['date'];
                         if (isset($userShifts[$u['id']][$prevDate])) { $lastShiftCode = $userShifts[$u['id']][$prevDate]; break; }
                     }
                     $wasMorning = $lastShiftCode && in_array($lastShiftCode, ['A1','A2','A3','D1','D4','C1']);
@@ -1363,6 +1410,9 @@ function admin_generate_planning()
             }
         }
     }
+
+    // ── Commit transaction: all passes 1/1.5/2 inserts flushed together ──
+    if ($inTx && $pdo->inTransaction()) { $pdo->commit(); $inTx = false; }
 
     // ── PASS 3 (IA): Optimize planning with AI if hybrid or ai mode ──
     $iaTokensIn = 0;
@@ -1445,83 +1495,153 @@ function admin_generate_planning()
         $iaRules = Db::fetchAll(
             "SELECT titre, description, importance FROM ia_human_rules WHERE actif = 1 ORDER BY CASE WHEN importance = 'important' THEN 1 WHEN importance = 'moyen' THEN 2 ELSE 3 END, created_at DESC"
         );
+        $importantRules = array_values(array_filter($iaRules, fn($r) => $r['importance'] === 'important'));
+        $moyenRules     = array_values(array_filter($iaRules, fn($r) => $r['importance'] === 'moyen'));
 
-        // Build shift catalog for prompt
+        // Build shift catalog for prompt (structured with type classification)
         $shiftCatalog = [];
+        $validShiftCodes = [];
         foreach ($horaires as $h) {
             if (in_array($h['code'], $excludeShiftCodes)) continue;
-            $shiftCatalog[] = "{$h['code']}({$h['heure_debut']}-{$h['heure_fin']}, {$h['duree_effective']}h)";
+            $deb = (int) substr($h['heure_debut'], 0, 2);
+            if ($deb >= $nightThreshold) $type = 'nuit';
+            elseif ($deb >= $eveningThreshold) $type = 'soir';
+            elseif ((float)$h['duree_effective'] >= $fullDayMinHours) $type = 'journee_complete';
+            else $type = 'matin';
+            $shiftCatalog[] = "  - {$h['code']} : {$h['heure_debut']}-{$h['heure_fin']} ({$h['duree_effective']}h) [type={$type}]";
+            $validShiftCodes[] = $h['code'];
         }
 
-        $prompt = "Tu es un expert en planification EMS (maison de retraite). Analyse ce planning et propose des optimisations.\n\n";
-        $prompt .= "## Configuration EMS\n";
-        $prompt .= "- Couverture journalière: {$coverageStart} à {$coverageEnd}\n";
-        $prompt .= "- AS par étage: {$asPerEtage}\n";
-        $prompt .= "- Paires matin/soir: " . ($shiftPairing ? 'oui' : 'non') . "\n";
-        $prompt .= "- Horaires disponibles: " . implode(', ', $shiftCatalog) . "\n\n";
+        $validModuleCodes = array_map(fn($mi) => $mi['code'], $modulesInfo);
 
-        $prompt .= "## Règles métier\n";
-        $prompt .= "- AS: {$asPerEtage} par étage, 7j/7, couverture {$coverageStart}-{$coverageEnd}" . ($shiftPairing ? " (paire matin+soir ou journée complète)" : "") . "\n";
-        $prompt .= "- Heures hebdo: respect du taux contractuel\n";
-        $prompt .= "- Jours consécutifs max: AS={$iaConsecutifMaxAS}, nuit={$iaConsecutifMaxNuit}, autres={$iaConsecutifMax}\n";
+        // ──────────────────────────────────────────────────────────────
+        // NEW PROMPT (XML-structured, strict rules, validation checklist)
+        // Goal: the model MUST respect hard constraints and never invent IDs.
+        // ──────────────────────────────────────────────────────────────
+        $prompt  = "<role>\n";
+        $prompt .= "Tu es un planificateur RH pour un EMS (maison de retraite) en Suisse. ";
+        $prompt .= "Ta mission : proposer des modifications ponctuelles au planning ci-dessous pour résoudre les conflits de couverture et rééquilibrer les heures, SANS JAMAIS violer une contrainte inviolable.\n";
+        $prompt .= "</role>\n\n";
+
+        $prompt .= "<contraintes_inviolables>\n";
+        $prompt .= "Chaque optimisation qui viole UNE de ces contraintes doit être REJETÉE (ne pas l'émettre).\n";
+        $prompt .= "1. user_id : utiliser UNIQUEMENT les UUID listés dans <staff>. Ne jamais en inventer ni les modifier.\n";
+        $prompt .= "2. to_shift : utiliser UNIQUEMENT les codes listés dans <shift_catalog> (codes valides : " . implode(', ', $validShiftCodes) . ").\n";
+        $prompt .= "3. module_code : utiliser UNIQUEMENT les codes listés dans <modules> (codes valides : " . implode(', ', $validModuleCodes) . ").\n";
+        $prompt .= "4. date : obligatoirement dans le mois cible {$mois} (format YYYY-MM-DD, entre {$mois}-01 et {$mois}-" . str_pad($daysInMonth, 2, '0', STR_PAD_LEFT) . ").\n";
+        $prompt .= "5. Fonction du poste : l'employé doit avoir la fonction demandée (un conflit AS se remplit uniquement avec un AS, idem INF/ASSC).\n";
+        $prompt .= "6. Désirs validés : INTERDIT de modifier (action=move) ou supprimer (action=remove) une assignation dont la note contient 'desir'. Ce sont des contraintes absolues validées par le responsable.\n";
+        $prompt .= "7. Absences validées : l'employé ne doit pas être absent ce jour-là.\n";
+        $prompt .= "8. Double assignation : un employé peut avoir au MAXIMUM 1 poste par jour. Ne jamais ajouter un employé déjà assigné ce jour.\n";
+        $prompt .= "9. Jours consécutifs : AS max {$iaConsecutifMaxAS} jours, nuit max {$iaConsecutifMaxNuit} (LTr art. 17a), autres max {$iaConsecutifMax}.\n";
         if ($iaDirWeekendOff) {
-            $prompt .= "- IMPORTANT: Les employés direction/responsable ne travaillent PAS le week-end (samedi/dimanche)\n";
+            $prompt .= "10. Direction/responsable : ne travaillent PAS le samedi ni le dimanche.\n";
         }
-        $prompt .= "- Probabilité skip week-end non-AS: {$iaWeekendSkipProb}%\n";
+        $prompt .= "</contraintes_inviolables>\n\n";
 
-        // Add custom IA rules from database
-        if (!empty($iaRules)) {
-            $prompt .= "\n## Règles personnalisées (priorités)\n";
-            $importantRules = array_filter($iaRules, fn($r) => $r['importance'] === 'important');
-            $moyenRules = array_filter($iaRules, fn($r) => $r['importance'] === 'moyen');
-
-            if (!empty($importantRules)) {
-                $prompt .= "### IMPORTANT (doit être respecté)\n";
-                foreach ($importantRules as $rule) {
-                    $prompt .= "- " . trim($rule['titre']) . ": " . trim($rule['description']) . "\n";
-                }
+        if (!empty($importantRules)) {
+            $prompt .= "<regles_importantes>\n";
+            $prompt .= "Règles métier spécifiques à cet EMS, à respecter comme des contraintes dures.\n";
+            foreach ($importantRules as $i => $rule) {
+                $prompt .= ($i + 1) . ". " . trim($rule['titre']) . " — " . trim($rule['description']) . "\n";
             }
+            $prompt .= "</regles_importantes>\n\n";
+        }
 
-            if (!empty($moyenRules)) {
-                $prompt .= "### MOYEN (à considérer)\n";
-                foreach ($moyenRules as $rule) {
-                    $prompt .= "- " . trim($rule['titre']) . ": " . trim($rule['description']) . "\n";
-                }
+        $prompt .= "<preferences>\n";
+        $prompt .= "À respecter autant que possible, sans compromettre les contraintes inviolables.\n";
+        $prompt .= "- Heures hebdomadaires proches du taux contractuel (ex : 100% ≈ " . round($iaJoursOuvres * $iaHeuresJour / $nbWeeksInMonth, 1) . "h/sem).\n";
+        $prompt .= "- Alternance matin/soir sur jours consécutifs (éviter 3 matins ou 3 soirs d'affilée).\n";
+        $prompt .= "- Module principal prioritaire ; entraide inter-modules seulement si nécessaire.\n";
+        if (!empty($moyenRules)) {
+            foreach ($moyenRules as $rule) {
+                $prompt .= "- " . trim($rule['titre']) . " — " . trim($rule['description']) . "\n";
+            }
+        }
+        $prompt .= "</preferences>\n\n";
+
+        $prompt .= "<contexte>\n";
+        $prompt .= "- Mois cible : {$mois}\n";
+        $prompt .= "- Jours dans le mois : {$daysInMonth}\n";
+        $prompt .= "- Couverture journalière : {$coverageStart} à {$coverageEnd}\n";
+        $prompt .= "- AS requis par étage : {$asPerEtage}\n";
+        $prompt .= "- Pairage matin/soir : " . ($shiftPairing ? 'oui' : 'non') . "\n";
+        $prompt .= "</contexte>\n\n";
+
+        $prompt .= "<modules>\n";
+        foreach ($modulesInfo as $mi) {
+            $prompt .= "  - code={$mi['code']} nom=\"{$mi['nom']}\" etages={$mi['nb_etages']}\n";
+        }
+        $prompt .= "</modules>\n\n";
+
+        $prompt .= "<shift_catalog>\n";
+        $prompt .= implode("\n", $shiftCatalog) . "\n";
+        $prompt .= "</shift_catalog>\n\n";
+
+        $prompt .= "<staff count=\"" . count($availableStaff) . "\">\n";
+        $prompt .= "Format par ligne : uuid | prénom nom | fonction | taux% | modules | heures_actuelles/cible\n";
+        $prompt .= implode("\n", array_slice($availableStaff, 0, 80));
+        if (count($availableStaff) > 80) {
+            $prompt .= "\n  (... " . (count($availableStaff) - 80) . " employés supplémentaires non listés)";
+        }
+        $prompt .= "\n</staff>\n\n";
+
+        $nbConflicts = count($conflictSummary);
+        $prompt .= "<conflicts count=\"{$nbConflicts}\">\n";
+        if (empty($conflictSummary)) {
+            $prompt .= "Aucun conflit de couverture.\n";
+        } else {
+            $prompt .= implode("\n", array_slice($conflictSummary, 0, 40));
+            if (count($conflictSummary) > 40) {
+                $prompt .= "\n  (... " . (count($conflictSummary) - 40) . " conflits supplémentaires)";
             }
             $prompt .= "\n";
         }
-        $prompt .= "\n";
-
-        $prompt .= "## Modules\n";
-        foreach ($modulesInfo as $mi) $prompt .= "- {$mi['code']} ({$mi['nom']}): {$mi['nb_etages']} étages\n";
-
-        $prompt .= "\n## Employés disponibles (utilise EXACTEMENT ces user_id UUID)\n";
-        $prompt .= implode("\n", array_slice($availableStaff, 0, 60)) . "\n";
-
-        $nbConflicts = count($conflictSummary);
-        $prompt .= "\n## Conflits ($nbConflicts positions non couvertes)\n";
-        if (empty($conflictSummary)) {
-            $prompt .= "Aucun conflit !\n";
-        } else {
-            $prompt .= implode("\n", array_slice($conflictSummary, 0, 30)) . "\n";
-            if (count($conflictSummary) > 30) $prompt .= "... et " . (count($conflictSummary) - 30) . " autres\n";
-        }
+        $prompt .= "</conflicts>\n\n";
 
         if (!empty($hoursSummary)) {
-            $prompt .= "\n## Déséquilibres d'heures (écart > 5h)\n";
-            $prompt .= implode("\n", array_slice($hoursSummary, 0, 20)) . "\n";
+            $prompt .= "<hours_imbalance description=\"écart actuel/cible &gt; 5h\">\n";
+            $prompt .= implode("\n", array_slice($hoursSummary, 0, 25)) . "\n";
+            $prompt .= "</hours_imbalance>\n\n";
         }
 
-        $prompt .= "\n## Demande\n";
-        $prompt .= "Réponds en JSON uniquement. Propose des modifications pour résoudre les conflits.\n";
-        if (!empty($iaRules)) {
-            $prompt .= "⚠️  RESPECTE ABSOLUMENT toutes les règles personnalisées ci-dessus, particulièrement les règles IMPORTANTES.\n";
-        }
-        $prompt .= "IMPORTANT: utilise UNIQUEMENT les user_id UUID listés ci-dessus. Ne les invente pas.\n";
-        $prompt .= "INTERDIT: Ne modifie JAMAIS une assignation marquée 'desir' dans les notes. Les désirs validés par le responsable sont des contraintes absolues.\n";
-        $prompt .= "Vérifie que l'employé n'est pas déjà assigné ce jour-là et qu'il a la bonne fonction pour le poste.\n";
-        $prompt .= "Format: {\"optimizations\": [{\"action\": \"move|add|remove\", \"user_id\": \"UUID exact\", \"date\": \"YYYY-MM-DD\", \"to_shift\": \"D1|D3|D4|S3|S4\", \"module_code\": \"M1|M2|M3|M4\", \"reason\": \"...\"}], \"summary\": \"résumé en français\"}\n";
-        $prompt .= "Si aucune optimisation possible, retourne {\"optimizations\": [], \"summary\": \"Planning optimal\"}\n";
+        $prompt .= "<tache>\n";
+        $prompt .= "1. Pour chaque ligne dans <conflicts>, proposer UNE optimisation qui la résout (action=add ou move), en respectant toutes les <contraintes_inviolables>.\n";
+        $prompt .= "2. Pour les déséquilibres d'heures significatifs, proposer des move/add/remove qui rapprochent chaque employé de sa cible, SANS créer de nouveaux conflits.\n";
+        $prompt .= "3. Ne proposer AUCUNE optimisation si tu n'es pas sûr qu'elle respecte toutes les contraintes : mieux vaut zéro optimisation qu'une invalide.\n";
+        $prompt .= "</tache>\n\n";
+
+        $prompt .= "<checklist_avant_chaque_optimisation>\n";
+        $prompt .= "Avant d'émettre CHAQUE élément du tableau optimizations, vérifier mentalement ces 8 points. Si UN SEUL échoue, ne pas émettre l'optimisation.\n";
+        $prompt .= "[1] user_id apparaît dans <staff> (copier-coller l'UUID exact).\n";
+        $prompt .= "[2] date est au format YYYY-MM-DD et appartient au mois {$mois}.\n";
+        $prompt .= "[3] to_shift est un code présent dans <shift_catalog>.\n";
+        $prompt .= "[4] module_code est un code présent dans <modules>.\n";
+        $prompt .= "[5] La fonction de l'employé (colonne fonction dans <staff>) correspond au besoin du conflit traité.\n";
+        $prompt .= "[6] L'employé n'est pas déjà assigné ce jour-là (pour action=add).\n";
+        $prompt .= "[7] L'assignation ciblée n'est pas un 'desir' (pour action=move ou remove).\n";
+        $prompt .= "[8] Aucune <contraintes_inviolables> ni <regles_importantes> n'est violée.\n";
+        $prompt .= "</checklist_avant_chaque_optimisation>\n\n";
+
+        $prompt .= "<format_sortie>\n";
+        $prompt .= "Réponds UNIQUEMENT par un objet JSON strict, sans markdown, sans balise code, sans texte avant/après.\n";
+        $prompt .= "Schéma :\n";
+        $prompt .= "{\n";
+        $prompt .= "  \"optimizations\": [\n";
+        $prompt .= "    {\n";
+        $prompt .= "      \"action\": \"move\" | \"add\" | \"remove\",\n";
+        $prompt .= "      \"user_id\": \"<uuid-exact-copié-depuis-staff>\",\n";
+        $prompt .= "      \"date\": \"YYYY-MM-DD\",\n";
+        $prompt .= "      \"to_shift\": \"<code-du-shift_catalog>\",\n";
+        $prompt .= "      \"module_code\": \"<code-des-modules>\",\n";
+        $prompt .= "      \"reason\": \"explication concise en français\"\n";
+        $prompt .= "    }\n";
+        $prompt .= "  ],\n";
+        $prompt .= "  \"summary\": \"résumé global en français (1-3 phrases)\"\n";
+        $prompt .= "}\n\n";
+        $prompt .= "Cas où aucune optimisation n'est sûre : {\"optimizations\": [], \"summary\": \"Planning optimal ou aucune modification sûre identifiée.\"}\n";
+        $prompt .= "Pour action=remove, les champs to_shift et module_code sont optionnels.\n";
+        $prompt .= "</format_sortie>\n";
 
         // Call IA API
         $iaResponse = null;
@@ -1632,33 +1752,41 @@ function admin_generate_planning()
         // Reconnect to DB because the long API call might have caused a timeout
         Db::reconnect();
 
-        // Apply IA optimizations if any (with validation)
+        // Apply IA optimizations if any (with strict server-side validation)
+        $iaRejected = []; // collect rejections for observability
         if ($iaResponse && !empty($iaResponse['optimizations'])) {
             $horaireByCode = [];
             foreach ($horaires as $h) $horaireByCode[$h['code']] = $h;
             $moduleByCode = [];
             foreach ($modulesInfo as $mi) $moduleByCode[$mi['code']] = $mi['id'];
 
-            // Build set of valid user IDs for validation
+            // Build set of valid user IDs + absence map for validation
             $validUserIds = [];
-            foreach ($users as $u) $validUserIds[$u['id']] = true;
+            $usersById = [];
+            foreach ($users as $u) { $validUserIds[$u['id']] = true; $usersById[$u['id']] = $u; }
 
             foreach ($iaResponse['optimizations'] as $opt) {
-                $action = $opt['action'] ?? '';
-                $userId = $opt['user_id'] ?? '';
-                $date = $opt['date'] ?? '';
+                $action  = $opt['action'] ?? '';
+                $userId  = $opt['user_id'] ?? '';
+                $date    = $opt['date'] ?? '';
                 $toShift = $opt['to_shift'] ?? '';
                 $modCode = $opt['module_code'] ?? '';
-                $modId = $moduleByCode[$modCode] ?? null;
+                $modId   = $moduleByCode[$modCode] ?? null;
 
-                // Validate user_id exists in our users table
-                if (!$userId || !$date) continue;
-                if (!isset($validUserIds[$userId])) {
-                    error_log("SpocSpace IA: skipped invalid user_id '$userId'");
-                    continue;
+                // ── Hard validations (reject silently, log for telemetry) ──
+                if (!in_array($action, ['move', 'add', 'remove'])) { $iaRejected[] = "action invalide: $action"; continue; }
+                if (!$userId || !$date) { $iaRejected[] = "user_id/date manquant"; continue; }
+                if (!isset($validUserIds[$userId])) { $iaRejected[] = "user_id inventé: $userId"; continue; }
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !str_starts_with($date, $mois)) {
+                    $iaRejected[] = "date hors mois: $date"; continue;
                 }
-                // Validate date is within the month
-                if (!str_starts_with($date, $mois)) continue;
+                if (($action === 'move' || $action === 'add') && !isset($horaireByCode[$toShift])) {
+                    $iaRejected[] = "to_shift inconnu: $toShift"; continue;
+                }
+                if ($action === 'add' && !$modId) { $iaRejected[] = "module_code inconnu: $modCode"; continue; }
+                if ($action === 'add' && isset($absenceMap[$userId][$date])) {
+                    $iaRejected[] = "employé absent: $userId@$date"; continue;
+                }
 
                 try {
                     // Protect approved desirs — IA cannot move or remove them
@@ -1667,7 +1795,7 @@ function admin_generate_planning()
                             "SELECT notes FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
                             [$planningId, $userId, $date]
                         );
-                        if ($existingNote === 'desir') continue; // Skip — desir is untouchable
+                        if ($existingNote === 'desir') { $iaRejected[] = "desir protégé: $userId@$date"; continue; }
                     }
 
                     if ($action === 'move' && $toShift && isset($horaireByCode[$toShift])) {
@@ -1704,6 +1832,9 @@ function admin_generate_planning()
                     continue; // Skip this optimization, don't crash
                 }
             }
+            if (!empty($iaRejected)) {
+                error_log("SpocSpace IA: " . count($iaRejected) . " optimisations rejetées — " . implode(' | ', array_slice($iaRejected, 0, 10)));
+            }
         }
     }
 
@@ -1725,7 +1856,7 @@ function admin_generate_planning()
     // Compute per-user stats for debugging
     $userStats = [];
     foreach ($users as $u) {
-        $target = round($iaJoursOuvres * $iaHeuresJour * ($u['taux'] / 100));
+        $target = $userTargetMonthHours[$u['id']];
         $actual = $userHours[$u['id']] ?? 0;
         $days = count($userDays[$u['id']] ?? []);
         $diff = round($actual - $target, 1);
@@ -1748,12 +1879,10 @@ function admin_generate_planning()
     // 1. Couverture : % des besoins remplis
     $totalSlots = 0;
     $filledSlots = 0;
-    $daysInMonth = (int) date('t', strtotime("$mois-01"));
-    foreach ($modules as $mod) {
+    foreach (array_keys($besoinsIdx) as $bModId) {
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $dateStr = sprintf('%s-%02d', $mois, $d);
-            $dow = (int) date('N', strtotime($dateStr));
-            $modBesoins = $besoinsIdx[$mod['id']][$dow] ?? [];
+            $dow = $dateCache[$d]['dow'];
+            $modBesoins = $besoinsIdx[$bModId][$dow] ?? [];
             foreach ($modBesoins as $fId => $nb) {
                 $totalSlots += $nb;
             }
@@ -1806,7 +1935,7 @@ function admin_generate_planning()
     foreach ($users as $u) {
         $wkCount = 0;
         foreach ($userDays[$u['id']] ?? [] as $date => $v) {
-            $dow = (int) date('N', strtotime($date));
+            $dow = $dateCache[$dateByStr[$date] ?? 0]['dow'] ?? (int) date('N', strtotime($date));
             if ($dow >= 6) $wkCount++;
         }
         if (($userHours[$u['id']] ?? 0) > 0) $weekendCounts[] = $wkCount;
@@ -1847,6 +1976,7 @@ function admin_generate_planning()
         'nb_conflicts' => count($conflicts),
         'mode' => $mode,
         'ia_optimizations' => $iaOptimizations,
+        'ia_rejected' => $iaRejected ?? [],
         'ia_cost' => round($iaCostUsd, 6),
         'ia_summary' => $iaResponse['summary'] ?? null,
         'ia_prompt' => $prompt ?? null,
