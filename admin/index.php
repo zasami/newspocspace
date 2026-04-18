@@ -97,6 +97,7 @@ $topbarPlaceholders = [
     'famille'      => 'Rechercher un résident...',
     'email-externe' => 'Rechercher un email...',
     'contacts'      => 'Rechercher un contact...',
+    'fiches-amelioration' => 'Rechercher dans les fiches d\'amélioration...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher un collaborateur...';
 

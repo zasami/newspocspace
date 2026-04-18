@@ -1,7 +1,4 @@
-import { apiPost, escapeHtml, toast, debounce } from '../helpers.js';
-
-let searchDebounced = null;
-let targetUsers = []; // [{id, prenom, nom}]
+import { apiPost, escapeHtml, toast } from '../helpers.js';
 
 export function init() {
     // Tabs
@@ -25,145 +22,18 @@ export function init() {
         });
     });
 
-    // New fiche modal
-    document.getElementById('faNewBtn')?.addEventListener('click', openNewModal);
-
-    // Modal close
-    document.querySelectorAll('[data-fa-close]').forEach(b => {
-        b.addEventListener('click', () => closeModal(b.dataset.faClose));
+    // Detail modal close
+    document.querySelectorAll('[data-fa-close="detail"]').forEach(b => {
+        b.addEventListener('click', closeDetailModal);
     });
-    document.querySelectorAll('.fa-modal').forEach(m => {
-        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
-    });
-
-    // Option toggles (catégorie, criticité, visibility)
-    ['faFCategorie','faFCriticite','faFVisibility'].forEach(gid => {
-        const g = document.getElementById(gid);
-        if (!g) return;
-        g.querySelectorAll('.fa-opt').forEach(o => {
-            o.addEventListener('click', () => {
-                g.querySelectorAll('.fa-opt').forEach(x => x.classList.remove('selected'));
-                o.classList.add('selected');
-                if (gid === 'faFVisibility') {
-                    const tw = document.getElementById('faFTargetWrap');
-                    if (tw) tw.style.display = (o.dataset.value === 'targeted') ? '' : 'none';
-                }
-            });
-        });
-    });
-
-    // User search (targeted)
-    const search = document.getElementById('faFTargetSearch');
-    const results = document.getElementById('faFTargetResults');
-    if (search && results) {
-        searchDebounced = debounce(async () => {
-            const q = search.value.trim();
-            if (q.length < 2) { results.style.display = 'none'; results.innerHTML = ''; return; }
-            const r = await apiPost('search_fiche_amelioration_users', { q });
-            if (!r.success || !r.users.length) { results.style.display = 'none'; return; }
-            results.innerHTML = r.users
-                .filter(u => !targetUsers.some(t => t.id === u.id))
-                .map(u => `<div class="fa-user-search-item" data-uid="${u.id}" data-name="${escapeHtml(u.prenom + ' ' + u.nom)}">${escapeHtml(u.prenom + ' ' + u.nom)}</div>`).join('');
-            results.style.display = results.innerHTML ? '' : 'none';
-        }, 250);
-        search.addEventListener('input', searchDebounced);
-        results.addEventListener('click', e => {
-            const it = e.target.closest('.fa-user-search-item');
-            if (!it) return;
-            const [prenom, ...nomParts] = it.dataset.name.split(' ');
-            addTargetUser({ id: it.dataset.uid, prenom, nom: nomParts.join(' ') });
-            search.value = '';
-            results.style.display = 'none';
-        });
-    }
-
-    // Submit
-    document.getElementById('faFSubmit')?.addEventListener('click', submitFiche);
+    const detailModal = document.getElementById('faDetailModal');
+    detailModal?.addEventListener('click', e => { if (e.target === detailModal) closeDetailModal(); });
 }
 
-export function destroy() {
-    targetUsers = [];
-    searchDebounced = null;
-}
+export function destroy() {}
 
-function openNewModal() {
-    document.getElementById('faFTitre').value = '';
-    document.getElementById('faFDescription').value = '';
-    document.getElementById('faFSuggestion').value = '';
-    document.getElementById('faFAnonymous').checked = false;
-    targetUsers = [];
-    renderTargetChips();
-    const tw = document.getElementById('faFTargetWrap');
-    if (tw) tw.style.display = 'none';
-    // Reset selections to defaults
-    resetSelected('faFCategorie', 'autre');
-    resetSelected('faFCriticite', 'moyenne');
-    resetSelected('faFVisibility', 'private');
-    document.getElementById('faNewModal').classList.add('show');
-}
-
-function resetSelected(gid, val) {
-    const g = document.getElementById(gid);
-    if (!g) return;
-    g.querySelectorAll('.fa-opt').forEach(o => o.classList.toggle('selected', o.dataset.value === val));
-}
-function getSelected(gid) {
-    const o = document.querySelector('#' + gid + ' .fa-opt.selected');
-    return o ? o.dataset.value : '';
-}
-
-function addTargetUser(u) {
-    if (targetUsers.some(x => x.id === u.id)) return;
-    targetUsers.push(u);
-    renderTargetChips();
-}
-function removeTargetUser(id) {
-    targetUsers = targetUsers.filter(u => u.id !== id);
-    renderTargetChips();
-}
-function renderTargetChips() {
-    const el = document.getElementById('faFTargetChips');
-    if (!el) return;
-    el.innerHTML = targetUsers.map(u => {
-        const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
-        return `<span class="fa-user-chip"><span class="avatar-mini">${escapeHtml(initials)}</span>${escapeHtml(u.prenom + ' ' + u.nom)}<button data-remove="${u.id}"><i class="bi bi-x"></i></button></span>`;
-    }).join('');
-    el.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', e => {
-        e.stopPropagation(); removeTargetUser(b.dataset.remove);
-    }));
-}
-
-function closeModal(name) {
-    if (name === 'new') document.getElementById('faNewModal')?.classList.remove('show');
-    if (name === 'detail') document.getElementById('faDetailModal')?.classList.remove('show');
-}
-
-async function submitFiche() {
-    const titre = document.getElementById('faFTitre').value.trim();
-    const description = document.getElementById('faFDescription').value.trim();
-    const suggestion = document.getElementById('faFSuggestion').value.trim();
-    const categorie = getSelected('faFCategorie');
-    const criticite = getSelected('faFCriticite');
-    const visibility = getSelected('faFVisibility');
-    const is_anonymous = document.getElementById('faFAnonymous').checked ? 1 : 0;
-    const concernes_ids = targetUsers.map(u => u.id);
-
-    if (!titre) { toast('Titre requis', 'warning'); return; }
-    if (!description) { toast('Description requise', 'warning'); return; }
-
-    const btn = document.getElementById('faFSubmit');
-    btn.disabled = true;
-    const r = await apiPost('submit_fiche_amelioration', {
-        titre, description, suggestion, categorie, criticite, visibility, is_anonymous, concernes_ids,
-    });
-    btn.disabled = false;
-    if (r.success) {
-        toast('Fiche soumise — merci pour votre contribution', 'success');
-        closeModal('new');
-        setTimeout(() => location.reload(), 500);
-    } else {
-        toast(r.message || 'Erreur', 'danger');
-    }
+function closeDetailModal() {
+    document.getElementById('faDetailModal')?.classList.remove('show');
 }
 
 async function openDetail(ficheId) {

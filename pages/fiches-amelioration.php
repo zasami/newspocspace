@@ -182,7 +182,7 @@ function fa_card_html(array $f, array $statutLabels, array $catLabels, array $cr
 </style>
 
 <div class="page-wrap">
-    <?= render_page_header('Fiches d\'amélioration continue', 'bi-lightbulb', null, null, '<button class="fa-new-btn" id="faNewBtn"><i class="bi bi-plus-lg"></i> Nouvelle fiche</button>') ?>
+    <?= render_page_header('Fiches d\'amélioration continue', 'bi-lightbulb', null, null, '<button class="fa-new-btn" data-link="fiche-amelioration-new"><i class="bi bi-plus-lg"></i> Nouvelle fiche</button>') ?>
 
     <div class="row g-3 mb-3">
         <?= render_stat_card('Mes fiches', count($mesFiches), 'bi-person', 'teal') ?>
@@ -223,71 +223,6 @@ function fa_card_html(array $f, array $statutLabels, array $catLabels, array $cr
             </div>
         <?php endif ?>
     </div>
-</div>
-
-<!-- Nouvelle fiche modal -->
-<div class="fa-modal" id="faNewModal" aria-hidden="true">
-  <div class="fa-modal-inner">
-    <div class="fa-modal-head">
-      <h5><i class="bi bi-lightbulb"></i> Nouvelle fiche d'amélioration</h5>
-      <button class="fa-modal-close" data-fa-close="new"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div class="fa-modal-body">
-      <div class="fa-field">
-        <label class="fa-label">Titre <span style="color:#A85B4A">*</span></label>
-        <input type="text" class="fa-input" id="faFTitre" maxlength="255" placeholder="Ex. : améliorer la rotation du planning du weekend">
-      </div>
-      <div class="fa-field">
-        <label class="fa-label">Catégorie</label>
-        <div class="fa-options" id="faFCategorie">
-          <?php foreach ($categorieLabels as $k => $l): ?>
-            <div class="fa-opt<?= $k === 'autre' ? ' selected' : '' ?>" data-value="<?= h($k) ?>"><?= h($l) ?></div>
-          <?php endforeach ?>
-        </div>
-      </div>
-      <div class="fa-field">
-        <label class="fa-label">Criticité</label>
-        <div class="fa-options" id="faFCriticite">
-          <?php foreach ($criticiteLabels as $k => $l): ?>
-            <div class="fa-opt<?= $k === 'moyenne' ? ' selected' : '' ?>" data-value="<?= h($k) ?>"><?= h($l['label']) ?></div>
-          <?php endforeach ?>
-        </div>
-      </div>
-      <div class="fa-field">
-        <label class="fa-label">Description du problème / suggestion <span style="color:#A85B4A">*</span></label>
-        <textarea class="fa-textarea" id="faFDescription" maxlength="5000" placeholder="Décrivez la situation observée, le contexte, ce qui pose problème..."></textarea>
-      </div>
-      <div class="fa-field">
-        <label class="fa-label">Solution proposée (optionnel)</label>
-        <textarea class="fa-textarea" id="faFSuggestion" maxlength="5000" placeholder="Votre proposition concrète pour résoudre ou améliorer la situation..."></textarea>
-      </div>
-      <div class="fa-field">
-        <label class="fa-label">Visibilité</label>
-        <div class="fa-options" id="faFVisibility">
-          <div class="fa-opt selected" data-value="private">🔒 Privée (admin uniquement)</div>
-          <div class="fa-opt" data-value="public">🌐 Publique (tous les collègues)</div>
-          <div class="fa-opt" data-value="targeted">🎯 Ciblée (personnes précises)</div>
-        </div>
-      </div>
-      <div class="fa-field" id="faFTargetWrap" style="display:none">
-        <label class="fa-label">Personnes concernées</label>
-        <input type="text" class="fa-input" id="faFTargetSearch" placeholder="Rechercher un collaborateur...">
-        <div class="fa-user-search-results" id="faFTargetResults" style="display:none"></div>
-        <div class="fa-user-chips" id="faFTargetChips"></div>
-      </div>
-      <label class="fa-check-row">
-        <input type="checkbox" id="faFAnonymous">
-        <div>
-          <strong>Soumettre anonymement</strong>
-          <div style="font-size:.78rem;color:var(--cl-text-muted);margin-top:2px">Votre identité ne sera pas stockée (anonymat strict — même l'admin ne pourra pas vous retrouver).</div>
-        </div>
-      </label>
-    </div>
-    <div class="fa-modal-foot">
-      <button class="btn btn-outline-secondary btn-sm" data-fa-close="new">Annuler</button>
-      <button class="fa-new-btn" id="faFSubmit"><i class="bi bi-send"></i> Soumettre</button>
-    </div>
-  </div>
 </div>
 
 <!-- Detail modal -->

@@ -203,9 +203,17 @@ function admin_add_fiche_amelioration_comment()
     $admin = require_responsable();
     global $params;
 
+    require_once __DIR__ . '/../../core/HtmlSanitize.php';
     $id = $params['fiche_id'] ?? '';
-    $content = Sanitize::text($params['content'] ?? '', 3000);
-    if (!$id || !$content) bad_request('Paramètres manquants');
+    $richOpts = ['allow_attrs' => [
+        'a' => ['href','title','target','rel'], 'span' => ['class'], 'div' => ['class'],
+        'ul' => ['class'], 'li' => ['class'], 'code' => ['class'], 'pre' => ['class'],
+        'th' => ['colspan','rowspan'], 'td' => ['colspan','rowspan'], '*' => [],
+    ]];
+    $content = HtmlSanitize::clean((string)($params['content'] ?? ''), $richOpts);
+    if (mb_strlen($content) > 10000) $content = mb_substr($content, 0, 10000);
+    $textOnly = trim(strip_tags($content));
+    if (!$id || !$textOnly) bad_request('Paramètres manquants');
 
     $fiche = Db::fetch("SELECT id FROM fiches_amelioration WHERE id = ?", [$id]);
     if (!$fiche) not_found('Fiche introuvable');

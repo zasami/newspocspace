@@ -10,6 +10,9 @@ const FA_CRITICITES = ['faible', 'moyenne', 'haute'];
 const FA_VISIBILITIES = ['private', 'public', 'targeted'];
 const FA_STATUTS = ['soumise', 'en_revue', 'en_cours', 'realisee', 'rejetee'];
 
+const FA_TYPES = ['incident','dysfonctionnement','suggestion','non_conformite','plainte','presque_accident'];
+const FA_PERSONNES = ['resident','collaborateur','visiteur','prestataire'];
+
 /**
  * Soumettre une nouvelle fiche
  */
@@ -20,33 +23,64 @@ function submit_fiche_amelioration()
 
     $userId = $_SESSION['ss_user']['id'];
     $isAnonymous = !empty($params['is_anonymous']) ? 1 : 0;
+    $isDraft     = !empty($params['is_draft']) ? 1 : 0;
     $visibility = in_array($params['visibility'] ?? '', FA_VISIBILITIES) ? $params['visibility'] : 'private';
     $categorie  = in_array($params['categorie'] ?? '', FA_CATEGORIES) ? $params['categorie'] : 'autre';
     $criticite  = in_array($params['criticite'] ?? '', FA_CRITICITES) ? $params['criticite'] : 'moyenne';
+    $typeEvt    = in_array($params['type_evenement'] ?? '', FA_TYPES) ? $params['type_evenement'] : 'suggestion';
+    require_once __DIR__ . '/../core/HtmlSanitize.php';
+    // Allow class attribute on ul/li so we can store <ul class="checklist"><li class="checked">…</li></ul>
+    $richOpts = ['allow_attrs' => [
+        'a'    => ['href', 'title', 'target', 'rel'],
+        'span' => ['class'], 'div' => ['class'],
+        'ul'   => ['class'], 'li'  => ['class'],
+        'code' => ['class'], 'pre' => ['class'],
+        'th'   => ['colspan', 'rowspan'], 'td' => ['colspan', 'rowspan'],
+        '*'    => [],
+    ]];
     $titre = Sanitize::text($params['titre'] ?? '', 255);
-    $description = Sanitize::text($params['description'] ?? '', 5000);
-    $suggestion = Sanitize::text($params['suggestion'] ?? '', 5000);
+    $description = HtmlSanitize::clean((string)($params['description'] ?? ''), $richOpts);
+    $suggestion = HtmlSanitize::clean((string)($params['suggestion'] ?? ''), $richOpts);
+    $mesures = HtmlSanitize::clean((string)($params['mesures_immediates'] ?? ''), $richOpts);
+    if (mb_strlen($description) > 20000) $description = mb_substr($description, 0, 20000);
+    if (mb_strlen($suggestion) > 20000) $suggestion = mb_substr($suggestion, 0, 20000);
+    if (mb_strlen($mesures) > 20000) $mesures = mb_substr($mesures, 0, 20000);
+    $lieu = Sanitize::text($params['lieu_precis'] ?? '', 255);
+    $dateEvt = Sanitize::date($params['date_evenement'] ?? '');
+    $heureEvt = Sanitize::time($params['heure_evenement'] ?? '');
+    $uniteId = (string)($params['unite_module_id'] ?? '');
+    if ($uniteId && strlen($uniteId) !== 36) $uniteId = '';
+    $personnes = array_values(array_intersect(FA_PERSONNES, explode(',', (string)($params['personnes_concernees_types'] ?? ''))));
     $concernesIds = is_array($params['concernes_ids'] ?? null) ? $params['concernes_ids'] : [];
 
     if (!$titre) bad_request('Titre requis');
-    if (!$description) bad_request('Description requise');
+    if (!$isDraft && !$description) bad_request('Description requise');
+
+    // Reference auto-générée : FAC-YYYY-NNN
+    $year = date('Y');
+    $nb = (int) Db::getOne("SELECT COUNT(*) FROM fiches_amelioration WHERE YEAR(created_at) = ?", [$year]);
+    $reference = sprintf('FAC-%d-%03d', $year, $nb + 1);
 
     $id = Uuid::v4();
 
     Db::exec(
         "INSERT INTO fiches_amelioration
-         (id, auteur_id, is_anonymous, visibility, titre, categorie, criticite, description, suggestion, statut)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'soumise')",
+         (id, reference_code, auteur_id, is_anonymous, visibility, type_evenement, personnes_concernees_types,
+          unite_module_id, titre, categorie, criticite, description, suggestion,
+          date_evenement, heure_evenement, lieu_precis, mesures_immediates,
+          statut, is_draft)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
-            $id,
-            $isAnonymous ? null : $userId, // anonymat strict
-            $isAnonymous,
-            $visibility,
-            $titre,
-            $categorie,
-            $criticite,
-            $description,
-            $suggestion ?: null,
+            $id, $reference,
+            $isAnonymous ? null : $userId,
+            $isAnonymous, $visibility, $typeEvt,
+            $personnes ? implode(',', $personnes) : null,
+            $uniteId ?: null,
+            $titre, $categorie, $criticite,
+            $description, $suggestion ?: null,
+            $dateEvt ?: null, $heureEvt ?: null,
+            $lieu ?: null, $mesures ?: null,
+            'soumise', $isDraft,
         ]
     );
 
@@ -58,7 +92,7 @@ function submit_fiche_amelioration()
         }
     }
 
-    respond(['success' => true, 'id' => $id, 'message' => 'Fiche soumise']);
+    respond(['success' => true, 'id' => $id, 'reference' => $reference, 'message' => $isDraft ? 'Brouillon enregistré' : 'Fiche soumise']);
 }
 
 /**
