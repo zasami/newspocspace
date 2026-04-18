@@ -105,6 +105,12 @@ return [
     'salles' => [
         'get_salles_disponibilites', 'create_reservation_salle', 'annuler_reservation_salle',
     ],
+    'fiches_amelioration' => [
+        'submit_fiche_amelioration', 'get_fiches_amelioration', 'get_fiche_amelioration_detail',
+        'add_fiche_amelioration_comment', 'respond_fiche_amelioration_rdv',
+        'upload_fiche_amelioration_attachment', 'download_fiche_amelioration_attachment',
+        'search_fiche_amelioration_users',
+    ],
     'cuisine' => [
         'cuisine_get_menus_semaine', 'cuisine_save_menu', 'cuisine_delete_menu',
         'cuisine_get_reservations_collab',

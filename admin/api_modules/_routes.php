@@ -235,6 +235,12 @@ return [
         'admin_save_email_template', 'admin_reset_email_template',
         'admin_preview_email_template', 'admin_send_test_email_template',
     ],
+    'fiches_amelioration' => [
+        'admin_list_fiches_amelioration', 'admin_get_fiche_amelioration',
+        'admin_update_fiche_amelioration_statut', 'admin_add_fiche_amelioration_comment',
+        'admin_propose_fiche_amelioration_rdv', 'admin_update_fiche_amelioration_rdv',
+        'admin_download_fiche_amelioration_attachment', 'admin_delete_fiche_amelioration',
+    ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',
         'admin_get_wiki_pages', 'admin_get_wiki_page', 'admin_create_wiki_page',

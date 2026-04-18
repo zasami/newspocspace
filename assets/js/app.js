@@ -24,6 +24,7 @@ const moduleMap = {
     'profile':    () => import('./modules/profile.js'),
     'notifications': () => import('./modules/notifications.js'),
     'fiches-salaire': () => import('./modules/fiches-salaire.js'),
+    'fiches-amelioration': () => import('./modules/fiches-amelioration.js'),
     'covoiturage': () => import('./modules/covoiturage.js'),
     'repartition': () => import('./modules/repartition.js'),
     'cuisine':    () => import('./modules/cuisine.js'),

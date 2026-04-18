@@ -203,6 +203,52 @@ class EmailTemplate
                     'footer_text' => '',
                 ],
             ],
+            'fiche_amelioration_statut' => [
+                'name' => 'Fiche d\'amélioration — Changement de statut',
+                'description' => "Envoyé à l'auteur quand le statut de sa fiche d'amélioration continue change",
+                'category' => 'Amélioration continue',
+                'variables' => ['prenom', 'nom', 'email', 'titre', 'statut', 'url_fiche', 'ems_nom'],
+                'defaults' => [
+                    'subject' => 'Votre fiche d\'amélioration — statut : {{statut}}',
+                    'header_color' => '#2d4a43',
+                    'header_text_color' => '#ffffff',
+                    'show_logo' => 1,
+                    'header_title' => '{{ems_nom}}',
+                    'header_subtitle' => 'Amélioration continue',
+                    'blocks' => [
+                        ['type' => 'paragraph', 'content' => "Bonjour {{prenom}},"],
+                        ['type' => 'paragraph', 'content' => "Votre fiche d'amélioration continue « <strong>{{titre}}</strong> » a changé de statut."],
+                        ['type' => 'highlight', 'title' => 'Nouveau statut', 'color' => '#2d4a43', 'bg' => '#f4f9f6', 'content' => "<strong>{{statut}}</strong>"],
+                        ['type' => 'paragraph', 'content' => "Merci pour votre contribution à l'amélioration de notre établissement."],
+                        ['type' => 'button', 'label' => 'Voir ma fiche', 'url' => '{{url_fiche}}', 'color' => '#2d4a43'],
+                        ['type' => 'signature', 'content' => "Cordialement,\n<strong>{{ems_nom}}</strong>"],
+                    ],
+                    'footer_text' => "Vous recevez cet email car vous êtes l'auteur de la fiche d'amélioration mentionnée.",
+                ],
+            ],
+            'fiche_amelioration_rdv' => [
+                'name' => 'Fiche d\'amélioration — Proposition de RDV',
+                'description' => "Envoyé à l'auteur quand l'administration propose un RDV pour discuter de sa fiche",
+                'category' => 'Amélioration continue',
+                'variables' => ['prenom', 'nom', 'email', 'titre', 'date_rdv', 'lieu', 'admin_notes', 'url_fiche', 'ems_nom'],
+                'defaults' => [
+                    'subject' => 'Proposition de rendez-vous — fiche « {{titre}} »',
+                    'header_color' => '#5B4B6B',
+                    'header_text_color' => '#ffffff',
+                    'show_logo' => 1,
+                    'header_title' => '{{ems_nom}}',
+                    'header_subtitle' => 'Proposition de rendez-vous',
+                    'blocks' => [
+                        ['type' => 'paragraph', 'content' => "Bonjour {{prenom}},"],
+                        ['type' => 'paragraph', 'content' => "Nous souhaitons échanger avec vous au sujet de votre fiche d'amélioration « <strong>{{titre}}</strong> »."],
+                        ['type' => 'highlight', 'title' => 'Rendez-vous proposé', 'color' => '#5B4B6B', 'bg' => '#f4f0f7', 'content' => "📅 <strong>{{date_rdv}}</strong><br>📍 {{lieu}}"],
+                        ['type' => 'paragraph', 'content' => "{{admin_notes}}"],
+                        ['type' => 'button', 'label' => 'Accepter ou refuser dans SpocSpace', 'url' => '{{url_fiche}}', 'color' => '#5B4B6B'],
+                        ['type' => 'signature', 'content' => "Cordialement,\n<strong>{{ems_nom}}</strong>"],
+                    ],
+                    'footer_text' => '',
+                ],
+            ],
         ];
     }
 

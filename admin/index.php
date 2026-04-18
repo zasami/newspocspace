@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -158,6 +158,7 @@ $pageLabels = [
     'wiki-analytics'   => 'Analytics Wiki',
     'securite'         => 'Sécurité & Antivirus',
     'email-templates'  => 'Templates d\'email',
+    'fiches-amelioration' => 'Amélioration continue',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -237,6 +238,7 @@ $sidebarCategories = [
             'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
             'annuaire'      => ['label' => 'Annuaire',           'icon' => 'telephone'],
             'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
+            'fiches-amelioration' => ['label' => 'Amélioration continue', 'icon' => 'lightbulb'],
             'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
             'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
             'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
