@@ -66,6 +66,9 @@ function admin_save_config()
         'ia_jours_ouvres', 'ia_heures_jour', 'ia_consecutif_max', 'ia_consecutif_max_besoins',
         'ia_direction_weekend_off', 'ia_bonus_principal', 'ia_random_max',
         'ia_weekend_skip_prob', 'ia_seuil_soir', 'ia_seuil_nuit', 'ia_admin_shift_code',
+        'ia_consecutif_max_as', 'ia_consecutif_max_nuit',
+        // Législation suisse (LTr) — plafonds légaux
+        'ia_legal_max_hours_week', 'ia_legal_max_consec_days', 'ia_max_over_taux_hours_week',
         // IA API keys
         'ai_provider', 'gemini_api_key', 'gemini_model',
         'anthropic_api_key', 'anthropic_model',

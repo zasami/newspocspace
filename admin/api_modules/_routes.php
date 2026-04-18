@@ -3,6 +3,11 @@ return [
     'dashboard' => [
         'admin_get_dashboard_stats', 'admin_get_system_info', 'admin_get_session_ping',
     ],
+    'admissions' => [
+        'admin_get_admissions', 'admin_get_admission',
+        'admin_update_admission_status', 'admin_update_admission_note',
+        'admin_delete_admission',
+    ],
     'users' => [
         'admin_get_users', 'admin_get_user', 'admin_search_users', 'admin_create_user',
         'admin_update_user', 'admin_toggle_user', 'admin_reset_user_password',
