@@ -419,8 +419,10 @@ function admin_generate_planning()
     // Art. 21 LTr : jour de repos hebdomadaire → max 6 jours consécutifs.
     // Art. 17a LTr : 5 nuits consécutives max (déjà $iaConsecutifMaxNuit).
     // Art. 31 al. 2 LTr : 9h/jour pour travailleurs de nuit (non appliqué ici — via shifts).
-    $iaLegalMaxHoursWeek    = (int) ($cfg['ia_legal_max_hours_week']    ?? 50); // LTr art. 9 al. 1 let. b
-    $iaLegalMaxConsecDays   = (int) ($cfg['ia_legal_max_consec_days']   ?? 6);  // LTr art. 21
+    $iaLegalMaxHoursWeek     = (int)   ($cfg['ia_legal_max_hours_week']     ?? 50); // LTr art. 9 al. 1 let. b
+    $iaLegalMaxConsecDays    = (int)   ($cfg['ia_legal_max_consec_days']    ?? 6);  // LTr art. 21
+    $iaLegalMaxHoursDay      = (float) ($cfg['ia_legal_max_hours_day']      ?? 12); // OLT 2 art. 7 (santé)
+    $iaLegalReposQuotidienH  = (float) ($cfg['ia_legal_repos_quotidien_h']  ?? 11); // LTr art. 15a al. 1
     // Limite contractuelle : taux + tolérance, plafonnée par le LTr.
     // 5h est un bon compromis : évite les heures sup abusives (conforme migration 080).
     $iaMaxOverTauxHoursWeek = (int) ($cfg['ia_max_over_taux_hours_week'] ?? 5);
@@ -721,9 +723,39 @@ function admin_generate_planning()
     $userHours = [];
     $userDays = [];     // [userId][date] = true
     $userShifts = [];   // [userId][date] = shift code (for rotation tracking)
+    $userShiftTimes = []; // [userId][date] = ['start_min'=>int, 'end_min_abs'=>int] (en min depuis minuit du jour ; end_min_abs peut dépasser 1440 si shift traverse minuit)
     $userWeekHours = []; // [userId][weekNum] = hours worked that week (for AS weekly cap)
     $assigned = 0;
     $conflicts = [];
+
+    // ── Helper: parse heure_debut/heure_fin d'un shift en minutes absolues ──
+    // Si shift traverse minuit (fin<debut), end_min_abs > 1440.
+    $parseShiftTimes = function ($shift) {
+        $startMin = (int) substr($shift['heure_debut'], 0, 2) * 60 + (int) substr($shift['heure_debut'], 3, 2);
+        $endMin   = (int) substr($shift['heure_fin'], 0, 2) * 60 + (int) substr($shift['heure_fin'], 3, 2);
+        if ($endMin <= $startMin) $endMin += 1440; // shift nuit passant minuit
+        return ['start_min' => $startMin, 'end_min_abs' => $endMin];
+    };
+
+    // ── Helper: check LTr art. 15a — 11h de repos entre deux journées ──
+    // Retourne true si le shift proposé respecte le repos minimum après le shift de J-1.
+    $checkRestBetween = function ($userId, $date, $shift) use (&$userShiftTimes, $mois, $iaLegalReposQuotidienH, $parseShiftTimes) {
+        $dNum = (int) substr($date, -2);
+        if ($dNum <= 1) return true; // premier jour du mois : pas de J-1 connu dans ce planning
+        $prevDate = $mois . '-' . ($dNum - 1 < 10 ? '0' . ($dNum - 1) : ($dNum - 1));
+        $prev = $userShiftTimes[$userId][$prevDate] ?? null;
+        if (!$prev) return true; // pas de shift la veille
+        $t = $parseShiftTimes($shift);
+        // fin shift J-1 (en minutes depuis minuit J-1) ; début shift J (en minutes depuis minuit J)
+        // gap = (24*60 - prev['end_min_abs']) + t['start_min'] si end_min_abs <= 1440
+        //     = t['start_min'] - (prev['end_min_abs'] - 1440) si end_min_abs > 1440 (shift nuit)
+        if ($prev['end_min_abs'] <= 1440) {
+            $gap = (1440 - $prev['end_min_abs']) + $t['start_min'];
+        } else {
+            $gap = $t['start_min'] - ($prev['end_min_abs'] - 1440);
+        }
+        return $gap >= $iaLegalReposQuotidienH * 60;
+    };
 
     // ── Helper: get ISO week number for a date (cached) ──
     $getWeekNum = function ($date) use (&$dateByStr, &$dateCache) {
@@ -1140,6 +1172,12 @@ function admin_generate_planning()
                     $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                     if ($currentWeekHours + (float) $shift['duree_effective'] > $userWeeklyHardCap[$u['id']]) continue;
 
+                    // ── LTr OLT 2 art. 7 : max 12h effectif par jour ──
+                    if ((float) $shift['duree_effective'] > $iaLegalMaxHoursDay) continue;
+
+                    // ── LTr art. 15a : 11h de repos entre deux journées ──
+                    if (!$checkRestBetween($u['id'], $date, $shift)) continue;
+
                     // Part-time: prefer shorter shifts — but NEVER override an approved desir
                     if (!$isDesir && $u['taux'] < 80 && $assignedForSlot > 0 && $u['fonction_code'] !== 'AS') {
                         if (!empty($morningShifts)) $shift = $morningShifts[array_rand($morningShifts)];
@@ -1258,6 +1296,10 @@ function admin_generate_planning()
                 // ── LTr HARD CAP : plafond hebdo absolu même pour les désirs ──
                 $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                 if ($currentWeekHours + (float) $shift['duree_effective'] > $userWeeklyHardCap[$u['id']]) continue;
+                // ── LTr OLT 2 art. 7 : max 12h effectif par jour ──
+                if ((float) $shift['duree_effective'] > $iaLegalMaxHoursDay) continue;
+                // ── LTr art. 15a : 11h de repos entre deux journées ──
+                if (!$checkRestBetween($u['id'], $date, $shift)) continue;
 
                 $asSlotIdx1_5 = $moduleASSlotIdx[$modId][$date] ?? ($c['assigne'] + $filled);
                 $groupeId = $getGroupeId('AS', $modId, $asSlotIdx1_5);
@@ -1427,6 +1469,16 @@ function admin_generate_planning()
                     $currentWeekHours = $userWeekHours[$u['id']][$wk] ?? 0;
                     if ($currentWeekHours + (float) $shift['duree_effective'] > $userWeeklyHardCap[$u['id']]) {
                         error_log("SpocSpace LTr: refus assignation {$u['prenom']} {$u['nom']} le $date — dépasserait plafond hebdo (" . $userWeeklyHardCap[$u['id']] . "h).");
+                        continue;
+                    }
+                    // ── LTr OLT 2 art. 7 : max 12h effectif par jour ──
+                    if ((float) $shift['duree_effective'] > $iaLegalMaxHoursDay) {
+                        error_log("SpocSpace LTr OLT2 art. 7: refus assignation {$u['prenom']} {$u['nom']} le $date — shift {$shift['code']} dépasse {$iaLegalMaxHoursDay}h/jour.");
+                        continue;
+                    }
+                    // ── LTr art. 15a : 11h de repos entre deux journées ──
+                    if (!$checkRestBetween($u['id'], $date, $shift)) {
+                        error_log("SpocSpace LTr art. 15a: refus assignation {$u['prenom']} {$u['nom']} le $date — repos quotidien < {$iaLegalReposQuotidienH}h.");
                         continue;
                     }
                 }
