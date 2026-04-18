@@ -419,11 +419,11 @@ function admin_generate_planning()
     // Art. 21 LTr : jour de repos hebdomadaire → max 6 jours consécutifs.
     // Art. 17a LTr : 5 nuits consécutives max (déjà $iaConsecutifMaxNuit).
     // Art. 31 al. 2 LTr : 9h/jour pour travailleurs de nuit (non appliqué ici — via shifts).
-    $iaLegalMaxHoursWeek = (int) ($cfg['ia_legal_max_hours_week'] ?? 50); // LTr art. 9 al. 1 let. b
-    $iaLegalMaxConsecDays = (int) ($cfg['ia_legal_max_consec_days'] ?? 6); // LTr art. 21
-    // Limite contractuelle : si taux < 100, on veut aussi ne pas dépasser raisonnablement.
-    // Tolérance max hebdo au-dessus du taux contractuel (pour coverage + entraide).
-    $iaMaxOverTauxHoursWeek = (int) ($cfg['ia_max_over_taux_hours_week'] ?? 10);
+    $iaLegalMaxHoursWeek    = (int) ($cfg['ia_legal_max_hours_week']    ?? 50); // LTr art. 9 al. 1 let. b
+    $iaLegalMaxConsecDays   = (int) ($cfg['ia_legal_max_consec_days']   ?? 6);  // LTr art. 21
+    // Limite contractuelle : taux + tolérance, plafonnée par le LTr.
+    // 5h est un bon compromis : évite les heures sup abusives (conforme migration 080).
+    $iaMaxOverTauxHoursWeek = (int) ($cfg['ia_max_over_taux_hours_week'] ?? 5);
 
     // Load reference data
     $users = Db::fetchAll(
