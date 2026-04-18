@@ -8,6 +8,16 @@
 -- Ce plafond prime sur toute tolérance contractuelle et sur les désirs validés.
 INSERT IGNORE INTO ems_config (config_key, config_value) VALUES ('ia_legal_max_hours_week', '50');
 
+-- ── Plafond journalier (OLT 2 art. 7 — hôpitaux/cliniques/EMS) ──
+-- 12h de travail EFFECTIF par jour max (les pauses ≥30min ne comptent pas).
+-- Permet les "journées 12h" : ex. 7h30-20h30 avec 1h de pause = 12h effectif.
+INSERT IGNORE INTO ems_config (config_key, config_value) VALUES ('ia_legal_max_hours_day', '12');
+
+-- ── Repos quotidien entre deux journées (LTr art. 15a al. 1) ──
+-- 11h consécutives minimum entre la fin d'un shift et le début du suivant.
+-- Ex. : shift fini à 20h30 → prochaine prise à 07h30 minimum le lendemain.
+INSERT IGNORE INTO ems_config (config_key, config_value) VALUES ('ia_legal_repos_quotidien_h', '11');
+
 -- ── Jours consécutifs max (LTr art. 21) ──
 -- Un jour de repos hebdomadaire obligatoire → 6 jours consécutifs travaillés max.
 INSERT IGNORE INTO ems_config (config_key, config_value) VALUES ('ia_legal_max_consec_days', '6');

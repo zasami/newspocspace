@@ -1199,6 +1199,7 @@ function admin_generate_planning()
                     $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                     $userDays[$u['id']][$date] = true;
                     $userShifts[$u['id']][$date] = $shift['code'];
+                    $userShiftTimes[$u['id']][$date] = $parseShiftTimes($shift);
                     $userWeekDays[$u['id']][$wk] = ($userWeekDays[$u['id']][$wk] ?? 0) + 1;
                     $assigned++;
                     $assignedForSlot++;
@@ -1316,6 +1317,7 @@ function admin_generate_planning()
                 $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                 $userDays[$u['id']][$date] = true;
                 $userShifts[$u['id']][$date] = $shift['code'];
+                $userShiftTimes[$u['id']][$date] = $parseShiftTimes($shift);
                 $assigned++;
                 $filled++;
             }
@@ -1504,6 +1506,7 @@ function admin_generate_planning()
                 $userHours[$u['id']] = ($userHours[$u['id']] ?? 0) + (float) $shift['duree_effective'];
                 $userDays[$u['id']][$date] = true;
                 $userShifts[$u['id']][$date] = $shift['code'];
+                $userShiftTimes[$u['id']][$date] = $parseShiftTimes($shift);
                 $userWeekDays[$u['id']][$wk] = ($userWeekDays[$u['id']][$wk] ?? 0) + 1;
                 $assigned++;
             }
@@ -1638,8 +1641,10 @@ function admin_generate_planning()
         $prompt .= "10. LÉGISLATION SUISSE (LTr art. 9 al. 1 let. b) — plafond hebdomadaire absolu : {$iaLegalMaxHoursWeek}h/semaine MAXIMUM, peu importe le taux contractuel ou un désir validé. Toute optimisation qui ferait dépasser ce seuil est REJETÉE.\n";
         $prompt .= "11. LÉGISLATION SUISSE (LTr art. 21) — jour de repos hebdomadaire : AUCUN employé ne peut travailler plus de {$iaLegalMaxConsecDays} jours consécutifs (tous profils confondus).\n";
         $prompt .= "12. Plafond contractuel : ne pas dépasser taux×heures_hebdo + {$iaMaxOverTauxHoursWeek}h de tolérance (ex : un 50% doit rester ≤ " . round(($iaJoursOuvres * $iaHeuresJour / $nbWeeksInMonth) * 0.5 + $iaMaxOverTauxHoursWeek, 1) . "h/semaine).\n";
+        $prompt .= "13. LÉGISLATION SUISSE (OLT 2 art. 7 — santé/EMS) — durée journalière max : {$iaLegalMaxHoursDay}h de travail EFFECTIF par jour (pauses ≥30min déjà exclues). Un shift dont duree_effective > {$iaLegalMaxHoursDay}h ne doit JAMAIS être proposé.\n";
+        $prompt .= "14. LÉGISLATION SUISSE (LTr art. 15a al. 1) — repos quotidien : au moins {$iaLegalReposQuotidienH}h de repos entre la fin d'un shift et le début du shift suivant le lendemain. Toute optimisation qui viole ce repos est REJETÉE (ex : finir à 20h30 puis reprendre à 06h30 = 10h = VIOLATION).\n";
         if ($iaDirWeekendOff) {
-            $prompt .= "13. Direction/responsable : ne travaillent PAS le samedi ni le dimanche.\n";
+            $prompt .= "15. Direction/responsable : ne travaillent PAS le samedi ni le dimanche.\n";
         }
         $prompt .= "</contraintes_inviolables>\n\n";
 
@@ -1724,7 +1729,10 @@ function admin_generate_planning()
         $prompt .= "[5] La fonction de l'employé (colonne fonction dans <staff>) correspond au besoin du conflit traité.\n";
         $prompt .= "[6] L'employé n'est pas déjà assigné ce jour-là (pour action=add).\n";
         $prompt .= "[7] L'assignation ciblée n'est pas un 'desir' (pour action=move ou remove).\n";
-        $prompt .= "[8] Aucune <contraintes_inviolables> ni <regles_importantes> n'est violée.\n";
+        $prompt .= "[8] Le shift choisi a une duree_effective ≤ {$iaLegalMaxHoursDay}h (plafond journalier OLT 2 art. 7).\n";
+        $prompt .= "[9] Le repos quotidien ≥ {$iaLegalReposQuotidienH}h est respecté (écart heure_fin du shift J-1 → heure_debut du shift J).\n";
+        $prompt .= "[10] L'employé n'atteindra pas {$iaLegalMaxHoursWeek}h sur la semaine ISO en ajoutant ce shift (LTr art. 9).\n";
+        $prompt .= "[11] Aucune <contraintes_inviolables> ni <regles_importantes> n'est violée.\n";
         $prompt .= "</checklist_avant_chaque_optimisation>\n\n";
 
         $prompt .= "<format_sortie>\n";
@@ -1892,23 +1900,31 @@ function admin_generate_planning()
                     $iaRejected[] = "employé absent: $userId@$date"; continue;
                 }
 
-                // ── LTr : validation plafond hebdo + jours consécutifs pour add/move ──
+                // ── LTr : validation plafonds + repos pour add/move ──
                 if (($action === 'add' || $action === 'move') && isset($horaireByCode[$toShift])) {
-                    $shiftHours = (float) $horaireByCode[$toShift]['duree_effective'];
+                    $shiftObj = $horaireByCode[$toShift];
+                    $shiftHours = (float) $shiftObj['duree_effective'];
                     $wkIA = $dateCache[$dateByStr[$date] ?? 0]['wk'] ?? null;
                     $capIA = $userWeeklyHardCap[$userId] ?? $iaLegalMaxHoursWeek;
 
+                    // 1) Plafond hebdo (Art. 9 LTr)
                     if ($action === 'add' && $wkIA !== null) {
                         $alreadyWk = $userWeekHours[$userId][$wkIA] ?? 0;
                         if ($alreadyWk + $shiftHours > $capIA) {
-                            $iaRejected[] = "LTr plafond hebdo dépassé ({$capIA}h): $userId@$date"; continue;
+                            $iaRejected[] = "LTr art. 9 plafond hebdo dépassé ({$capIA}h): $userId@$date"; continue;
                         }
                     }
-                    if ($action === 'add' && isset($usersById[$userId])) {
-                        // LTr art. 21 : 6 jours consécutifs max
-                        if ($getConsecutive($userId, $date) >= $iaLegalMaxConsecDays) {
-                            $iaRejected[] = "LTr art. 21 (6j consécutifs): $userId@$date"; continue;
-                        }
+                    // 2) Max 6 jours consécutifs (Art. 21 LTr)
+                    if ($action === 'add' && $getConsecutive($userId, $date) >= $iaLegalMaxConsecDays) {
+                        $iaRejected[] = "LTr art. 21 (6j consécutifs): $userId@$date"; continue;
+                    }
+                    // 3) Max 12h effectif/jour (OLT 2 art. 7 — santé)
+                    if ($shiftHours > $iaLegalMaxHoursDay) {
+                        $iaRejected[] = "LTr OLT 2 art. 7 shift >{$iaLegalMaxHoursDay}h/jour: $userId@$date"; continue;
+                    }
+                    // 4) Repos quotidien 11h (Art. 15a LTr)
+                    if ($action === 'add' && !$checkRestBetween($userId, $date, $shiftObj)) {
+                        $iaRejected[] = "LTr art. 15a repos <{$iaLegalReposQuotidienH}h: $userId@$date"; continue;
                     }
                 }
 
@@ -2070,20 +2086,23 @@ function admin_generate_planning()
         $qualityReport['weekend_mean'] = round(array_sum($weekendCounts) / count($weekendCounts), 1);
     }
 
-    // 5. Conformité LTr — détection violations plafond hebdo ou jours consécutifs
+    // 5. Conformité LTr — détection complète (hebdo, consécutifs, journalier, repos)
     $ltrWeeklyViolations = 0;
     $ltrConsecViolations = 0;
+    $ltrDailyOverflow = 0;
+    $ltrRestViolations = 0;
     $ltrViolations = [];
     foreach ($users as $u) {
         $uid = $u['id'];
         if (empty($userWeekHours[$uid])) continue;
+        // Plafond hebdo (LTr art. 9)
         foreach ($userWeekHours[$uid] as $wkNum => $hWk) {
             if ($hWk > $iaLegalMaxHoursWeek) {
                 $ltrWeeklyViolations++;
-                $ltrViolations[] = "LTr 9: {$u['prenom']} {$u['nom']} sem.{$wkNum} = {$hWk}h (>{$iaLegalMaxHoursWeek}h)";
+                $ltrViolations[] = "LTr art. 9: {$u['prenom']} {$u['nom']} sem.{$wkNum} = {$hWk}h (>{$iaLegalMaxHoursWeek}h)";
             }
         }
-        // Vérif jours consécutifs max
+        // Jours consécutifs (LTr art. 21)
         $streak = 0; $maxStreak = 0;
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $date = $dateCache[$d]['date'];
@@ -2092,16 +2111,58 @@ function admin_generate_planning()
         }
         if ($maxStreak > $iaLegalMaxConsecDays) {
             $ltrConsecViolations++;
-            $ltrViolations[] = "LTr 21: {$u['prenom']} {$u['nom']} {$maxStreak}j consécutifs (>{$iaLegalMaxConsecDays}j)";
+            $ltrViolations[] = "LTr art. 21: {$u['prenom']} {$u['nom']} {$maxStreak}j consécutifs (>{$iaLegalMaxConsecDays}j)";
+        }
+        // Repos quotidien (LTr art. 15a) : fin shift J-1 → début shift J
+        if (!empty($userShiftTimes[$uid])) {
+            $prevDate = null; $prev = null;
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $date = $dateCache[$d]['date'];
+                $cur = $userShiftTimes[$uid][$date] ?? null;
+                if ($cur && $prev && $prevDate) {
+                    // Continuité J-1 → J ?
+                    $prevDayNum = (int) substr($prevDate, -2);
+                    if ($prevDayNum === $d - 1) {
+                        $gap = $prev['end_min_abs'] <= 1440
+                            ? (1440 - $prev['end_min_abs']) + $cur['start_min']
+                            : $cur['start_min'] - ($prev['end_min_abs'] - 1440);
+                        if ($gap < $iaLegalReposQuotidienH * 60) {
+                            $ltrRestViolations++;
+                            $hGap = round($gap / 60, 1);
+                            $ltrViolations[] = "LTr art. 15a: {$u['prenom']} {$u['nom']} repos {$hGap}h entre {$prevDate} et {$date}";
+                        }
+                    }
+                }
+                if ($cur) { $prev = $cur; $prevDate = $date; }
+            }
+        }
+    }
+    // Plafond journalier (OLT 2 art. 7) : analysé via les durées de shift en DB
+    foreach ($horaires as $h) {
+        if ((float) $h['duree_effective'] > $iaLegalMaxHoursDay) {
+            // Shift lui-même est au-delà du plafond — mais le seul fait de l'utiliser est un risque
+            $used = Db::getOne(
+                "SELECT COUNT(*) FROM planning_assignations WHERE planning_id = ? AND horaire_type_id = ?",
+                [$planningId, $h['id']]
+            );
+            if ((int) $used > 0) {
+                $ltrDailyOverflow += (int) $used;
+                $ltrViolations[] = "LTr OLT 2 art. 7: shift {$h['code']} = {$h['duree_effective']}h (>{$iaLegalMaxHoursDay}h) utilisé {$used}×";
+            }
         }
     }
     $qualityReport['ltr'] = [
         'max_hours_week' => $iaLegalMaxHoursWeek,
         'max_consec_days' => $iaLegalMaxConsecDays,
+        'max_hours_day' => $iaLegalMaxHoursDay,
+        'repos_quotidien_h' => $iaLegalReposQuotidienH,
         'weekly_violations' => $ltrWeeklyViolations,
         'consec_violations' => $ltrConsecViolations,
+        'daily_overflow' => $ltrDailyOverflow,
+        'rest_violations' => $ltrRestViolations,
         'violations' => array_slice($ltrViolations, 0, 20),
-        'conforme' => ($ltrWeeklyViolations === 0 && $ltrConsecViolations === 0),
+        'conforme' => ($ltrWeeklyViolations === 0 && $ltrConsecViolations === 0
+                     && $ltrDailyOverflow === 0 && $ltrRestViolations === 0),
     ];
 
     // 6. Score global (0-100) — pénalisé si violations LTr
@@ -2114,7 +2175,7 @@ function admin_generate_planning()
         $scoreWeekend = max(0, 100 - ($wkRange * 10)); // -10pts par jour d'écart
     }
     // Pénalité LTr : chaque violation -15pts (plafonnée)
-    $ltrPenalty = min(100, ($ltrWeeklyViolations + $ltrConsecViolations) * 15);
+    $ltrPenalty = min(100, ($ltrWeeklyViolations + $ltrConsecViolations + $ltrDailyOverflow + $ltrRestViolations) * 15);
     $qualityReport['score'] = max(0, round(
         $scoreCoverage * 0.40 +
         $scoreEquity   * 0.25 +
