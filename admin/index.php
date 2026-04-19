@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'admissions'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -160,7 +160,6 @@ $pageLabels = [
     'securite'         => 'Sécurité & Antivirus',
     'email-templates'  => 'Templates d\'email',
     'fiches-amelioration' => 'Amélioration continue',
-    'admissions'       => 'Admissions',
 ];
 
 // ── AJAX page loading (SPA mode) ──
@@ -228,12 +227,6 @@ $sidebarCategories = [
             'rh-candidatures' => ['label' => 'Candidatures',         'icon' => 'person-lines-fill'],
             'rh-formations'   => ['label' => 'Formations',           'icon' => 'mortarboard'],
             'rh-stagiaires'   => ['label' => 'Stagiaires',           'icon' => 'person-badge'],
-        ],
-    ],
-    'residents' => [
-        'label' => 'Résidents',
-        'items' => [
-            'admissions'    => ['label' => 'Admissions',           'icon' => 'file-earmark-person'],
         ],
     ],
     'autres' => [

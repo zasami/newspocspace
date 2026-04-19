@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin — Admissions
+ * SpocCare — Admissions
  * Gestion des demandes d'admission soumises via le formulaire public
  */
 
@@ -25,7 +25,7 @@ $stats = Db::fetch(
       <small class="text-muted">Demandes d'inscription en ligne (étape 1 du dossier)</small>
     </div>
     <div class="d-flex gap-2">
-      <a href="/spocspace/admission.php" target="_blank" class="btn btn-sm btn-outline-secondary">
+      <a href="/spocspace/website/admissions.php#formulaire" target="_blank" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-box-arrow-up-right"></i> Voir formulaire public
       </a>
     </div>
@@ -139,7 +139,7 @@ $stats = Db::fetch(
   </div>
 </div>
 
-<script<?= function_exists('nonce') ? ' nonce="' . nonce() . '"' : '' ?>>
+<script<?= function_exists('nonce') ? nonce() : '' ?>>
 (function(){
   const statutLabels = {
     'demande_envoyee': ['Demande envoyée', 'bg-warning-subtle text-warning-emphasis'],
@@ -282,7 +282,7 @@ $stats = Db::fetch(
 
           <div class="small text-muted">
             <i class="bi bi-link-45deg"></i> Lien de suivi famille :
-            <a href="/spocspace/admission-suivi.php?token=${escapeHtml(c.token_acces)}" target="_blank">ouvrir</a>
+            <a href="/spocspace/website/admissions-suivi.php?token=${escapeHtml(c.token_acces)}" target="_blank">ouvrir</a>
             · IP : ${escapeHtml(c.ip_soumission || 'n/a')}
           </div>
         </div>

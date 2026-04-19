@@ -29,7 +29,7 @@ $page = $_GET['page'] ?? 'dashboard';
 $allowedPages = [
     'dashboard', 'residents', 'marquage', 'famille', 'menus',
     'reservations', 'protection', 'hygiene', 'wiki', 'wiki-edit',
-    'annonces', 'annonce-edit',
+    'annonces', 'annonce-edit', 'admissions',
 ];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
@@ -48,6 +48,7 @@ $pageLabels = [
     'wiki-edit'    => 'Éditeur Wiki',
     'annonces'     => 'Annonces officielles',
     'annonce-edit' => 'Éditeur Annonce',
+    'admissions'   => 'Admissions',
 ];
 
 $topbarPlaceholders = [
@@ -59,6 +60,7 @@ $topbarPlaceholders = [
     'protection'   => 'Rechercher une protection...',
     'wiki'         => 'Rechercher une page wiki...',
     'annonces'     => 'Rechercher une annonce...',
+    'admissions'   => 'Rechercher une admission...',
 ];
 $topbarPlaceholder = $topbarPlaceholders[$page] ?? 'Rechercher...';
 
@@ -82,9 +84,10 @@ $sidebarCategories = [
     'residents' => [
         'label' => 'Résidents',
         'items' => [
-            'residents'  => ['label' => 'Résidents',         'icon' => 'person-badge'],
-            'famille'    => ['label' => 'Espace Famille',    'icon' => 'house-heart'],
-            'protection' => ['label' => 'Suivi Protection',  'icon' => 'shield-check'],
+            'admissions' => ['label' => 'Admissions',         'icon' => 'file-earmark-person'],
+            'residents'  => ['label' => 'Résidents',          'icon' => 'person-badge'],
+            'famille'    => ['label' => 'Espace Famille',     'icon' => 'house-heart'],
+            'protection' => ['label' => 'Suivi Protection',   'icon' => 'shield-check'],
         ],
     ],
     'quotidien' => [

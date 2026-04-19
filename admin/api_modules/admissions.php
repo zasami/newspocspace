@@ -1,6 +1,6 @@
 <?php
 /**
- * Admissions — API admin
+ * Admissions — API (utilisé par la page SpocCare)
  * Gestion des demandes d'admission soumises via le formulaire public
  */
 
