@@ -9,7 +9,7 @@ $emsAdr   = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = '
 // ─────────── Traitement du formulaire de demande en ligne ───────────
 $formErrors  = [];
 $formSuccess = false;
-$formToken   = null;
+$formEmail   = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) {
 
@@ -67,6 +67,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
         $formErrors[] = 'Email de la personne de référence requis et valide.';
     }
 
+    // Mot de passe (pour le suivi du dossier + futur espace famille)
+    $password        = (string)($_POST['password'] ?? '');
+    $passwordConfirm = (string)($_POST['password_confirm'] ?? '');
+    if (strlen($password) < 8) {
+        $formErrors[] = 'Le mot de passe doit contenir au moins 8 caractères.';
+    }
+    if ($password !== $passwordConfirm) {
+        $formErrors[] = 'Les deux mots de passe ne correspondent pas.';
+    }
+
+    // Vérifier qu'il n'existe pas déjà un dossier avec cet email
+    if ($refEmail && filter_var($refEmail, FILTER_VALIDATE_EMAIL)) {
+        $existing = Db::fetch("SELECT id FROM admissions_candidats WHERE ref_email = ? LIMIT 1", [$refEmail]);
+        if ($existing) {
+            $formErrors[] = 'Un dossier existe déjà pour cet email. Si c\'est votre dossier, connectez-vous depuis la page de suivi. Sinon, contactez la direction.';
+        }
+    }
+
     $medNom = trim($_POST['med_nom'] ?? '') ?: null;
     $medAdr = trim($_POST['med_adresse_postale'] ?? '') ?: null;
     $medEmail = trim($_POST['med_email'] ?? '');
@@ -84,10 +102,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
     if (!$formErrors) {
         $newId = Uuid::v4();
         $newToken = Uuid::v4();
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         Db::exec(
             "INSERT INTO admissions_candidats (
-                id, token_acces, type_demande, date_demande,
+                id, token_acces, password_hash, type_demande, date_demande,
                 nom_prenom, date_naissance, adresse_postale, email, telephone,
                 situation, situation_autre,
                 ref_nom_prenom, ref_aspect_administratifs, ref_aspect_soins,
@@ -95,9 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
                 ref_adresse_postale, ref_email, ref_telephone,
                 med_nom, med_adresse_postale, med_email, med_telephone,
                 statut, ip_soumission
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'demande_envoyee', ?)",
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'demande_envoyee', ?)",
             [
-                $newId, $newToken, $typeDemande, $dateDemande,
+                $newId, $newToken, $passwordHash, $typeDemande, $dateDemande,
                 $nomPrenom, $dateNaissance, $adressePostale, $email, $telephone,
                 $situation, $situationAutre,
                 $refNomPrenom, $refAdmin, $refSoins,
@@ -114,10 +133,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
             [Uuid::v4(), $newId, 'Demande soumise via le site web par ' . $refNomPrenom]
         );
 
-        // Magic link via email
+        // Email de confirmation (pas de magic link, l'accès se fait via mot de passe)
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $suiviUrl = $scheme . '://' . $host . '/spocspace/website/admissions-suivi.php?token=' . $newToken;
+        $suiviUrl = $scheme . '://' . $host . '/spocspace/website/admissions-suivi.php';
 
         if ($emsEmail) {
             $subject = '=?UTF-8?B?' . base64_encode('[' . $emsNom . '] Confirmation de votre demande d\'admission') . '?=';
@@ -126,9 +145,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
                   . "<p>Bonjour " . h($refNomPrenom) . ",</p>"
                   . "<p>Nous accusons réception de votre demande d'admission concernant <strong>" . h($nomPrenom) . "</strong>.</p>"
                   . "<p>Votre dossier va être examiné par la direction de <strong>" . h($emsNom) . "</strong>. Vous serez informé(e) par email de la suite de la procédure.</p>"
-                  . "<p>Vous pouvez suivre l'état de votre dossier à tout moment en cliquant sur le lien ci-dessous :</p>"
-                  . "<p style=\"margin:24px 0;\"><a href=\"" . h($suiviUrl) . "\" style=\"background:#2E7D32;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;display:inline-block;font-weight:600;\">Suivre ma demande</a></p>"
+                  . "<p><strong>Pour suivre votre dossier :</strong> connectez-vous à la page de suivi avec votre email (<em>" . h($refEmail) . "</em>) et le mot de passe que vous avez choisi lors de la demande.</p>"
+                  . "<p style=\"margin:24px 0;\"><a href=\"" . h($suiviUrl) . "\" style=\"background:#2E7D32;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;display:inline-block;font-weight:600;\">Accéder au suivi du dossier</a></p>"
                   . "<p style=\"font-size:12px;color:#4A6548;\">Ou copiez ce lien : " . h($suiviUrl) . "</p>"
+                  . "<p style=\"font-size:13px;color:#4A6548;\">En cas d'oubli de mot de passe, utilisez le lien « Mot de passe oublié » sur la page de connexion.</p>"
                   . "<hr style=\"border:none;border-top:1px solid #D8E8D0;margin:24px 0;\">"
                   . "<p style=\"font-size:13px;color:#4A6548;\">" . h($emsNom)
                   . ($emsAdr ? "<br>" . h($emsAdr) : '')
@@ -149,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
         }
 
         $formSuccess = true;
-        $formToken = $newToken;
+        $formEmail = $refEmail;
     }
 }
 ?>
@@ -352,7 +372,16 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 @media (max-width: 576px) { .adm-form-row { grid-template-columns: 1fr; } }
 .adm-field label { display: block; font-size: .85rem; font-weight: 600; color: var(--adm-text); margin-bottom: 6px; }
 .adm-field label .req { color: #B85450; }
-.adm-field input[type="text"], .adm-field input[type="email"], .adm-field input[type="date"], .adm-field input[type="tel"], .adm-field textarea, .adm-field select {
+.adm-input-wrap { position: relative; }
+.adm-input-wrap .adm-eye {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; padding: 6px 8px; cursor: pointer;
+  color: var(--adm-text-muted); display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; font-size: 1.05rem; transition: color .15s, background .15s;
+}
+.adm-input-wrap .adm-eye:hover { color: var(--adm-green); background: var(--adm-green-light); }
+.adm-input-wrap input { padding-right: 44px !important; }
+.adm-field input[type="text"], .adm-field input[type="email"], .adm-field input[type="password"], .adm-field input[type="date"], .adm-field input[type="tel"], .adm-field textarea, .adm-field select {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--adm-border);
@@ -469,7 +498,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         <div class="adm-path-icon"><i class="bi bi-pencil-square"></i></div>
         <div>
           <h6>Remplir la demande en ligne</h6>
-          <p>Formulaire de pré-inscription rempli en ligne. Vous recevez un email de confirmation avec un lien de suivi personnel.</p>
+          <p>Formulaire de pré-inscription rempli en ligne. Vous choisissez un mot de passe qui vous permettra de suivre votre dossier.</p>
           <span class="adm-anchor">Remplir maintenant <i class="bi bi-arrow-right"></i></span>
         </div>
       </a>
@@ -482,6 +511,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         </div>
       </a>
     </div>
+    <a href="/spocspace/website/admissions-suivi.php" class="adm-path-card" style="margin-top:16px">
+      <div class="adm-path-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+      <div>
+        <h6>Suivre un dossier déjà soumis</h6>
+        <p>Connectez-vous à votre espace de suivi avec l'email et le mot de passe choisis lors de votre demande pour consulter l'état d'avancement.</p>
+        <span class="adm-anchor">Accéder au suivi <i class="bi bi-arrow-right"></i></span>
+      </div>
+    </a>
   </div>
 
   <!-- ═══ DOCUMENTS REQUIS ═══ -->
@@ -529,18 +566,18 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <div class="adm-success-card">
         <div class="icon"><i class="bi bi-check-circle-fill"></i></div>
         <h3>Votre demande a bien été envoyée</h3>
-        <p>Un email de confirmation vient d'être envoyé avec un lien personnel pour suivre l'avancement de votre dossier.</p>
+        <p>Un email de confirmation vient d'être envoyé à <strong><?= h($formEmail) ?></strong>.</p>
         <p>La direction de <strong><?= h($emsNom) ?></strong> vous contactera prochainement pour la suite de la procédure.</p>
-        <?php
-          $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-          $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-          $suiviLink = $scheme . '://' . $host . '/spocspace/website/admissions-suivi.php?token=' . $formToken;
-        ?>
-        <div class="adm-token-box">
-          <strong>Lien de suivi personnel :</strong><br>
-          <a href="<?= h($suiviLink) ?>" style="color:var(--adm-green);text-decoration:none"><?= h($suiviLink) ?></a>
+        <div class="adm-token-box" style="text-align:left">
+          <strong><i class="bi bi-key"></i> Pour suivre votre dossier à tout moment :</strong><br>
+          Connectez-vous sur la page de suivi avec votre email (<em><?= h($formEmail) ?></em>) et le mot de passe que vous avez choisi.
         </div>
-        <p style="font-size:.82rem;color:var(--adm-text-muted)">Conservez précieusement ce lien. Il vous permet de consulter l'état de votre demande à tout moment sans authentification.</p>
+        <p style="margin-top:20px">
+          <a href="/spocspace/website/admissions-suivi.php" class="adm-btn adm-btn-primary" style="text-decoration:none">
+            <i class="bi bi-box-arrow-in-right"></i> Accéder au suivi du dossier
+          </a>
+        </p>
+        <p style="font-size:.82rem;color:var(--adm-text-muted);margin-top:20px">Conservez précieusement vos identifiants : ils vous serviront aussi pour accéder à l'espace famille si votre dossier est accepté.</p>
       </div>
     <?php else: ?>
 
@@ -553,13 +590,47 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         </div>
       <?php endif; ?>
 
-      <form method="POST" action="#formulaire" class="adm-form-card" autocomplete="off" novalidate>
+      <form method="POST" action="#formulaire" autocomplete="off" novalidate id="admissionForm">
         <input type="hidden" name="admission_submit" value="1">
         <input type="text" name="website_url" class="adm-honey" tabindex="-1" autocomplete="off">
 
-        <p style="color:var(--adm-text-secondary);margin-bottom:22px;font-size:.92rem">
-          Ce formulaire correspond à la <strong>demande d'inscription</strong> (étape 1). Les documents médicaux et le formulaire administratif cantonal 300-04 vous seront demandés dans un second temps.
-        </p>
+        <div class="adm-form-card" style="background:linear-gradient(135deg, rgba(46,125,50,0.04) 0%, rgba(216,232,204,0.20) 100%);border:1px solid var(--adm-green-border);margin-bottom:20px">
+          <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--adm-green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">
+              <i class="bi bi-shield-lock"></i>
+            </div>
+            <div>
+              <h4 style="font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;margin:0 0 4px;color:var(--adm-text)">Accès à votre espace de suivi</h4>
+              <p style="margin:0;color:var(--adm-text-secondary);font-size:.92rem">
+                <i class="bi bi-info-circle" style="color:var(--adm-green)"></i> <strong>Conservez bien ces informations</strong> : elles vous permettent de suivre l'avancement de votre dossier, et — si votre demande est acceptée — d'accéder ensuite à votre espace famille pour les prochaines étapes.
+              </p>
+            </div>
+          </div>
+
+          <div class="adm-form-row">
+            <div class="adm-field">
+              <label>Mot de passe <span class="req">*</span></label>
+              <div class="adm-input-wrap">
+                <input type="password" name="password" minlength="8" required autocomplete="new-password">
+                <button type="button" class="adm-eye" data-toggle-password aria-label="Afficher ou masquer le mot de passe"><i class="bi bi-eye"></i></button>
+              </div>
+              <div class="hint">Au moins 8 caractères. À conserver précieusement.</div>
+            </div>
+            <div class="adm-field">
+              <label>Confirmer le mot de passe <span class="req">*</span></label>
+              <div class="adm-input-wrap">
+                <input type="password" name="password_confirm" minlength="8" required autocomplete="new-password">
+                <button type="button" class="adm-eye" data-toggle-password aria-label="Afficher ou masquer le mot de passe"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:.82rem;color:var(--adm-text-muted);margin:0">Votre email de connexion sera celui de la <strong>personne de référence</strong> que vous renseignerez ci-dessous.</p>
+        </div>
+
+        <div class="adm-form-card">
+          <p style="color:var(--adm-text-secondary);margin-bottom:22px;font-size:.92rem">
+            Ce formulaire correspond à la <strong>demande d'inscription</strong> (étape 1). Les documents médicaux et le formulaire administratif cantonal 300-04 vous seront demandés dans un second temps.
+          </p>
 
         <fieldset class="adm-form-fieldset">
           <legend><i class="bi bi-flag"></i> Type de demande</legend>
@@ -703,10 +774,11 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
           </label>
         </div>
 
-        <div class="adm-form-actions">
-          <button type="submit" class="adm-btn adm-btn-primary">
-            <i class="bi bi-send"></i> Envoyer la demande
-          </button>
+          <div class="adm-form-actions">
+            <button type="submit" class="adm-btn adm-btn-primary">
+              <i class="bi bi-send"></i> Envoyer la demande
+            </button>
+          </div>
         </div>
       </form>
 
@@ -808,6 +880,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 <!-- ═══ FOOTER ═══ -->
 <?php include __DIR__ . '/includes/footer.php'; ?>
 
+<script>
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-toggle-password]');
+  if (!btn) return;
+  var wrap = btn.closest('.adm-input-wrap');
+  if (!wrap) return;
+  var input = wrap.querySelector('input');
+  var icon = btn.querySelector('i');
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+});
+</script>
 
 </body>
 </html>
