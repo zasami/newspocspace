@@ -85,6 +85,23 @@ $situationLabels = [
     'hug'          => 'Aux HUG',
     'autre'        => 'Autre',
 ];
+
+function formatAdresse(array $c, string $prefix = ''): ?string
+{
+    $rue   = trim((string)($c[$prefix . 'adresse_rue'] ?? ''));
+    $comp  = trim((string)($c[$prefix . 'adresse_complement'] ?? ''));
+    $cp    = trim((string)($c[$prefix . 'adresse_cp'] ?? ''));
+    $ville = trim((string)($c[$prefix . 'adresse_ville'] ?? ''));
+    $lines = [];
+    if ($rue) $lines[] = $rue;
+    if ($comp) $lines[] = $comp;
+    if ($cp || $ville) $lines[] = trim($cp . ' ' . $ville);
+    if (!$lines) {
+        $legacy = trim((string)($c[$prefix . 'adresse_postale'] ?? ''));
+        return $legacy ?: null;
+    }
+    return implode("\n", $lines);
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -287,7 +304,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <dl class="kv">
       <dt>Nom et prénom</dt><dd><?= h($candidat['nom_prenom']) ?></dd>
       <?php if ($candidat['date_naissance']): ?><dt>Date de naissance</dt><dd><?= h(date('d/m/Y', strtotime($candidat['date_naissance']))) ?></dd><?php endif; ?>
-      <?php if ($candidat['adresse_postale']): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($candidat['adresse_postale']) ?></dd><?php endif; ?>
+      <?php $adr = formatAdresse($candidat); if ($adr): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($adr) ?></dd><?php endif; ?>
       <?php if ($candidat['email']): ?><dt>Email</dt><dd><?= h($candidat['email']) ?></dd><?php endif; ?>
       <?php if ($candidat['telephone']): ?><dt>Téléphone</dt><dd><?= h($candidat['telephone']) ?></dd><?php endif; ?>
       <dt>Situation actuelle</dt>
@@ -312,16 +329,16 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       </dd>
       <?php if ($candidat['ref_lien_parente']): ?><dt>Lien de parenté</dt><dd><?= h($candidat['ref_lien_parente']) ?></dd><?php endif; ?>
       <?php if ($candidat['ref_autre']): ?><dt>Autre</dt><dd><?= h($candidat['ref_autre']) ?></dd><?php endif; ?>
-      <?php if ($candidat['ref_adresse_postale']): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($candidat['ref_adresse_postale']) ?></dd><?php endif; ?>
+      <?php $refAdrFmt = formatAdresse($candidat, 'ref_'); if ($refAdrFmt): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($refAdrFmt) ?></dd><?php endif; ?>
       <dt>Email</dt><dd><?= h($candidat['ref_email']) ?></dd>
       <?php if ($candidat['ref_telephone']): ?><dt>Téléphone</dt><dd><?= h($candidat['ref_telephone']) ?></dd><?php endif; ?>
     </dl>
 
-    <?php if ($candidat['med_nom'] || $candidat['med_email'] || $candidat['med_telephone']): ?>
+    <?php $medAdrFmtBlock = formatAdresse($candidat, 'med_'); if ($candidat['med_nom'] || $candidat['med_email'] || $candidat['med_telephone'] || $medAdrFmtBlock): ?>
     <div class="adm-section-title"><i class="bi bi-heart-pulse"></i> Médecin traitant</div>
     <dl class="kv">
       <?php if ($candidat['med_nom']): ?><dt>Nom</dt><dd><?= h($candidat['med_nom']) ?></dd><?php endif; ?>
-      <?php if ($candidat['med_adresse_postale']): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($candidat['med_adresse_postale']) ?></dd><?php endif; ?>
+      <?php $medAdrFmt = formatAdresse($candidat, 'med_'); if ($medAdrFmt): ?><dt>Adresse postale</dt><dd style="white-space:pre-line"><?= h($medAdrFmt) ?></dd><?php endif; ?>
       <?php if ($candidat['med_email']): ?><dt>Email</dt><dd><?= h($candidat['med_email']) ?></dd><?php endif; ?>
       <?php if ($candidat['med_telephone']): ?><dt>Téléphone</dt><dd><?= h($candidat['med_telephone']) ?></dd><?php endif; ?>
     </dl>

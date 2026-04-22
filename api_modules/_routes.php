@@ -111,6 +111,13 @@ return [
         'upload_fiche_amelioration_attachment', 'download_fiche_amelioration_attachment',
         'search_fiche_amelioration_users',
     ],
+    'suggestions' => [
+        'get_suggestions', 'get_suggestion_detail',
+        'create_suggestion', 'update_suggestion', 'delete_suggestion',
+        'toggle_suggestion_vote', 'add_suggestion_comment',
+        'upload_suggestion_attachment', 'download_suggestion_attachment',
+        'delete_suggestion_attachment',
+    ],
     'cuisine' => [
         'cuisine_get_menus_semaine', 'cuisine_save_menu', 'cuisine_delete_menu',
         'cuisine_get_reservations_collab',

@@ -246,6 +246,11 @@ return [
         'admin_propose_fiche_amelioration_rdv', 'admin_update_fiche_amelioration_rdv',
         'admin_download_fiche_amelioration_attachment', 'admin_delete_fiche_amelioration',
     ],
+    'suggestions' => [
+        'admin_list_suggestions', 'admin_get_suggestion',
+        'admin_update_suggestion_statut', 'admin_add_suggestion_comment',
+        'admin_delete_suggestion', 'admin_download_suggestion_attachment',
+    ],
     'wiki' => [
         'admin_get_wiki_categories', 'admin_create_wiki_category', 'admin_update_wiki_category', 'admin_delete_wiki_category',
         'admin_get_wiki_pages', 'admin_get_wiki_page', 'admin_create_wiki_page',

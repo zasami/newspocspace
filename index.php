@@ -86,6 +86,12 @@ $sidebarNav = [
     ],
 ];
 
+// Module Suggestions / Co-construction : injecté si flag activé
+$sugFlag = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'allow_feature_requests'");
+if ($sugFlag === '1') {
+    $sidebarNav['info']['items']['suggestions'] = ['label' => 'Suggestions', 'icon' => 'lightbulb'];
+}
+
 // Add profile link for external users
 if ($user && ($user['type_employe'] ?? '') === 'externe') {
     $sidebarNav['compte'] = [
@@ -328,7 +334,7 @@ window.__SS__ = {
   tempPasswordExpires: <?= !empty($_SESSION['ss_temp_password_expires']) ? "'" . h($_SESSION['ss_temp_password_expires']) . "'" : 'null' ?>,
   appUrl: '<?= APP_URL ?>',
   deniedPerms: <?= json_encode($deniedPerms, JSON_HEX_TAG) ?>,
-  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine', 'cuisine-home' => 'Tableau de bord cuisine'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
+  pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine', 'cuisine-home' => 'Tableau de bord cuisine', 'suggestion-new' => 'Nouvelle suggestion', 'suggestion-detail' => 'Suggestion'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
 };
 </script>
 <script nonce="<?= $cspNonce ?>" src="assets/js/vendor/bootstrap.bundle.min.js"></script>

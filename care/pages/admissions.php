@@ -232,6 +232,19 @@ $stats = Db::fetch(
     if (+c.ref_curateur) aspects.push('Curateur');
 
     const kv = (label, val) => val ? `<dt class="col-sm-4 text-muted">${escapeHtml(label)}</dt><dd class="col-sm-8">${escapeHtml(val)}</dd>` : '';
+    const kvMulti = (label, val) => val ? `<dt class="col-sm-4 text-muted">${escapeHtml(label)}</dt><dd class="col-sm-8" style="white-space:pre-line">${escapeHtml(val)}</dd>` : '';
+    const fmtAdresse = (prefix) => {
+      const rue   = (c[prefix + 'adresse_rue'] || '').trim();
+      const comp  = (c[prefix + 'adresse_complement'] || '').trim();
+      const cp    = (c[prefix + 'adresse_cp'] || '').trim();
+      const ville = (c[prefix + 'adresse_ville'] || '').trim();
+      const lines = [];
+      if (rue) lines.push(rue);
+      if (comp) lines.push(comp);
+      if (cp || ville) lines.push((cp + ' ' + ville).trim());
+      if (lines.length) return lines.join('\n');
+      return (c[prefix + 'adresse_postale'] || '').trim();
+    };
 
     body.innerHTML = `
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
@@ -254,7 +267,7 @@ $stats = Db::fetch(
           <dl class="row mb-3">
             ${kv('Nom et prénom', c.nom_prenom)}
             ${kv('Date de naissance', c.date_naissance ? fmtDate(c.date_naissance) : '')}
-            ${kv('Adresse postale', c.adresse_postale)}
+            ${kvMulti('Adresse postale', fmtAdresse(''))}
             ${kv('Email', c.email)}
             ${kv('Téléphone', c.telephone)}
             ${kv('Situation', (situationLabels[c.situation] || c.situation) + (c.situation === 'autre' && c.situation_autre ? ' — ' + c.situation_autre : ''))}
@@ -266,7 +279,7 @@ $stats = Db::fetch(
             ${kv('Aspects', aspects.join(' · '))}
             ${kv('Lien de parenté', c.ref_lien_parente)}
             ${kv('Autre', c.ref_autre)}
-            ${kv('Adresse postale', c.ref_adresse_postale)}
+            ${kvMulti('Adresse postale', fmtAdresse('ref_'))}
             ${kv('Email', c.ref_email)}
             ${kv('Téléphone', c.ref_telephone)}
           </dl>
@@ -275,7 +288,7 @@ $stats = Db::fetch(
           <h6 class="text-uppercase small text-muted">Médecin traitant</h6>
           <dl class="row mb-3">
             ${kv('Nom', c.med_nom)}
-            ${kv('Adresse postale', c.med_adresse_postale)}
+            ${kvMulti('Adresse postale', fmtAdresse('med_'))}
             ${kv('Email', c.med_email)}
             ${kv('Téléphone', c.med_telephone)}
           </dl>` : ''}

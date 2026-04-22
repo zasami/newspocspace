@@ -37,7 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
     }
     $dateNaissance = $dateNaissance ?: null;
 
-    $adressePostale = trim($_POST['adresse_postale'] ?? '') ?: null;
+    $adresseRue   = trim($_POST['adresse_rue'] ?? '') ?: null;
+    $adresseComp  = trim($_POST['adresse_complement'] ?? '') ?: null;
+    $adresseCp    = trim($_POST['adresse_cp'] ?? '') ?: null;
+    $adresseVille = trim($_POST['adresse_ville'] ?? '') ?: null;
     $email = trim($_POST['email'] ?? '');
     if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $formErrors[] = 'Email du résident invalide.';
@@ -59,7 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
     $refCurateur = !empty($_POST['ref_curateur']) ? 1 : 0;
     $refLien     = trim($_POST['ref_lien_parente'] ?? '') ?: null;
     $refAutre    = trim($_POST['ref_autre'] ?? '') ?: null;
-    $refAdr      = trim($_POST['ref_adresse_postale'] ?? '') ?: null;
+    $refRue   = trim($_POST['ref_adresse_rue'] ?? '') ?: null;
+    $refComp  = trim($_POST['ref_adresse_complement'] ?? '') ?: null;
+    $refCp    = trim($_POST['ref_adresse_cp'] ?? '') ?: null;
+    $refVille = trim($_POST['ref_adresse_ville'] ?? '') ?: null;
     $refEmail    = trim($_POST['ref_email'] ?? '');
     $refTel      = trim($_POST['ref_telephone'] ?? '') ?: null;
 
@@ -86,7 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
     }
 
     $medNom = trim($_POST['med_nom'] ?? '') ?: null;
-    $medAdr = trim($_POST['med_adresse_postale'] ?? '') ?: null;
+    $medRue   = trim($_POST['med_adresse_rue'] ?? '') ?: null;
+    $medComp  = trim($_POST['med_adresse_complement'] ?? '') ?: null;
+    $medCp    = trim($_POST['med_adresse_cp'] ?? '') ?: null;
+    $medVille = trim($_POST['med_adresse_ville'] ?? '') ?: null;
     $medEmail = trim($_POST['med_email'] ?? '');
     if ($medEmail && !filter_var($medEmail, FILTER_VALIDATE_EMAIL)) {
         $formErrors[] = 'Email du médecin traitant invalide.';
@@ -107,22 +116,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admission_submit'])) 
         Db::exec(
             "INSERT INTO admissions_candidats (
                 id, token_acces, password_hash, type_demande, date_demande,
-                nom_prenom, date_naissance, adresse_postale, email, telephone,
+                nom_prenom, date_naissance,
+                adresse_rue, adresse_complement, adresse_cp, adresse_ville,
+                email, telephone,
                 situation, situation_autre,
                 ref_nom_prenom, ref_aspect_administratifs, ref_aspect_soins,
                 ref_lien_parente, ref_curateur, ref_autre,
-                ref_adresse_postale, ref_email, ref_telephone,
-                med_nom, med_adresse_postale, med_email, med_telephone,
+                ref_adresse_rue, ref_adresse_complement, ref_adresse_cp, ref_adresse_ville,
+                ref_email, ref_telephone,
+                med_nom,
+                med_adresse_rue, med_adresse_complement, med_adresse_cp, med_adresse_ville,
+                med_email, med_telephone,
                 statut, ip_soumission
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'demande_envoyee', ?)",
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'demande_envoyee', ?)",
             [
                 $newId, $newToken, $passwordHash, $typeDemande, $dateDemande,
-                $nomPrenom, $dateNaissance, $adressePostale, $email, $telephone,
+                $nomPrenom, $dateNaissance,
+                $adresseRue, $adresseComp, $adresseCp, $adresseVille,
+                $email, $telephone,
                 $situation, $situationAutre,
                 $refNomPrenom, $refAdmin, $refSoins,
                 $refLien, $refCurateur, $refAutre,
-                $refAdr, $refEmail, $refTel,
-                $medNom, $medAdr, $medEmail, $medTel,
+                $refRue, $refComp, $refCp, $refVille,
+                $refEmail, $refTel,
+                $medNom,
+                $medRue, $medComp, $medCp, $medVille,
+                $medEmail, $medTel,
                 $_SERVER['REMOTE_ADDR'] ?? null
             ]
         );
@@ -669,8 +688,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
           </div>
           <div class="adm-form-row full">
             <div class="adm-field">
-              <label>Adresse postale</label>
-              <textarea name="adresse_postale"><?= h($_POST['adresse_postale'] ?? '') ?></textarea>
+              <label>Rue et numéro</label>
+              <input type="text" name="adresse_rue" value="<?= h($_POST['adresse_rue'] ?? '') ?>" placeholder="ex: Rue de Carouge 45">
+            </div>
+          </div>
+          <div class="adm-form-row full">
+            <div class="adm-field">
+              <label>Complément d'adresse <span style="font-weight:400;color:var(--adm-text-muted);font-size:.78rem">(facultatif)</span></label>
+              <input type="text" name="adresse_complement" value="<?= h($_POST['adresse_complement'] ?? '') ?>" placeholder="ex: c/o, appartement, étage…">
+            </div>
+          </div>
+          <div class="adm-form-row" style="grid-template-columns:160px 1fr">
+            <div class="adm-field">
+              <label>Code postal</label>
+              <input type="text" name="adresse_cp" value="<?= h($_POST['adresse_cp'] ?? '') ?>" placeholder="1205" maxlength="10">
+            </div>
+            <div class="adm-field">
+              <label>Ville</label>
+              <input type="text" name="adresse_ville" value="<?= h($_POST['adresse_ville'] ?? '') ?>" placeholder="Genève">
             </div>
           </div>
           <div class="adm-form-row full">
@@ -724,8 +759,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
           </div>
           <div class="adm-form-row full">
             <div class="adm-field">
-              <label>Adresse postale</label>
-              <textarea name="ref_adresse_postale"><?= h($_POST['ref_adresse_postale'] ?? '') ?></textarea>
+              <label>Rue et numéro</label>
+              <input type="text" name="ref_adresse_rue" value="<?= h($_POST['ref_adresse_rue'] ?? '') ?>" placeholder="ex: Chemin des Clochettes 12">
+            </div>
+          </div>
+          <div class="adm-form-row full">
+            <div class="adm-field">
+              <label>Complément d'adresse <span style="font-weight:400;color:var(--adm-text-muted);font-size:.78rem">(facultatif)</span></label>
+              <input type="text" name="ref_adresse_complement" value="<?= h($_POST['ref_adresse_complement'] ?? '') ?>" placeholder="ex: c/o, appartement, étage…">
+            </div>
+          </div>
+          <div class="adm-form-row" style="grid-template-columns:160px 1fr">
+            <div class="adm-field">
+              <label>Code postal</label>
+              <input type="text" name="ref_adresse_cp" value="<?= h($_POST['ref_adresse_cp'] ?? '') ?>" placeholder="1206" maxlength="10">
+            </div>
+            <div class="adm-field">
+              <label>Ville</label>
+              <input type="text" name="ref_adresse_ville" value="<?= h($_POST['ref_adresse_ville'] ?? '') ?>" placeholder="Genève">
             </div>
           </div>
           <div class="adm-form-row">
@@ -751,8 +802,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
           </div>
           <div class="adm-form-row full">
             <div class="adm-field">
-              <label>Adresse postale</label>
-              <textarea name="med_adresse_postale"><?= h($_POST['med_adresse_postale'] ?? '') ?></textarea>
+              <label>Rue et numéro</label>
+              <input type="text" name="med_adresse_rue" value="<?= h($_POST['med_adresse_rue'] ?? '') ?>" placeholder="ex: Avenue de Champel 10">
+            </div>
+          </div>
+          <div class="adm-form-row full">
+            <div class="adm-field">
+              <label>Complément d'adresse <span style="font-weight:400;color:var(--adm-text-muted);font-size:.78rem">(facultatif)</span></label>
+              <input type="text" name="med_adresse_complement" value="<?= h($_POST['med_adresse_complement'] ?? '') ?>" placeholder="ex: Cabinet médical, étage…">
+            </div>
+          </div>
+          <div class="adm-form-row" style="grid-template-columns:160px 1fr">
+            <div class="adm-field">
+              <label>Code postal</label>
+              <input type="text" name="med_adresse_cp" value="<?= h($_POST['med_adresse_cp'] ?? '') ?>" placeholder="1206" maxlength="10">
+            </div>
+            <div class="adm-field">
+              <label>Ville</label>
+              <input type="text" name="med_adresse_ville" value="<?= h($_POST['med_adresse_ville'] ?? '') ?>" placeholder="Genève">
             </div>
           </div>
           <div class="adm-form-row">

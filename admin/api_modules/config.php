@@ -94,6 +94,7 @@ function admin_save_config()
         'feature_pv', 'feature_emails', 'feature_documents',
         'feature_votes', 'feature_covoiturage', 'feature_fiches_salaire',
         'feature_mur_social', 'feature_annonces',
+        'allow_feature_requests',
         // CSS mode
         'css_mode',
         // Pinned section (website)
