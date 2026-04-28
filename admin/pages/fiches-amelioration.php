@@ -300,12 +300,15 @@ $faCategorieLabels = [
                 const crInput = document.getElementById('faFltCriticite');
 
                 if (crit !== undefined) {
+                    // Card criticité (Haute) : reset statut, toggle crit
                     stInput.value = '';
                     crInput.value = (crInput.value === crit) ? '' : crit;
                     setCriticiteTab(crInput.value);
                 } else {
-                    // Toggle off si on reclique la même
+                    // Card statut : reset crit (sinon Haute reste collé) + toggle statut
                     stInput.value = (stInput.value === statut) ? '' : (statut || '');
+                    crInput.value = '';
+                    setCriticiteTab('');
                 }
                 updateStatActive();
                 loadList();
