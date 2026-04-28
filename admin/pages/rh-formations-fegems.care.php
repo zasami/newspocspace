@@ -160,66 +160,132 @@ foreach ($sessions as $s) {
       <?php if (!$sessions): ?>
         <div class="ds-empty"><i class="bi bi-calendar-x"></i><div class="ds-empty-title">Aucune session ouverte</div><div class="ds-empty-msg">Lancez une resynchronisation du catalogue.</div></div>
       <?php else: ?>
-        <?php foreach ($sessions as $s):
+        <?php $JOURS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+              $MOIS_FR = ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
+        ?>
+        <?php foreach ($sessions as $i => $s):
           $dt = $s['date_debut'] ? new DateTime($s['date_debut']) : null;
-          $mois = $dt ? strtoupper(strftime('%b', $dt->getTimestamp())) : '';
-          // Fallback strftime déprécié : utilisez format
-          if ($dt) {
-              $moisFr = ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
-              $mois = $moisFr[(int) $dt->format('n') - 1];
+          $mois = $dt ? $MOIS_FR[(int) $dt->format('n') - 1] : '';
+          $jour = $dt ? $JOURS_FR[(int) $dt->format('w')] : '';
+
+          $hMin = $s['heure_debut'] ? substr($s['heure_debut'], 0, 5) : '';
+          $hMax = $s['heure_fin']   ? substr($s['heure_fin'], 0, 5)   : '';
+          $heuresPlage = ($hMin && $hMax) ? "$hMin - $hMax" : '';
+          $duree = $s['duree_heures'] ? rtrim(rtrim(number_format($s['duree_heures'], 1, '.', ''), '0'), '.') . 'h' : '';
+
+          // Détermination "1 journée" / "X jours"
+          $dureeJours = '';
+          if ($s['date_debut'] && $s['date_fin'] && $s['date_debut'] === $s['date_fin']) {
+              $dureeJours = '1 journée';
+          } elseif ($s['date_debut'] && $s['date_fin']) {
+              $diff = (new DateTime($s['date_debut']))->diff(new DateTime($s['date_fin']))->days + 1;
+              $dureeJours = $diff . ' jours';
           }
-          $heuresAffichage = '';
-          if ($s['heure_debut'] && $s['heure_fin']) {
-              $heuresAffichage = substr($s['heure_debut'], 0, 5) . '–' . substr($s['heure_fin'], 0, 5);
-          } elseif ($s['duree_heures']) {
-              $heuresAffichage = $s['duree_heures'] . 'h';
-          }
+
           $places = (int) $s['places_total'];
           $restantes = (int) $s['places_restantes'];
           $pris = $places - $restantes;
           $pct = $places > 0 ? ($pris / $places) * 100 : 0;
           $statBar = $pct >= 100 ? 'bad' : ($pct >= 70 ? 'warn' : 'ok');
-          $btnClass = $restantes <= 0 ? 'careb-btn-light-sm' : 'careb-btn-primary-sm';
-          $btnLabel = $restantes <= 0 ? 'Liste d\'attente' : 'Inscrire';
-          $btnIcon = $restantes <= 0 ? 'bi-clock' : 'bi-plus-lg';
+          $isComplete = $restantes <= 0;
+
+          // Tags : multi-couleur selon contexte
+          $tags = [];
+          $titreLow = strtolower($s['titre']);
+          if (str_contains($titreLow, 'hpci') || str_contains($titreLow, 'soin') || str_contains($titreLow, 'palliatif')
+              || str_contains($titreLow, 'transmission') || str_contains($titreLow, 'acte') || str_contains($titreLow, 'examen')) {
+              $tags[] = ['SOINS', 'sec-soins'];
+          }
+          if (str_contains($titreLow, 'hôtel') || str_contains($titreLow, 'hotel')) {
+              $tags[] = ['HÔTELLERIE', 'sec-hotel'];
+          }
+          if (str_contains($titreLow, 'animation')) {
+              $tags[] = ['ANIMATION', 'sec-anim'];
+          }
+          if (str_contains($titreLow, 'inc') || str_contains($titreLow, 'tout secteur')) {
+              $tags[] = ['TOUT SECTEUR', 'tout-secteur'];
+          }
+          if (str_contains($titreLow, 'bls') || str_contains($titreLow, 'cyber') || str_contains($titreLow, 'incendie')) {
+              $tags[] = ['TOUT PUBLIC', 'tout-public'];
+          }
+          if ($s['type'] === 'certificat' || str_contains($titreLow, 'acte délégué')) {
+              $tags[] = ['VALIDÉ OCS', 'valide-ocs'];
+          }
+          if (in_array($s['statut'], ['ouverte']) && $restantes <= ($places * 0.3)) {
+              $tags[] = ['OBLIGATOIRE', 'obligatoire'];
+          }
+          // E-learning
+          if ($s['modalite'] === 'elearning' || $s['form_modalite'] === 'elearning') {
+              $tags[] = ['E-LEARNING', 'e-learning'];
+          }
+
+          $contactEmail = $s['contact_inscription_email'] ?? '';
+          $isFirst = ($i === 0);
         ?>
-          <div class="rhfg-session-row">
-            <div class="rhfg-session-date">
-              <div class="rhfg-session-mois"><?= h($mois) ?></div>
-              <div class="rhfg-session-jour"><?= $dt ? $dt->format('d') : '—' ?></div>
-              <div class="rhfg-session-annee"><?= $dt ? $dt->format('Y') : '' ?></div>
+          <div class="rhfg-session-row <?= $isFirst ? 'rhfg-session-row--active' : '' ?>" data-session="<?= h($s['session_id']) ?>">
+            <div class="rhfg-session-sticker">
+              <div class="rhfg-sticker-mois"><?= h($mois) ?></div>
+              <div class="rhfg-sticker-jour"><?= $dt ? $dt->format('d') : '—' ?></div>
+              <div class="rhfg-sticker-annee"><?= $dt ? $dt->format('Y') : '' ?></div>
             </div>
+
             <div class="rhfg-session-info">
               <div class="rhfg-session-title"><?= h($s['titre']) ?></div>
               <div class="rhfg-session-meta">
-                <?php if ($s['lieu']): ?><span><i class="bi bi-geo-alt"></i> <?= h($s['lieu']) ?></span><?php endif ?>
-                <?php if ($heuresAffichage): ?><span><i class="bi bi-clock"></i> <?= h($heuresAffichage) ?></span><?php endif ?>
-                <?php if ($s['modalite'] || $s['form_modalite']): ?><span><?= h($s['modalite'] ?: $s['form_modalite']) ?></span><?php endif ?>
-                <?php if ($s['public_cible']): ?><span><?= h($s['public_cible']) ?></span><?php endif ?>
-              </div>
-              <div class="rhfg-session-tags">
-                <?php if (str_contains(strtolower($s['titre']), 'hpci') || str_contains(strtolower($s['titre']), 'soin')): ?>
-                  <span class="careb-tag-tag" style="background:var(--sec-soins-bg);color:var(--sec-soins)">SOINS</span>
+                <?php if ($s['lieu']): ?>
+                  <span><i class="bi bi-geo-alt-fill" style="color:var(--danger)"></i> <?= h($s['lieu']) ?></span>
                 <?php endif ?>
-                <?php if ($s['type'] === 'certificat'): ?>
-                  <span class="careb-tag-tag">VALIDÉ OCS</span>
+                <?php if ($duree || $dureeJours): ?>
+                  <span class="dot-sep">·</span>
+                  <span><i class="bi bi-clock"></i>
+                    <?= $duree ? h($duree) : '' ?><?= $duree && $dureeJours ? ' · ' : '' ?><?= h($dureeJours) ?>
+                  </span>
+                <?php endif ?>
+                <?php if ($jour && $heuresPlage): ?>
+                  <span class="dot-sep">·</span>
+                  <span><?= h($jour) ?> <?= h($heuresPlage) ?></span>
+                <?php elseif ($s['public_cible']): ?>
+                  <span class="dot-sep">·</span>
+                  <span><?= h($s['public_cible']) ?></span>
+                <?php endif ?>
+                <?php if ($contactEmail && $isFirst): ?>
+                  <span class="dot-sep">·</span>
+                  <span>Inscription : <a href="mailto:<?= h($contactEmail) ?>" style="color:var(--teal-600)"><?= h($contactEmail) ?></a></span>
                 <?php endif ?>
               </div>
+              <?php if ($tags): ?>
+                <div class="rhfg-session-tags">
+                  <?php foreach ($tags as $tag): ?>
+                    <span class="rhfg-tag rhfg-tag--<?= h($tag[1]) ?>"><?= h($tag[0]) ?></span>
+                  <?php endforeach ?>
+                </div>
+              <?php endif ?>
             </div>
+
             <div class="rhfg-session-places">
-              <div class="rhfg-session-places-num">
-                <span class="t-num" style="color:<?= $statBar === 'bad' ? 'var(--danger)' : ($statBar === 'warn' ? 'var(--warn)' : 'var(--ok)') ?>"><?= $pris ?></span>
-                <span style="color:var(--muted)"> / <?= $places ?></span>
-                <span class="t-meta" style="margin-left:6px">places</span>
+              <div class="rhfg-places-num">
+                <span class="t-num" style="font-weight:600;color:<?= $statBar === 'bad' ? 'var(--danger)' : ($statBar === 'warn' ? 'var(--warn)' : 'var(--ok)') ?>"><?= $pris ?></span>
+                <span style="color:var(--muted)"> / <?= $places ?> places</span>
               </div>
-              <div class="ds-progress" style="margin-top:6px">
-                <div class="ds-progress-bar"><div class="ds-progress-fill <?= $statBar === 'ok' ? '' : $statBar ?>" style="width:<?= min(100, $pct) ?>%"></div></div>
+              <div class="rhfg-places-bar">
+                <div class="rhfg-places-fill rhfg-places-fill--<?= $statBar ?>" style="width:<?= min(100, $pct) ?>%"></div>
               </div>
-              <div class="t-meta" style="margin-top:4px"><?= $restantes ?> places restantes</div>
+              <div class="t-meta" style="margin-top:4px;font-size:11px"><?= $restantes ?> places restantes</div>
             </div>
-            <button class="<?= $btnClass ?>" data-session-inscrire="<?= h($s['session_id']) ?>">
-              <i class="bi <?= $btnIcon ?>"></i> <?= h($btnLabel) ?>
-            </button>
+
+            <?php if ($isFirst): ?>
+              <button class="careb-btn-primary rhfg-btn-inscrire" data-session-inscrire="<?= h($s['session_id']) ?>">
+                <i class="bi bi-plus-lg"></i> Inscrire
+              </button>
+            <?php elseif ($isComplete): ?>
+              <button class="rhfg-btn-outline" data-session-inscrire="<?= h($s['session_id']) ?>">
+                <i class="bi bi-clock"></i> Liste d'attente
+              </button>
+            <?php else: ?>
+              <button class="rhfg-btn-outline" data-session-inscrire="<?= h($s['session_id']) ?>">
+                Inscrire
+              </button>
+            <?php endif ?>
           </div>
         <?php endforeach ?>
       <?php endif ?>
@@ -373,21 +439,94 @@ foreach ($sessions as $s) {
 
 /* Sessions */
 .rhfg-session-row {
-  display: grid; grid-template-columns: 80px 1fr 200px auto;
-  gap: 18px; align-items: center; padding: 16px 24px;
+  display: grid; grid-template-columns: 92px 1fr 200px auto;
+  gap: 22px; align-items: center; padding: 18px 26px;
   border-bottom: 1px solid var(--line, #e3ebe8);
   transition: background .12s ease;
 }
 .rhfg-session-row:hover { background: var(--surface-2, #fafbfa); }
 .rhfg-session-row:last-child { border-bottom: 0; }
-.rhfg-session-date { text-align: center; }
-.rhfg-session-mois { font-size: 10.5px; letter-spacing: .08em; font-weight: 700; color: var(--muted, #6b8783); }
-.rhfg-session-jour { font-family: var(--font-display, Fraunces, serif); font-size: 30px; font-weight: 500; color: var(--ink, #0d2a26); line-height: 1; }
-.rhfg-session-annee { font-size: 11px; color: var(--muted, #6b8783); margin-top: 2px; }
-.rhfg-session-title { font-size: 14.5px; font-weight: 600; color: var(--ink, #0d2a26); margin-bottom: 4px; }
-.rhfg-session-meta { font-size: 12px; color: var(--muted, #6b8783); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
-.rhfg-session-tags { display: flex; gap: 4px; }
-.rhfg-session-places-num { font-size: 13.5px; }
+.rhfg-session-row--active { background: #ecf2f7; }
+.rhfg-session-row--active:hover { background: #e3edf3; }
+
+/* Sticker date */
+.rhfg-session-sticker {
+  background: #fff; border: 1px solid var(--line, #e3ebe8); border-radius: 10px;
+  padding: 10px 6px; text-align: center; min-width: 80px;
+  box-shadow: 0 1px 2px rgba(13,42,38,.04);
+}
+.rhfg-sticker-mois {
+  font-size: 10.5px; letter-spacing: .1em; font-weight: 700;
+  color: var(--muted, #6b8783); text-transform: uppercase;
+}
+.rhfg-sticker-jour {
+  font-family: var(--font-display, Fraunces, serif); font-size: 26px; font-weight: 500;
+  color: var(--ink, #0d2a26); line-height: 1.05; margin: 2px 0;
+}
+.rhfg-sticker-annee { font-size: 11px; color: var(--muted, #6b8783); }
+
+.rhfg-session-title {
+  font-family: var(--font-display, Fraunces, serif); font-size: 17px;
+  font-weight: 600; color: var(--ink, #0d2a26); margin-bottom: 6px;
+  letter-spacing: -.005em;
+}
+.rhfg-session-meta {
+  font-size: 12.5px; color: var(--ink-2, #324e4a);
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 8px;
+}
+.rhfg-session-meta .dot-sep { color: var(--muted, #6b8783); opacity: .6; }
+.rhfg-session-meta i { margin-right: 3px; }
+.rhfg-session-meta a { text-decoration: none; }
+.rhfg-session-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* Tags multi-couleurs */
+.rhfg-tag {
+  display: inline-block; font-size: 9.5px; letter-spacing: .08em;
+  padding: 3px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase;
+}
+.rhfg-tag--sec-soins   { background: #e8f0e8; color: #3a5a2d; }
+.rhfg-tag--sec-hotel   { background: var(--sec-hotel-bg, #fff3e3); color: var(--sec-hotel, #8a5a1a); }
+.rhfg-tag--sec-anim    { background: var(--sec-anim-bg, #f0e8f5); color: var(--sec-anim, #5e3a78); }
+.rhfg-tag--tout-secteur{ background: #e8f0e8; color: #3a5a2d; }
+.rhfg-tag--tout-public { background: #e8f0e8; color: #3a5a2d; }
+.rhfg-tag--obligatoire { background: var(--danger-bg, #f7e3e0); color: var(--danger, #b8443a); }
+.rhfg-tag--valide-ocs  { background: #e2ecf2; color: #3a6a8a; }
+.rhfg-tag--e-learning  { background: var(--info-bg, #e2ecf2); color: var(--info, #3a6a8a); }
+.rhfg-tag--cert-cantonal { background: #e8f0e8; color: #3a5a2d; }
+
+/* Places */
+.rhfg-session-places { min-width: 180px; }
+.rhfg-places-num { font-size: 13px; text-align: right; }
+.rhfg-places-bar {
+  height: 5px; background: var(--line, #e3ebe8); border-radius: 99px;
+  overflow: hidden; margin-top: 6px;
+}
+.rhfg-places-fill {
+  height: 100%; border-radius: 99px; transition: width .3s ease;
+}
+.rhfg-places-fill--ok     { background: linear-gradient(90deg, var(--teal-500, #2d8074), #5cad9b); }
+.rhfg-places-fill--warn   { background: linear-gradient(90deg, var(--warn, #c97a2a), #e0a85a); }
+.rhfg-places-fill--bad    { background: linear-gradient(90deg, var(--danger, #b8443a), #cd6b62); }
+
+/* Boutons inscrire (override BS éventuels) */
+.rhfg-btn-inscrire {
+  background: linear-gradient(135deg, #1f6359, #164a42); color: #fff;
+  border: 0; padding: 10px 20px; border-radius: 8px; font-weight: 600;
+  font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; transition: all .15s ease;
+  box-shadow: 0 2px 6px rgba(31,99,89,.25);
+}
+.rhfg-btn-inscrire:hover { background: linear-gradient(135deg, #164a42, #0d2a26); }
+
+.rhfg-btn-outline {
+  background: transparent; color: var(--ink-2, #324e4a);
+  border: 1px solid var(--line, #e3ebe8); padding: 9px 20px; border-radius: 8px;
+  font-weight: 500; font-size: 13px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .15s ease;
+}
+.rhfg-btn-outline:hover { border-color: var(--teal-300, #7ab5ab); color: var(--teal-700, #164a42); }
 
 /* Email preview */
 .rhfg-email-preview {
