@@ -26,6 +26,9 @@ return [
     'messages' => [
         'get_mes_messages', 'mark_message_read',
     ],
+    'apparence' => [
+        'get_apparence', 'save_apparence',
+    ],
     'messages_internes' => [
         'get_inbox', 'get_sent', 'get_message_detail', 'send_message',
         'upload_message_attachment', 'download_attachment', 'delete_message',

@@ -35,6 +35,10 @@ if ($user && !isset($user['type_employe'])) {
 // Per-user denied permissions
 $deniedPerms = $user ? ($_SESSION['ss_user']['denied_perms'] ?? []) : [];
 
+// Préférence de thème (default | sombre | care)
+$themePref = $user ? (Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$user['id']]) ?: 'default') : 'default';
+$themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
+
 $sidebarNav = [
     'main' => [
         'label' => 'Navigation',
@@ -82,6 +86,12 @@ $sidebarNav = [
             'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
             'fiches-amelioration' => ['label' => 'Amélioration continue', 'icon' => 'lightbulb'],
             'wiki'      => ['label' => 'Base de connaissances', 'icon' => 'book'],
+        ],
+    ],
+    'preferences' => [
+        'label' => 'Préférences',
+        'items' => [
+            'apparence' => ['label' => 'Apparence', 'icon' => 'palette'],
         ],
     ],
 ];
@@ -177,6 +187,12 @@ if ($user && !empty($deniedPerms)) {
 <link rel="stylesheet" href="assets/css/emoji-picker.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/annonces.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/pages-all.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/css/themes.css?v=<?= $v ?>">
+<?php if ($themePref === 'care'): ?>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<?php endif ?>
 <?php if ($cssMode === 'tailwind'): ?>
 <script nonce="<?= $cspNonce ?>" src="/spocspace/assets/js/vendor/tailwind-browser.min.js"></script>
 <style type="text/tailwindcss">
@@ -184,7 +200,7 @@ if ($user && !empty($deniedPerms)) {
 </style>
 <?php endif; ?>
 </head>
-<body>
+<body class="<?= h($themeBodyClass) ?>">
 
 <?php if ($user): ?>
 <!-- BACKDROP (mobile) -->

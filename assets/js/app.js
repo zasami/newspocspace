@@ -22,6 +22,7 @@ const moduleMap = {
     'documents':  () => import('./modules/documents.js'),
     'changements':() => import('./modules/changements.js'),
     'profile':    () => import('./modules/profile.js'),
+    'apparence':  () => import('./modules/apparence.js'),
     'notifications': () => import('./modules/notifications.js'),
     'fiches-salaire': () => import('./modules/fiches-salaire.js'),
     'fiches-amelioration': () => import('./modules/fiches-amelioration.js'),

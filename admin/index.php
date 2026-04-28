@@ -278,6 +278,7 @@ $sidebarCategories = [
         'items' => [
             'etablissement'      => ['label' => 'Établissement',       'icon' => 'hospital'],
             'affichage-planning' => ['label' => 'Affichage planning',  'icon' => 'sliders'],
+            'apparence'          => ['label' => 'Apparence',           'icon' => 'palette'],
             'config-ia'          => ['label' => 'Config IA',           'icon' => 'cpu'],
             'email-config'       => ['label' => 'Config Email',        'icon' => 'envelope-at'],
             'email-templates'    => ['label' => "Templates d'email",    'icon' => 'envelope-paper'],
@@ -297,6 +298,10 @@ $activeSection = match($page) {
     'user-edit', 'user-detail' => 'users',
     default => $page,
 };
+
+// Préférence de thème de l'utilisateur (default | sombre | care)
+$themePref = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$admin['id']]) ?: 'default';
+$themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -315,8 +320,14 @@ $activeSection = match($page) {
 <link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/themes.css?v=<?= APP_VERSION ?>">
+<?php if ($themePref === 'care'): ?>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<?php endif ?>
 </head>
-<body>
+<body class="<?= h($themeBodyClass) ?>">
 
 <!-- BACKDROP (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>

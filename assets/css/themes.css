@@ -1,0 +1,264 @@
+/* ============================================================
+   SPOCSPACE THEMES — SPA employé
+   ============================================================
+   - .theme-default   → palette actuelle (cl-* pastel cream/teal)
+   - .theme-sombre    → mode dark
+   - .theme-care      → nouveau Spoc Care (DS Fraunces+Outfit, palette teal)
+   ============================================================ */
+
+
+/* ============================================================
+   THÈME CARE — Spocspace Design System v1.0
+   ============================================================ */
+body.theme-care {
+  --teal-50:  #ecf5f3;
+  --teal-100: #d2e7e2;
+  --teal-200: #a8d1c8;
+  --teal-300: #7ab5ab;
+  --teal-400: #4d9a8e;
+  --teal-500: #2d8074;
+  --teal-600: #1f6359;
+  --teal-700: #164a42;
+  --teal-800: #0f3631;
+  --teal-900: #0d2a26;
+
+  --ink:   #0d2a26;
+  --ink-2: #324e4a;
+  --ink-3: #4a6661;
+  --muted: #6b8783;
+
+  --line:   #e3ebe8;
+  --line-2: #d4ddda;
+
+  --bg:        #f5f7f5;
+  --surface:   #ffffff;
+  --surface-2: #fafbfa;
+  --surface-3: #f3f6f5;
+
+  --ok: #3d8b6b;     --ok-bg: #e3f0ea;     --ok-line: #b8d4c5;
+  --warn: #c97a2a;   --warn-bg: #fbf0e1;   --warn-line: #e8c897;
+  --danger: #b8443a; --danger-bg: #f7e3e0; --danger-line: #e6b8b0;
+  --info: #3a6a8a;   --info-bg: #e2ecf2;   --info-line: #b5cad8;
+
+  --sec-soins:#1f6359; --sec-soins-bg:#ecf5f3;
+  --sec-hotel:#8a5a1a; --sec-hotel-bg:#fff3e3;
+  --sec-anim:#5e3a78;  --sec-anim-bg:#f0e8f5;
+  --sec-tech:#2d4a6b;  --sec-tech-bg:#e6ecf2;
+  --sec-admin:#6b5a1f; --sec-admin-bg:#f0eee3;
+  --sec-mgmt:#8a3a30;  --sec-mgmt-bg:#fde8e6;
+  --sec-int:#3a5a2d;   --sec-int-bg:#e8f0e6;
+
+  --r-xs: 4px; --r-sm: 6px; --r: 10px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(13,42,38,.04), 0 1px 1px rgba(13,42,38,.03);
+  --shadow:    0 4px 16px -4px rgba(13,42,38,.08), 0 2px 4px rgba(13,42,38,.04);
+  --shadow-lg: 0 16px 48px -12px rgba(13,42,38,.18), 0 4px 12px rgba(13,42,38,.06);
+
+  --grad-hero:    linear-gradient(135deg,#164a42 0%, #1f6359 50%, #2d8074 100%);
+  --grad-sidebar: linear-gradient(180deg,#0d2a26 0%, #164a42 100%);
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', Menlo, monospace;
+
+  /* Pont vers --cl-* (existant SpocSpace) */
+  --cl-teal:         var(--teal-600);
+  --cl-teal-700:     var(--teal-700);
+  --cl-teal-50:      var(--teal-50);
+  --cl-text:         var(--ink);
+  --cl-text-muted:   var(--muted);
+  --cl-bg:           var(--bg);
+  --cl-surface:      var(--surface);
+  --cl-border:       var(--line);
+  --cl-border-light: var(--line);
+  --cl-red:          var(--danger);
+  --cl-orange:       var(--warn);
+  --cl-green:        var(--ok);
+  --cl-blue:         var(--info);
+  --cl-sand:         #d4c4a8;
+  --cl-purple:       var(--sec-anim);
+
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+}
+
+body.theme-care h1, body.theme-care h2, body.theme-care h3,
+body.theme-care h4, body.theme-care h5, body.theme-care h6 {
+  font-family: var(--font-display);
+  letter-spacing: -.015em;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+body.theme-care .stat-value { font-family: var(--font-display); font-weight: 500; }
+body.theme-care .num,
+body.theme-care code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+body.theme-care .btn { border-radius: var(--r-sm); font-weight: 500; transition: all .18s ease; }
+body.theme-care .btn-primary { background: var(--teal-600); border-color: var(--teal-600); }
+body.theme-care .btn-primary:hover { background: var(--teal-700); border-color: var(--teal-700); }
+body.theme-care .btn-outline-primary {
+  color: var(--teal-600); background: var(--teal-50); border-color: var(--teal-100);
+}
+body.theme-care .btn-outline-primary:hover {
+  background: var(--teal-100); color: var(--teal-700); border-color: var(--teal-200);
+}
+body.theme-care .btn-success { background: var(--ok); border-color: var(--ok); }
+body.theme-care .btn-warning { background: var(--warn); border-color: var(--warn); color: #fff; }
+body.theme-care .btn-danger { background: var(--danger); border-color: var(--danger); }
+
+body.theme-care .card,
+body.theme-care .ss-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+}
+
+body.theme-care .form-control,
+body.theme-care .form-select,
+body.theme-care input[type="text"],
+body.theme-care input[type="email"],
+body.theme-care input[type="date"],
+body.theme-care input[type="number"],
+body.theme-care textarea {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+body.theme-care .form-control:focus,
+body.theme-care .form-select:focus {
+  border-color: var(--teal-500);
+  box-shadow: 0 0 0 3px rgba(45,128,116,.15);
+}
+
+body.theme-care .modal-content {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px -12px rgba(13,42,38,.25);
+}
+body.theme-care .modal-header { border-bottom: 1px solid var(--line); }
+body.theme-care .modal-footer { border-top: 1px solid var(--line); background: var(--surface-2); }
+
+body.theme-care .badge.text-bg-success,
+body.theme-care .badge.bg-success { background: var(--ok-bg) !important; color: var(--ok) !important; }
+body.theme-care .badge.text-bg-warning,
+body.theme-care .badge.bg-warning { background: var(--warn-bg) !important; color: var(--warn) !important; }
+body.theme-care .badge.text-bg-danger,
+body.theme-care .badge.bg-danger { background: var(--danger-bg) !important; color: var(--danger) !important; }
+body.theme-care .badge.text-bg-info,
+body.theme-care .badge.bg-info { background: var(--info-bg) !important; color: var(--info) !important; }
+
+/* Sidebar SPA employé */
+body.theme-care .fe-sidebar {
+  background: var(--grad-sidebar);
+  color: #cfe0db;
+}
+body.theme-care .fe-sidebar .fe-sidebar-link,
+body.theme-care .fe-sidebar a {
+  color: #a8c4be;
+  border-radius: var(--r-sm);
+}
+body.theme-care .fe-sidebar a:hover,
+body.theme-care .fe-sidebar .fe-sidebar-link:hover {
+  background: rgba(255,255,255,.04);
+  color: #e8f1ee;
+}
+body.theme-care .fe-sidebar a.active,
+body.theme-care .fe-sidebar .fe-sidebar-link.active {
+  background: rgba(125,211,168,.12);
+  color: #fff;
+  font-weight: 500;
+}
+
+body.theme-care a:not(.btn):not(.nav-link) {
+  color: var(--teal-600);
+}
+body.theme-care a:not(.btn):not(.nav-link):hover {
+  color: var(--teal-700);
+}
+
+
+/* ============================================================
+   THÈME SOMBRE — mode dark
+   ============================================================ */
+body.theme-sombre {
+  --cl-bg:           #0d2a26;
+  --cl-surface:      #164a42;
+  --cl-text:         #e8f1ee;
+  --cl-text-muted:   #a8c4be;
+  --cl-border:       #1f4a42;
+  --cl-border-light: #1f4a42;
+  --cl-teal:         #7dd3a8;
+  --cl-teal-700:     #a8e6c9;
+  --cl-teal-50:      #1f4a42;
+
+  background: #0d2a26;
+  color: #e8f1ee;
+}
+body.theme-sombre .card,
+body.theme-sombre .ss-card,
+body.theme-sombre .modal-content {
+  background: #164a42;
+  border-color: #1f4a42;
+  color: #e8f1ee;
+}
+body.theme-sombre .card-header,
+body.theme-sombre .modal-header,
+body.theme-sombre .modal-footer {
+  background: #0f3631;
+  border-color: #1f4a42;
+  color: #e8f1ee;
+}
+body.theme-sombre .form-control,
+body.theme-sombre .form-select,
+body.theme-sombre input,
+body.theme-sombre textarea {
+  background: #0f3631;
+  border-color: #1f4a42;
+  color: #e8f1ee;
+}
+body.theme-sombre .form-control::placeholder { color: #7ea69c; }
+body.theme-sombre .form-control:focus,
+body.theme-sombre .form-select:focus {
+  background: #0f3631;
+  color: #e8f1ee;
+  border-color: #7dd3a8;
+  box-shadow: 0 0 0 3px rgba(125,211,168,.15);
+}
+body.theme-sombre .btn-primary {
+  background: #7dd3a8;
+  border-color: #7dd3a8;
+  color: #0d2a26;
+}
+body.theme-sombre .btn-primary:hover {
+  background: #a8e6c9;
+  border-color: #a8e6c9;
+  color: #0d2a26;
+}
+body.theme-sombre .btn-outline-secondary {
+  color: #cfe0db;
+  border-color: #1f4a42;
+}
+body.theme-sombre .btn-outline-secondary:hover {
+  background: #1f4a42;
+  color: #fff;
+}
+body.theme-sombre .text-muted { color: #7ea69c !important; }
+body.theme-sombre a:not(.btn):not(.nav-link) { color: #7dd3a8; }
+body.theme-sombre a:not(.btn):not(.nav-link):hover { color: #a8e6c9; }
+body.theme-sombre .dropdown-menu {
+  background: #164a42;
+  border-color: #1f4a42;
+}
+body.theme-sombre .dropdown-item { color: #e8f1ee; }
+body.theme-sombre .dropdown-item:hover { background: #1f4a42; }
+body.theme-sombre .stat-card {
+  background: #164a42;
+  border-color: #1f4a42;
+  color: #e8f1ee;
+}

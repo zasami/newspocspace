@@ -217,6 +217,9 @@ return [
     'global_search' => [
         'admin_global_search',
     ],
+    'apparence' => [
+        'admin_get_apparence', 'admin_save_apparence',
+    ],
     'care_search' => [
         'admin_care_global_search',
     ],
