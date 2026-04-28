@@ -2702,6 +2702,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     // ── Formation popover (hover) ──
     let _fpEl = null;
     let _fpHideTimer = null;
+    let _fpAnchor = null;
+    let _fpScrollBound = false;
 
     function ensureFormationPopover() {
         if (_fpEl) return _fpEl;
@@ -2711,7 +2713,80 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         document.body.appendChild(_fpEl);
         _fpEl.addEventListener('mouseenter', () => clearTimeout(_fpHideTimer));
         _fpEl.addEventListener('mouseleave', () => hideFormationPopoverWithDelay());
+
+        // Une seule fois : binder scroll/resize/wheel pour cacher
+        if (!_fpScrollBound) {
+            const hide = () => hideFormationPopoverImmediate();
+            window.addEventListener('scroll', hide, { passive: true, capture: true });
+            window.addEventListener('wheel', hide, { passive: true });
+            window.addEventListener('resize', hide, { passive: true });
+            // Scroll dans le wrapper grille (horizontal/vertical)
+            const gridWrap = document.querySelector('.tr-grid-wrap');
+            if (gridWrap) gridWrap.addEventListener('scroll', hide, { passive: true });
+            _fpScrollBound = true;
+        }
         return _fpEl;
+    }
+
+    function hideFormationPopoverImmediate() {
+        clearTimeout(_fpHideTimer);
+        if (_fpEl) _fpEl.style.display = 'none';
+        _fpAnchor = null;
+    }
+
+    // Replace ancienne fonction de positionnement avec calcul plus complet
+    function positionFormationPopover(iconEl) {
+        const pop = _fpEl;
+        if (!pop) return;
+        const PAD = 10;             // marge écran
+        const ARROW_GAP = 12;       // espace entre cellule et popover
+        // Force display=block pour mesurer
+        pop.style.visibility = 'hidden';
+        pop.style.display = 'block';
+        const rect = iconEl.getBoundingClientRect();
+        const popW = pop.offsetWidth;
+        const popH = pop.offsetHeight;
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+
+        const spaceBelow = winH - rect.bottom;
+        const spaceAbove = rect.top;
+        const spaceRight = winW - rect.right;
+        const spaceLeft  = rect.left;
+
+        // Vertical : préfère en bas, sinon en haut, sinon meilleur compromis
+        let placeAbove = false;
+        if (spaceBelow < popH + ARROW_GAP + PAD && spaceAbove > spaceBelow) {
+            placeAbove = true;
+        }
+
+        let top = placeAbove
+            ? rect.top - popH - ARROW_GAP
+            : rect.bottom + ARROW_GAP;
+        // Clamp vertical (cas extrême : pas assez de place ni en haut ni en bas)
+        if (top < PAD) top = PAD;
+        if (top + popH > winH - PAD) top = winH - popH - PAD;
+
+        // Horizontal : centré sur l'icône, clamped
+        let left = rect.left + (rect.width / 2) - (popW / 2);
+        if (left + popW > winW - PAD) left = winW - popW - PAD;
+        if (left < PAD) left = PAD;
+
+        pop.style.left = left + 'px';
+        pop.style.top = top + 'px';
+        pop.classList.toggle('fp-above', placeAbove);
+
+        // Position de la flèche : recentrer sur l'icône
+        const arrow = pop.querySelector('.fp-arrow');
+        if (arrow) {
+            const iconCenter = rect.left + rect.width / 2;
+            const arrowOffset = Math.max(14, Math.min(popW - 14, iconCenter - left));
+            arrow.style.left = arrowOffset + 'px';
+            arrow.style.transform = placeAbove
+                ? 'translateX(-50%) rotate(45deg)'
+                : 'translateX(-50%) rotate(45deg)';
+        }
+        pop.style.visibility = 'visible';
     }
 
     function showFormationPopover(iconEl) {
@@ -2787,25 +2862,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             </div>
         `;
 
-        // Position
-        const rect = iconEl.getBoundingClientRect();
-        pop.style.display = 'block';
-        const popW = pop.offsetWidth;
-        const popH = pop.offsetHeight;
-        let left = rect.left + (rect.width / 2) - (popW / 2);
-        let top = rect.bottom + 12;
-        // Si déborde à droite/gauche
-        if (left + popW > window.innerWidth - 10) left = window.innerWidth - popW - 10;
-        if (left < 10) left = 10;
-        // Si déborde en bas → afficher au-dessus
-        if (top + popH > window.innerHeight - 10) {
-            top = rect.top - popH - 12;
-            pop.classList.add('fp-above');
-        } else {
-            pop.classList.remove('fp-above');
-        }
-        pop.style.left = left + 'px';
-        pop.style.top = top + 'px';
+        _fpAnchor = iconEl;
+        positionFormationPopover(iconEl);
     }
 
     function hideFormationPopoverWithDelay() {
