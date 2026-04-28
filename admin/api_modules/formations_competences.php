@@ -704,7 +704,8 @@ function admin_inscrire_users_formation()
     );
 
     // ── Sync vers planning si déjà créé pour le(s) mois de la formation ──
-    sync_formation_to_planning($inscrits, $dateDebut, $dateFin, $session['titre']);
+    $dureeForm = (float) Db::getOne("SELECT duree_heures FROM formations WHERE id = ?", [$session['formation_id']]);
+    sync_formation_to_planning($inscrits, $dateDebut, $dateFin, $session['titre'], $dureeForm);
 
     respond([
         'success' => true,
@@ -725,12 +726,18 @@ function admin_inscrire_users_formation()
  *  - INSERT IGNORE une cellule statut='formation' avec notes 'Formation : <titre>'
  * Retourne le nombre de cellules ajoutées.
  */
-function sync_formation_to_planning(array $userIds, string $dateDebut, string $dateFin, string $titre): int
+function sync_formation_to_planning(array $userIds, string $dateDebut, string $dateFin, string $titre, ?float $dureeHeuresTotal = null): int
 {
     if (!$userIds) return 0;
     $startTs = strtotime($dateDebut);
     $endTs = strtotime($dateFin ?: $dateDebut);
-    $note = 'Formation : ' . mb_substr($titre, 0, 80);
+    $nbDays = max(1, (int) round(($endTs - $startTs) / 86400) + 1);
+    // Heures par jour : duree formation / nb_jours, fallback 8.4 (LTr/CCT EMS Suisse)
+    $heuresJourDefault = (float) (Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ia_heures_jour'") ?: 8.4);
+    $heuresJour = $dureeHeuresTotal && $dureeHeuresTotal > 0
+        ? round($dureeHeuresTotal / $nbDays, 2)
+        : $heuresJourDefault;
+    $note = sprintf('Formation : %s [%sh]', mb_substr($titre, 0, 70), rtrim(rtrim(number_format($heuresJour, 1, '.', ''), '0'), '.'));
 
     // Plannings concernés (par mois unique)
     $moisDistincts = [];

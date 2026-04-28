@@ -111,7 +111,7 @@ function admin_create_planning()
         "SELECT p.user_id,
                 COALESCE(fs.date_debut, f.date_debut) AS date_debut,
                 COALESCE(fs.date_fin,   f.date_fin,   fs.date_debut, f.date_debut) AS date_fin,
-                f.titre
+                f.titre, f.duree_heures
          FROM formation_participants p
          JOIN formations f ON f.id = p.formation_id
          LEFT JOIN formation_sessions fs ON fs.id = p.session_id
@@ -126,15 +126,24 @@ function admin_create_planning()
         $userPrincipalModule[$um['user_id']] = $um['module_id'];
     }
 
+    // Heures par jour : config EMS (LTr/CCT Suisse 8.4h)
+    $heuresJourDefault = (float) Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ia_heures_jour'") ?: 8.4;
+
     $nbForm = 0;
     foreach ($formationsMois as $f) {
         $start = max(strtotime($firstDay), strtotime($f['date_debut']));
         $end = min(strtotime($lastDay), strtotime($f['date_fin']));
+        $nbDays = max(1, (int) round(($end - $start) / 86400) + 1);
+        $heuresJour = $f['duree_heures'] && $f['duree_heures'] > 0
+            ? round($f['duree_heures'] / $nbDays, 2)
+            : $heuresJourDefault;
+        $hLbl = rtrim(rtrim(number_format($heuresJour, 1, '.', ''), '0'), '.');
+        $note = sprintf('Formation : %s [%sh]', mb_substr($f['titre'], 0, 70), $hLbl);
+
         for ($t = $start; $t <= $end; $t += 86400) {
             $date = date('Y-m-d', $t);
-            if (isset($absenceMap[$f['user_id']][$date])) continue; // absence prime
+            if (isset($absenceMap[$f['user_id']][$date])) continue;
             $modPrincipal = $userPrincipalModule[$f['user_id']] ?? null;
-            $note = 'Formation : ' . mb_substr($f['titre'], 0, 80);
             try {
                 Db::exec(
                     "INSERT IGNORE INTO planning_assignations
@@ -597,7 +606,7 @@ function admin_generate_planning()
         $start = max(strtotime($firstDay), strtotime($f['date_debut']));
         $end = min(strtotime($lastDay), strtotime($f['date_fin']));
         $nbDays = max(1, (int) round(($end - $start) / 86400) + 1);
-        $heuresParJour = $f['duree_heures'] > 0 ? round($f['duree_heures'] / $nbDays, 2) : 7;
+        $heuresParJour = $f['duree_heures'] > 0 ? round($f['duree_heures'] / $nbDays, 2) : $iaHeuresJour;
         for ($t = $start; $t <= $end; $t += 86400) {
             $formationMap[$f['user_id']][date('Y-m-d', $t)] = [
                 'titre' => $f['titre'],

@@ -1168,10 +1168,14 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                             if (a.statut === 'formation') {
                                 // Cellule formation : badge teal + icône mortarboard, heures comptées
                                 cellClass += ' dc-formation';
-                                const titre = (a.notes || '').replace(/^Formation\s*:\s*/, '');
-                                cellContent = `<span class="dc-formation-badge" title="Formation : ${escapeHtml(titre)}"><i class="bi bi-mortarboard-fill"></i> FORM</span>`;
-                                // Compter les heures formation comme travaillées (≈ 7h/jour si non spécifié)
-                                totalHours += 7;
+                                // Parse "Formation : <titre> [Xh]" → titre + heures effectives
+                                const rawNotes = a.notes || '';
+                                const hMatch = rawNotes.match(/\[([\d.,]+)h\]\s*$/);
+                                const heuresJour = hMatch ? parseFloat(hMatch[1].replace(',', '.')) : 8.4;
+                                const titre = rawNotes.replace(/^Formation\s*:\s*/, '').replace(/\s*\[[\d.,]+h\]\s*$/, '');
+                                cellContent = `<span class="dc-formation-badge" title="Formation : ${escapeHtml(titre)} · ${heuresJour}h"><i class="bi bi-mortarboard-fill"></i> FORM</span>`;
+                                // Heures formation comptées comme travaillées (norme LTr/CCT EMS Suisse 8.4h par défaut)
+                                totalHours += heuresJour;
                             } else {
                                 if (a.statut === 'absent') cellClass += ' dc-absent';
                                 else if (a.statut === 'repos') cellClass += ' dc-repos';
