@@ -6,11 +6,19 @@ require_once __DIR__ . '/includes/cms.php';
 // Load CMS sections
 $cms = ws_load_sections('index');
 
-// Get 4 weeks of menus (current week Monday → +27 days) for continuous carousel
-$dt = new DateTime();
+// Carousel: minimum 4 semaines, étendu jusqu'au dimanche de la dernière semaine de menus en DB
+$dt = (new DateTime())->setTime(0, 0, 0);
 $dow = (int) $dt->format('N');
 $wsMonday = (clone $dt)->modify('-' . ($dow - 1) . ' days');
 $wsEnd = (clone $wsMonday)->modify('+27 days');
+$wsLastMenu = Db::getOne("SELECT MAX(date_jour) FROM menus WHERE date_jour >= ?", [$wsMonday->format('Y-m-d')]);
+if ($wsLastMenu) {
+    $lastDt = (new DateTime($wsLastMenu))->setTime(0, 0, 0);
+    $lastDow = (int) $lastDt->format('N');
+    $sundayOfLastMenu = (clone $lastDt)->modify('+' . (7 - $lastDow) . ' days');
+    if ($sundayOfLastMenu > $wsEnd) $wsEnd = $sundayOfLastMenu;
+}
+$wsTotalDays = ((int) $wsMonday->diff($wsEnd)->days) + 1;
 $wsMenus = Db::fetchAll(
     "SELECT date_jour, repas, entree, plat, salade, accompagnement, dessert, remarques
      FROM menus WHERE date_jour BETWEEN ? AND ? ORDER BY date_jour ASC, repas ASC",
@@ -328,8 +336,8 @@ $wsDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanch
         menusByKey[m.date_jour + '_' + (m.repas || 'midi')] = m;
     });
 
-    // ── 28 jours de données, carousel glissant ──
-    const TOTAL_DAYS = 28;
+    // ── Carousel glissant — plage étendue jusqu'au dernier menu en DB ──
+    const TOTAL_DAYS = <?= (int) $wsTotalDays ?>;
     const minDate = new Date('<?= $wsMonday->format('Y-m-d') ?>T00:00:00');
     // Position initiale = aujourd'hui - lundi de la semaine
     let carouselPos = Math.floor((new Date() - minDate) / 86400000);

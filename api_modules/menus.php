@@ -40,12 +40,16 @@ function get_menus_semaine()
         }
     }
 
+    $bounds = Db::fetch("SELECT MIN(date_jour) AS first_date, MAX(date_jour) AS last_date FROM menus");
+
     respond([
         'success' => true,
         'menus' => $menus,
         'my_reservations' => $myReservations,
         'semaine_debut' => $monday->format('Y-m-d'),
         'semaine_fin' => $sunday->format('Y-m-d'),
+        'first_menu_date' => $bounds['first_date'] ?? null,
+        'last_menu_date' => $bounds['last_date'] ?? null,
     ]);
 }
 

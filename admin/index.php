@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -150,7 +150,8 @@ $pageLabels = [
     'recrutement'      => 'Recrutement',
     'rh-offres'        => 'Offres d\'emploi',
     'rh-candidatures'  => 'Candidatures',
-    'rh-formations'    => 'Formations collaborateurs',
+    'rh-formations'    => 'Liste des formations',
+    'rh-formations-stats' => 'Statistiques formations',
     'rh-stagiaires'    => 'Stagiaires & stages',
     'rh-stagiaire-detail' => 'Profil stagiaire',
     'mur'              => 'Mur social',
@@ -226,8 +227,14 @@ $sidebarCategories = [
         'items' => [
             'rh-offres'       => ['label' => 'Offres d\'emploi',     'icon' => 'briefcase'],
             'rh-candidatures' => ['label' => 'Candidatures',         'icon' => 'person-lines-fill'],
-            'rh-formations'   => ['label' => 'Formations',           'icon' => 'mortarboard'],
             'rh-stagiaires'   => ['label' => 'Stagiaires',           'icon' => 'person-badge'],
+        ],
+    ],
+    'formations' => [
+        'label' => 'Formations',
+        'items' => [
+            'rh-formations'       => ['label' => 'Liste des formations', 'icon' => 'list-ul'],
+            'rh-formations-stats' => ['label' => 'Statistiques',         'icon' => 'graph-up'],
         ],
     ],
     'autres' => [

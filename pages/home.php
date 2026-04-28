@@ -126,6 +126,9 @@ $nextShift = Db::fetch(
                         <button class="btn btn-sm btn-outline-secondary" id="menuNextWeek" title="Semaine suivante">
                             <i class="bi bi-chevron-right"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="menuLastWeek" title="Dernier menu disponible" style="display:none">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="card-body" id="homeMenus">

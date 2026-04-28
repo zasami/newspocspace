@@ -611,6 +611,12 @@ function admin_import_fegems_formations()
 
     if (empty($formations)) bad_request('Aucune formation trouvée sur le site FEGEMS');
 
+    // Exclure les formations dont la date de fin est passée
+    $today = date('Y-m-d');
+    $formations = array_values(array_filter($formations, function ($f) use ($today) {
+        return empty($f['date_fin']) || $f['date_fin'] >= $today;
+    }));
+
     respond(['success' => true, 'formations' => $formations, 'count' => count($formations)]);
 }
 

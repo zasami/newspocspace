@@ -8,6 +8,8 @@ let currentMonday = null; // derived from currentDate
 let menuMonday = null;
 let menusCache = [];
 let myReservationsCache = {};
+let firstMenuDate = null;
+let lastMenuDate = null;
 let resModal = null;
 let menuRefreshInterval = null;
 
@@ -27,6 +29,7 @@ export async function init() {
     document.getElementById('homeNextWeek')?.addEventListener('click', () => moveNav(1));
     document.getElementById('menuPrevWeek')?.addEventListener('click', () => moveMenuWeek(-1));
     document.getElementById('menuNextWeek')?.addEventListener('click', () => moveMenuWeek(1));
+    document.getElementById('menuLastWeek')?.addEventListener('click', () => jumpToLastMenu());
 
     const modalEl = document.getElementById('menuReservationModal');
     if (modalEl) resModal = new bootstrap.Modal(modalEl);
@@ -180,11 +183,41 @@ async function loadMenus() {
     const res = await apiPost('get_menus_semaine', { date: fmtISO(menuMonday) });
     menusCache = res.menus || [];
     myReservationsCache = res.my_reservations || {};
+    firstMenuDate = res.first_menu_date || null;
+    lastMenuDate = res.last_menu_date || null;
 
     const label = document.getElementById('menuWeekLabel');
     if (label) label.textContent = `S${weekNum(menuMonday)}`;
 
+    updateMenuNavButtons();
     renderMenus();
+}
+
+function updateMenuNavButtons() {
+    const prevBtn = document.getElementById('menuPrevWeek');
+    const nextBtn = document.getElementById('menuNextWeek');
+    const lastBtn = document.getElementById('menuLastWeek');
+    const sunday = new Date(menuMonday);
+    sunday.setDate(sunday.getDate() + 6);
+    const weekStart = fmtISO(menuMonday);
+    const weekEnd = fmtISO(sunday);
+
+    if (prevBtn) prevBtn.disabled = !firstMenuDate || weekStart <= firstMenuDate;
+    if (nextBtn) nextBtn.disabled = !lastMenuDate || weekEnd >= lastMenuDate;
+    if (lastBtn) {
+        const showLast = lastMenuDate && weekEnd < lastMenuDate;
+        lastBtn.style.display = showLast ? '' : 'none';
+        lastBtn.title = showLast ? `Dernier menu : ${formatDateShort(lastMenuDate)}` : '';
+    }
+}
+
+function jumpToLastMenu() {
+    if (!lastMenuDate) return;
+    menuMonday = getMonday(new Date(lastMenuDate + 'T00:00:00'));
+    loadMenus();
+    currentMonday = new Date(menuMonday);
+    currentDate = new Date(menuMonday);
+    loadWeek();
 }
 
 function moveMenuWeek(dir) {

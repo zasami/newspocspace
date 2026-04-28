@@ -89,6 +89,11 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 .rhf-fegems-card .rhf-fg-meta i { margin-right: 3px; }
 .rhf-fegems-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .rhf-fegems-toolbar .rhf-fg-count { font-size: .82rem; color: var(--cl-text-muted); }
+.rhf-fegems-months { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
+.rhf-fegems-months .rhf-fg-month { padding: 4px 12px; border-radius: 999px; border: 1.5px solid var(--cl-border-light, #F0EDE8); background: #fff; color: var(--cl-text, #333); font-size: .78rem; cursor: pointer; transition: all .15s; }
+.rhf-fegems-months .rhf-fg-month:hover { border-color: var(--cl-primary, #7B6B5B); }
+.rhf-fegems-months .rhf-fg-month.active { background: var(--cl-primary, #2d4a43); color: #fff; border-color: var(--cl-primary, #2d4a43); }
+.rhf-fegems-months .rhf-fg-month .rhf-fg-month-count { font-size: .68rem; opacity: .7; margin-left: 4px; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -674,6 +679,44 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
     // FEGEMS import
     let fegemsData = [];
     let fegemsSelected = new Set();
+    let fegemsMonthFilter = '';
+    let fegemsTextFilter = '';
+
+    const MONTH_LABELS = ['Janv.','Févr.','Mars','Avril','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'];
+
+    function fegemsMonthsForFormation(f) {
+        if (!f.date_debut) return [];
+        const start = new Date(f.date_debut + 'T00:00:00');
+        const end = f.date_fin ? new Date(f.date_fin + 'T00:00:00') : start;
+        const months = new Set();
+        const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+        const last = new Date(end.getFullYear(), end.getMonth(), 1);
+        while (cur <= last) {
+            months.add(cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0'));
+            cur.setMonth(cur.getMonth() + 1);
+        }
+        return Array.from(months);
+    }
+
+    function fegemsMatches(f) {
+        if (fegemsMonthFilter) {
+            const months = fegemsMonthsForFormation(f);
+            if (!months.includes(fegemsMonthFilter)) return false;
+        }
+        if (fegemsTextFilter) {
+            const q = fegemsTextFilter;
+            const hay = (f.titre + ' ' + (f.categories || '') + ' ' + (f.modalite || '')).toLowerCase();
+            if (!hay.includes(q)) return false;
+        }
+        return true;
+    }
+
+    function applyFegemsFilters() {
+        document.querySelectorAll('#rhfFegemsGrid .rhf-fegems-card').forEach(c => {
+            const idx = parseInt(c.dataset.fi);
+            c.style.display = fegemsMatches(fegemsData[idx]) ? '' : 'none';
+        });
+    }
 
     document.querySelector('[data-import="fegems"]')?.addEventListener('click', () => {
         bootstrap.Modal.getInstance(document.getElementById('rhfImportModal'))?.hide();
@@ -686,6 +729,8 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             if (!r.success) { document.getElementById('rhfFegemsBody').innerHTML = '<p class="text-danger">Erreur : ' + escapeHtml(r.error || 'Impossible de charger') + '</p>'; return; }
             fegemsData = r.formations || [];
             fegemsSelected = new Set();
+            fegemsMonthFilter = '';
+            fegemsTextFilter = '';
             renderFegemsPreview();
         });
     });
@@ -694,12 +739,31 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
         const body = document.getElementById('rhfFegemsBody');
         if (!fegemsData.length) { body.innerHTML = '<p class="text-muted">Aucune formation trouvée.</p>'; return; }
 
+        // Compter les formations par mois (couvre toute la durée debut→fin)
+        const monthCounts = {};
+        fegemsData.forEach(f => {
+            fegemsMonthsForFormation(f).forEach(m => { monthCounts[m] = (monthCounts[m] || 0) + 1; });
+        });
+        const sortedMonths = Object.keys(monthCounts).sort();
+
         let html = '<div class="rhf-fegems-toolbar">';
         html += '<button class="btn btn-sm btn-outline-secondary" id="rhfSelectAll"><i class="bi bi-check2-all"></i> Tout sélectionner</button>';
         html += '<button class="btn btn-sm btn-outline-secondary" id="rhfDeselectAll"><i class="bi bi-x-lg"></i> Tout désélectionner</button>';
-        html += '<input type="text" class="form-control form-control-sm" id="rhfFegemsSearch" placeholder="Filtrer..." style="max-width:220px">';
+        html += '<input type="text" class="form-control form-control-sm" id="rhfFegemsSearch" placeholder="Filtrer..." style="max-width:220px" value="' + escapeHtml(fegemsTextFilter) + '">';
         html += '<span class="rhf-fg-count">' + fegemsData.length + ' formations disponibles</span>';
         html += '</div>';
+
+        if (sortedMonths.length) {
+            html += '<div class="rhf-fegems-months">';
+            html += '<button class="rhf-fg-month' + (fegemsMonthFilter === '' ? ' active' : '') + '" data-month="">Tous</button>';
+            sortedMonths.forEach(ym => {
+                const [y, m] = ym.split('-');
+                const label = MONTH_LABELS[parseInt(m, 10) - 1] + ' ' + y;
+                html += '<button class="rhf-fg-month' + (fegemsMonthFilter === ym ? ' active' : '') + '" data-month="' + ym + '">'
+                    + label + '<span class="rhf-fg-month-count">' + monthCounts[ym] + '</span></button>';
+            });
+            html += '</div>';
+        }
 
         html += '<div class="rhf-fegems-grid" id="rhfFegemsGrid">';
         fegemsData.forEach((f, i) => {
@@ -746,16 +810,22 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
             updateFegemsCount();
         });
 
-        // Filter
+        // Filter texte
         document.getElementById('rhfFegemsSearch')?.addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            document.querySelectorAll('#rhfFegemsGrid .rhf-fegems-card').forEach(c => {
-                const idx = parseInt(c.dataset.fi);
-                const f = fegemsData[idx];
-                const match = !q || f.titre.toLowerCase().includes(q) || (f.categories||'').toLowerCase().includes(q) || (f.modalite||'').toLowerCase().includes(q);
-                c.style.display = match ? '' : 'none';
+            fegemsTextFilter = e.target.value.toLowerCase();
+            applyFegemsFilters();
+        });
+
+        // Filter mois
+        body.querySelectorAll('.rhf-fg-month').forEach(btn => {
+            btn.addEventListener('click', () => {
+                fegemsMonthFilter = btn.dataset.month || '';
+                body.querySelectorAll('.rhf-fg-month').forEach(b => b.classList.toggle('active', b.dataset.month === fegemsMonthFilter || (!fegemsMonthFilter && !b.dataset.month)));
+                applyFegemsFilters();
             });
         });
+
+        applyFegemsFilters();
     }
 
     function updateFegemsCount() {
