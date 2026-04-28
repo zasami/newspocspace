@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-formations-pluriannuel', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -162,6 +162,7 @@ $pageLabels = [
     'rh-candidatures'  => 'Candidatures',
     'rh-formations'    => 'Liste des formations',
     'rh-formations-stats' => 'Statistiques formations',
+    'rh-formations-pluriannuel' => 'Plan formation pluriannuel',
     'rh-formations-cartographie' => 'Cartographie d\'équipe',
     'rh-formations-fegems'       => 'Inscriptions FEGEMS',
     'rh-formations-sessions'     => 'Sessions & catalogue',
@@ -257,6 +258,7 @@ $sidebarCategories = [
             'rh-formations-sessions'     => ['label' => 'Sessions & catalogue',     'icon' => 'calendar3'],
             'rh-formations-profil'       => ['label' => 'Profil d\'équipe attendu', 'icon' => 'bullseye'],
             'rh-formations-stats'        => ['label' => 'Statistiques',             'icon' => 'graph-up'],
+            'rh-formations-pluriannuel'  => ['label' => 'Plan pluriannuel',         'icon' => 'graph-up-arrow'],
             'rh-formations-parametres'   => ['label' => 'Paramètres',               'icon' => 'gear'],
         ],
     ],
