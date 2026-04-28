@@ -1013,48 +1013,57 @@ em{font-style:italic;color:#324e4a}
     if (typeof showToast === 'function') showToast('Document Word téléchargé', 'success');
   }
 
-  function exportPdf() {
-    // Stratégie : ouvrir une fenêtre avec uniquement le rapport stylé,
-    // déclencher print → l'utilisateur sauvegarde en PDF via la dialog du navigateur
+  async function exportPdf() {
+    // Génération PDF côté serveur via Dompdf → download direct comme Word
     const rapport = document.querySelector('.fpai-rapport');
     if (!rapport) return;
     const clone = rapport.cloneNode(true);
     clone.querySelector('.fpai-ai-notice')?.remove();
     const html = clone.innerHTML;
-    const w = window.open('', '_blank', 'width=820,height=900');
-    if (!w) {
-      if (typeof showToast === 'function') showToast('Bloqueur de popup actif — autorise pour exporter en PDF', 'danger');
-      return;
+
+    const btn = document.getElementById('fpaiExportPdf');
+    const orig = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Génération…'; }
+
+    try {
+      // CSRF token (admin)
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content
+                 || (typeof window.csrfToken !== 'undefined' ? window.csrfToken : '');
+
+      const fd = new FormData();
+      fd.append('action', 'admin_export_plan_formation_pdf');
+      fd.append('html', html);
+      const res = await fetch('/spocspace/admin/api.php', {
+        method: 'POST',
+        headers: csrf ? { 'X-CSRF-Token': csrf } : {},
+        body: fd,
+        credentials: 'same-origin',
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error('HTTP ' + res.status + (t ? ' · ' + t.slice(0, 200) : ''));
+      }
+      const blob = await res.blob();
+      if (!blob || blob.size < 100) throw new Error('PDF vide');
+
+      // Téléchargement type Word : déclencher download avec nom de fichier
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plan-formation-pluriannuel-${new Date().toISOString().slice(0,10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Garder l'URL un peu pour que le navigateur puisse ouvrir le fichier après save
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      if (typeof showToast === 'function') showToast('PDF téléchargé · ouvre le fichier pour le visualiser', 'success');
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('Échec génération PDF : ' + e.message, 'danger');
+      console.error('PDF export error:', e);
+    } finally {
+      if (btn && orig) { btn.disabled = false; btn.innerHTML = orig; }
     }
-    const dateStr = new Date().toLocaleDateString('fr-CH');
-    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
-<title>Plan formation pluriannuel — Synthèse</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-@page { size: A4; margin: 18mm 16mm; }
-body{font-family:'Outfit',sans-serif;font-size:11.5pt;line-height:1.55;color:#0d2a26;max-width:170mm;margin:auto}
-h1{font-family:'Fraunces',serif;font-size:22pt;font-weight:500;color:#164a42;margin:0 0 14pt;letter-spacing:-.02em}
-h2{font-family:'Fraunces',serif;font-size:13pt;font-weight:600;color:#1f6359;margin:16pt 0 6pt;letter-spacing:-.01em;border-top:1px solid #e3ebe8;padding-top:10pt}
-h2:first-of-type{border-top:0;padding-top:0}
-h3{font-family:'Fraunces',serif;font-size:11.5pt;font-weight:600;color:#324e4a;margin:10pt 0 5pt}
-p{margin:6pt 0}
-ul,ol{margin:6pt 0;padding-left:18pt}
-li{margin:2pt 0}
-strong{color:#164a42;font-weight:600}
-em{font-style:italic;color:#324e4a}
-.ai-notice{margin-top:24pt;padding:10pt 12pt;background:#fbf0e1;border-left:3pt solid #c97a2a;font-size:9.5pt;color:#8a5a1a}
-.ai-notice strong{color:#8a5a1a}
-.fpai-foot{margin-top:18pt;padding-top:8pt;border-top:1px dashed #d4ddda;font-size:9.5pt;color:#6b8783;text-align:center}
-</style></head><body>
-${html}
-<div class="ai-notice"><strong>⚠ Généré par IA — brouillon à vérifier.</strong> Relisez chaque chiffre, citation réglementaire et recommandation avant envoi ou publication. La validation humaine reste obligatoire.</div>
-<div class="fpai-foot">Document généré par SpocSpace · ${dateStr} · Données anonymisées</div>
-<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script>
-</body></html>`);
-    w.document.close();
-    if (typeof showToast === 'function') showToast('Dialog d\'impression ouverte — choisis "Enregistrer au format PDF"', 'info');
   }
 
   // Markdown → HTML minimal (headings, bold, italic, lists, paragraphs)

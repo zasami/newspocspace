@@ -635,14 +635,22 @@ La direction</textarea>
   }, 120);
   searchInput.addEventListener('input', searchHandler);
 
-  // Hook to topbar global search if present
-  const topSearch = document.querySelector('input[name="global_search"], #global-search-input, .topbar input[type="search"]');
+  // Hook to topbar global search (id réel = #topbarSearchInput)
+  const topSearch = document.getElementById('topbarSearchInput');
+  let topSearchHandler = null;
   if (topSearch) {
-    topSearch.addEventListener('input', () => {
-      searchInput.value = topSearch.value;
-      curSearch = topSearch.value.trim().toLowerCase();
+    topSearchHandler = () => {
+      const v = topSearch.value.trim();
+      // Si le @ est tapé, c'est filtre page courante → on l'ignore
+      if (v.startsWith('@')) return;
+      searchInput.value = v;
+      curSearch = v.toLowerCase();
       applyFilters();
-    });
+    };
+    topSearch.addEventListener('input', topSearchHandler);
+
+    // Pré-remplir si déjà tapé
+    if (topSearch.value) topSearchHandler();
   }
 
   // Bulk select

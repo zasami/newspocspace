@@ -27,8 +27,101 @@ export async function init() {
     // Souhait submit
     document.getElementById('souhaitSubmitBtn')?.addEventListener('click', submitSouhait);
 
+    // Drag & drop zone certif
+    initCertDrop();
+
     // Click delegate global
     document.addEventListener('click', handleClick);
+}
+
+// ─── Drag & drop + détection type fichier ──────────────────────────────────
+function initCertDrop() {
+    const drop = document.getElementById('certDrop');
+    const input = document.getElementById('certifFile');
+    const empty = drop?.querySelector('.cert-drop-empty');
+    const filled = drop?.querySelector('.cert-drop-filled');
+    const errorEl = document.getElementById('certError');
+    const upBtn = document.getElementById('certifUploadBtn');
+    const removeBtn = document.getElementById('certFileRemove');
+    if (!drop || !input) return;
+
+    const ALLOWED = ['pdf','doc','docx','jpg','jpeg','png','gif','webp'];
+    const MAX = 8 * 1024 * 1024; // 8 Mo
+
+    function showError(msg) {
+        if (!errorEl) return;
+        errorEl.textContent = msg || '';
+        errorEl.hidden = !msg;
+    }
+
+    function clearFile() {
+        input.value = '';
+        empty.hidden = false;
+        filled.hidden = true;
+        drop.classList.remove('has-file');
+        upBtn.disabled = true;
+        showError('');
+    }
+
+    function setFile(file) {
+        if (!file) { clearFile(); return; }
+        const ext = (file.name || '').toLowerCase().split('.').pop();
+        if (!ALLOWED.includes(ext)) {
+            showError('Format non accepté · seuls PDF/DOC/DOCX/JPG/PNG/GIF/WebP sont acceptés.');
+            clearFile();
+            return;
+        }
+        if (file.size > MAX) {
+            showError(`Fichier trop volumineux · max 8 Mo (${fmtBytes(file.size)}).`);
+            clearFile();
+            return;
+        }
+        // Inject dans l'input pour validation submit
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+
+        // Met à jour preview
+        const t = fileTypeOf(file.name);
+        const ico = document.getElementById('certFileIco');
+        ico.className = 'cert-file-ico t-' + t.kind;
+        ico.innerHTML = `<i class="bi ${t.icon}"></i>`;
+        document.getElementById('certFileName').textContent = file.name;
+        document.getElementById('certFileSize').textContent = fmtBytes(file.size) + ' · ' + t.kind.toUpperCase();
+        empty.hidden = true;
+        filled.hidden = false;
+        drop.classList.add('has-file');
+        upBtn.disabled = false;
+        showError('');
+    }
+
+    input.addEventListener('change', () => setFile(input.files[0]));
+
+    removeBtn?.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        clearFile();
+    });
+
+    // Drag events
+    ['dragenter', 'dragover'].forEach(ev => {
+        drop.addEventListener(ev, e => {
+            e.preventDefault(); e.stopPropagation();
+            if (!drop.classList.contains('has-file')) drop.classList.add('dragover');
+        });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+        drop.addEventListener(ev, e => {
+            e.preventDefault(); e.stopPropagation();
+            drop.classList.remove('dragover');
+        });
+    });
+    drop.addEventListener('drop', e => {
+        const f = e.dataTransfer?.files?.[0];
+        if (f) setFile(f);
+    });
+
+    // Reset à l'ouverture de la modal
+    document.getElementById('certifModal')?.addEventListener('show.bs.modal', clearFile);
 }
 
 export function destroy() {
@@ -170,9 +263,7 @@ function cardPassee(f) {
         : `<div class="fmt-thumb"><i class="bi bi-mortarboard"></i></div>`;
 
     const certifBtn = f.certificat_url
-        ? `<button class="btn btn-sm fmt-certif-btn has-certif" data-view-certif="${escapeHtml(f.certificat_url)}" data-title="${escapeHtml(f.titre)}">
-             <i class="bi bi-eye"></i> Voir certificat
-           </button>
+        ? `${renderCertCard(f.certificat_url, f.titre)}
            <button class="btn btn-sm btn-outline-secondary fmt-certif-btn" data-upload-certif="${escapeHtml(f.participant_id)}" data-formation-titre="${escapeHtml(f.titre)}" title="Remplacer">
              <i class="bi bi-arrow-repeat"></i>
            </button>`
@@ -446,6 +537,36 @@ function openCertifLightbox(url, title) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// ─── Type fichier (icône + couleur selon extension) ─────────────────────────
+function fileTypeOf(nameOrUrl) {
+    const ext = (nameOrUrl || '').toLowerCase().split('?')[0].split('.').pop();
+    if (['pdf'].includes(ext)) return { kind: 'pdf', icon: 'bi-file-earmark-pdf-fill' };
+    if (['doc','docx','odt','rtf'].includes(ext)) return { kind: 'doc', icon: 'bi-file-earmark-word-fill' };
+    if (['jpg','jpeg','png','gif','webp','heic','svg'].includes(ext)) return { kind: 'img', icon: 'bi-file-earmark-image-fill' };
+    return { kind: 'other', icon: 'bi-file-earmark' };
+}
+
+function fileBaseName(url) {
+    const parts = (url || '').split('?')[0].split('/');
+    return decodeURIComponent(parts[parts.length - 1] || 'fichier');
+}
+
+// Card cliquable affichée dans la liste à la place du bouton "Voir certificat"
+function renderCertCard(url, formationTitre) {
+    const t = fileTypeOf(url);
+    const fname = fileBaseName(url);
+    return `<a class="fmt-cert-card" data-view-certif="${escapeHtml(url)}" data-title="${escapeHtml(formationTitre || fname)}" title="Voir le certificat">
+              <div class="fmt-cert-card-ico t-${t.kind}"><i class="bi ${t.icon}"></i></div>
+              <div class="fmt-cert-card-name">${escapeHtml(t.kind === 'pdf' ? 'PDF' : t.kind === 'doc' ? 'Document' : t.kind === 'img' ? 'Image' : 'Fichier')}</div>
+            </a>`;
+}
+
+function fmtBytes(b) {
+    if (!b || b < 1024) return (b || 0) + ' o';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' Ko';
+    return (b / 1024 / 1024).toFixed(1) + ' Mo';
+}
 
 function escapeHtml(s) {
     if (s === null || s === undefined) return '';

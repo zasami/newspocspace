@@ -1107,6 +1107,111 @@ PROMPT;
     ]);
 }
 
+/**
+ * Génère un PDF du rapport (depuis HTML envoyé par le front) via Dompdf.
+ * Renvoie directement le binaire PDF en download (Content-Disposition: attachment).
+ */
+function admin_export_plan_formation_pdf()
+{
+    require_admin();
+    global $params;
+
+    $contenuHtml = $params['html'] ?? '';
+    if (!$contenuHtml) bad_request('html requis');
+    // Sécurité minimale : strip scripts/iframes
+    $contenuHtml = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $contenuHtml);
+    $contenuHtml = preg_replace('#<iframe\b[^>]*>.*?</iframe>#is', '', $contenuHtml);
+    // Enlever le bandeau IA qui pourrait être présent (on le réinjecte stylé)
+    $contenuHtml = preg_replace('#<div class="fpai-ai-notice"[\s\S]*?</div>\s*</div>#i', '', $contenuHtml);
+
+    $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_nom'") ?: 'EMS';
+    $dateStr = date('d.m.Y');
+    $dateFile = date('Y-m-d');
+
+    $html = <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+@page { margin: 18mm 16mm 22mm 16mm; }
+body { font-family: 'DejaVu Sans', sans-serif; font-size: 10.5pt; line-height: 1.5; color: #0d2a26; }
+h1 { font-size: 22pt; font-weight: bold; color: #164a42; margin: 0 0 12pt; letter-spacing: -0.5pt; }
+h2 { font-size: 13pt; font-weight: bold; color: #1f6359; margin: 16pt 0 6pt; padding-top: 8pt; border-top: 0.5pt solid #d4ddda; }
+h2:first-of-type { border-top: 0; padding-top: 0; }
+h3 { font-size: 11pt; font-weight: bold; color: #324e4a; margin: 10pt 0 4pt; }
+p { margin: 5pt 0; }
+ul, ol { margin: 5pt 0 5pt 16pt; padding: 0; }
+li { margin: 2pt 0; }
+strong { color: #164a42; font-weight: bold; }
+em { font-style: italic; color: #324e4a; }
+hr { border: 0; border-top: 0.5pt solid #d4ddda; margin: 8pt 0; }
+.cover {
+  text-align: center; padding: 24pt 0 14pt;
+  border-bottom: 1.5pt solid #1f6359; margin-bottom: 14pt;
+}
+.cover-eyebrow { font-size: 8pt; letter-spacing: 1.5pt; color: #6b8783; text-transform: uppercase; }
+.cover-title { font-size: 24pt; font-weight: bold; color: #164a42; margin: 6pt 0 4pt; }
+.cover-meta { font-size: 9.5pt; color: #6b8783; }
+.ai-notice {
+  margin-top: 18pt; padding: 9pt 11pt;
+  background: #fbf0e1; border-left: 3pt solid #c97a2a;
+  font-size: 9pt; color: #5a3d12;
+}
+.ai-notice strong { color: #8a5a1a; }
+.foot {
+  margin-top: 14pt; padding-top: 6pt;
+  border-top: 0.5pt dashed #d4ddda;
+  font-size: 8.5pt; color: #6b8783; text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="cover-eyebrow">Plan formation pluriannuel · synthèse exécutive</div>
+  <div class="cover-title">{$emsNom}</div>
+  <div class="cover-meta">Document à l'attention du Conseil de Fondation · {$dateStr}</div>
+</div>
+
+{$contenuHtml}
+
+<div class="ai-notice">
+  <strong>⚠ Généré par IA — brouillon à vérifier.</strong>
+  Relisez chaque chiffre, citation réglementaire et recommandation avant envoi ou publication.
+  La validation humaine reste obligatoire.
+</div>
+
+<div class="foot">
+  Document généré par SpocSpace · {$dateStr} · Données anonymisées
+</div>
+</body>
+</html>
+HTML;
+
+    require_once __DIR__ . '/../../vendor/autoload.php';
+
+    $options = new \Dompdf\Options();
+    $options->set('isRemoteEnabled', false);  // pas de fetch externe (sécurité)
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans');
+
+    $dompdf = new \Dompdf\Dompdf($options);
+    $dompdf->loadHtml($html, 'UTF-8');
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    $pdfBin = $dompdf->output();
+    $filename = 'plan-formation-pluriannuel-' . $dateFile . '.pdf';
+
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . strlen($pdfBin));
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    echo $pdfBin;
+    exit;
+}
+
 function admin_regenerer_propositions()
 {
     require_admin();

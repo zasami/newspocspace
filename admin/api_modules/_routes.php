@@ -201,7 +201,7 @@ return [
         'admin_get_proposition_detail', 'admin_validate_proposition', 'admin_reject_proposition',
         'admin_send_inscription_email', 'admin_get_formation_sessions',
         'admin_check_formation_conflicts', 'admin_inscrire_users_formation',
-        'admin_generate_plan_formation_ai',
+        'admin_generate_plan_formation_ai', 'admin_export_plan_formation_pdf',
         'admin_get_session_detail', 'admin_save_session', 'admin_delete_session',
         'admin_get_parametres_formation', 'admin_save_parametre_formation', 'admin_reset_parametre_formation',
         'admin_get_formations_stats_enriched',
