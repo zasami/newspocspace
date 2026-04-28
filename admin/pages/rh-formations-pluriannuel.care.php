@@ -6,19 +6,19 @@ $anneeBase = (int) date('Y');
 $annees = [$anneeBase + 1, $anneeBase + 2, $anneeBase + 3, $anneeBase + 4];
 
 // ── Données de base ──────────────────────────────────────────────────────
-$nbCollabs = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE actif = 1");
+$nbCollabs = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
 
 $secteurCounts = [];
 foreach (Db::fetchAll("SELECT f.secteur_fegems AS sec, COUNT(*) AS n
                        FROM users u JOIN fonctions f ON f.id = u.fonction_id
-                       WHERE u.actif = 1 GROUP BY f.secteur_fegems") as $r) {
+                       WHERE u.is_active = 1 GROUP BY f.secteur_fegems") as $r) {
     $secteurCounts[$r['sec']] ?? null;
     $secteurCounts[$r['sec']] = (int) $r['n'];
 }
 $nbSoins = $secteurCounts['soins'] ?? 0;
 $nbInfASSC = (int) Db::getOne(
     "SELECT COUNT(*) FROM users u JOIN fonctions f ON f.id = u.fonction_id
-     WHERE u.actif = 1 AND f.secteur_fegems = 'soins'
+     WHERE u.is_active = 1 AND f.secteur_fegems = 'soins'
        AND (f.code LIKE 'INF%' OR f.code LIKE 'ASSC%' OR f.nom LIKE '%infirm%' OR f.nom LIKE '%ASSC%')"
 );
 
