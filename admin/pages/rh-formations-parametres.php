@@ -59,7 +59,7 @@ foreach ($params as $p) {
 ?>
 <div class="card mb-3">
   <div class="card-header d-flex align-items-center gap-2">
-    <i class="<?= h($catIcon) ?>" style="color:var(--cl-<?= h($catColor) ?>, #2d4a43)"></i>
+    <i class="<?= h($catIcon) ?>" style="color:var(--cl-<?= h($catColor) ?>, var(--cl-primary))"></i>
     <strong><?= h($catLabel) ?></strong>
     <span class="text-muted small ms-auto"><?= count($list) ?> paramètre<?= count($list) > 1 ? 's' : '' ?></span>
   </div>

@@ -142,12 +142,12 @@ function fmt_chf(float $v, string $devise = 'CHF'): string
 .rhfs-bar-label { min-width: 110px; font-size: .82rem; font-weight: 600; color: var(--cl-text); }
 .rhfs-bar-track { flex: 1; height: 10px; background: var(--cl-border-light, #F0EDE8); border-radius: 6px; overflow: hidden; }
 .rhfs-bar-fill { height: 100%; border-radius: 6px; transition: width .4s ease; }
-.rhfs-bar-fill.bg-teal    { background: #bcd2cb; }
+.rhfs-bar-fill.bg-teal    { background: var(--cl-primary-bg); }
 .rhfs-bar-fill.bg-blue    { background: #B8C9D4; }
 .rhfs-bar-fill.bg-purple  { background: #D0C4D8; }
 .rhfs-bar-fill.bg-sand    { background: #D4C4A8; }
 .rhfs-bar-fill.bg-rose    { background: #E2B8AE; }
-.rhfs-bar-fill.bg-green   { background: #bcd2cb; }
+.rhfs-bar-fill.bg-green   { background: var(--cl-primary-bg); }
 .rhfs-bar-fill.bg-orange  { background: #E8C9A0; }
 .rhfs-bar-count { min-width: 50px; text-align: right; font-size: .82rem; font-weight: 600; color: var(--cl-text-muted); }
 .rhfs-section-title { font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--cl-text-muted); margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
@@ -165,7 +165,7 @@ function fmt_chf(float $v, string $devise = 'CHF'): string
 /* Budget gauge */
 .rhfs-budget-gauge { background: var(--cl-bg, #F7F5F2); border-radius: 14px; padding: 18px; }
 .rhfs-budget-bar { height: 18px; background: #F0EDE8; border-radius: 10px; overflow: hidden; position: relative; margin: 14px 0 10px; }
-.rhfs-budget-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #bcd2cb, #2d4a43); transition: width .6s ease; }
+.rhfs-budget-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--cl-primary-bg), var(--cl-primary)); transition: width .6s ease; }
 .rhfs-budget-fill.warn { background: linear-gradient(90deg, #E8C9A0, #C8924B); }
 .rhfs-budget-fill.danger { background: linear-gradient(90deg, #E2B8AE, #B45F4E); }
 .rhfs-budget-marker { position: absolute; top: -6px; bottom: -6px; width: 2px; background: #B45F4E; }
@@ -176,9 +176,9 @@ function fmt_chf(float $v, string $devise = 'CHF'): string
 
 /* Mini evolution chart */
 .rhfs-evol { display: flex; align-items: flex-end; gap: 4px; height: 80px; padding: 6px 0; }
-.rhfs-evol-bar { flex: 1; background: linear-gradient(180deg, #bcd2cb, #8aa9a0); border-radius: 4px 4px 0 0; min-height: 2px; cursor: pointer; transition: opacity .2s; position: relative; }
+.rhfs-evol-bar { flex: 1; background: linear-gradient(180deg, var(--cl-primary-bg), #8aa9a0); border-radius: 4px 4px 0 0; min-height: 2px; cursor: pointer; transition: opacity .2s; position: relative; }
 .rhfs-evol-bar:hover { opacity: .75; }
-.rhfs-evol-bar:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #2d4a43; color: #fff; font-size: .7rem; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 10; margin-bottom: 4px; }
+.rhfs-evol-bar:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--cl-primary); color: #fff; font-size: .7rem; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 10; margin-bottom: 4px; }
 .rhfs-evol-labels { display: flex; gap: 4px; font-size: .64rem; color: var(--cl-text-muted); margin-top: 4px; }
 .rhfs-evol-labels span { flex: 1; text-align: center; }
 </style>

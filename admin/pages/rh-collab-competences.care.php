@@ -235,6 +235,8 @@ $prioMeta = [
     </div>
   </div>
 
+  <div class="fc-content-wrap">
+
   <!-- Pull-up snap cards -->
   <div class="fc-snap">
     <div class="fc-card-snap">
@@ -744,6 +746,7 @@ $prioMeta = [
     <span style="margin-left:auto">Dernière modification · <?= date('d.m.Y') ?></span>
   </div>
 
+  </div><!-- /.fc-content-wrap -->
 </div>
 
 <style>
@@ -780,19 +783,23 @@ $prioMeta = [
   font-size: 14px;
   color: var(--fc-ink);
   line-height: 1.45;
-  padding: 0 32px 60px;
-  max-width: 1600px;
-  margin: 0 auto;
+  /* Annule le padding 1.5rem de .admin-content pour permettre le hero full-width */
+  margin: -1.5rem -1.5rem 0;
+  padding: 0 0 60px;
 }
 .fc-page * { box-sizing: border-box; }
+
+/* Le contenu post-hero garde un padding interne */
+.fc-content-wrap { padding: 0 32px; max-width: 1600px; margin: 0 auto; }
 
 /* ═════ HERO ═════ */
 .fc-hero {
   background: linear-gradient(135deg, #164a42 0%, #1f6359 50%, #2d8074 100%);
-  margin: 0 -32px 0;
+  margin: 0;
   padding: 32px 32px 110px;
   position: relative;
   overflow: hidden;
+  border-radius: 0;
 }
 .fc-hero::before {
   content: ""; position: absolute; inset: 0;

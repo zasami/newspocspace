@@ -17,13 +17,13 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 
 /* ── Badges ── */
 .rhf-badge { font-size: .72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
-.rhf-badge-interne    { background: #bcd2cb; color: #2d4a43; }
+.rhf-badge-interne    { background: var(--cl-primary-bg); color: var(--cl-primary); }
 .rhf-badge-externe    { background: #B8C9D4; color: #3B4F6B; }
 .rhf-badge-e-learning { background: #D0C4D8; color: #5B4B6B; }
 .rhf-badge-certificat { background: #D4C4A8; color: #6B5B3E; }
 .rhf-badge-planifiee  { background: #B8C9D4; color: #3B4F6B; }
 .rhf-badge-en_cours   { background: #D4C4A8; color: #6B5B3E; }
-.rhf-badge-terminee   { background: #bcd2cb; color: #2d4a43; }
+.rhf-badge-terminee   { background: var(--cl-primary-bg); color: var(--cl-primary); }
 .rhf-badge-annulee    { background: #E2B8AE; color: #7B3B2C; }
 .rhf-count { background: var(--cl-border-light, #F0EDE8); color: var(--cl-text-muted); font-size: .72rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
 
@@ -92,7 +92,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
 .rhf-fegems-months { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--cl-border-light, #F0EDE8); }
 .rhf-fegems-months .rhf-fg-month { padding: 4px 12px; border-radius: 999px; border: 1.5px solid var(--cl-border-light, #F0EDE8); background: #fff; color: var(--cl-text, #333); font-size: .78rem; cursor: pointer; transition: all .15s; }
 .rhf-fegems-months .rhf-fg-month:hover { border-color: var(--cl-primary, #7B6B5B); }
-.rhf-fegems-months .rhf-fg-month.active { background: var(--cl-primary, #2d4a43); color: #fff; border-color: var(--cl-primary, #2d4a43); }
+.rhf-fegems-months .rhf-fg-month.active { background: var(--cl-primary, var(--cl-primary)); color: #fff; border-color: var(--cl-primary, var(--cl-primary)); }
 .rhf-fegems-months .rhf-fg-month .rhf-fg-month-count { font-size: .68rem; opacity: .7; margin-left: 4px; }
 </style>
 
@@ -276,11 +276,11 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
         <p class="text-muted small mb-3">Choisissez la source d'importation :</p>
         <div class="rhf-import-sources">
           <div class="rhf-import-card" data-import="fegems">
-            <div class="rhf-ic-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-globe2"></i></div>
+            <div class="rhf-ic-icon" style="background:var(--cl-primary-bg);color:var(--cl-primary)"><i class="bi bi-globe2"></i></div>
             <div class="rhf-ic-label">FEGEMS</div>
           </div>
           <label class="rhf-import-card" data-import="csv">
-            <div class="rhf-ic-icon" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-filetype-csv"></i></div>
+            <div class="rhf-ic-icon" style="background:var(--cl-primary-bg);color:var(--cl-primary)"><i class="bi bi-filetype-csv"></i></div>
             <div class="rhf-ic-label">CSV</div>
             <input type="file" id="rhfFileCSV" accept=".csv,.txt" style="display:none">
           </label>
@@ -392,7 +392,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
                         <div class="rhf-card-footer-left">
                             <span class="rhf-badge rhf-badge-${typeCls}">${escapeHtml(TYPE_LABELS[f.type_formation] || f.type_formation)}</span>
                             <span class="rhf-badge rhf-badge-${statutCls}">${escapeHtml(STATUT_LABELS[f.statut] || f.statut)}</span>
-                            ${parseInt(f.is_obligatoire) ? '<span class="rhf-badge" style="background:#bcd2cb;color:#2d4a43"><i class="bi bi-check-circle-fill"></i> Obligatoire</span>' : ''}
+                            ${parseInt(f.is_obligatoire) ? '<span class="rhf-badge" style="background:var(--cl-primary-bg);color:var(--cl-primary)"><i class="bi bi-check-circle-fill"></i> Obligatoire</span>' : ''}
                         </div>
                         <div class="rhf-card-footer-right">
                             <button class="rhf-row-btn" data-detail="${f.id}" title="Détail"><i class="bi bi-eye"></i></button>

@@ -85,6 +85,11 @@ body.theme-care {
   --cl-sand:        #d4c4a8;
   --cl-purple:      var(--sec-anim);
 
+  /* Override couleur primaire pour theme-care = teal */
+  --cl-primary:     var(--teal-700);
+  --cl-primary-bg:  var(--teal-50);
+  --cl-primary-soft:var(--teal-100);
+
   /* Compétences — pont vers --comp-* */
   --comp-teal-50:  var(--teal-50);
   --comp-teal-100: var(--teal-100);

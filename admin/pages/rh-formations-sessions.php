@@ -35,12 +35,12 @@ $nbPassees    = (int) Db::getOne("SELECT COUNT(*) FROM formation_sessions WHERE 
 <div class="card mb-3">
   <div class="card-body py-2 d-flex align-items-center gap-2 flex-wrap">
     <span class="small text-muted me-2 fw-bold" style="text-transform:uppercase;letter-spacing:.06em;font-size:.7rem">Période</span>
-    <button class="btn btn-sm rhs-filter active" data-periode="a_venir" style="font-size:.78rem;border-radius:99px;background:#2d4a43;color:#fff">À venir</button>
+    <button class="btn btn-sm rhs-filter active" data-periode="a_venir" style="font-size:.78rem;border-radius:99px;background:var(--cl-primary);color:#fff">À venir</button>
     <button class="btn btn-sm rhs-filter" data-periode="" style="font-size:.78rem;border-radius:99px;background:#fff">Toutes</button>
     <button class="btn btn-sm rhs-filter" data-periode="passees" style="font-size:.78rem;border-radius:99px;background:#fff">Passées</button>
     <span class="vr mx-2"></span>
     <span class="small text-muted me-2 fw-bold" style="text-transform:uppercase;letter-spacing:.06em;font-size:.7rem">Statut</span>
-    <button class="btn btn-sm rhs-filter-statut active" data-statut="" style="font-size:.78rem;border-radius:99px;background:#2d4a43;color:#fff">Tous</button>
+    <button class="btn btn-sm rhs-filter-statut active" data-statut="" style="font-size:.78rem;border-radius:99px;background:var(--cl-primary);color:#fff">Tous</button>
     <button class="btn btn-sm rhs-filter-statut" data-statut="ouverte" style="font-size:.78rem;border-radius:99px;background:#fff">Ouvertes</button>
     <button class="btn btn-sm rhs-filter-statut" data-statut="complete" style="font-size:.78rem;border-radius:99px;background:#fff">Complètes</button>
     <button class="btn btn-sm rhs-filter-statut" data-statut="passee" style="font-size:.78rem;border-radius:99px;background:#fff">Passées</button>
@@ -81,7 +81,7 @@ $nbPassees    = (int) Db::getOne("SELECT COUNT(*) FROM formation_sessions WHERE 
 
     function statutBadge(s) {
         const map = {
-            ouverte: ['Ouverte', '#bcd2cb', '#2d4a43'],
+            ouverte: ['Ouverte', 'var(--cl-primary-bg)', 'var(--cl-primary)'],
             complete: ['Complète', '#D4C4A8', '#6B5B3E'],
             liste_attente: ['Liste attente', '#E2B8AE', '#7B3B2C'],
             annulee: ['Annulée', '#E2B8AE', '#7B3B2C'],
@@ -172,7 +172,7 @@ $nbPassees    = (int) Db::getOne("SELECT COUNT(*) FROM formation_sessions WHERE 
         document.querySelectorAll(selector).forEach(b => {
             const isActive = (b.dataset[attr] || '') === (val || '');
             b.classList.toggle('active', isActive);
-            b.style.background = isActive ? '#2d4a43' : '#fff';
+            b.style.background = isActive ? 'var(--cl-primary)' : '#fff';
             b.style.color = isActive ? '#fff' : '';
         });
     }

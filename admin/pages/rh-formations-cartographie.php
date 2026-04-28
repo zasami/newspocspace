@@ -76,14 +76,14 @@ $nbHeuresFormation = (float) Db::getOne(
     <?php foreach ($secteurs as $key => [$label, $color]): ?>
       <button class="btn btn-sm rhc-filter-secteur<?= $key === '' ? ' active' : '' ?>"
               data-secteur="<?= h($key) ?>"
-              style="font-size:.78rem;border-radius:99px;<?= $key === '' ? 'background:#2d4a43;color:#fff;border-color:#2d4a43' : 'background:#fff;border:1px solid var(--cl-border-light)' ?>">
+              style="font-size:.78rem;border-radius:99px;<?= $key === '' ? 'background:var(--cl-primary);color:#fff;border-color:var(--cl-primary)' : 'background:#fff;border:1px solid var(--cl-border-light)' ?>">
         <?php if ($color): ?><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:<?= h($color) ?>;margin-right:5px"></span><?php endif ?>
         <?= h($label) ?>
       </button>
     <?php endforeach ?>
     <span class="vr mx-2"></span>
     <span class="small text-muted me-2 fw-bold" style="text-transform:uppercase;letter-spacing:.06em;font-size:.7rem">Priorité</span>
-    <button class="btn btn-sm rhc-filter-priorite active" data-priorite="" style="font-size:.78rem;border-radius:99px;background:#2d4a43;color:#fff;border-color:#2d4a43">Toutes</button>
+    <button class="btn btn-sm rhc-filter-priorite active" data-priorite="" style="font-size:.78rem;border-radius:99px;background:var(--cl-primary);color:#fff;border-color:var(--cl-primary)">Toutes</button>
     <button class="btn btn-sm rhc-filter-priorite" data-priorite="haute"   style="font-size:.78rem;border-radius:99px;background:#fff;border:1px solid var(--cl-border-light)"><span class="comp-priorite comp-priorite-haute" style="padding:0;background:none">Haute</span></button>
     <button class="btn btn-sm rhc-filter-priorite" data-priorite="moyenne" style="font-size:.78rem;border-radius:99px;background:#fff;border:1px solid var(--cl-border-light)"><span class="comp-priorite comp-priorite-moyenne" style="padding:0;background:none">Moyenne</span></button>
     <button class="btn btn-sm rhc-filter-priorite" data-priorite="a_jour"  style="font-size:.78rem;border-radius:99px;background:#fff;border:1px solid var(--cl-border-light)"><span class="comp-priorite comp-priorite-a_jour" style="padding:0;background:none">À jour</span></button>
@@ -257,9 +257,9 @@ $nbHeuresFormation = (float) Db::getOne(
         document.querySelectorAll(selector).forEach(b => {
             const isActive = (b.dataset[attr] || '') === (value || '');
             b.classList.toggle('active', isActive);
-            b.style.background = isActive ? '#2d4a43' : '#fff';
+            b.style.background = isActive ? 'var(--cl-primary)' : '#fff';
             b.style.color = isActive ? '#fff' : '';
-            b.style.borderColor = isActive ? '#2d4a43' : 'var(--cl-border-light)';
+            b.style.borderColor = isActive ? 'var(--cl-primary)' : 'var(--cl-border-light)';
         });
     }
 
