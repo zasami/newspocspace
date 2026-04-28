@@ -638,12 +638,6 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
         <h3 id="fpaiResultTitle" style="color:#fff">Plan formation pluriannuel — Synthèse exécutive</h3>
       </div>
       <div class="fpai-result-actions">
-        <button type="button" class="btn btn-sm fpai-btn-ondark" id="fpaiCopyBtn" title="Copier">
-          <i class="bi bi-clipboard"></i> Copier
-        </button>
-        <button type="button" class="btn btn-sm fpai-btn-ondark" id="fpaiPrintBtn" title="Imprimer">
-          <i class="bi bi-printer"></i> Imprimer
-        </button>
         <button class="fpai-modal-close" data-close-result style="color:#fff"><i class="bi bi-x-lg"></i></button>
       </div>
     </div>
@@ -795,12 +789,56 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 }
 
 .fpai-meta-foot {
-  font-size: 11px; color: #6b8783; justify-content: space-between !important;
-  font-family: 'JetBrains Mono', monospace;
+  display: flex !important; flex-direction: column !important; align-items: stretch !important;
+  gap: 10px; padding: 12px 22px !important;
+  font-family: 'Outfit', sans-serif;
 }
-.fpai-meta-foot .fpai-meta-row { display: flex; gap: 12px; flex-wrap: wrap; }
-.fpai-meta-foot .fpai-meta-row span { display: inline-flex; align-items: center; gap: 4px; }
-.fpai-meta-foot .fpai-anonymized { color: #3d8b6b; font-weight: 600; }
+.fpai-meta-info {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 11px; color: #6b8783; font-family: 'JetBrains Mono', monospace;
+  padding-bottom: 8px; border-bottom: 1px dashed #e3ebe8;
+}
+.fpai-meta-info span { display: inline-flex; align-items: center; gap: 4px; }
+.fpai-anonymized { color: #3d8b6b; font-weight: 600; }
+
+.fpai-foot-actions {
+  display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* Boutons doux (Copier / Word / PDF / Imprimer) */
+.fpai-btn-soft {
+  background: #fff !important; color: #324e4a !important;
+  border: 1px solid #e3ebe8 !important; padding: 6px 11px !important;
+  font-weight: 500 !important; font-size: 12.5px !important;
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 7px !important; transition: all .12s ease;
+}
+.fpai-btn-soft:hover {
+  border-color: #7ab5ab !important; color: #1f6359 !important;
+  background: #ecf5f3 !important;
+}
+.fpai-btn-soft i { font-size: 13px; }
+
+/* Notice IA en bas du rapport */
+.fpai-ai-notice {
+  margin-top: 28px; padding: 14px 16px;
+  background: #fbf0e1; border-left: 3px solid #c97a2a;
+  border-radius: 8px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.fpai-ai-notice-ico {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #c97a2a; color: #fff;
+  display: grid; place-items: center; font-size: 16px;
+  flex-shrink: 0;
+}
+.fpai-ai-notice strong {
+  display: block; font-size: 13px; color: #8a5a1a; margin-bottom: 4px;
+}
+.fpai-ai-notice p {
+  margin: 0; font-size: 12px; color: #5a3d12; line-height: 1.5;
+}
+.fpai-ai-notice strong { color: #8a5a1a; }
 
 @media print {
   body * { visibility: hidden !important; }
@@ -872,22 +910,49 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 
       const md = r.rapport || '';
       const html = mdToHtml(md);
-      document.getElementById('fpaiResultBody').innerHTML = `<div class="fpai-rapport">${html}</div>`;
+      const aiNotice = `
+        <div class="fpai-ai-notice">
+          <div class="fpai-ai-notice-ico"><i class="bi bi-robot"></i></div>
+          <div>
+            <strong>Généré par IA — brouillon à vérifier</strong>
+            <p>Ce document a été rédigé automatiquement à partir de vos données anonymisées. <strong>Relisez attentivement</strong> chaque chiffre, citation réglementaire et recommandation avant tout envoi ou publication.
+            L'IA peut halluciner ou interpréter de façon imparfaite — la validation humaine reste obligatoire. Aucune action automatique (email, modification BDD) n'est déclenchée depuis cette sortie.</p>
+          </div>
+        </div>`;
+      document.getElementById('fpaiResultBody').innerHTML = `<div class="fpai-rapport">${html}${aiNotice}</div>`;
 
       const meta = r.meta || {};
       document.getElementById('fpaiResultMeta').innerHTML = `
-        <div class="fpai-meta-row">
+        <div class="fpai-meta-info">
           <span class="fpai-anonymized"><i class="bi bi-shield-check"></i> Données anonymisées</span>
           <span><i class="bi bi-cpu"></i> ${escapeHtml(meta.provider || '')} · ${escapeHtml(meta.model || '')}</span>
           <span><i class="bi bi-stopwatch"></i> ${meta.duration_ms}ms</span>
           <span><i class="bi bi-coin"></i> ${meta.tokens_in}/${meta.tokens_out} tokens · $${(meta.cost_usd || 0).toFixed(4)}</span>
         </div>
-        <div class="fpai-meta-row">
-          <button class="fp-btn fp-btn-primary" id="fpaiSendCa">
+        <div class="fpai-foot-actions">
+          <button type="button" class="btn btn-sm fpai-btn-soft" id="fpaiCopyBtn">
+            <i class="bi bi-clipboard"></i> Copier
+          </button>
+          <button type="button" class="btn btn-sm fpai-btn-soft" id="fpaiExportWord">
+            <i class="bi bi-file-earmark-word"></i> Word
+          </button>
+          <button type="button" class="btn btn-sm fpai-btn-soft" id="fpaiExportPdf">
+            <i class="bi bi-file-earmark-pdf"></i> PDF
+          </button>
+          <button type="button" class="btn btn-sm fpai-btn-soft" id="fpaiPrintBtn">
+            <i class="bi bi-printer"></i> Imprimer
+          </button>
+          <button type="button" class="btn btn-sm fpai-btn-ai" id="fpaiSendCa">
             <i class="bi bi-send"></i> Envoyer au CA
           </button>
         </div>
       `;
+
+      // Bind tous les boutons après injection
+      document.getElementById('fpaiCopyBtn')?.addEventListener('click', copyRapport);
+      document.getElementById('fpaiPrintBtn')?.addEventListener('click', () => window.print());
+      document.getElementById('fpaiExportWord')?.addEventListener('click', exportWord);
+      document.getElementById('fpaiExportPdf')?.addEventListener('click', exportPdf);
       document.getElementById('fpaiSendCa')?.addEventListener('click', () => {
         if (typeof showToast === 'function') showToast('Envoi au CA en cours de développement', 'info');
       });
@@ -900,15 +965,97 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
     }
   });
 
-  document.getElementById('fpaiCopyBtn')?.addEventListener('click', () => {
+  function copyRapport() {
     const txt = document.querySelector('.fpai-rapport')?.innerText || '';
     if (!txt) return;
     navigator.clipboard.writeText(txt).then(() => {
       if (typeof showToast === 'function') showToast('Copié dans le presse-papiers', 'success');
     });
-  });
+  }
 
-  document.getElementById('fpaiPrintBtn')?.addEventListener('click', () => window.print());
+  function exportWord() {
+    // Récupère seulement le rapport sans le notice IA (qui sera réinjecté en bas)
+    const rapport = document.querySelector('.fpai-rapport');
+    if (!rapport) return;
+    const clone = rapport.cloneNode(true);
+    clone.querySelector('.fpai-ai-notice')?.remove();
+    const html = clone.innerHTML;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    // Word ouvre le HTML enveloppé en .doc avec MIME word
+    const wordHtml = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>Plan formation pluriannuel</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>
+body{font-family:Calibri,sans-serif;font-size:11pt;line-height:1.5;color:#0d2a26;max-width:680px;margin:auto}
+h1{font-family:Georgia,serif;font-size:22pt;color:#164a42;margin:0 0 14pt}
+h2{font-family:Georgia,serif;font-size:14pt;color:#1f6359;margin:18pt 0 8pt;border-top:1pt solid #d4ddda;padding-top:10pt}
+h2:first-of-type{border-top:0;padding-top:0}
+h3{font-family:Georgia,serif;font-size:12pt;color:#324e4a;margin:10pt 0 5pt}
+p{margin:6pt 0}
+ul,ol{margin:6pt 0;padding-left:20pt}
+li{margin:2pt 0}
+strong{color:#164a42}
+em{font-style:italic;color:#324e4a}
+.ai-notice{margin-top:24pt;padding:10pt 12pt;background:#fbf0e1;border-left:3pt solid #c97a2a;font-size:9.5pt;color:#8a5a1a}
+.ai-notice strong{color:#8a5a1a}
+.foot{margin-top:18pt;padding-top:8pt;border-top:1pt dashed #d4ddda;font-size:9pt;color:#6b8783;text-align:center}
+</style></head><body>${html}
+<div class="ai-notice"><strong>⚠ Généré par IA — brouillon à vérifier.</strong> Relisez chaque chiffre, citation réglementaire et recommandation avant envoi ou publication. La validation humaine reste obligatoire.</div>
+<div class="foot">Document généré par SpocSpace · ${dateStr} · Données anonymisées</div>
+</body></html>`;
+    const blob = new Blob(['﻿' + wordHtml], { type: 'application/msword' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `plan-formation-pluriannuel-${dateStr}.doc`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (typeof showToast === 'function') showToast('Document Word téléchargé', 'success');
+  }
+
+  function exportPdf() {
+    // Stratégie : ouvrir une fenêtre avec uniquement le rapport stylé,
+    // déclencher print → l'utilisateur sauvegarde en PDF via la dialog du navigateur
+    const rapport = document.querySelector('.fpai-rapport');
+    if (!rapport) return;
+    const clone = rapport.cloneNode(true);
+    clone.querySelector('.fpai-ai-notice')?.remove();
+    const html = clone.innerHTML;
+    const w = window.open('', '_blank', 'width=820,height=900');
+    if (!w) {
+      if (typeof showToast === 'function') showToast('Bloqueur de popup actif — autorise pour exporter en PDF', 'danger');
+      return;
+    }
+    const dateStr = new Date().toLocaleDateString('fr-CH');
+    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Plan formation pluriannuel — Synthèse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page { size: A4; margin: 18mm 16mm; }
+body{font-family:'Outfit',sans-serif;font-size:11.5pt;line-height:1.55;color:#0d2a26;max-width:170mm;margin:auto}
+h1{font-family:'Fraunces',serif;font-size:22pt;font-weight:500;color:#164a42;margin:0 0 14pt;letter-spacing:-.02em}
+h2{font-family:'Fraunces',serif;font-size:13pt;font-weight:600;color:#1f6359;margin:16pt 0 6pt;letter-spacing:-.01em;border-top:1px solid #e3ebe8;padding-top:10pt}
+h2:first-of-type{border-top:0;padding-top:0}
+h3{font-family:'Fraunces',serif;font-size:11.5pt;font-weight:600;color:#324e4a;margin:10pt 0 5pt}
+p{margin:6pt 0}
+ul,ol{margin:6pt 0;padding-left:18pt}
+li{margin:2pt 0}
+strong{color:#164a42;font-weight:600}
+em{font-style:italic;color:#324e4a}
+.ai-notice{margin-top:24pt;padding:10pt 12pt;background:#fbf0e1;border-left:3pt solid #c97a2a;font-size:9.5pt;color:#8a5a1a}
+.ai-notice strong{color:#8a5a1a}
+.fpai-foot{margin-top:18pt;padding-top:8pt;border-top:1px dashed #d4ddda;font-size:9.5pt;color:#6b8783;text-align:center}
+</style></head><body>
+${html}
+<div class="ai-notice"><strong>⚠ Généré par IA — brouillon à vérifier.</strong> Relisez chaque chiffre, citation réglementaire et recommandation avant envoi ou publication. La validation humaine reste obligatoire.</div>
+<div class="fpai-foot">Document généré par SpocSpace · ${dateStr} · Données anonymisées</div>
+<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script>
+</body></html>`);
+    w.document.close();
+    if (typeof showToast === 'function') showToast('Dialog d\'impression ouverte — choisis "Enregistrer au format PDF"', 'info');
+  }
 
   // Markdown → HTML minimal (headings, bold, italic, lists, paragraphs)
   function mdToHtml(md) {
