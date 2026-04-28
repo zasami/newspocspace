@@ -422,6 +422,42 @@ foreach ($sessions as $s) {
 .rhfg-bb-btn--primary { background: #7dd3a8; color: #0d2a26; border-color: #7dd3a8; font-weight: 600; }
 .rhfg-bb-btn--primary:hover { background: #a8e6c9; color: #0d2a26; }
 
+/* Checklist & workflow dans email preview */
+.rhfg-checklist { list-style: none; padding: 0; margin: 0; }
+.rhfg-checklist li {
+  padding: 6px 0; font-size: 13px; color: var(--ink-2, #324e4a);
+  display: flex; align-items: center; gap: 10px;
+}
+.rhfg-checklist li.ok i { color: var(--ok, #3d8b6b); font-size: 15px; }
+.rhfg-checklist li.warn i { color: var(--warn, #c97a2a); font-size: 15px; }
+.rhfg-checklist li.todo .rhfg-todo-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface-3, #f3f6f5); color: var(--muted, #6b8783);
+  font-size: 11px; font-weight: 700;
+}
+
+.rhfg-workflow {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rhfg-workflow li {
+  padding: 6px 0; font-size: 13px; color: var(--muted, #6b8783);
+  display: flex; align-items: center; gap: 10px;
+}
+.rhfg-workflow li.done { color: var(--ink-2, #324e4a); }
+.rhfg-workflow li.active { color: var(--ink, #0d2a26); }
+.rhfg-workflow li.active strong { color: var(--ink, #0d2a26); font-weight: 600; }
+.rhfg-step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-3, #f3f6f5); color: var(--muted, #6b8783);
+  font-size: 11px; font-weight: 700; font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
+}
+.rhfg-workflow li.done .rhfg-step-num { background: var(--ok, #3d8b6b); color: #fff; }
+.rhfg-workflow li.active .rhfg-step-num { background: var(--teal-600, #1f6359); color: #fff; }
+
 @media (max-width: 991px) {
   .rhfg-suggest-grid { grid-template-columns: 1fr; }
   .rhfg-hero-stats { grid-template-columns: repeat(2, 1fr); }
@@ -598,6 +634,40 @@ foreach ($sessions as $s) {
             <p>L'ensemble de ces collaborateurs ont une attestation expirée et nécessitent un renouvellement.</p>
             <p>Pouvez-vous me confirmer la prise en compte de ces inscriptions et m'indiquer les places disponibles restantes ?</p>
             <p>Bien cordialement,<br><strong>M. Chanel · Directrice</strong><br>Résidence Les Tilleuls<br>Plan-les-Ouates · 022 XXX XX XX</p>
+          </div>
+
+          <!-- PRÉ-REMPLISSAGE AUTOMATIQUE -->
+          <div style="border-top:1px solid var(--line);padding:18px 22px;background:var(--surface-2)">
+            <div class="t-eyebrow" style="margin-bottom:12px">PRÉ-REMPLISSAGE AUTOMATIQUE</div>
+            <ul class="rhfg-checklist">
+              <li class="ok"><i class="bi bi-check-circle-fill"></i> Coordonnées EMS depuis profil structure</li>
+              <li class="ok"><i class="bi bi-check-circle-fill"></i> ${candidats.length} collaborateurs ciblés (HPCI expirée)</li>
+              <li class="ok"><i class="bi bi-check-circle-fill"></i> Diplômes &amp; fonctions vérifiés</li>
+              <li class="ok"><i class="bi bi-check-circle-fill"></i> Annexe PDF liste complète générée</li>
+              <li class="warn"><i class="bi bi-exclamation-circle-fill"></i> Vérifier auprès du collab. Ferrer (planning)</li>
+            </ul>
+          </div>
+
+          <!-- WORKFLOW D'INSCRIPTION -->
+          <div style="border-top:1px solid var(--line);padding:18px 22px">
+            <div class="t-eyebrow" style="margin-bottom:12px">WORKFLOW D'INSCRIPTION</div>
+            <ol class="rhfg-workflow">
+              <li class="done"><span class="rhfg-step-num"><i class="bi bi-check"></i></span> Suggestion générée</li>
+              <li class="done"><span class="rhfg-step-num"><i class="bi bi-check"></i></span> Collaborateurs vérifiés</li>
+              <li class="active"><span class="rhfg-step-num">3</span> <strong>Email à envoyer</strong></li>
+              <li><span class="rhfg-step-num">4</span> Confirmation Fegems</li>
+              <li><span class="rhfg-step-num">5</span> Suivi &amp; attestation</li>
+            </ol>
+          </div>
+
+          <!-- APRÈS ENVOI -->
+          <div style="border-top:1px solid var(--line);padding:18px 22px;background:var(--surface-2)">
+            <div class="t-eyebrow" style="margin-bottom:12px">APRÈS ENVOI</div>
+            <ul class="rhfg-checklist">
+              <li class="todo"><span class="rhfg-todo-i"><i class="bi bi-info-circle"></i></span> Statut "En attente" sur les fiches employés</li>
+              <li class="todo"><span class="rhfg-todo-i"><i class="bi bi-info-circle"></i></span> Rappel auto à J-7 de la session</li>
+              <li class="todo"><span class="rhfg-todo-i"><i class="bi bi-info-circle"></i></span> Upload attestation à J+3 après session</li>
+            </ul>
           </div>
         `;
         // Send button
