@@ -183,7 +183,7 @@ $themes = [
 .is-saving { animation: savedPulse 1s infinite; }
 </style>
 
-<script nonce="<?= nonce() ?>">
+<script<?= nonce() ?>>
 (function () {
   const grid = document.getElementById('themesGrid');
   const state = document.getElementById('themeSaveState');
@@ -197,7 +197,7 @@ $themes = [
       state.className = 'small text-muted is-saving';
 
       try {
-        const r = await adminApiPost('save_apparence', { theme });
+        const r = await adminApiPost('admin_save_apparence', { theme });
         if (!r.success) throw new Error(r.message || 'Erreur');
 
         // UI : marquer la carte sélectionnée
