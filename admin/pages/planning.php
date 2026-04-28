@@ -786,6 +786,8 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     let assignations = [];
     let absencesData = [];
     let absIdx = {};
+    let formationsData = [];
+    let formIdx = {}; // userId_date → formation info
     let refs = {
         success: true,
         users: <?= json_encode(array_values($planningUsers), JSON_HEX_TAG | JSON_HEX_APOS) ?>,
@@ -987,6 +989,36 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             }
         });
 
+        // Build formation lookup: userId_date → details
+        formationsData = res.formations || [];
+        formIdx = {};
+        formationsData.forEach(f => {
+            const start = new Date(f.date_debut + 'T00:00:00');
+            const end = new Date((f.date_fin || f.date_debut) + 'T00:00:00');
+            const days = Math.max(1, Math.round((end - start) / 86400000) + 1);
+            const heuresJour = f.duree_heures > 0 ? Math.round((f.duree_heures / days) * 10) / 10 : 8.4;
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const key = f.user_id + '_' + fmtISO(d);
+                formIdx[key] = {
+                    titre: f.titre,
+                    type: f.type,
+                    is_obligatoire: parseInt(f.is_obligatoire) === 1,
+                    duree_heures: parseFloat(f.duree_heures) || 0,
+                    heures_jour: heuresJour,
+                    date_debut: f.date_debut,
+                    date_fin: f.date_fin || f.date_debut,
+                    nb_jours: days,
+                    heure_debut: f.heure_debut,
+                    heure_fin: f.heure_fin,
+                    lieu: f.lieu,
+                    modalite: f.modalite,
+                    formation_id: f.formation_id,
+                    contact: f.contact_inscription_email,
+                    statut: f.participant_statut,
+                };
+            }
+        });
+
         updateToolbar();
 
         // Default week start to 1st Monday of month
@@ -1166,15 +1198,11 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                             cellContent = absIcons[absType] || absIcons.autre;
                         } else if (a) {
                             if (a.statut === 'formation') {
-                                // Cellule formation : badge teal + icône mortarboard, heures comptées
                                 cellClass += ' dc-formation';
-                                // Parse "Formation : <titre> [Xh]" → titre + heures effectives
                                 const rawNotes = a.notes || '';
                                 const hMatch = rawNotes.match(/\[([\d.,]+)h\]\s*$/);
                                 const heuresJour = hMatch ? parseFloat(hMatch[1].replace(',', '.')) : 8.4;
-                                const titre = rawNotes.replace(/^Formation\s*:\s*/, '').replace(/\s*\[[\d.,]+h\]\s*$/, '');
-                                cellContent = `<span class="dc-formation-badge" title="Formation : ${escapeHtml(titre)} · ${heuresJour}h"><i class="bi bi-mortarboard-fill"></i> FORM</span>`;
-                                // Heures formation comptées comme travaillées (norme LTr/CCT EMS Suisse 8.4h par défaut)
+                                cellContent = `<span class="dc-formation-icon" data-form-uid="${u.id}" data-form-date="${dateStr}"><i class="bi bi-mortarboard-fill"></i></span>`;
                                 totalHours += heuresJour;
                             } else {
                                 if (a.statut === 'absent') cellClass += ' dc-absent';
@@ -1244,6 +1272,12 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
         // Add click handlers on cells
         content.querySelectorAll('.dc').forEach(cell => {
             cell.addEventListener('click', () => openCellModal(cell));
+        });
+
+        // Hover popover on formation cells
+        content.querySelectorAll('.dc-formation-icon').forEach(el => {
+            el.addEventListener('mouseenter', e => showFormationPopover(el));
+            el.addEventListener('mouseleave', e => hideFormationPopoverWithDelay());
         });
 
         // Click on user cell → open user-detail + row hover
@@ -2663,6 +2697,122 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
     }
     function fmtISO(d) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // ── Formation popover (hover) ──
+    let _fpEl = null;
+    let _fpHideTimer = null;
+
+    function ensureFormationPopover() {
+        if (_fpEl) return _fpEl;
+        _fpEl = document.createElement('div');
+        _fpEl.className = 'formation-popover';
+        _fpEl.style.cssText = 'position:fixed;display:none;z-index:9999;pointer-events:auto;';
+        document.body.appendChild(_fpEl);
+        _fpEl.addEventListener('mouseenter', () => clearTimeout(_fpHideTimer));
+        _fpEl.addEventListener('mouseleave', () => hideFormationPopoverWithDelay());
+        return _fpEl;
+    }
+
+    function showFormationPopover(iconEl) {
+        clearTimeout(_fpHideTimer);
+        const uid = iconEl.dataset.formUid;
+        const date = iconEl.dataset.formDate;
+        const info = formIdx[uid + '_' + date];
+        if (!info) return;
+
+        const pop = ensureFormationPopover();
+
+        // Type & icône : colorisation par catégorie
+        const typeMeta = {
+            'interne':    { lbl: 'Interne',    bg: '#e3f0ea', fg: '#3d8b6b', ico: 'bi-building' },
+            'externe':    { lbl: 'Externe',    bg: '#e2ecf2', fg: '#3a6a8a', ico: 'bi-cloud-arrow-up' },
+            'e-learning': { lbl: 'E-learning', bg: '#f3eef0', fg: '#7a3a5d', ico: 'bi-laptop' },
+            'certificat': { lbl: 'Certificat', bg: '#ecf5f3', fg: '#1f6359', ico: 'bi-award' },
+        };
+        const tm = typeMeta[info.type] || typeMeta['externe'];
+
+        // Dates affichage
+        const fmtDate = d => {
+            const dt = new Date(d + 'T00:00:00');
+            return dt.toLocaleDateString('fr-CH', { day:'2-digit', month:'short', year:'numeric' });
+        };
+        const dateRange = info.date_debut === info.date_fin
+            ? fmtDate(info.date_debut)
+            : `${fmtDate(info.date_debut)} → ${fmtDate(info.date_fin)}`;
+        const horaires = (info.heure_debut && info.heure_fin)
+            ? `${info.heure_debut.slice(0,5)} – ${info.heure_fin.slice(0,5)}`
+            : null;
+
+        const obligBadge = info.is_obligatoire
+            ? '<span class="fp-tag fp-tag-oblig"><i class="bi bi-shield-check"></i> Obligatoire</span>'
+            : '<span class="fp-tag fp-tag-opt">Optionnelle</span>';
+        const statutLbl = {
+            'inscrit': '<span class="fp-tag fp-tag-info"><i class="bi bi-pencil-square"></i> Inscrit</span>',
+            'present': '<span class="fp-tag fp-tag-ok"><i class="bi bi-check-circle"></i> Présent</span>',
+            'valide':  '<span class="fp-tag fp-tag-ok"><i class="bi bi-check-circle-fill"></i> Validé</span>',
+        }[info.statut] || '';
+
+        pop.innerHTML = `
+            <div class="fp-arrow"></div>
+            <div class="fp-head" style="background:linear-gradient(135deg, #1f6359, #2d8074)">
+                <div class="fp-head-ico" style="background:rgba(255,255,255,.18)"><i class="bi bi-mortarboard-fill"></i></div>
+                <div class="fp-head-body">
+                    <div class="fp-eyebrow">FORMATION FEGEMS</div>
+                    <div class="fp-titre">${escapeHtml(info.titre)}</div>
+                </div>
+            </div>
+            <div class="fp-body">
+                <div class="fp-tags">
+                    <span class="fp-tag" style="background:${tm.bg};color:${tm.fg}"><i class="bi ${tm.ico}"></i> ${tm.lbl}</span>
+                    ${obligBadge}
+                    ${statutLbl}
+                </div>
+                <div class="fp-rows">
+                    <div class="fp-row">
+                        <i class="bi bi-calendar3 fp-row-ico"></i>
+                        <div><div class="fp-row-lbl">Date${info.nb_jours > 1 ? 's' : ''}</div><div class="fp-row-val">${dateRange}${info.nb_jours > 1 ? ` <span class="fp-mono">· ${info.nb_jours} jours</span>` : ''}</div></div>
+                    </div>
+                    ${horaires ? `<div class="fp-row"><i class="bi bi-clock fp-row-ico"></i><div><div class="fp-row-lbl">Horaires</div><div class="fp-row-val fp-mono">${horaires}</div></div></div>` : ''}
+                    <div class="fp-row">
+                        <i class="bi bi-hourglass-split fp-row-ico"></i>
+                        <div><div class="fp-row-lbl">Durée</div><div class="fp-row-val fp-mono">${info.heures_jour}h / jour${info.duree_heures > 0 ? ` <span style="color:#6b8783">· ${info.duree_heures}h total</span>` : ''}</div></div>
+                    </div>
+                    ${info.lieu ? `<div class="fp-row"><i class="bi bi-geo-alt fp-row-ico"></i><div><div class="fp-row-lbl">Lieu</div><div class="fp-row-val">${escapeHtml(info.lieu)}</div></div></div>` : ''}
+                    ${info.modalite ? `<div class="fp-row"><i class="bi bi-display fp-row-ico"></i><div><div class="fp-row-lbl">Modalité</div><div class="fp-row-val">${escapeHtml(info.modalite[0].toUpperCase() + info.modalite.slice(1))}</div></div></div>` : ''}
+                </div>
+                <div class="fp-foot">
+                    <div class="fp-foot-info"><i class="bi bi-info-circle"></i> Heures comptées comme travaillées</div>
+                </div>
+            </div>
+        `;
+
+        // Position
+        const rect = iconEl.getBoundingClientRect();
+        pop.style.display = 'block';
+        const popW = pop.offsetWidth;
+        const popH = pop.offsetHeight;
+        let left = rect.left + (rect.width / 2) - (popW / 2);
+        let top = rect.bottom + 12;
+        // Si déborde à droite/gauche
+        if (left + popW > window.innerWidth - 10) left = window.innerWidth - popW - 10;
+        if (left < 10) left = 10;
+        // Si déborde en bas → afficher au-dessus
+        if (top + popH > window.innerHeight - 10) {
+            top = rect.top - popH - 12;
+            pop.classList.add('fp-above');
+        } else {
+            pop.classList.remove('fp-above');
+        }
+        pop.style.left = left + 'px';
+        pop.style.top = top + 'px';
+    }
+
+    function hideFormationPopoverWithDelay() {
+        clearTimeout(_fpHideTimer);
+        _fpHideTimer = setTimeout(() => {
+            if (_fpEl) _fpEl.style.display = 'none';
+        }, 180);
     }
 
     window.initPlanningPage = initPlanningPage;

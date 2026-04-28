@@ -1577,13 +1577,112 @@ body.ss-immersive .ss-immersive-pill {
   background: repeating-linear-gradient(135deg, #ecf5f3 0 6px, #d2e7e2 6px 12px);
   border-color: #7ab5ab;
 }
-.dc-formation-badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: .58rem; font-weight: 700; letter-spacing: .04em;
-  background: #1f6359; color: #fff; padding: 2px 5px; border-radius: 3px;
-  white-space: nowrap;
+.dc-formation-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 7px;
+  background: linear-gradient(135deg, #1f6359, #2d8074);
+  color: #fff; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(13,42,38,.18);
+  transition: transform .12s ease, box-shadow .12s ease;
 }
-.dc-formation-badge i { font-size: .7rem; }
+.dc-formation-icon:hover {
+  transform: translateY(-1px) scale(1.06);
+  box-shadow: 0 3px 8px rgba(13,42,38,.28);
+}
+.dc-formation-icon i { font-size: .82rem; }
+
+/* ── Formation popover ── */
+.formation-popover {
+  width: 340px; background: #fff;
+  border: 1px solid #e3ebe8; border-radius: 14px;
+  box-shadow: 0 16px 48px -12px rgba(13,42,38,.22), 0 4px 12px rgba(13,42,38,.08);
+  font-family: 'Outfit', -apple-system, sans-serif;
+  font-size: 13px; color: #0d2a26; line-height: 1.45;
+  overflow: hidden;
+  animation: fpFadeIn .14s ease-out;
+}
+@keyframes fpFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.formation-popover .fp-arrow {
+  position: absolute; top: -7px; left: 50%; transform: translateX(-50%) rotate(45deg);
+  width: 12px; height: 12px; background: #1f6359;
+  border-top: 1px solid #e3ebe8; border-left: 1px solid #e3ebe8;
+}
+.formation-popover.fp-above .fp-arrow {
+  top: auto; bottom: -7px;
+  background: #fff; border: 0;
+  border-bottom: 1px solid #e3ebe8; border-right: 1px solid #e3ebe8;
+}
+
+.formation-popover .fp-head {
+  padding: 14px 16px; color: #fff;
+  display: flex; align-items: center; gap: 12px;
+}
+.formation-popover .fp-head-ico {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center; font-size: 17px;
+  border: 1px solid rgba(255,255,255,.18);
+  flex-shrink: 0;
+}
+.formation-popover .fp-head-body { flex: 1; min-width: 0; }
+.formation-popover .fp-eyebrow {
+  font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: #a8e6c9; font-weight: 600;
+}
+.formation-popover .fp-titre {
+  font-family: 'Fraunces', serif;
+  font-size: 15px; font-weight: 600; line-height: 1.25;
+  letter-spacing: -.01em; margin-top: 2px; color: #fff;
+}
+
+.formation-popover .fp-body { padding: 12px 16px 14px; }
+.formation-popover .fp-tags {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;
+}
+.formation-popover .fp-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: 3px 7px; border-radius: 4px;
+  background: #ecf5f3; color: #1f6359;
+}
+.formation-popover .fp-tag i { font-size: 11px; }
+.formation-popover .fp-tag-oblig { background: #f7e3e0; color: #b8443a; }
+.formation-popover .fp-tag-opt   { background: #f0ede8; color: #6b6560; }
+.formation-popover .fp-tag-info  { background: #e2ecf2; color: #3a6a8a; }
+.formation-popover .fp-tag-ok    { background: #e3f0ea; color: #3d8b6b; }
+
+.formation-popover .fp-rows {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 0; border-top: 1px solid #e3ebe8;
+}
+.formation-popover .fp-row {
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.formation-popover .fp-row-ico {
+  width: 16px; font-size: 13px; color: #6b8783; flex-shrink: 0; margin-top: 2px;
+}
+.formation-popover .fp-row-lbl {
+  font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: #6b8783; font-weight: 600;
+}
+.formation-popover .fp-row-val {
+  font-size: 12.5px; color: #0d2a26; font-weight: 500; margin-top: 1px;
+}
+.formation-popover .fp-mono {
+  font-family: 'JetBrains Mono', monospace; font-weight: 600;
+}
+
+.formation-popover .fp-foot {
+  margin-top: 4px; padding-top: 10px;
+  border-top: 1px dashed #e3ebe8;
+}
+.formation-popover .fp-foot-info {
+  font-size: 11px; color: #6b8783;
+  display: flex; align-items: center; gap: 5px;
+}
+.formation-popover .fp-foot-info i { color: #1f6359; }
 .dc-abs-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
 .dc-abs-bi { font-size: .85rem; vertical-align: middle; }
 /* Vacation */

@@ -46,9 +46,10 @@ function admin_get_planning()
         "SELECT p.user_id,
                 COALESCE(fs.date_debut, f.date_debut) AS date_debut,
                 COALESCE(fs.date_fin,   f.date_fin,   fs.date_debut, f.date_debut) AS date_fin,
-                f.titre, f.duree_heures,
+                f.titre, f.duree_heures, f.type, f.is_obligatoire,
                 fs.heure_debut, fs.heure_fin, fs.lieu, fs.modalite,
-                f.id AS formation_id
+                fs.contact_inscription_email,
+                f.id AS formation_id, p.statut AS participant_statut
          FROM formation_participants p
          JOIN formations f ON f.id = p.formation_id
          LEFT JOIN formation_sessions fs ON fs.id = p.session_id
