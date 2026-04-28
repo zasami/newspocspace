@@ -133,6 +133,63 @@ $roleLabel = $ROLES[$u['role']] ?? $u['role'];
                     </div>
                 </div>
             </div>
+
+            <!-- Adresse personnelle (utilisée pour calculs d'itinéraire formations) -->
+            <div class="card mt-3">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt text-muted"></i>
+                        <h5 class="mb-0">Mon adresse personnelle</h5>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" id="editAdresseBtn" type="button">
+                        <i class="bi bi-pencil"></i> Modifier
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="adresseDisplay">
+                        <?php if ($u['adresse_rue']): ?>
+                            <div><?= h($u['adresse_rue']) ?></div>
+                            <?php if ($u['adresse_complement']): ?>
+                                <div class="text-muted small"><?= h($u['adresse_complement']) ?></div>
+                            <?php endif ?>
+                            <div><?= h($u['adresse_cp']) ?> <?= h($u['adresse_ville']) ?></div>
+                        <?php else: ?>
+                            <div class="text-muted small">
+                                <i class="bi bi-info-circle"></i> Aucune adresse renseignée.
+                                Ajoutez-la pour calculer l'itinéraire depuis chez vous vers vos formations.
+                            </div>
+                        <?php endif ?>
+                    </div>
+                    <form id="adresseForm" class="d-none">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Rue et numéro</label>
+                            <input type="text" class="form-control form-control-sm" id="adrRue" value="<?= h($u['adresse_rue']) ?>" placeholder="Ex: Rue de Lausanne 14">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Complément <span class="text-muted">(optionnel)</span></label>
+                            <input type="text" class="form-control form-control-sm" id="adrComplement" value="<?= h($u['adresse_complement']) ?>" placeholder="Étage, app, c/o…">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold">CP</label>
+                                <input type="text" class="form-control form-control-sm" id="adrCp" value="<?= h($u['adresse_cp']) ?>" placeholder="1207">
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label small fw-semibold">Ville</label>
+                                <input type="text" class="form-control form-control-sm" id="adrVille" value="<?= h($u['adresse_ville']) ?>" placeholder="Genève">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                                <i class="bi bi-check-lg"></i> Enregistrer
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="cancelAdresseBtn">
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <!-- Password -->

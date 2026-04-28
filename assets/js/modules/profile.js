@@ -56,6 +56,53 @@ export function init() {
         }
     });
 
+    // Adresse perso
+    const adresseDisplay = document.getElementById('adresseDisplay');
+    const adresseForm = document.getElementById('adresseForm');
+
+    document.getElementById('editAdresseBtn')?.addEventListener('click', () => {
+        adresseDisplay?.classList.add('d-none');
+        adresseForm?.classList.remove('d-none');
+    });
+    document.getElementById('cancelAdresseBtn')?.addEventListener('click', () => {
+        adresseForm?.classList.add('d-none');
+        adresseDisplay?.classList.remove('d-none');
+    });
+    adresseForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            adresse_rue:        document.getElementById('adrRue').value.trim(),
+            adresse_complement: document.getElementById('adrComplement').value.trim(),
+            adresse_cp:         document.getElementById('adrCp').value.trim(),
+            adresse_ville:      document.getElementById('adrVille').value.trim(),
+        };
+        try {
+            const r = await apiPost('update_user_adresse', payload);
+            if (!r.success) throw new Error(r.message || 'Erreur');
+            toast('Adresse enregistrée', 'success');
+            // Refresh display
+            if (payload.adresse_rue) {
+                let html = `<div>${escapeHtml(payload.adresse_rue)}</div>`;
+                if (payload.adresse_complement) html += `<div class="text-muted small">${escapeHtml(payload.adresse_complement)}</div>`;
+                html += `<div>${escapeHtml(payload.adresse_cp)} ${escapeHtml(payload.adresse_ville)}</div>`;
+                adresseDisplay.innerHTML = html;
+            } else {
+                adresseDisplay.innerHTML = '<div class="text-muted small"><i class="bi bi-info-circle"></i> Aucune adresse renseignée.</div>';
+            }
+            adresseForm.classList.add('d-none');
+            adresseDisplay.classList.remove('d-none');
+        } catch (err) {
+            toast('Erreur : ' + err.message, 'danger');
+        }
+    });
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        const t = document.createElement('span');
+        t.textContent = String(s);
+        return t.innerHTML;
+    }
+
     // Avatar upload
     document.getElementById('profAvatarImg')?.addEventListener('click', () => {
         document.getElementById('profAvatarInput')?.click();

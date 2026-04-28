@@ -88,6 +88,12 @@ $sidebarNav = [
             'wiki'      => ['label' => 'Base de connaissances', 'icon' => 'book'],
         ],
     ],
+    'parcours' => [
+        'label' => 'Mon parcours',
+        'items' => [
+            'formations' => ['label' => 'Mes formations', 'icon' => 'mortarboard'],
+        ],
+    ],
     'preferences' => [
         'label' => 'Préférences',
         'items' => [

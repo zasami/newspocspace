@@ -29,6 +29,12 @@ return [
     'apparence' => [
         'get_apparence', 'save_apparence',
     ],
+    'formations' => [
+        'get_mes_formations', 'get_formation_detail_emp',
+        'upload_formation_certificat', 'get_catalogue_formations',
+        'submit_souhait_formation', 'propose_covoiturage_formation',
+        'update_user_adresse',
+    ],
     'messages_internes' => [
         'get_inbox', 'get_sent', 'get_message_detail', 'send_message',
         'upload_message_attachment', 'download_attachment', 'delete_message',
