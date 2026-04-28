@@ -1573,6 +1573,17 @@ body.ss-immersive .ss-immersive-pill {
 .tr-grid .dc-repos  { background: var(--cl-bg); }
 .tr-grid .dc-vacant { background: #FFFBEB; }
 .tr-grid .dc-absence { background: rgba(188,210,203,.12); }
+.tr-grid .dc-formation {
+  background: repeating-linear-gradient(135deg, #ecf5f3 0 6px, #d2e7e2 6px 12px);
+  border-color: #7ab5ab;
+}
+.dc-formation-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: .58rem; font-weight: 700; letter-spacing: .04em;
+  background: #1f6359; color: #fff; padding: 2px 5px; border-radius: 3px;
+  white-space: nowrap;
+}
+.dc-formation-badge i { font-size: .7rem; }
 .dc-abs-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
 .dc-abs-bi { font-size: .85rem; vertical-align: middle; }
 /* Vacation */

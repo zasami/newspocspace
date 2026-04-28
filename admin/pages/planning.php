@@ -1165,21 +1165,30 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                             cellClass += ' dc-absence';
                             cellContent = absIcons[absType] || absIcons.autre;
                         } else if (a) {
-                            if (a.statut === 'absent') cellClass += ' dc-absent';
-                            else if (a.statut === 'repos') cellClass += ' dc-repos';
-                            else if (a.statut === 'vacant') cellClass += ' dc-vacant';
+                            if (a.statut === 'formation') {
+                                // Cellule formation : badge teal + icône mortarboard, heures comptées
+                                cellClass += ' dc-formation';
+                                const titre = (a.notes || '').replace(/^Formation\s*:\s*/, '');
+                                cellContent = `<span class="dc-formation-badge" title="Formation : ${escapeHtml(titre)}"><i class="bi bi-mortarboard-fill"></i> FORM</span>`;
+                                // Compter les heures formation comme travaillées (≈ 7h/jour si non spécifié)
+                                totalHours += 7;
+                            } else {
+                                if (a.statut === 'absent') cellClass += ' dc-absent';
+                                else if (a.statut === 'repos') cellClass += ' dc-repos';
+                                else if (a.statut === 'vacant') cellClass += ' dc-vacant';
 
-                            if (a.horaire_code) {
-                                const color = a.couleur || hColorMap[a.horaire_type_id] || '#6c757d';
-                                const desirIcon = (a.notes && a.notes.includes('desir')) ? '<i class="bi bi-emoji-smile" style="font-size:.55rem;color:#e8a838;position:absolute;top:-2px;right:-2px"></i>' : '';
-                                cellContent = `<span class="shift-code" style="background:${color};position:relative">${escapeHtml(a.horaire_code)}${desirIcon}</span>`;
-                                if (a.statut === 'present') {
-                                    const h = (refs.horaires || []).find(h => h.id === a.horaire_type_id);
-                                    if (h) totalHours += parseFloat(h.duree_effective) || 0;
+                                if (a.horaire_code) {
+                                    const color = a.couleur || hColorMap[a.horaire_type_id] || '#6c757d';
+                                    const desirIcon = (a.notes && a.notes.includes('desir')) ? '<i class="bi bi-emoji-smile" style="font-size:.55rem;color:#e8a838;position:absolute;top:-2px;right:-2px"></i>' : '';
+                                    cellContent = `<span class="shift-code" style="background:${color};position:relative">${escapeHtml(a.horaire_code)}${desirIcon}</span>`;
+                                    if (a.statut === 'present') {
+                                        const h = (refs.horaires || []).find(h => h.id === a.horaire_type_id);
+                                        if (h) totalHours += parseFloat(h.duree_effective) || 0;
+                                    }
+                                } else if (a.statut !== 'present') {
+                                    const statusIcons = { repos: '·', absent: '✕', vacant: '?', remplace: 'R', interim: 'I', entraide: 'E' };
+                                    cellContent = `<span class="text-muted">${statusIcons[a.statut] || a.statut.charAt(0).toUpperCase()}</span>`;
                                 }
-                            } else if (a.statut !== 'present') {
-                                const statusIcons = { repos: '·', absent: '✕', vacant: '?', remplace: 'R', interim: 'I', entraide: 'E' };
-                                cellContent = `<span class="text-muted">${statusIcons[a.statut] || a.statut.charAt(0).toUpperCase()}</span>`;
                             }
                         }
 

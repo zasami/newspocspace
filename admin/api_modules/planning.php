@@ -40,11 +40,31 @@ function admin_get_planning()
         [$moisEnd, $moisStart]
     );
 
+    // Load formations chevauchant le mois (sessions inscrites/présentes)
+    // Une formation bloque les dates [date_debut..date_fin] pour ses participants
+    $formations = Db::fetchAll(
+        "SELECT p.user_id,
+                COALESCE(fs.date_debut, f.date_debut) AS date_debut,
+                COALESCE(fs.date_fin,   f.date_fin,   fs.date_debut, f.date_debut) AS date_fin,
+                f.titre, f.duree_heures,
+                fs.heure_debut, fs.heure_fin, fs.lieu, fs.modalite,
+                f.id AS formation_id
+         FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         LEFT JOIN formation_sessions fs ON fs.id = p.session_id
+         WHERE p.statut IN ('inscrit','present','valide')
+           AND COALESCE(fs.date_debut, f.date_debut) <= ?
+           AND COALESCE(fs.date_fin, f.date_fin, fs.date_debut, f.date_debut) >= ?
+         ORDER BY COALESCE(fs.date_debut, f.date_debut)",
+        [$moisEnd, $moisStart]
+    );
+
     respond([
         'success' => true,
         'planning' => $planning,
         'assignations' => $assignations,
         'absences' => $absences,
+        'formations' => $formations,
     ]);
 }
 
@@ -489,6 +509,38 @@ function admin_generate_planning()
         }
     }
 
+    // ── Formations chevauchant le mois ─────────────────────────
+    // Les jours de formation bloquent la génération et seront pré-assignés
+    // avec statut='formation'. Heures de formation comptent comme heures travaillées.
+    $formationsMois = Db::fetchAll(
+        "SELECT p.user_id,
+                COALESCE(fs.date_debut, f.date_debut) AS date_debut,
+                COALESCE(fs.date_fin,   f.date_fin,   fs.date_debut, f.date_debut) AS date_fin,
+                f.titre, f.duree_heures,
+                f.id AS formation_id
+         FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         LEFT JOIN formation_sessions fs ON fs.id = p.session_id
+         WHERE p.statut IN ('inscrit','present','valide')
+           AND COALESCE(fs.date_debut, f.date_debut) <= ?
+           AND COALESCE(fs.date_fin, f.date_fin, fs.date_debut, f.date_debut) >= ?",
+        [$lastDay, $firstDay]
+    );
+    $formationMap = []; // [user_id][date] = ['titre'=>..., 'heures'=>..., 'formation_id'=>...]
+    foreach ($formationsMois as $f) {
+        $start = max(strtotime($firstDay), strtotime($f['date_debut']));
+        $end = min(strtotime($lastDay), strtotime($f['date_fin']));
+        $nbDays = max(1, (int) round(($end - $start) / 86400) + 1);
+        $heuresParJour = $f['duree_heures'] > 0 ? round($f['duree_heures'] / $nbDays, 2) : 7;
+        for ($t = $start; $t <= $end; $t += 86400) {
+            $formationMap[$f['user_id']][date('Y-m-d', $t)] = [
+                'titre' => $f['titre'],
+                'heures' => $heuresParJour,
+                'formation_id' => $f['formation_id'],
+            ];
+        }
+    }
+
     // ── Index horaires by code for easy lookup ──
     $horaireByCode = [];
     $horaireById = [];
@@ -728,6 +780,36 @@ function admin_generate_planning()
     $assigned = 0;
     $conflicts = [];
 
+    // ── Pré-assignations FORMATION (priorité absolue) ──────────
+    // Pour chaque user inscrit à une formation chevauchant le mois, on
+    // crée une assignation statut='formation' qui bloque la cellule et
+    // dont les heures comptent comme heures travaillées.
+    $userById = [];
+    foreach ($users as $u) $userById[$u['id']] = $u;
+
+    foreach ($formationMap as $userId => $byDate) {
+        if (!isset($userById[$userId])) continue;
+        $u = $userById[$userId];
+        // Filtrage par module si moduleFilter actif : on ne pré-assigne
+        // les formations que si l'user appartient au module concerné
+        if ($moduleFilter && empty(array_intersect([$moduleFilter], $userModuleMap[$userId] ?? []))) continue;
+
+        $modPrincipal = $u['principal_module_id'] ?? ($userModuleMap[$userId][0] ?? null);
+        foreach ($byDate as $date => $info) {
+            if (!isset($dateByStr[$date])) continue;
+            $note = 'Formation : ' . mb_substr($info['titre'], 0, 80);
+            $stmtInsert->execute([
+                Uuid::v4(), $planningId, $userId, $date,
+                null, $modPrincipal, null, 'formation', $note
+            ]);
+            $userDays[$userId][$date] = true;
+            $userHours[$userId] = ($userHours[$userId] ?? 0) + (float) $info['heures'];
+            $wk = $dateCache[$dateByStr[$date]]['wk'];
+            $userWeekHours[$userId][$wk] = ($userWeekHours[$userId][$wk] ?? 0) + (float) $info['heures'];
+            $assigned++;
+        }
+    }
+
     // ── Helper: parse heure_debut/heure_fin d'un shift en minutes absolues ──
     // Si shift traverse minuit (fin<debut), end_min_abs > 1440.
     $parseShiftTimes = function ($shift) {
@@ -916,8 +998,10 @@ function admin_generate_planning()
     };
 
     // ── Helper: check if user is eligible ──
-    $isEligible = function ($u, $date) use (&$absenceMap, &$desirMap, &$userDays) {
+    // Bloque aussi les jours de formation (les heures sont déjà pré-comptabilisées)
+    $isEligible = function ($u, $date) use (&$absenceMap, &$formationMap, &$desirMap, &$userDays) {
         if (isset($absenceMap[$u['id']][$date])) return false;
+        if (isset($formationMap[$u['id']][$date])) return false;
         if (isset($desirMap[$u['id']][$date]) && $desirMap[$u['id']][$date]['type'] === 'jour_off') return false;
         if (isset($userDays[$u['id']][$date])) return false;
         return true;
