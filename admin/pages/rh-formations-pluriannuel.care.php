@@ -762,6 +762,38 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 .fpai-rapport strong { color: #164a42; font-weight: 600; }
 .fpai-rapport em { color: #324e4a; font-style: italic; }
 
+/* Boutons modale IA */
+.fpai-btn-ai {
+  background: linear-gradient(135deg, #1f6359 0%, #2d8074 60%, #5cad9b 100%);
+  color: #fff !important; border: 0; padding: 8px 16px;
+  font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 7px;
+  box-shadow: 0 2px 8px -2px rgba(31,99,89,.4);
+  transition: all .15s ease;
+}
+.fpai-btn-ai:hover:not(:disabled) {
+  background: linear-gradient(135deg, #164a42 0%, #1f6359 60%, #2d8074 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(31,99,89,.5);
+}
+.fpai-btn-ai:disabled {
+  background: #d4ddda; color: #9bb0ad !important;
+  cursor: not-allowed; box-shadow: none; opacity: 1;
+}
+.fpai-btn-ai i { font-size: 14px; }
+
+.fpai-btn-ondark {
+  background: rgba(255,255,255,.14) !important; color: #fff !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  font-weight: 500; font-size: 12.5px;
+  padding: 6px 12px; transition: all .15s ease;
+}
+.fpai-btn-ondark:hover {
+  background: rgba(255,255,255,.24) !important;
+  border-color: rgba(255,255,255,.4) !important;
+  color: #fff !important;
+}
+
 .fpai-meta-foot {
   font-size: 11px; color: #6b8783; justify-content: space-between !important;
   font-family: 'JetBrains Mono', monospace;
