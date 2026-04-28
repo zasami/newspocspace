@@ -352,6 +352,253 @@ body.theme-care a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
 
 
 /* ============================================================
+   CLASSES UTILITAIRES DS (scope theme-care uniquement)
+   À utiliser dans les pages *.care.php pour reproduire la maquette
+   ============================================================ */
+
+/* === Typographie === */
+body.theme-care .serif { font-family: var(--font-display); }
+body.theme-care .mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+body.theme-care .h-display-1 { font-family: var(--font-display); font-size: 48px; font-weight: 500; letter-spacing: -.03em; line-height: 1.05; color: var(--teal-900); margin: 0; }
+body.theme-care .h-display-2 { font-family: var(--font-display); font-size: 34px; font-weight: 500; letter-spacing: -.025em; line-height: 1.1; margin: 0; }
+body.theme-care .h-1 { font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; margin: 0; }
+body.theme-care .h-2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; margin: 0; }
+body.theme-care .h-3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -.01em; line-height: 1.25; margin: 0; }
+body.theme-care .t-body  { font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+body.theme-care .t-small { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+body.theme-care .t-meta  { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+body.theme-care .t-eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal-600); font-weight: 600; }
+body.theme-care .t-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* === Layout sections === */
+body.theme-care .care-page { padding: 24px 28px; max-width: 1280px; margin: 0 auto; }
+body.theme-care .care-section { margin-top: 40px; }
+body.theme-care .care-section:first-child { margin-top: 0; }
+body.theme-care .care-section-title {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+body.theme-care .care-section-title h2 { font-size: 22px; font-weight: 600; letter-spacing: -.02em; font-family: var(--font-display); }
+body.theme-care .care-block { margin-bottom: 32px; }
+body.theme-care .care-block-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin: 0 0 12px;
+  font-family: var(--font-body);
+}
+
+/* === KPI cards (DS) === */
+body.theme-care .kpi {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 18px 20px;
+  position: relative; overflow: hidden;
+}
+body.theme-care .kpi-lbl {
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
+}
+body.theme-care .kpi-val {
+  font-family: var(--font-display); font-size: 30px; font-weight: 500;
+  color: var(--ink); margin-top: 5px; letter-spacing: -.02em; line-height: 1;
+}
+body.theme-care .kpi-val small { font-size: 14px; color: var(--muted); font-family: var(--font-body); font-weight: 400; }
+body.theme-care .kpi-delta { font-size: 11.5px; color: var(--ok); margin-top: 7px; }
+body.theme-care .kpi-delta.bad { color: var(--danger); }
+body.theme-care .kpi.feature {
+  background: var(--grad-hero); border-color: transparent; color: #fff;
+}
+body.theme-care .kpi.feature .kpi-lbl { color: #a8c4be; }
+body.theme-care .kpi.feature .kpi-val { color: #fff; }
+body.theme-care .kpi.feature .kpi-val small { color: #cfe0db; }
+body.theme-care .kpi.feature .kpi-delta { color: #a8e6c9; }
+
+/* === Tags secteur === */
+body.theme-care .sector-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: var(--r-sm);
+  font-size: 11.5px; font-weight: 500;
+}
+body.theme-care .sector-tag .bullet { width: 6px; height: 6px; border-radius: 50%; }
+body.theme-care .s-soins { background: var(--sec-soins-bg); color: var(--sec-soins); }
+body.theme-care .s-soins .bullet { background: var(--sec-soins); }
+body.theme-care .s-hot   { background: var(--sec-hotel-bg); color: var(--sec-hotel); }
+body.theme-care .s-hot .bullet { background: var(--sec-hotel); }
+body.theme-care .s-anim  { background: var(--sec-anim-bg); color: var(--sec-anim); }
+body.theme-care .s-anim .bullet { background: var(--sec-anim); }
+body.theme-care .s-tech  { background: var(--sec-tech-bg); color: var(--sec-tech); }
+body.theme-care .s-tech .bullet { background: var(--sec-tech); }
+body.theme-care .s-admin { background: var(--sec-admin-bg); color: var(--sec-admin); }
+body.theme-care .s-admin .bullet { background: var(--sec-admin); }
+body.theme-care .s-mgmt  { background: var(--sec-mgmt-bg); color: var(--sec-mgmt); }
+body.theme-care .s-mgmt .bullet { background: var(--sec-mgmt); }
+body.theme-care .s-int   { background: var(--sec-int-bg); color: var(--sec-int); }
+body.theme-care .s-int .bullet { background: var(--sec-int); }
+
+/* === Pills filtres === */
+body.theme-care .ds-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: var(--r-pill);
+  font-size: 12.5px; font-weight: 500;
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line);
+  cursor: pointer; transition: all .12s ease;
+  text-decoration: none;
+}
+body.theme-care .ds-pill:hover { border-color: var(--teal-300); color: var(--ink); }
+body.theme-care .ds-pill.on   { background: var(--teal-600); color: #fff; border-color: var(--teal-600); }
+body.theme-care .ds-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+/* === Tabs DS === */
+body.theme-care .ds-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+body.theme-care .ds-tab {
+  padding: 11px 18px; font-size: 13.5px; font-weight: 500;
+  background: transparent; border: 0; color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 8px; transition: all .12s ease;
+  text-decoration: none;
+}
+body.theme-care .ds-tab:hover { color: var(--ink-2); }
+body.theme-care .ds-tab.on { color: var(--teal-600); border-bottom-color: var(--teal-600); }
+body.theme-care .ds-tab .count {
+  font-family: var(--font-mono); font-size: 10.5px;
+  background: var(--teal-50); color: var(--teal-700);
+  padding: 1px 6px; border-radius: var(--r-pill); font-weight: 600;
+}
+body.theme-care .ds-tab.on .count { background: var(--teal-600); color: #fff; }
+
+/* === Toggle segmenté === */
+body.theme-care .ds-toggle {
+  display: inline-flex; background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 3px; gap: 2px;
+}
+body.theme-care .ds-toggle button {
+  padding: 7px 14px; font-size: 12.5px; font-weight: 500; color: var(--muted);
+  background: transparent; border: 0; border-radius: var(--r-sm); cursor: pointer;
+  transition: all .12s ease;
+}
+body.theme-care .ds-toggle button:hover { color: var(--ink-2); }
+body.theme-care .ds-toggle button.on { background: #fff; color: var(--teal-600); box-shadow: var(--shadow-sm); font-weight: 600; }
+
+/* === Avatar (DS) === */
+body.theme-care .ds-avatar {
+  display: inline-grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  font-weight: 600; color: #fff; font-size: 12px;
+  font-family: var(--font-body); flex-shrink: 0;
+}
+body.theme-care .ds-avatar.sm { width: 24px; height: 24px; font-size: 10px; }
+body.theme-care .ds-avatar.lg { width: 48px; height: 48px; font-size: 16px; }
+body.theme-care .ds-avatar.xl { width: 64px; height: 64px; font-size: 20px; border-radius: var(--r-md); }
+
+/* === Progress (DS) === */
+body.theme-care .ds-progress { display: flex; align-items: center; gap: 8px; width: 100%; }
+body.theme-care .ds-progress-bar {
+  flex: 1; height: 6px; background: var(--line);
+  border-radius: var(--r-pill); overflow: hidden; min-width: 60px;
+}
+body.theme-care .ds-progress-fill {
+  height: 100%; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--teal-500), #5cad9b);
+  transition: width .3s ease;
+}
+body.theme-care .ds-progress-fill.warn   { background: linear-gradient(90deg, var(--warn), #e0a85a); }
+body.theme-care .ds-progress-fill.danger { background: linear-gradient(90deg, var(--danger), #cd6b62); }
+body.theme-care .ds-progress-pct {
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 500;
+  color: var(--ink-2); min-width: 32px; text-align: right;
+}
+
+/* === Tableau DS === */
+body.theme-care .ds-tbl-wrap {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+body.theme-care table.ds-tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
+body.theme-care .ds-tbl thead th {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); font-weight: 700;
+  text-align: left; padding: 11px 14px; background: var(--surface-2);
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+body.theme-care .ds-tbl thead th.num { text-align: right; }
+body.theme-care .ds-tbl tbody td {
+  padding: 13px 14px; border-bottom: 1px solid var(--line);
+  vertical-align: middle; font-size: 13.5px;
+}
+body.theme-care .ds-tbl tbody tr:hover { background: var(--teal-50); }
+body.theme-care .ds-tbl tbody tr:last-child td { border-bottom: 0; }
+
+/* === Card DS (à part du Bootstrap) === */
+body.theme-care .ds-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); overflow: hidden;
+  transition: all .18s ease;
+}
+body.theme-care .ds-card-head {
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+body.theme-care .ds-card-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+body.theme-care .ds-card-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+body.theme-care .ds-card-body { padding: 20px; }
+body.theme-care .ds-card-foot {
+  padding: 13px 20px; border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+body.theme-care .ds-card-hover:hover { border-color: var(--teal-300); box-shadow: var(--shadow); transform: translateY(-1px); }
+body.theme-care .ds-card-padded { padding: 20px; }
+
+/* === Hero gradient (page-level) === */
+body.theme-care .ds-hero {
+  background: var(--grad-hero); color: #fff;
+  border-radius: var(--r-lg); padding: 28px 32px;
+  margin-bottom: 24px;
+}
+body.theme-care .ds-hero h1 { font-family: var(--font-display); font-size: 30px; font-weight: 500; color: #fff; margin: 0; letter-spacing: -.02em; }
+body.theme-care .ds-hero .ds-hero-sub { color: #cfe0db; font-size: 14px; margin-top: 6px; }
+body.theme-care .ds-hero .ds-hero-stats { display: flex; gap: 24px; margin-top: 18px; flex-wrap: wrap; }
+body.theme-care .ds-hero .ds-hero-stat { background: rgba(255,255,255,.1); border-radius: var(--r); padding: 10px 14px; }
+body.theme-care .ds-hero .ds-hero-stat strong { display: block; font-family: var(--font-display); font-size: 22px; color: #fff; line-height: 1; }
+body.theme-care .ds-hero .ds-hero-stat span { font-size: 11px; color: #cfe0db; letter-spacing: .04em; }
+
+/* === Empty state DS === */
+body.theme-care .ds-empty {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+}
+body.theme-care .ds-empty i { font-size: 2rem; opacity: .25; display: block; margin-bottom: 8px; }
+body.theme-care .ds-empty .ds-empty-title { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+body.theme-care .ds-empty .ds-empty-msg { font-size: 12.5px; margin-top: 4px; }
+
+/* === Search (DS) === */
+body.theme-care .ds-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 7px 12px; max-width: 340px;
+}
+body.theme-care .ds-search input {
+  border: 0; background: transparent; outline: none;
+  font: inherit; color: var(--ink); width: 100%; font-size: 13px;
+}
+
+/* Override pour stat-card existante qui devienne style DS automatiquement sur theme-care */
+body.theme-care .stat-card {
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+}
+body.theme-care .stat-card .stat-value {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -.02em;
+}
+body.theme-care .stat-card .stat-label {
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
+}
+
+
+/* ============================================================
    THÈME SOMBRE — mode dark
    ============================================================ */
 body.theme-sombre {

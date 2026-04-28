@@ -107,6 +107,16 @@ if (!file_exists($pageFile)) {
     $pageFile = __DIR__ . '/pages/dashboard.php';
 }
 
+// Dispatch theme-care : si l'utilisateur est en theme-care ET qu'un template
+// alternatif {page}.care.php existe, on l'utilise à la place du standard.
+$_themePrefDispatch = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$admin['id']]) ?: 'default';
+if ($_themePrefDispatch === 'care') {
+    $careFile = __DIR__ . '/pages/' . $page . '.care.php';
+    if (file_exists($careFile)) {
+        $pageFile = $careFile;
+    }
+}
+
 $pageLabels = [
     'dashboard'     => 'Tableau de bord',
     'etablissement' => 'Établissement',
