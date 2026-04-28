@@ -774,3 +774,413 @@ function admin_delete_session()
     Db::exec("DELETE FROM formation_sessions WHERE id = ?", [$id]);
     respond(['success' => true]);
 }
+
+// ─── Paramètres formation ────────────────────────────────────────────────────
+
+function admin_get_parametres_formation()
+{
+    require_responsable();
+    $rows = Db::fetchAll(
+        "SELECT cle, valeur, type, categorie, libelle, description, valeur_defaut,
+                min_val, max_val, options_json, ordre
+         FROM parametres_formation WHERE visible = 1
+         ORDER BY categorie, ordre"
+    );
+    respond(['success' => true, 'parametres' => $rows]);
+}
+
+function admin_save_parametre_formation()
+{
+    require_admin();
+    global $params;
+    $cle = Sanitize::text($params['cle'] ?? '', 100);
+    if (!$cle) bad_request('cle requise');
+
+    $row = Db::fetch("SELECT cle, type, min_val, max_val, options_json FROM parametres_formation WHERE cle = ?", [$cle]);
+    if (!$row) not_found('Paramètre inconnu');
+
+    $val = $params['valeur'] ?? '';
+
+    switch ($row['type']) {
+        case 'bool':
+            $val = !empty($val) && $val !== '0' && $val !== 'false' ? '1' : '0';
+            break;
+        case 'int':
+            if (!is_numeric($val)) bad_request('Entier attendu');
+            $val = (string)(int)$val;
+            if ($row['min_val'] !== null && (int)$val < (int)$row['min_val']) bad_request('Valeur < min (' . $row['min_val'] . ')');
+            if ($row['max_val'] !== null && (int)$val > (int)$row['max_val']) bad_request('Valeur > max (' . $row['max_val'] . ')');
+            break;
+        case 'decimal':
+            if (!is_numeric($val)) bad_request('Décimal attendu');
+            $val = (string)(float)$val;
+            if ($row['min_val'] !== null && (float)$val < (float)$row['min_val']) bad_request('Valeur < min');
+            if ($row['max_val'] !== null && (float)$val > (float)$row['max_val']) bad_request('Valeur > max');
+            break;
+        case 'json':
+            $decoded = json_decode($val, true);
+            if (json_last_error() !== JSON_ERROR_NONE) bad_request('JSON invalide : ' . json_last_error_msg());
+            $val = json_encode($decoded, JSON_UNESCAPED_UNICODE);
+            break;
+        case 'date':
+            if ($val !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) bad_request('Date format YYYY-MM-DD attendu');
+            break;
+        case 'string':
+        default:
+            if ($row['options_json']) {
+                $opts = json_decode($row['options_json'], true) ?: [];
+                $allowedKeys = array_keys($opts);
+                if ($val !== '' && !in_array($val, $allowedKeys, true) && !in_array($val, $opts, true)) {
+                    bad_request('Valeur hors options');
+                }
+            }
+            $val = (string)$val;
+            break;
+    }
+
+    $userId = $_SESSION['admin']['id'] ?? null;
+    Db::exec(
+        "UPDATE parametres_formation SET valeur = ?, updated_by = ?, updated_at = NOW() WHERE cle = ?",
+        [$val, $userId, $cle]
+    );
+
+    respond(['success' => true, 'cle' => $cle, 'valeur' => $val]);
+}
+
+function admin_reset_parametre_formation()
+{
+    require_admin();
+    global $params;
+    $cle = Sanitize::text($params['cle'] ?? '', 100);
+    if (!$cle) bad_request('cle requise');
+    $row = Db::fetch("SELECT valeur_defaut FROM parametres_formation WHERE cle = ?", [$cle]);
+    if (!$row) not_found('Paramètre inconnu');
+    $userId = $_SESSION['admin']['id'] ?? null;
+    Db::exec(
+        "UPDATE parametres_formation SET valeur = ?, updated_by = ?, updated_at = NOW() WHERE cle = ?",
+        [$row['valeur_defaut'], $userId, $cle]
+    );
+    respond(['success' => true, 'cle' => $cle, 'valeur' => $row['valeur_defaut']]);
+}
+
+// ─── Stats formations enrichies ──────────────────────────────────────────────
+
+function admin_get_formations_stats_enriched()
+{
+    require_responsable();
+
+    $totalFormations   = (int) Db::getOne("SELECT COUNT(*) FROM formations");
+    $totalParticipants = (int) Db::getOne("SELECT COUNT(*) FROM formation_participants");
+    $totalHeures       = (float) Db::getOne(
+        "SELECT COALESCE(SUM(f.duree_heures), 0) FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         WHERE p.statut IN ('present','valide')"
+    );
+    $totalValides = (int) Db::getOne("SELECT COUNT(*) FROM formation_participants WHERE statut = 'valide'");
+
+    // Heures par secteur FEGEMS
+    $heuresParSecteur = Db::fetchAll(
+        "SELECT COALESCE(fn.secteur_fegems, 'sans_secteur') AS secteur,
+                COUNT(DISTINCT p.user_id) AS nb_collab,
+                COALESCE(SUM(f.duree_heures), 0) AS heures
+         FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         JOIN users u ON u.id = p.user_id
+         LEFT JOIN fonctions fn ON fn.id = u.fonction_id
+         WHERE p.statut IN ('present','valide')
+         GROUP BY secteur
+         ORDER BY heures DESC"
+    );
+
+    // Top 10 thématiques (par occurence dans formation_thematiques avec liens vers participants)
+    $topThematiques = Db::fetchAll(
+        "SELECT t.id, t.code, t.nom, t.categorie, t.couleur,
+                COUNT(DISTINCT fp.id) AS nb_part,
+                COALESCE(SUM(CASE WHEN fp.statut IN ('present','valide') THEN f.duree_heures ELSE 0 END), 0) AS heures
+         FROM competences_thematiques t
+         JOIN formation_thematiques ft ON ft.thematique_id = t.id
+         JOIN formations f ON f.id = ft.formation_id
+         LEFT JOIN formation_participants fp ON fp.formation_id = f.id
+         GROUP BY t.id
+         HAVING nb_part > 0
+         ORDER BY nb_part DESC
+         LIMIT 10"
+    );
+
+    // Budget : alloué vs consommé
+    $budgetAnnuelTotal = (float) Db::getOne("SELECT valeur FROM parametres_formation WHERE cle = 'bud.annuel_total_chf'");
+    $seuilAlertePct    = (int) Db::getOne("SELECT valeur FROM parametres_formation WHERE cle = 'bud.seuil_alerte_pct'") ?: 80;
+    $devise            = Db::getOne("SELECT valeur FROM parametres_formation WHERE cle = 'bud.devise'") ?: 'CHF';
+
+    $anneeCourante = (int) date('Y');
+    $budgetAlloue = (float) Db::getOne(
+        "SELECT COALESCE(SUM(budget_alloue), 0) FROM formations
+         WHERE YEAR(date_debut) = ?", [$anneeCourante]
+    );
+    $coutReel = (float) Db::getOne(
+        "SELECT COALESCE(SUM(p.cout_individuel), 0) FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         WHERE p.statut IN ('present','valide')
+           AND YEAR(f.date_debut) = ?", [$anneeCourante]
+    );
+    if ($coutReel == 0) {
+        // Fallback : somme cout_formation × nb participants
+        $coutReel = (float) Db::getOne(
+            "SELECT COALESCE(SUM(f.cout_formation), 0) FROM formation_participants p
+             JOIN formations f ON f.id = p.formation_id
+             WHERE p.statut IN ('present','valide')
+               AND YEAR(f.date_debut) = ?", [$anneeCourante]
+        );
+    }
+
+    // Évolution mensuelle (12 derniers mois)
+    $evolution = Db::fetchAll(
+        "SELECT DATE_FORMAT(f.date_debut, '%Y-%m') AS mois,
+                COUNT(DISTINCT f.id) AS nb_formations,
+                COUNT(DISTINCT p.id) AS nb_part,
+                COALESCE(SUM(CASE WHEN p.statut IN ('present','valide') THEN f.duree_heures END), 0) AS heures
+         FROM formations f
+         LEFT JOIN formation_participants p ON p.formation_id = f.id
+         WHERE f.date_debut >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+         GROUP BY mois
+         ORDER BY mois ASC"
+    );
+
+    respond([
+        'success' => true,
+        'global' => [
+            'formations'   => $totalFormations,
+            'participants' => $totalParticipants,
+            'heures'       => $totalHeures,
+            'valides'      => $totalValides,
+            'taux_validation' => $totalParticipants > 0 ? round(($totalValides / $totalParticipants) * 100, 1) : 0,
+        ],
+        'par_secteur'    => $heuresParSecteur,
+        'top_thematiques' => $topThematiques,
+        'budget' => [
+            'annuee'         => $anneeCourante,
+            'budget_total'   => $budgetAnnuelTotal,
+            'budget_alloue'  => $budgetAlloue,
+            'cout_reel'      => $coutReel,
+            'reste'          => max(0, $budgetAnnuelTotal - $coutReel),
+            'seuil_alerte_pct' => $seuilAlertePct,
+            'pct_consomme'   => $budgetAnnuelTotal > 0 ? round(($coutReel / $budgetAnnuelTotal) * 100, 1) : 0,
+            'devise'         => $devise,
+        ],
+        'evolution' => $evolution,
+    ]);
+}
+
+// ─── Entretiens annuels ──────────────────────────────────────────────────────
+
+function admin_get_entretiens_list()
+{
+    require_responsable();
+    global $params;
+    $statut = $params['statut'] ?? null;
+    $annee  = isset($params['annee']) ? (int)$params['annee'] : null;
+
+    $where = ['1=1'];
+    $binds = [];
+    if ($statut && in_array($statut, ['planifie', 'realise', 'reporte', 'annule'], true)) {
+        $where[] = 'e.statut = ?';
+        $binds[] = $statut;
+    }
+    if ($annee) {
+        $where[] = 'e.annee = ?';
+        $binds[] = $annee;
+    }
+    $whereSql = implode(' AND ', $where);
+
+    $rows = Db::fetchAll(
+        "SELECT e.id, e.user_id, e.evaluator_id, e.annee, e.date_entretien, e.statut,
+                e.signed_at, e.created_at,
+                u.prenom, u.nom, u.email,
+                ev.prenom AS eval_prenom, ev.nom AS eval_nom,
+                fn.nom AS fonction, fn.secteur_fegems
+         FROM entretiens_annuels e
+         JOIN users u ON u.id = e.user_id
+         LEFT JOIN users ev ON ev.id = e.evaluator_id
+         LEFT JOIN fonctions fn ON fn.id = u.fonction_id
+         WHERE $whereSql
+         ORDER BY e.date_entretien IS NULL, e.date_entretien ASC, u.nom ASC",
+        $binds
+    );
+
+    // Échéances : users actifs avec prochain_entretien_date <= +30 jours et pas d'entretien planifié futur
+    $echeances = Db::fetchAll(
+        "SELECT u.id, u.prenom, u.nom, u.prochain_entretien_date,
+                fn.nom AS fonction, fn.secteur_fegems,
+                DATEDIFF(u.prochain_entretien_date, CURDATE()) AS jours_restants
+         FROM users u
+         LEFT JOIN fonctions fn ON fn.id = u.fonction_id
+         WHERE u.is_active = 1
+           AND u.prochain_entretien_date IS NOT NULL
+           AND u.prochain_entretien_date <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+           AND NOT EXISTS (
+               SELECT 1 FROM entretiens_annuels e2
+               WHERE e2.user_id = u.id AND e2.statut = 'planifie' AND e2.date_entretien >= CURDATE()
+           )
+         ORDER BY u.prochain_entretien_date ASC
+         LIMIT 30"
+    );
+
+    respond([
+        'success' => true,
+        'entretiens' => $rows,
+        'echeances'  => $echeances,
+    ]);
+}
+
+function admin_get_entretien_detail()
+{
+    require_responsable();
+    global $params;
+    $id = Sanitize::text($params['id'] ?? '', 36);
+    if (!$id) bad_request('id requis');
+
+    $entretien = Db::fetch(
+        "SELECT e.*, u.prenom, u.nom, u.email, u.experience_fonction_annees, u.cct,
+                ev.prenom AS eval_prenom, ev.nom AS eval_nom,
+                fn.nom AS fonction, fn.secteur_fegems
+         FROM entretiens_annuels e
+         JOIN users u ON u.id = e.user_id
+         LEFT JOIN users ev ON ev.id = e.evaluator_id
+         LEFT JOIN fonctions fn ON fn.id = u.fonction_id
+         WHERE e.id = ?",
+        [$id]
+    );
+    if (!$entretien) not_found('Entretien introuvable');
+
+    // Synthèse compétences du collab
+    $synthese = Db::fetch(
+        "SELECT COUNT(*) AS total,
+                SUM(CASE WHEN priorite = 'haute' THEN 1 ELSE 0 END) AS prio_haute,
+                SUM(CASE WHEN priorite = 'moyenne' THEN 1 ELSE 0 END) AS prio_moyenne,
+                ROUND(AVG(niveau_actuel), 2) AS niveau_moyen
+         FROM competences_user
+         WHERE user_id = ?",
+        [$entretien['user_id']]
+    );
+
+    // Objectifs liés à cet entretien (origine) ou de l'année
+    $objectifs = Db::fetchAll(
+        "SELECT o.*, t.nom AS thematique_nom
+         FROM competences_objectifs_annuels o
+         LEFT JOIN competences_thematiques t ON t.id = o.thematique_id_liee
+         WHERE o.user_id = ?
+           AND (o.entretien_origine_id = ? OR o.annee = ?)
+         ORDER BY o.statut, o.ordre",
+        [$entretien['user_id'], $id, $entretien['annee']]
+    );
+
+    respond([
+        'success' => true,
+        'entretien' => $entretien,
+        'synthese'  => $synthese,
+        'objectifs' => $objectifs,
+    ]);
+}
+
+function admin_save_entretien()
+{
+    require_responsable();
+    global $params;
+
+    $id      = Sanitize::text($params['id'] ?? '', 36);
+    $userId  = Sanitize::text($params['user_id'] ?? '', 36);
+    $evalId  = Sanitize::text($params['evaluator_id'] ?? '', 36) ?: null;
+    $annee   = (int)($params['annee'] ?? date('Y'));
+    $date    = Sanitize::date($params['date_entretien'] ?? null);
+    $statut  = in_array($params['statut'] ?? '', ['planifie','realise','reporte','annule'], true) ? $params['statut'] : 'planifie';
+    $notesM  = $params['notes_manager'] ?? null;
+    $notesC  = $params['notes_collaborateur'] ?? null;
+
+    if (!$userId) bad_request('user_id requis');
+
+    if ($id) {
+        Db::exec(
+            "UPDATE entretiens_annuels
+             SET evaluator_id = ?, annee = ?, date_entretien = ?, statut = ?,
+                 notes_manager = ?, notes_collaborateur = ?,
+                 signed_at = CASE WHEN ? = 'realise' AND signed_at IS NULL THEN NOW() ELSE signed_at END
+             WHERE id = ?",
+            [$evalId, $annee, $date, $statut, $notesM, $notesC, $statut, $id]
+        );
+    } else {
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO entretiens_annuels
+             (id, user_id, evaluator_id, annee, date_entretien, statut, notes_manager, notes_collaborateur)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $userId, $evalId, $annee, $date, $statut, $notesM, $notesC]
+        );
+    }
+
+    // Si réalisé : mettre à jour prochain_entretien_date du user (selon paramètre fréquence)
+    if ($statut === 'realise' && $date) {
+        $freq = (int) Db::getOne("SELECT valeur FROM parametres_formation WHERE cle = 'entr.frequence_mois'") ?: 12;
+        Db::exec(
+            "UPDATE users SET prochain_entretien_date = DATE_ADD(?, INTERVAL ? MONTH) WHERE id = ?",
+            [$date, $freq, $userId]
+        );
+    }
+
+    respond(['success' => true, 'id' => $id]);
+}
+
+function admin_delete_entretien()
+{
+    require_admin();
+    global $params;
+    $id = Sanitize::text($params['id'] ?? '', 36);
+    if (!$id) bad_request('id requis');
+    Db::exec("DELETE FROM entretiens_annuels WHERE id = ?", [$id]);
+    respond(['success' => true]);
+}
+
+function admin_save_objectif_annuel()
+{
+    require_responsable();
+    global $params;
+    $id     = Sanitize::text($params['id'] ?? '', 36);
+    $userId = Sanitize::text($params['user_id'] ?? '', 36);
+    $annee  = (int)($params['annee'] ?? date('Y'));
+    $libelle = trim($params['libelle'] ?? '');
+    $description = $params['description'] ?? null;
+    $thematiqueId = Sanitize::text($params['thematique_id_liee'] ?? '', 36) ?: null;
+    $statut = in_array($params['statut'] ?? '', ['a_definir','en_cours','atteint','reporte','abandonne'], true) ? $params['statut'] : 'a_definir';
+    $entretienId = Sanitize::text($params['entretien_origine_id'] ?? '', 36) ?: null;
+    $trimestre = in_array($params['trimestre_cible'] ?? '', ['Q1','Q2','Q3','Q4','annuel'], true) ? $params['trimestre_cible'] : 'annuel';
+
+    if (!$userId || !$libelle) bad_request('user_id et libelle requis');
+
+    if ($id) {
+        Db::exec(
+            "UPDATE competences_objectifs_annuels
+             SET libelle = ?, description = ?, thematique_id_liee = ?, statut = ?, trimestre_cible = ?,
+                 date_atteint = CASE WHEN ? = 'atteint' AND date_atteint IS NULL THEN CURDATE() ELSE date_atteint END
+             WHERE id = ?",
+            [$libelle, $description, $thematiqueId, $statut, $trimestre, $statut, $id]
+        );
+    } else {
+        $id = Uuid::v4();
+        Db::exec(
+            "INSERT INTO competences_objectifs_annuels
+             (id, user_id, annee, trimestre_cible, libelle, description, thematique_id_liee, statut, entretien_origine_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$id, $userId, $annee, $trimestre, $libelle, $description, $thematiqueId, $statut, $entretienId]
+        );
+    }
+    respond(['success' => true, 'id' => $id]);
+}
+
+function admin_delete_objectif_annuel()
+{
+    require_responsable();
+    global $params;
+    $id = Sanitize::text($params['id'] ?? '', 36);
+    if (!$id) bad_request('id requis');
+    Db::exec("DELETE FROM competences_objectifs_annuels WHERE id = ?", [$id]);
+    respond(['success' => true]);
+}

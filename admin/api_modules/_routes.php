@@ -201,6 +201,10 @@ return [
         'admin_get_proposition_detail', 'admin_validate_proposition', 'admin_reject_proposition',
         'admin_send_inscription_email', 'admin_get_formation_sessions',
         'admin_get_session_detail', 'admin_save_session', 'admin_delete_session',
+        'admin_get_parametres_formation', 'admin_save_parametre_formation', 'admin_reset_parametre_formation',
+        'admin_get_formations_stats_enriched',
+        'admin_get_entretiens_list', 'admin_get_entretien_detail', 'admin_save_entretien', 'admin_delete_entretien',
+        'admin_save_objectif_annuel', 'admin_delete_objectif_annuel',
     ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',
