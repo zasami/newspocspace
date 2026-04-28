@@ -205,6 +205,7 @@ return [
         'admin_get_formations_stats_enriched',
         'admin_get_entretiens_list', 'admin_get_entretien_detail', 'admin_save_entretien', 'admin_delete_entretien',
         'admin_save_objectif_annuel', 'admin_delete_objectif_annuel',
+        'admin_init_competences_for_user',
     ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',

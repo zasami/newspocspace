@@ -161,6 +161,12 @@ function admin_create_user()
     // Apply default permissions for fonction (if profil defined)
     if ($fonctionId) Permission::applyFonctionDefaults($id, $fonctionId);
 
+    // Auto-init competences depuis profil_attendu du secteur (si fonction a un secteur FEGEMS)
+    if ($fonctionId) {
+        require_once __DIR__ . '/formations_competences.php';
+        init_competences_for_user($id, $fonctionId);
+    }
+
     // Send welcome message via internal messaging
     $adminId = $_SESSION['ss_user']['id'] ?? '';
     $loginUrl = APP_URL . '/login';
@@ -292,11 +298,18 @@ function admin_update_user()
     // Si la fonction a changé et qu'admin demande d'appliquer le profil (ou toujours auto)
     $newFonctionId = $params['fonction_id'] ?? null;
     $applyProfile = !empty($params['apply_fonction_profile']); // bouton explicite
-    if ($newFonctionId && $newFonctionId !== $prevFonctionId) {
+    $fonctionChanged = $newFonctionId && $newFonctionId !== $prevFonctionId;
+    if ($fonctionChanged) {
         // Auto-apply si fonction a un profil défini
         Permission::applyFonctionDefaults($id, $newFonctionId);
     } elseif ($applyProfile && $newFonctionId) {
         Permission::applyFonctionDefaults($id, $newFonctionId);
+    }
+
+    // Auto-update competences si fonction a changé (ne touche pas aux niveaux_actuels existants)
+    if ($fonctionChanged) {
+        require_once __DIR__ . '/formations_competences.php';
+        init_competences_for_user($id, $newFonctionId);
     }
 
     respond(['success' => true, 'message' => 'Collaborateur mis à jour']);

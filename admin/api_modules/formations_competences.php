@@ -1184,3 +1184,69 @@ function admin_delete_objectif_annuel()
     Db::exec("DELETE FROM competences_objectifs_annuels WHERE id = ?", [$id]);
     respond(['success' => true]);
 }
+
+// ─── Hook auto-init competences_user depuis profil_attendu ──────────────────
+//
+// Appelé automatiquement quand un user est créé ou change de fonction.
+// - Récupère les lignes profil_attendu requises pour le secteur
+// - Pour chaque thématique : crée la ligne si absente (niveau_actuel = NULL),
+//   ou met à jour niveau_requis sans toucher au niveau_actuel existant.
+// Retourne le nombre de lignes insérées + mises à jour.
+
+function init_competences_for_user(string $userId, ?string $fonctionId): array
+{
+    if (!$fonctionId) return ['inserted' => 0, 'updated' => 0, 'skipped' => 'no_fonction'];
+
+    $secteur = Db::getOne("SELECT secteur_fegems FROM fonctions WHERE id = ?", [$fonctionId]);
+    if (!$secteur || !in_array($secteur, COMP_SECTEURS, true)) {
+        return ['inserted' => 0, 'updated' => 0, 'skipped' => 'no_secteur'];
+    }
+
+    // Lignes du profil attendu pour ce secteur
+    $rows = Db::fetchAll(
+        "SELECT thematique_id, niveau_requis, type_formation_recommande
+         FROM competences_profil_attendu
+         WHERE secteur = ? AND requis = 1 AND niveau_requis IS NOT NULL",
+        [$secteur]
+    );
+
+    $inserted = 0;
+    $updated = 0;
+    foreach ($rows as $r) {
+        $existing = Db::fetch(
+            "SELECT id FROM competences_user WHERE user_id = ? AND thematique_id = ?",
+            [$userId, $r['thematique_id']]
+        );
+        if ($existing) {
+            Db::exec(
+                "UPDATE competences_user
+                 SET niveau_requis = ?, type_action = COALESCE(type_action, ?)
+                 WHERE id = ?",
+                [$r['niveau_requis'], $r['type_formation_recommande'], $existing['id']]
+            );
+            $updated++;
+        } else {
+            Db::exec(
+                "INSERT INTO competences_user
+                 (id, user_id, thematique_id, niveau_actuel, niveau_requis, type_action)
+                 VALUES (?, ?, ?, NULL, ?, ?)",
+                [Uuid::v4(), $userId, $r['thematique_id'], $r['niveau_requis'], $r['type_formation_recommande']]
+            );
+            $inserted++;
+        }
+    }
+
+    return ['inserted' => $inserted, 'updated' => $updated, 'secteur' => $secteur];
+}
+
+// Endpoint admin pour appliquer manuellement le profil (bouton "Régénérer compétences")
+function admin_init_competences_for_user()
+{
+    require_responsable();
+    global $params;
+    $userId = Sanitize::text($params['user_id'] ?? '', 36);
+    if (!$userId) bad_request('user_id requis');
+    $fonctionId = Db::getOne("SELECT fonction_id FROM users WHERE id = ?", [$userId]);
+    $result = init_competences_for_user($userId, $fonctionId);
+    respond(['success' => true] + $result);
+}
