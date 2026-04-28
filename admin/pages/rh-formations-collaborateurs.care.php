@@ -268,50 +268,52 @@ $fmtN = fn($n, $d=0) => number_format((float)$n, $d, ',', "'");
 
 </div>
 
-<!-- Modal envoi rappel -->
-<div class="fcl-modal" id="fclModalReminder" hidden>
-  <div class="fcl-modal-overlay"></div>
-  <div class="fcl-modal-card">
-    <div class="fcl-modal-head">
-      <div>
-        <div class="fcl-modal-eyebrow">RAPPEL FORMATION</div>
-        <h3>Envoyer un rappel</h3>
+<!-- Modal envoi rappel · pattern Bootstrap SpocSpace standard -->
+<div class="modal fade" id="fclModalReminder" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:560px">
+    <div class="modal-content" style="display:flex;flex-direction:column;max-height:85vh">
+      <div class="modal-header" style="flex-shrink:0">
+        <div>
+          <div class="text-muted small" style="letter-spacing:.08em;text-transform:uppercase;font-weight:600;font-size:10.5px;color:var(--cl-primary,#1f6359)!important">Rappel formation</div>
+          <h5 class="modal-title mt-1">Envoyer un rappel</h5>
+        </div>
+        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:50%;border:1px solid #dee2e6" data-bs-dismiss="modal"><i class="bi bi-x-lg" style="font-size:0.85rem"></i></button>
       </div>
-      <button class="fcl-modal-close" aria-label="Fermer"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div class="fcl-modal-body">
-      <div class="fcl-modal-recipients" id="fclReminderRecipients"></div>
+      <div class="modal-body" style="flex:1;overflow-y:auto">
+        <div id="fclReminderRecipients" class="alert alert-info py-2 px-3 mb-3" style="font-size:13px"></div>
 
-      <label class="fcl-field">
-        <span>Type de rappel</span>
-        <select id="fclReminderType">
-          <option value="certificat">Upload certificat de formation</option>
-          <option value="renouvellement">Renouvellement compétence</option>
-          <option value="inscription">Confirmation inscription</option>
-          <option value="custom">Message personnalisé</option>
-        </select>
-      </label>
+        <div class="mb-3">
+          <label class="form-label small text-muted text-uppercase fw-semibold" style="letter-spacing:.04em">Type de rappel</label>
+          <select class="form-select" id="fclReminderType">
+            <option value="certificat">Upload certificat de formation</option>
+            <option value="renouvellement">Renouvellement compétence</option>
+            <option value="inscription">Confirmation inscription</option>
+            <option value="custom">Message personnalisé</option>
+          </select>
+        </div>
 
-      <label class="fcl-field">
-        <span>Sujet</span>
-        <input type="text" id="fclReminderSubject" value="Rappel : merci d'uploader votre certificat de formation">
-      </label>
+        <div class="mb-3">
+          <label class="form-label small text-muted text-uppercase fw-semibold" style="letter-spacing:.04em">Sujet</label>
+          <input type="text" class="form-control" id="fclReminderSubject" value="Rappel : merci d'uploader votre certificat de formation">
+        </div>
 
-      <label class="fcl-field">
-        <span>Message</span>
-        <textarea id="fclReminderBody" rows="6">Bonjour,
+        <div class="mb-2">
+          <label class="form-label small text-muted text-uppercase fw-semibold" style="letter-spacing:.04em">Message</label>
+          <textarea class="form-control" id="fclReminderBody" rows="6">Bonjour {prenom},
 
 Tu as suivi récemment une formation FEGEMS dont nous n'avons pas encore reçu l'attestation. Merci de la téléverser depuis ton espace SpocSpace > Formations.
 
 Cordialement,
 La direction</textarea>
-      </label>
-    </div>
-    <div class="fcl-modal-foot">
-      <button class="fcl-btn" id="fclModalCancel">Annuler</button>
-      <button class="fcl-btn fcl-btn-primary" id="fclModalSend">
-        <i class="bi bi-send"></i> Envoyer
-      </button>
+          <small class="text-muted">Variables disponibles : <code>{prenom}</code>, <code>{nom}</code></small>
+        </div>
+      </div>
+      <div class="modal-footer d-flex">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-sm btn-primary ms-auto" id="fclModalSend">
+          <i class="bi bi-send"></i> Envoyer
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -551,77 +553,16 @@ La direction</textarea>
 }
 .fcl-empty i { font-size: 36px; opacity: .25; display: block; margin-bottom: 12px; }
 
-/* MODAL */
-.fcl-modal[hidden] { display: none; }
-.fcl-modal {
-  position: fixed; inset: 0; z-index: 1200;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+/* MODAL · pattern Bootstrap SpocSpace, juste styles spécifiques pour les chips destinataires */
+#fclReminderRecipients {
+  display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center;
 }
-.fcl-modal-overlay {
-  position: absolute; inset: 0; background: rgba(13,42,38,.4);
-  backdrop-filter: blur(2px);
-}
-.fcl-modal-card {
-  position: relative; background: #fff; border-radius: 14px;
-  width: 100%; max-width: 560px; max-height: 90vh; overflow: auto;
-  box-shadow: 0 24px 64px -16px rgba(13,42,38,.4);
-}
-.fcl-modal-head {
-  padding: 18px 20px; border-bottom: 1px solid var(--fcl-line);
-  display: flex; justify-content: space-between; align-items: flex-start;
-}
-.fcl-modal-eyebrow {
-  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--fcl-teal-600); font-weight: 600;
-}
-.fcl-modal-head h3 {
-  font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600;
-  letter-spacing: -.01em; margin-top: 2px;
-}
-.fcl-modal-close {
-  background: transparent; border: 0; cursor: pointer; color: var(--fcl-muted);
-  width: 32px; height: 32px; border-radius: 6px;
-  display: grid; place-items: center;
-}
-.fcl-modal-close:hover { background: var(--fcl-surface-2); color: var(--fcl-ink); }
-.fcl-modal-body { padding: 18px 20px; }
-.fcl-modal-foot {
-  padding: 14px 20px; border-top: 1px solid var(--fcl-line);
-  display: flex; justify-content: flex-end; gap: 8px;
-  background: var(--fcl-surface-2);
-}
-
-.fcl-modal-recipients {
-  margin-bottom: 14px; padding: 10px 12px;
-  background: var(--fcl-teal-50); border-radius: 8px;
-  font-size: 12.5px; color: var(--fcl-teal-700); display: flex;
-  flex-wrap: wrap; gap: 4px; align-items: center;
-}
-.fcl-modal-recipients .lbl {
-  font-weight: 600; margin-right: 6px;
-}
-.fcl-modal-recipients .chip {
+#fclReminderRecipients .lbl { font-weight: 600; margin-right: 4px; }
+#fclReminderRecipients .chip {
+  display: inline-block;
   background: rgba(255,255,255,.6); padding: 2px 7px; border-radius: 4px;
-  font-size: 11.5px;
+  font-size: 11.5px; color: inherit;
 }
-
-.fcl-field { display: block; margin-bottom: 12px; }
-.fcl-field span {
-  display: block; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--fcl-muted); font-weight: 600; margin-bottom: 5px;
-}
-.fcl-field input, .fcl-field select, .fcl-field textarea {
-  width: 100%; padding: 9px 12px; border-radius: 8px;
-  border: 1px solid var(--fcl-line); background: #fff;
-  font-family: inherit; font-size: 13px; color: var(--fcl-ink);
-  outline: none; transition: .15s;
-}
-.fcl-field input:focus, .fcl-field select:focus, .fcl-field textarea:focus {
-  border-color: var(--fcl-teal-600);
-  box-shadow: 0 0 0 3px var(--fcl-teal-50);
-}
-.fcl-field textarea { resize: vertical; min-height: 100px; }
 
 @media (max-width: 1280px) {
   .fcl-stats { grid-template-columns: repeat(3, 1fr); }
@@ -737,8 +678,9 @@ La direction</textarea>
     });
   });
 
-  // Modal rappel
-  const modal = document.getElementById('fclModalReminder');
+  // Modal rappel · Bootstrap modal
+  const modalEl = document.getElementById('fclModalReminder');
+  const modal = new bootstrap.Modal(modalEl);
   const modalRecipients = document.getElementById('fclReminderRecipients');
   const modalSubject = document.getElementById('fclReminderSubject');
   const modalBody = document.getElementById('fclReminderBody');
@@ -772,15 +714,10 @@ La direction</textarea>
     modalRecipients.innerHTML = '<span class="lbl">Destinataires :</span>'
       + checked.slice(0, 12).map(r => `<span class="chip">${escapeHtml(r.dataset.name)}</span>`).join('')
       + (checked.length > 12 ? `<span class="chip">+ ${checked.length - 12}</span>` : '');
-    modal.hidden = false;
+    modal.show();
   }
 
-  function closeReminderModal() { modal.hidden = true; }
-
   sendBtn.addEventListener('click', openReminderModal);
-  modal.querySelector('.fcl-modal-close').addEventListener('click', closeReminderModal);
-  modal.querySelector('.fcl-modal-overlay').addEventListener('click', closeReminderModal);
-  document.getElementById('fclModalCancel').addEventListener('click', closeReminderModal);
 
   document.getElementById('fclModalSend').addEventListener('click', async () => {
     const checked = rows.filter(r => !r.hidden && r.querySelector('.fcl-row-chk').checked);
@@ -820,7 +757,7 @@ La direction</textarea>
       if (ok > 0) showToast(`${ok} rappel${ok > 1 ? 's' : ''} envoyé${ok > 1 ? 's' : ''}` + (fail > 0 ? ` · ${fail} erreur(s)` : ''), 'success');
       else if (fail > 0) showToast(`${fail} erreur(s) lors de l'envoi`, 'danger');
     }
-    if (ok > 0) closeReminderModal();
+    if (ok > 0) modal.hide();
   });
 
   // Export CSV
