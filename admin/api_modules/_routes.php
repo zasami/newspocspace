@@ -197,6 +197,10 @@ return [
         'admin_get_profil_attendu', 'admin_save_profil_cellule', 'admin_clear_profil_cellule',
         'admin_remplir_secteur', 'admin_get_cartographie_equipe', 'admin_get_collab_competences',
         'admin_save_collab_competence', 'admin_get_heatmap_secteurs',
+        'admin_get_inscriptions_propositions', 'admin_regenerer_propositions',
+        'admin_get_proposition_detail', 'admin_validate_proposition', 'admin_reject_proposition',
+        'admin_send_inscription_email', 'admin_get_formation_sessions',
+        'admin_get_session_detail', 'admin_save_session', 'admin_delete_session',
     ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',
