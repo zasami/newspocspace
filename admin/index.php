@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-formations-pluriannuel', 'rh-formations-dashboard', 'rh-formations-dashboard-secteur', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-formations-pluriannuel', 'rh-formations-dashboard', 'rh-formations-dashboard-secteur', 'rh-formations-collaborateurs', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -163,6 +163,7 @@ $pageLabels = [
     'rh-formations'    => 'Liste des formations',
     'rh-formations-stats' => 'Statistiques formations',
     'rh-formations-dashboard' => 'Tableau de bord formation',
+    'rh-formations-collaborateurs' => 'Collaborateurs · formation',
     'rh-formations-dashboard-secteur' => 'Détail secteur formation',
     'rh-formations-pluriannuel' => 'Plan formation pluriannuel',
     'rh-formations-cartographie' => 'Cartographie d\'équipe',
@@ -254,9 +255,10 @@ $sidebarCategories = [
     'formations' => [
         'label' => 'Formations',
         'items' => [
-            'rh-formations-dashboard'    => ['label' => 'Tableau de bord',          'icon' => 'speedometer2'],
-            'rh-formations'              => ['label' => 'Liste des formations',     'icon' => 'list-ul'],
-            'rh-formations-cartographie' => ['label' => 'Cartographie d\'équipe',   'icon' => 'diagram-3'],
+            'rh-formations-dashboard'        => ['label' => 'Tableau de bord',          'icon' => 'speedometer2'],
+            'rh-formations-collaborateurs'   => ['label' => 'Collaborateurs',           'icon' => 'people-fill'],
+            'rh-formations'                  => ['label' => 'Liste des formations',     'icon' => 'list-ul'],
+            'rh-formations-cartographie'     => ['label' => 'Cartographie d\'équipe',   'icon' => 'diagram-3'],
             'rh-formations-fegems'       => ['label' => 'Inscriptions FEGEMS',      'icon' => 'cloud-arrow-up'],
             'rh-formations-sessions'     => ['label' => 'Sessions & catalogue',     'icon' => 'calendar3'],
             'rh-formations-profil'       => ['label' => 'Profil d\'équipe attendu', 'icon' => 'bullseye'],
