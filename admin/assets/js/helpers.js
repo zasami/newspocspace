@@ -53,3 +53,93 @@ window.showToast = function showToast(msg, type = 'info') {
 
 // Alias for toast
 window.toast = (msg, type = 'success') => window.showToast(msg, type === 'error' ? 'error' : 'success');
+
+/**
+ * Modal de confirmation SpocSpace — remplace confirm() natif.
+ *
+ * Usage 1 : await ssConfirm('Question ?', { okText:'Supprimer', variant:'danger' })
+ * Usage 2 : await ssConfirm({ title, message, confirmText, confirmClass, icon })
+ */
+window.ssConfirm = function ssConfirm(messageOrOpts, opts = {}) {
+    let title, message, okText, cancelText, variant, icon;
+
+    if (typeof messageOrOpts === 'object' && messageOrOpts !== null) {
+        title       = messageOrOpts.title       || 'Confirmation';
+        message     = messageOrOpts.message     || '';
+        okText      = messageOrOpts.confirmText || messageOrOpts.okText || 'Confirmer';
+        cancelText  = messageOrOpts.cancelText  || 'Annuler';
+        icon        = messageOrOpts.icon        || null;
+        const cls   = messageOrOpts.confirmClass || '';
+        variant     = cls.includes('danger')  ? 'danger'
+                    : cls.includes('warning') ? 'warning'
+                    : cls.includes('success') ? 'success'
+                    : (messageOrOpts.variant || 'primary');
+    } else {
+        title      = opts.title       || 'Confirmation';
+        message    = messageOrOpts    || '';
+        okText     = opts.okText      || 'Confirmer';
+        cancelText = opts.cancelText  || 'Annuler';
+        variant    = opts.variant     || 'primary';
+        icon       = opts.icon        || null;
+    }
+
+    return new Promise(resolve => {
+        let modalEl = document.getElementById('ssConfirmModal');
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = 'ssConfirmModal';
+            modalEl.className = 'modal fade';
+            modalEl.tabIndex = -1;
+            modalEl.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi ss-confirm-icon"></i> <span class="ss-confirm-title"></span></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body ss-confirm-body"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-outline-secondary ss-confirm-cancel" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn btn-sm ss-confirm-ok"></button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modalEl);
+        }
+
+        modalEl.querySelector('.ss-confirm-title').textContent = title;
+        const body = modalEl.querySelector('.ss-confirm-body');
+        if (typeof message === 'string') body.innerHTML = `<p class="mb-0">${window.escapeHtml(message)}</p>`;
+        else { body.innerHTML = ''; if (message) body.append(message); }
+
+        const iconEl = modalEl.querySelector('.ss-confirm-icon');
+        const defaultIcon = variant === 'danger'  ? 'bi-exclamation-triangle'
+                         : variant === 'warning' ? 'bi-exclamation-circle'
+                         : variant === 'success' ? 'bi-check-circle'
+                         : 'bi-question-circle';
+        iconEl.className = 'bi ss-confirm-icon ' + (icon || defaultIcon);
+
+        const okBtn = modalEl.querySelector('.ss-confirm-ok');
+        okBtn.textContent = okText;
+        const okVariantClass = variant === 'danger'  ? 'btn-danger'
+                            : variant === 'warning' ? 'btn-warning'
+                            : variant === 'success' ? 'btn-success'
+                            : 'btn-primary';
+        okBtn.className = 'btn btn-sm ss-confirm-ok ' + okVariantClass;
+
+        modalEl.querySelector('.ss-confirm-cancel').textContent = cancelText;
+
+        let confirmed = false;
+        const onOk = () => { confirmed = true; bsModal.hide(); };
+        okBtn.addEventListener('click', onOk, { once: true });
+
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const onHidden = () => {
+            modalEl.removeEventListener('hidden.bs.modal', onHidden);
+            okBtn.removeEventListener('click', onOk);
+            resolve(confirmed);
+        };
+        modalEl.addEventListener('hidden.bs.modal', onHidden);
+        bsModal.show();
+    });
+};

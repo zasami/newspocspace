@@ -205,7 +205,7 @@ $pctRempli = $totalCellsBase > 0 ? round(($nbProfils / $totalCellsBase) * 100) :
 
         let html = '<table class="comp-matrix-table">';
         html += '<thead><tr><th>Thématique</th>';
-        SECTEURS.forEach(s => { html += '<th>' + escapeHtml(SECTEUR_LABELS[SECTEURS.indexOf(s)]) + '</th>'; });
+        SECTEURS.forEach(s => { html += '<th>' + escapeHtml((SECTEUR_LABELS[s] || s)) + '</th>'; });
         html += '</tr></thead>';
 
         Object.keys(CAT_LABELS).forEach(cat => {
@@ -243,7 +243,7 @@ $pctRempli = $totalCellsBase > 0 ? round(($nbProfils / $totalCellsBase) * 100) :
         const c = cells[themId + '|' + secteur] || { requis: 1, niveau_requis: 2, part_a_former_pct: 100, type_formation_recommande: 'continue_catalogue', objectif_strategique: '' };
 
         document.getElementById('rhpCellTitle').textContent = them.nom;
-        document.getElementById('rhpCellSubtitle').textContent = SECTEUR_LABELS[SECTEURS.indexOf(secteur)] + ' · cliquez les boutons puis Enregistrer';
+        document.getElementById('rhpCellSubtitle').textContent = (SECTEUR_LABELS[secteur] || secteur) + ' · cliquez les boutons puis Enregistrer';
         document.getElementById('rhpCellThemId').value = themId;
         document.getElementById('rhpCellSecteur').value = secteur;
         document.getElementById('rhpCellRequis').checked = parseInt(c.requis) === 1;
@@ -311,10 +311,18 @@ $pctRempli = $totalCellsBase > 0 ? round(($nbProfils / $totalCellsBase) * 100) :
         });
 
         document.querySelectorAll('.rhp-fill-secteur').forEach(el => {
-            el.addEventListener('click', e => {
+            el.addEventListener('click', async e => {
                 e.preventDefault();
                 const secteur = el.dataset.secteur;
-                if (!confirm('Pré-remplir toutes les thématiques de base pour le secteur ' + SECTEUR_LABELS[SECTEURS.indexOf(secteur)] + ' (niveau 2 · 100 %) ? Les cellules déjà définies ne seront pas écrasées.')) return;
+                const label = SECTEUR_LABELS[secteur] || secteur;
+                const ok = await ssConfirm({
+                    title: 'Pré-remplir le secteur',
+                    message: `Pré-remplir toutes les thématiques de base pour le secteur ${label} (niveau 2 · 100 %) ? Les cellules déjà définies ne seront pas écrasées.`,
+                    confirmText: 'Pré-remplir',
+                    icon: 'bi-magic',
+                    variant: 'primary'
+                });
+                if (!ok) return;
                 adminApiPost('admin_remplir_secteur', {
                     secteur, niveau_requis: 2, part_a_former_pct: 100, categorie: 'fegems_base'
                 }).then(r => {

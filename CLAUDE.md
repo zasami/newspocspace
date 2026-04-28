@@ -213,6 +213,22 @@ Système de backup/restore à deux niveaux : per-user (admin) et global.
 - Écraser : avertissement DANGER rouge, confirmation par saisie "RESTAURER"
 - Global : double confirmation (code spécial + saisie "RESTAURER")
 
+## Cron quotidien
+
+Script wrapper : [scripts/cron_daily.php](scripts/cron_daily.php) — exécute en séquence :
+1. Génération propositions inscription FEGEMS (si `insc.auto_proposer` = 1)
+2. Auto-création entretiens à échéance (si `entr.auto_creer_a_echeance` = 1)
+3. Recalcul priorités compétences (refresh STORED columns)
+
+Lock file : `data/cron_daily.lock` (évite exécutions concurrentes).
+
+**Ligne crontab Infomaniak** (panel d'admin → Cron) :
+```
+0 3 * * *  /usr/bin/php /home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/spocspace/scripts/cron_daily.php >> /home/clients/c81789f8de36e992da19fb6856aa48f6/logs/cron_spocspace.log 2>&1
+```
+
+Pour tester manuellement : `php scripts/cron_daily.php`
+
 ## Travail en cours
 
 _(section vidée quand toutes les tâches sont terminées)_

@@ -260,9 +260,16 @@ $emailFegems = Db::getOne("SELECT valeur FROM parametres_formation WHERE cle = '
             });
         });
 
-        document.getElementById('rhfEmailReject')?.addEventListener('click', () => {
+        document.getElementById('rhfEmailReject')?.addEventListener('click', async () => {
             if (!currentPropId) return;
-            if (!confirm('Rejeter cette suggestion ? Elle ne sera plus proposée pour cette session.')) return;
+            const ok = await ssConfirm({
+                title: 'Rejeter la suggestion',
+                message: 'Elle ne sera plus proposée pour cette session.',
+                confirmText: 'Rejeter',
+                confirmClass: 'btn-warning',
+                icon: 'bi-x-circle'
+            });
+            if (!ok) return;
             adminApiPost('admin_reject_proposition', { id: currentPropId }).then(r => {
                 if (!r.success) return;
                 modal.hide();

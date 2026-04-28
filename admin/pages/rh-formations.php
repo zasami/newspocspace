@@ -654,10 +654,17 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
         });
 
         // Remove participant
-        document.getElementById('rhfDetailBody')?.addEventListener('click', e => {
+        document.getElementById('rhfDetailBody')?.addEventListener('click', async e => {
             const btn = e.target.closest('[data-remove-part]');
             if (!btn) return;
-            if (!confirm('Retirer ce participant ?')) return;
+            const ok = await ssConfirm({
+                title: 'Retirer le participant',
+                message: 'Confirmer le retrait de ce participant de la formation ?',
+                confirmText: 'Retirer',
+                confirmClass: 'btn-warning',
+                icon: 'bi-person-dash'
+            });
+            if (!ok) return;
             adminApiPost('admin_remove_formation_participant', { id: btn.dataset.removePart }).then(r => {
                 if (r.success) { showToast('Participant retiré', 'success'); loadDetail(currentDetailId); loadFormations(); }
                 else showToast(r.error || 'Erreur', 'danger');
