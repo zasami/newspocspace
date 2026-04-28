@@ -192,6 +192,12 @@ return [
         'admin_update_formation_participant',
         'admin_import_fegems_formations', 'admin_save_imported_formations', 'admin_import_formations_file',
     ],
+    'formations_competences' => [
+        'admin_get_thematiques', 'admin_get_secteurs',
+        'admin_get_profil_attendu', 'admin_save_profil_cellule', 'admin_clear_profil_cellule',
+        'admin_remplir_secteur', 'admin_get_cartographie_equipe', 'admin_get_collab_competences',
+        'admin_save_collab_competence', 'admin_get_heatmap_secteurs',
+    ],
     'email_externe' => [
         'admin_email_ext_get_providers', 'admin_email_ext_get_config', 'admin_email_ext_save_config', 'admin_email_ext_test',
         'admin_email_ext_get_folders', 'admin_email_ext_fetch_list', 'admin_email_ext_fetch_email',

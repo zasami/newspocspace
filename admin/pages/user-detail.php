@@ -249,6 +249,9 @@ if ($userId) {
               <button class="btn btn-outline-warning btn-sm" id="udPermBtn">
                 <i class="bi bi-shield-check"></i> Permissions
               </button>
+              <a href="${AdminURL.page('rh-collab-competences', u.id)}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-bullseye"></i> Compétences
+              </a>
               <a href="${AdminURL.page('user-edit', u.id)}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil"></i> Modifier
               </a>

@@ -314,6 +314,7 @@ $activeSection = match($page) {
 <link href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/spocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
 </head>
 <body>
 
