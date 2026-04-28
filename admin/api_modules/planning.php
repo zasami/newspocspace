@@ -86,7 +86,73 @@ function admin_create_planning()
         [$id, $mois, $userId]
     );
 
-    respond(['success' => true, 'message' => 'Planning créé', 'id' => $id]);
+    // ── Pré-marquage des cellules formation (à titre informatif) ──
+    // Dès la création du planning vide, on pré-injecte les jours de
+    // formation des collaborateurs inscrits, en sautant ceux qui ont
+    // une absence validée le même jour (l'absence prime).
+    $firstDay = $mois . '-01';
+    $lastDay = date('Y-m-t', strtotime($firstDay));
+
+    $absences = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin FROM absences
+         WHERE statut = 'valide' AND date_debut <= ? AND date_fin >= ?",
+        [$lastDay, $firstDay]
+    );
+    $absenceMap = [];
+    foreach ($absences as $a) {
+        $start = max(strtotime($firstDay), strtotime($a['date_debut']));
+        $end = min(strtotime($lastDay), strtotime($a['date_fin']));
+        for ($t = $start; $t <= $end; $t += 86400) {
+            $absenceMap[$a['user_id']][date('Y-m-d', $t)] = true;
+        }
+    }
+
+    $formationsMois = Db::fetchAll(
+        "SELECT p.user_id,
+                COALESCE(fs.date_debut, f.date_debut) AS date_debut,
+                COALESCE(fs.date_fin,   f.date_fin,   fs.date_debut, f.date_debut) AS date_fin,
+                f.titre
+         FROM formation_participants p
+         JOIN formations f ON f.id = p.formation_id
+         LEFT JOIN formation_sessions fs ON fs.id = p.session_id
+         WHERE p.statut IN ('inscrit','present','valide')
+           AND COALESCE(fs.date_debut, f.date_debut) <= ?
+           AND COALESCE(fs.date_fin, f.date_fin, fs.date_debut, f.date_debut) >= ?",
+        [$lastDay, $firstDay]
+    );
+
+    $userPrincipalModule = [];
+    foreach (Db::fetchAll("SELECT user_id, module_id FROM user_modules WHERE is_principal = 1") as $um) {
+        $userPrincipalModule[$um['user_id']] = $um['module_id'];
+    }
+
+    $nbForm = 0;
+    foreach ($formationsMois as $f) {
+        $start = max(strtotime($firstDay), strtotime($f['date_debut']));
+        $end = min(strtotime($lastDay), strtotime($f['date_fin']));
+        for ($t = $start; $t <= $end; $t += 86400) {
+            $date = date('Y-m-d', $t);
+            if (isset($absenceMap[$f['user_id']][$date])) continue; // absence prime
+            $modPrincipal = $userPrincipalModule[$f['user_id']] ?? null;
+            $note = 'Formation : ' . mb_substr($f['titre'], 0, 80);
+            try {
+                Db::exec(
+                    "INSERT IGNORE INTO planning_assignations
+                       (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, statut, notes)
+                     VALUES (?, ?, ?, ?, NULL, ?, NULL, 'formation', ?)",
+                    [Uuid::v4(), $id, $f['user_id'], $date, $modPrincipal, $note]
+                );
+                $nbForm++;
+            } catch (\Throwable $e) { /* silently skip duplicates */ }
+        }
+    }
+
+    respond([
+        'success' => true,
+        'message' => 'Planning créé' . ($nbForm > 0 ? " · $nbForm cellule(s) formation pré-marquées" : ''),
+        'id' => $id,
+        'pre_formations' => $nbForm,
+    ]);
 }
 
 function admin_save_assignation()

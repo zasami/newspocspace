@@ -679,28 +679,32 @@ function admin_inscrire_users_formation()
             $refuses[$uid] = $hasConflict[$uid];
             continue;
         }
-        // Vérifier qu'il n'est pas déjà inscrit
         $exists = Db::getOne(
-            "SELECT id FROM formation_participants WHERE formation_id = ? AND user_id = ? AND (session_id = ? OR session_id IS NULL)",
-            [$session['formation_id'], $uid, $sessionId]
+            "SELECT id FROM formation_participants WHERE formation_id = ? AND user_id = ?",
+            [$session['formation_id'], $uid]
         );
-        if ($exists) { $inscrits[] = $uid; continue; }
-
-        Db::exec(
-            "INSERT INTO formation_participants (id, formation_id, user_id, session_id, statut)
-             VALUES (?, ?, ?, ?, 'inscrit')",
-            [Uuid::v4(), $session['formation_id'], $uid, $sessionId]
-        );
+        if ($exists) {
+            Db::exec("UPDATE formation_participants SET session_id = ?, statut = 'inscrit' WHERE id = ?",
+                [$sessionId, $exists]);
+        } else {
+            Db::exec(
+                "INSERT INTO formation_participants (id, formation_id, user_id, session_id, statut)
+                 VALUES (?, ?, ?, ?, 'inscrit')",
+                [Uuid::v4(), $session['formation_id'], $uid, $sessionId]
+            );
+        }
         $inscrits[] = $uid;
     }
 
-    // Mettre à jour places_inscrites de la session
     Db::exec(
         "UPDATE formation_sessions SET places_inscrites = (
            SELECT COUNT(*) FROM formation_participants WHERE session_id = ? AND statut IN ('inscrit','present','valide')
          ) WHERE id = ?",
         [$sessionId, $sessionId]
     );
+
+    // ── Sync vers planning si déjà créé pour le(s) mois de la formation ──
+    sync_formation_to_planning($inscrits, $dateDebut, $dateFin, $session['titre']);
 
     respond([
         'success' => true,
@@ -711,6 +715,93 @@ function admin_inscrire_users_formation()
             ? sprintf('%d inscrit·es, %d refusé·es (conflits absences/désirs)', count($inscrits), count($refuses))
             : sprintf('%d inscription·s créée·s', count($inscrits)),
     ]);
+}
+
+/**
+ * Synchronise des dates de formation vers le ou les planning(s) existant(s).
+ * Pour chaque date dans [dateDebut..dateFin] et chaque user :
+ *  - cherche un planning du mois (statut != 'final')
+ *  - skip si user a une absence validée ce jour-là (absence prime)
+ *  - INSERT IGNORE une cellule statut='formation' avec notes 'Formation : <titre>'
+ * Retourne le nombre de cellules ajoutées.
+ */
+function sync_formation_to_planning(array $userIds, string $dateDebut, string $dateFin, string $titre): int
+{
+    if (!$userIds) return 0;
+    $startTs = strtotime($dateDebut);
+    $endTs = strtotime($dateFin ?: $dateDebut);
+    $note = 'Formation : ' . mb_substr($titre, 0, 80);
+
+    // Plannings concernés (par mois unique)
+    $moisDistincts = [];
+    for ($t = $startTs; $t <= $endTs; $t += 86400) {
+        $moisDistincts[date('Y-m', $t)] = true;
+    }
+    $plannings = [];
+    foreach (array_keys($moisDistincts) as $m) {
+        $p = Db::fetch("SELECT id, statut FROM plannings WHERE mois_annee = ?", [$m]);
+        if ($p && $p['statut'] !== 'final') $plannings[$m] = $p['id'];
+    }
+    if (!$plannings) return 0;
+
+    // Modules principaux
+    $userPrincipalModule = [];
+    foreach (Db::fetchAll("SELECT user_id, module_id FROM user_modules WHERE is_principal = 1") as $um) {
+        $userPrincipalModule[$um['user_id']] = $um['module_id'];
+    }
+
+    // Absences validées chevauchant la plage pour ces users
+    $ph = implode(',', array_fill(0, count($userIds), '?'));
+    $absRows = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin FROM absences
+         WHERE statut = 'valide' AND user_id IN ($ph) AND date_debut <= ? AND date_fin >= ?",
+        array_merge($userIds, [date('Y-m-d', $endTs), date('Y-m-d', $startTs)])
+    );
+    $absMap = [];
+    foreach ($absRows as $a) {
+        $s = max($startTs, strtotime($a['date_debut']));
+        $e = min($endTs, strtotime($a['date_fin']));
+        for ($t = $s; $t <= $e; $t += 86400) $absMap[$a['user_id']][date('Y-m-d', $t)] = true;
+    }
+
+    $nb = 0;
+    foreach ($userIds as $uid) {
+        for ($t = $startTs; $t <= $endTs; $t += 86400) {
+            $date = date('Y-m-d', $t);
+            $mois = date('Y-m', $t);
+            if (!isset($plannings[$mois])) continue;
+            if (isset($absMap[$uid][$date])) continue;
+
+            $modPrincipal = $userPrincipalModule[$uid] ?? null;
+
+            // Si une cellule existe déjà (autre statut), on l'écrase en formation
+            // sauf si statut = 'absent' (absence locale au planning)
+            $existing = Db::fetch(
+                "SELECT id, statut FROM planning_assignations WHERE planning_id = ? AND user_id = ? AND date_jour = ?",
+                [$plannings[$mois], $uid, $date]
+            );
+            if ($existing) {
+                if (in_array($existing['statut'], ['absent','formation'], true)) continue;
+                Db::exec(
+                    "UPDATE planning_assignations
+                     SET horaire_type_id = NULL, module_id = ?, groupe_id = NULL, statut = 'formation', notes = ?, updated_at = NOW()
+                     WHERE id = ?",
+                    [$modPrincipal, $note, $existing['id']]
+                );
+            } else {
+                try {
+                    Db::exec(
+                        "INSERT INTO planning_assignations
+                           (id, planning_id, user_id, date_jour, horaire_type_id, module_id, groupe_id, statut, notes)
+                         VALUES (?, ?, ?, ?, NULL, ?, NULL, 'formation', ?)",
+                        [Uuid::v4(), $plannings[$mois], $uid, $date, $modPrincipal, $note]
+                    );
+                } catch (\Throwable $e) { continue; }
+            }
+            $nb++;
+        }
+    }
+    return $nb;
 }
 
 function admin_regenerer_propositions()
