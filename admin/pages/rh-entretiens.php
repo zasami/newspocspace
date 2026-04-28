@@ -180,7 +180,7 @@ $anneesDispos = Db::fetchAll("SELECT DISTINCT annee FROM entretiens_annuels ORDE
               ? ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][(int) date('w', strtotime($e['date_entretien']))]
               : '';
           ?>
-            <div class="rhe-row" data-link="<?= h(AdminURL::page('rh-entretiens-fiche', $e['id'])) ?>">
+            <div class="rhe-row" data-link="<?= h(admin_url('rh-entretiens-fiche', $e['id'])) ?>">
               <div class="rhe-avatar"><?= h($initials) ?></div>
               <div style="flex:1;min-width:0">
                 <div class="rhe-name"><?= h($e['prenom'] . ' ' . $e['nom']) ?></div>

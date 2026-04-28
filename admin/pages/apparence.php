@@ -1,5 +1,5 @@
 <?php
-$adminId = $_SESSION['admin']['id'];
+$adminId = $_SESSION['ss_user']['id'] ?? '';
 $current = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$adminId]) ?: 'default';
 
 $themes = [

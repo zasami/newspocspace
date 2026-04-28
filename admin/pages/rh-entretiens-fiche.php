@@ -148,7 +148,7 @@ $SECTEUR_LABELS = [
         </div>
       </div>
       <div class="text-end">
-        <a href="<?= h(AdminURL::page('rh-collab-competences', $entretien['user_id'])) ?>"
+        <a href="<?= h(admin_url('rh-collab-competences', $entretien['user_id'])) ?>"
            class="btn btn-sm btn-light" data-page-link>
           <i class="bi bi-bullseye"></i> Voir cartographie
         </a>
@@ -310,7 +310,7 @@ $SECTEUR_LABELS = [
             <strong style="color:#2d4a43"><?= (int) ($synthese['a_jour'] ?? 0) ?></strong>
           </div>
         </div>
-        <a href="<?= h(AdminURL::page('rh-collab-competences', $entretien['user_id'])) ?>"
+        <a href="<?= h(admin_url('rh-collab-competences', $entretien['user_id'])) ?>"
            class="btn btn-sm btn-outline-primary w-100 mt-3" data-page-link>
           <i class="bi bi-arrow-right"></i> Détail compétences
         </a>

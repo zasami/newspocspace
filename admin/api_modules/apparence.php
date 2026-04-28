@@ -9,7 +9,7 @@ const ADMIN_ALLOWED_THEMES = ['default', 'sombre', 'care'];
 function admin_get_apparence()
 {
     require_responsable();
-    $userId = $_SESSION['admin']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     $theme = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$userId]) ?: 'default';
     respond(['success' => true, 'theme' => $theme]);
 }
@@ -20,7 +20,7 @@ function admin_save_apparence()
     global $params;
     $theme = Sanitize::text($params['theme'] ?? '', 20);
     if (!in_array($theme, ADMIN_ALLOWED_THEMES, true)) bad_request('Thème inconnu');
-    $userId = $_SESSION['admin']['id'];
+    $userId = $_SESSION['ss_user']['id'];
     Db::exec("UPDATE users SET theme_preference = ? WHERE id = ?", [$theme, $userId]);
     respond(['success' => true, 'theme' => $theme]);
 }

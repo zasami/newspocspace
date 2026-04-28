@@ -5,22 +5,22 @@ $today = date('Y-m-d');
 
 // Stats hero
 $nbPropositionsActives = (int) Db::getOne(
-    "SELECT COUNT(*) FROM inscription_propositions WHERE statut IN ('proposee','en_attente','validee')"
+    "SELECT COUNT(*) FROM inscription_propositions WHERE statut IN ('proposee','en_validation')"
 );
 $nbUrgentes = (int) Db::getOne(
     "SELECT COUNT(*) FROM inscription_propositions ip
-     WHERE ip.statut IN ('proposee','en_attente') AND ip.motif = 'renouvellement_expire'"
+     WHERE ip.statut IN ('proposee','en_validation') AND ip.type_motif = 'renouvellement_expire'"
 );
 $nbINC = (int) Db::getOne(
-    "SELECT COUNT(*) FROM inscription_propositions ip WHERE ip.motif = 'inc_nouveau'
-       AND ip.statut IN ('proposee','en_attente')"
+    "SELECT COUNT(*) FROM inscription_propositions ip WHERE ip.type_motif = 'inc_nouveau'
+       AND ip.statut IN ('proposee','en_validation')"
 );
 $coutTotalEstime = (float) Db::getOne(
     "SELECT COALESCE(SUM(DISTINCT f.cout_formation), 0)
      FROM inscription_propositions ip
      JOIN formation_sessions fs ON fs.id = ip.session_id
      JOIN formations f ON f.id = fs.formation_id
-     WHERE ip.statut IN ('proposee','en_attente')"
+     WHERE ip.statut IN ('proposee','en_validation')"
 ) ?: 4180;
 $coutPriseEnCharge = 71;
 
@@ -435,7 +435,7 @@ foreach ($sessions as $s) {
     }
 
     function loadPropositions() {
-        adminApiPost('admin_get_inscriptions_propositions', { statut: 'proposee,en_attente' }).then(r => {
+        adminApiPost('admin_get_inscriptions_propositions', { statut: 'proposee' }).then(r => {
             if (!r.success) {
                 document.getElementById('suggestionsGrid').innerHTML =
                     '<div class="rhfg-empty"><i class="bi bi-exclamation-triangle"></i> ' + escapeHtml(r.message || 'Erreur') + '</div>';
