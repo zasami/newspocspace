@@ -496,6 +496,223 @@ function admin_get_inscriptions_propositions()
     respond(['success' => true, 'propositions' => $rows, 'stats' => $stats]);
 }
 
+/**
+ * Vérifie les conflits absences/désirs/vacances pour un ou plusieurs collaborateurs
+ * sur les dates d'une formation/session avant inscription.
+ *
+ * Params :
+ *   - session_id (optionnel) ou formation_id : pour récupérer les dates
+ *   - user_ids : array des collaborateurs à vérifier (sinon tous les candidats si proposition_id donné)
+ *   - proposition_id (optionnel) : raccourci pour récupérer session + candidats
+ *
+ * Retour : ['conflicts' => [user_id => [['date'=>..., 'type'=>..., 'motif'=>...], ...]]]
+ */
+function admin_check_formation_conflicts()
+{
+    require_responsable();
+    global $params;
+
+    $sessionId = Sanitize::text($params['session_id'] ?? '', 36);
+    $formationId = Sanitize::text($params['formation_id'] ?? '', 36);
+    $propId = Sanitize::text($params['proposition_id'] ?? '', 36);
+    $userIds = $params['user_ids'] ?? [];
+    if (!is_array($userIds)) $userIds = [];
+
+    $dateDebut = null; $dateFin = null;
+    if ($propId) {
+        $row = Db::fetch(
+            "SELECT s.id AS session_id, s.date_debut, s.date_fin, f.id AS formation_id
+             FROM inscription_propositions p
+             JOIN formation_sessions s ON s.id = p.session_id
+             JOIN formations f ON f.id = s.formation_id WHERE p.id = ?",
+            [$propId]
+        );
+        if (!$row) bad_request('Proposition introuvable');
+        $dateDebut = $row['date_debut'];
+        $dateFin = $row['date_fin'] ?: $row['date_debut'];
+        if (!$userIds) {
+            $userIds = array_column(
+                Db::fetchAll("SELECT user_id FROM inscription_proposition_users WHERE proposition_id = ? AND statut = 'selectionne'", [$propId]),
+                'user_id'
+            );
+        }
+    } elseif ($sessionId) {
+        $row = Db::fetch("SELECT date_debut, date_fin FROM formation_sessions WHERE id = ?", [$sessionId]);
+        if (!$row) bad_request('Session introuvable');
+        $dateDebut = $row['date_debut'];
+        $dateFin = $row['date_fin'] ?: $row['date_debut'];
+    } elseif ($formationId) {
+        $row = Db::fetch("SELECT date_debut, date_fin FROM formations WHERE id = ?", [$formationId]);
+        if (!$row) bad_request('Formation introuvable');
+        $dateDebut = $row['date_debut'];
+        $dateFin = $row['date_fin'] ?: $row['date_debut'];
+    } else {
+        bad_request('session_id, formation_id ou proposition_id requis');
+    }
+
+    if (!$userIds) respond(['success' => true, 'conflicts' => [], 'date_debut' => $dateDebut, 'date_fin' => $dateFin]);
+
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+
+    // 1) Absences validées chevauchant la plage
+    $absRows = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin, type, motif
+         FROM absences
+         WHERE statut = 'valide' AND user_id IN ($placeholders)
+           AND date_debut <= ? AND date_fin >= ?",
+        array_merge($userIds, [$dateFin, $dateDebut])
+    );
+
+    // 2) Désirs jour_off validés sur les dates
+    $desRows = Db::fetchAll(
+        "SELECT user_id, date_souhaitee AS date, motif
+         FROM desirs
+         WHERE statut = 'valide' AND type = 'jour_off' AND user_id IN ($placeholders)
+           AND date_souhaitee BETWEEN ? AND ?",
+        array_merge($userIds, [$dateDebut, $dateFin])
+    );
+
+    $conflicts = [];
+    $absLabels = [
+        'vacances' => 'Vacances', 'maladie' => 'Maladie', 'accident' => 'Accident',
+        'conge_special' => 'Congé spécial', 'formation' => 'Autre formation',
+        'maternite' => 'Maternité', 'paternite' => 'Paternité', 'autre' => 'Absence',
+    ];
+    foreach ($absRows as $a) {
+        $start = max(strtotime($dateDebut), strtotime($a['date_debut']));
+        $end = min(strtotime($dateFin), strtotime($a['date_fin']));
+        for ($t = $start; $t <= $end; $t += 86400) {
+            $conflicts[$a['user_id']][] = [
+                'date' => date('Y-m-d', $t),
+                'kind' => 'absence',
+                'type' => $a['type'],
+                'label' => $absLabels[$a['type']] ?? 'Absence',
+                'motif' => $a['motif'] ?: '',
+            ];
+        }
+    }
+    foreach ($desRows as $d) {
+        $conflicts[$d['user_id']][] = [
+            'date' => $d['date'],
+            'kind' => 'desir',
+            'type' => 'jour_off',
+            'label' => 'Désir off',
+            'motif' => $d['motif'] ?: '',
+        ];
+    }
+
+    // Nom + prénom des users en conflit pour affichage UI
+    $usersInfo = [];
+    if ($conflicts) {
+        $confUserIds = array_keys($conflicts);
+        $ph2 = implode(',', array_fill(0, count($confUserIds), '?'));
+        $usersRows = Db::fetchAll("SELECT id, prenom, nom FROM users WHERE id IN ($ph2)", $confUserIds);
+        foreach ($usersRows as $u) $usersInfo[$u['id']] = $u['prenom'] . ' ' . $u['nom'];
+    }
+
+    respond([
+        'success' => true,
+        'conflicts' => $conflicts,
+        'users_info' => $usersInfo,
+        'date_debut' => $dateDebut,
+        'date_fin' => $dateFin,
+    ]);
+}
+
+/**
+ * Inscrit un ou plusieurs users à une formation/session.
+ * Refuse les users avec conflits (absence/désir validé) sauf si force=1.
+ *
+ * Params : session_id, user_ids[], force (optionnel)
+ * Retour : ['inscrits' => [...], 'refuses' => [user_id => conflicts[]]]
+ */
+function admin_inscrire_users_formation()
+{
+    require_responsable();
+    global $params;
+
+    $sessionId = Sanitize::text($params['session_id'] ?? '', 36);
+    $userIds = $params['user_ids'] ?? [];
+    if (!is_array($userIds)) $userIds = [];
+    $force = !empty($params['force']);
+
+    if (!$sessionId) bad_request('session_id requis');
+    if (!$userIds) bad_request('user_ids requis');
+
+    $session = Db::fetch(
+        "SELECT s.id, s.date_debut, s.date_fin, s.formation_id, f.titre
+         FROM formation_sessions s JOIN formations f ON f.id = s.formation_id
+         WHERE s.id = ?", [$sessionId]
+    );
+    if (!$session) not_found('Session introuvable');
+
+    $dateDebut = $session['date_debut'];
+    $dateFin = $session['date_fin'] ?: $dateDebut;
+
+    // Vérifier conflits
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+    $absRows = Db::fetchAll(
+        "SELECT user_id, date_debut, date_fin, type, motif FROM absences
+         WHERE statut = 'valide' AND user_id IN ($placeholders) AND date_debut <= ? AND date_fin >= ?",
+        array_merge($userIds, [$dateFin, $dateDebut])
+    );
+    $desRows = Db::fetchAll(
+        "SELECT user_id, date_souhaitee AS date, motif FROM desirs
+         WHERE statut = 'valide' AND type = 'jour_off' AND user_id IN ($placeholders)
+           AND date_souhaitee BETWEEN ? AND ?",
+        array_merge($userIds, [$dateDebut, $dateFin])
+    );
+
+    $hasConflict = [];
+    foreach ($absRows as $a) {
+        $hasConflict[$a['user_id']][] = ['kind' => 'absence', 'type' => $a['type'], 'motif' => $a['motif']];
+    }
+    foreach ($desRows as $d) {
+        $hasConflict[$d['user_id']][] = ['kind' => 'desir', 'date' => $d['date'], 'motif' => $d['motif']];
+    }
+
+    $refuses = [];
+    $inscrits = [];
+
+    foreach ($userIds as $uid) {
+        if (isset($hasConflict[$uid]) && !$force) {
+            $refuses[$uid] = $hasConflict[$uid];
+            continue;
+        }
+        // Vérifier qu'il n'est pas déjà inscrit
+        $exists = Db::getOne(
+            "SELECT id FROM formation_participants WHERE formation_id = ? AND user_id = ? AND (session_id = ? OR session_id IS NULL)",
+            [$session['formation_id'], $uid, $sessionId]
+        );
+        if ($exists) { $inscrits[] = $uid; continue; }
+
+        Db::exec(
+            "INSERT INTO formation_participants (id, formation_id, user_id, session_id, statut)
+             VALUES (?, ?, ?, ?, 'inscrit')",
+            [Uuid::v4(), $session['formation_id'], $uid, $sessionId]
+        );
+        $inscrits[] = $uid;
+    }
+
+    // Mettre à jour places_inscrites de la session
+    Db::exec(
+        "UPDATE formation_sessions SET places_inscrites = (
+           SELECT COUNT(*) FROM formation_participants WHERE session_id = ? AND statut IN ('inscrit','present','valide')
+         ) WHERE id = ?",
+        [$sessionId, $sessionId]
+    );
+
+    respond([
+        'success' => true,
+        'inscrits_count' => count($inscrits),
+        'refuses_count' => count($refuses),
+        'refuses' => $refuses,
+        'message' => count($refuses) > 0 && !$force
+            ? sprintf('%d inscrit·es, %d refusé·es (conflits absences/désirs)', count($inscrits), count($refuses))
+            : sprintf('%d inscription·s créée·s', count($inscrits)),
+    ]);
+}
+
 function admin_regenerer_propositions()
 {
     require_admin();

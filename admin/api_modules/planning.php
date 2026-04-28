@@ -797,6 +797,9 @@ function admin_generate_planning()
         $modPrincipal = $u['principal_module_id'] ?? ($userModuleMap[$userId][0] ?? null);
         foreach ($byDate as $date => $info) {
             if (!isset($dateByStr[$date])) continue;
+            // Si l'user a une absence/vacances/maladie validée ce jour-là,
+            // l'absence prime. La formation est ignorée pour cette date.
+            if (isset($absenceMap[$userId][$date])) continue;
             $note = 'Formation : ' . mb_substr($info['titre'], 0, 80);
             $stmtInsert->execute([
                 Uuid::v4(), $planningId, $userId, $date,
