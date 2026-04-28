@@ -599,6 +599,244 @@ body.theme-care .stat-card .stat-label {
 
 
 /* ============================================================
+   COMPOSANTS CAREB-* (partagés par toutes les pages .care.php)
+   ============================================================ */
+
+/* Breadcrumb */
+body.theme-care .careb-crumb {
+  padding: 14px 28px;
+  font-size: 12.5px; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+body.theme-care .careb-crumb a { color: var(--muted); text-decoration: none; }
+body.theme-care .careb-crumb a:hover { color: var(--teal-700); }
+body.theme-care .careb-crumb i { font-size: 9px; opacity: .5; }
+
+/* Boutons careb-* */
+body.theme-care .careb-btn-light,
+body.theme-care .careb-btn-light-sm {
+  background: var(--surface); color: var(--ink-2); border: 1px solid var(--line);
+  padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-decoration: none;
+  transition: all .15s ease;
+}
+body.theme-care .careb-btn-light:hover,
+body.theme-care .careb-btn-light-sm:hover { border-color: var(--teal-300); color: var(--teal-700); }
+body.theme-care .careb-btn-light-sm { padding: 6px 12px; font-size: 12px; }
+
+body.theme-care .careb-btn-primary,
+body.theme-care .careb-btn-primary-sm {
+  background: var(--teal-600); color: #fff; border: 0;
+  padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-decoration: none;
+  transition: all .15s ease;
+}
+body.theme-care .careb-btn-primary:hover,
+body.theme-care .careb-btn-primary-sm:hover { background: var(--teal-700); }
+body.theme-care .careb-btn-primary-sm { padding: 6px 12px; font-size: 12px; }
+
+body.theme-care .careb-btn-soft {
+  background: var(--teal-50); color: var(--teal-700); border: 1px solid var(--teal-100);
+  padding: 7px 13px; border-radius: 8px; font-size: 12.5px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  transition: all .15s ease;
+}
+body.theme-care .careb-btn-soft:hover { background: var(--teal-100); }
+
+body.theme-care .careb-btn-icon {
+  background: transparent; border: 0; color: var(--muted); cursor: pointer;
+  padding: 6px 8px; border-radius: 6px;
+}
+body.theme-care .careb-btn-icon:hover { background: var(--surface-3); color: var(--ink-2); }
+
+/* HERO grand format (page rh-collab-competences) */
+body.theme-care .careb-hero {
+  background: linear-gradient(135deg, #164a42 0%, #1f6359 50%, #2d8074 100%);
+  color: #fff; border-radius: var(--r-lg);
+  padding: 26px 30px; margin: 24px 0;
+}
+body.theme-care .careb-hero-row { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+body.theme-care .careb-hero-avatar {
+  width: 88px; height: 88px; border-radius: 16px;
+  background: rgba(255,255,255,.13);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 30px; font-weight: 500; color: #fff;
+  flex-shrink: 0;
+}
+body.theme-care .careb-hero-id { flex: 1; min-width: 280px; }
+body.theme-care .careb-hero-eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #a8e6c9; font-weight: 600; }
+body.theme-care .careb-hero h1 { font-family: var(--font-display); font-size: 32px; font-weight: 500; color: #fff; margin: 4px 0 6px; letter-spacing: -.02em; line-height: 1.1; }
+body.theme-care .careb-hero-meta { font-size: 14px; color: #cfe0db; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+body.theme-care .careb-hero-meta .sep { opacity: .4; }
+body.theme-care .careb-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+
+body.theme-care .careb-hero .careb-btn-light {
+  background: rgba(255,255,255,.95); color: #164a42; border: 0;
+}
+body.theme-care .careb-hero .careb-btn-light:hover { background: #fff; color: #0d2a26; }
+body.theme-care .careb-hero .careb-btn-primary {
+  background: linear-gradient(135deg, #3da896, #7dd3a8); color: #0d2a26;
+}
+body.theme-care .careb-hero .careb-btn-primary:hover { background: linear-gradient(135deg, #5cad9b, #a8e6c9); }
+
+body.theme-care .careb-hero-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px;
+  margin-top: 22px; padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+body.theme-care .careb-hero-lbl { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #a8c4be; font-weight: 600; }
+body.theme-care .careb-hero-val { font-family: var(--font-display); font-size: 18px; font-weight: 500; color: #fff; margin-top: 4px; }
+body.theme-care .careb-hero-sub { font-size: 11.5px; color: #a8c4be; font-family: var(--font-body); font-weight: 400; }
+
+/* KPI cards */
+body.theme-care .careb-kpi-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 24px;
+}
+body.theme-care .careb-kpi {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 20px 22px;
+}
+body.theme-care .careb-kpi-lbl {
+  font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; margin-bottom: 8px;
+}
+body.theme-care .careb-kpi-val {
+  font-family: var(--font-display); font-size: 36px; font-weight: 500;
+  color: var(--ink); line-height: 1; letter-spacing: -.02em;
+}
+body.theme-care .careb-kpi-val--ok { color: var(--ok); }
+body.theme-care .careb-kpi-val--warn { color: var(--warn); }
+body.theme-care .careb-kpi-val--danger { color: var(--danger); }
+body.theme-care .careb-kpi-unit {
+  font-family: var(--font-body); font-size: 16px;
+  color: var(--muted); font-weight: 400; margin-left: 4px;
+}
+body.theme-care .careb-kpi-sub { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+
+/* Tabs careb */
+body.theme-care .careb-tabs {
+  list-style: none; padding: 0; margin: 0 0 20px;
+  display: flex; gap: 4px; border-bottom: 1px solid var(--line);
+}
+body.theme-care .careb-tabs li {
+  padding: 12px 18px; font-size: 13.5px; font-weight: 500; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 8px; transition: all .12s ease;
+}
+body.theme-care .careb-tabs li:hover { color: var(--ink-2); }
+body.theme-care .careb-tabs li.active { color: var(--teal-700); border-bottom-color: var(--teal-600); }
+body.theme-care .careb-tab-count {
+  font-family: var(--font-mono); font-size: 10.5px;
+  background: var(--surface-3); color: var(--ink-2);
+  padding: 1px 7px; border-radius: 99px; font-weight: 600;
+}
+body.theme-care .careb-tabs li.active .careb-tab-count { background: var(--teal-600); color: #fff; }
+body.theme-care .careb-tab-pane[hidden] { display: none; }
+
+/* Cards careb */
+body.theme-care .careb-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); margin-bottom: 16px; overflow: hidden;
+}
+body.theme-care .careb-card-head {
+  padding: 18px 24px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+body.theme-care .careb-card-title { font-family: var(--font-display); font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+body.theme-care .careb-card-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+body.theme-care .careb-card-body { padding: 22px 24px; }
+body.theme-care .careb-card-padded { padding: 24px; }
+
+/* Empty states */
+body.theme-care .ds-empty {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+}
+body.theme-care .ds-empty i { font-size: 2rem; opacity: .25; display: block; margin-bottom: 8px; }
+body.theme-care .ds-empty .ds-empty-title { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+body.theme-care .ds-empty .ds-empty-msg { font-size: 12.5px; margin-top: 4px; }
+
+/* Status pill (formations, entretiens) */
+body.theme-care .careb-status {
+  display: inline-block; padding: 3px 9px; border-radius: 5px;
+  font-size: 10px; letter-spacing: .08em; font-weight: 700; text-transform: uppercase;
+}
+body.theme-care .careb-status--inscrite { background: var(--info-bg); color: var(--info); }
+body.theme-care .careb-status--planning { background: var(--info-bg); color: var(--info); }
+body.theme-care .careb-status--encours  { background: var(--warn-bg); color: var(--warn); }
+body.theme-care .careb-status--realisee { background: var(--ok-bg); color: var(--ok); }
+body.theme-care .careb-status--present  { background: var(--ok-bg); color: var(--ok); }
+body.theme-care .careb-status--absent   { background: var(--danger-bg); color: var(--danger); }
+
+/* Sector tags (réutilisé partout) */
+body.theme-care .sector-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: var(--r-sm);
+  font-size: 11.5px; font-weight: 500;
+}
+body.theme-care .sector-tag .bullet { width: 6px; height: 6px; border-radius: 50%; }
+body.theme-care .s-soins { background: var(--sec-soins-bg); color: var(--sec-soins); }
+body.theme-care .s-soins .bullet { background: var(--sec-soins); }
+body.theme-care .s-hot   { background: var(--sec-hotel-bg); color: var(--sec-hotel); }
+body.theme-care .s-hot .bullet { background: var(--sec-hotel); }
+body.theme-care .s-anim  { background: var(--sec-anim-bg); color: var(--sec-anim); }
+body.theme-care .s-anim .bullet { background: var(--sec-anim); }
+body.theme-care .s-tech  { background: var(--sec-tech-bg); color: var(--sec-tech); }
+body.theme-care .s-tech .bullet { background: var(--sec-tech); }
+body.theme-care .s-admin { background: var(--sec-admin-bg); color: var(--sec-admin); }
+body.theme-care .s-admin .bullet { background: var(--sec-admin); }
+body.theme-care .s-mgmt  { background: var(--sec-mgmt-bg); color: var(--sec-mgmt); }
+body.theme-care .s-mgmt .bullet { background: var(--sec-mgmt); }
+body.theme-care .s-int   { background: var(--sec-int-bg); color: var(--sec-int); }
+body.theme-care .s-int .bullet { background: var(--sec-int); }
+
+/* Pills DS (filtres rond) */
+body.theme-care .ds-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: var(--r-pill);
+  font-size: 12.5px; font-weight: 500;
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line);
+  cursor: pointer; transition: all .12s ease;
+  text-decoration: none;
+}
+body.theme-care .ds-pill:hover { border-color: var(--teal-300); color: var(--ink); }
+body.theme-care .ds-pill.on { background: var(--teal-600); color: #fff; border-color: var(--teal-600); }
+body.theme-care .ds-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+/* Search DS */
+body.theme-care .ds-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 7px 12px;
+}
+body.theme-care .ds-search input {
+  border: 0; background: transparent; outline: none;
+  font: inherit; color: var(--ink); width: 100%; font-size: 13px;
+}
+
+/* Progress DS */
+body.theme-care .ds-progress { display: flex; align-items: center; gap: 8px; width: 100%; }
+body.theme-care .ds-progress-bar {
+  flex: 1; height: 6px; background: var(--line);
+  border-radius: var(--r-pill); overflow: hidden; min-width: 60px;
+}
+body.theme-care .ds-progress-fill {
+  height: 100%; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--teal-500), #5cad9b);
+  transition: width .3s ease;
+}
+body.theme-care .ds-progress-fill.warn   { background: linear-gradient(90deg, var(--warn), #e0a85a); }
+body.theme-care .ds-progress-fill.danger { background: linear-gradient(90deg, var(--danger), #cd6b62); }
+
+@media (max-width: 991px) {
+  body.theme-care .careb-hero-grid { grid-template-columns: repeat(2, 1fr); }
+  body.theme-care .careb-kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ============================================================
    THÈME SOMBRE — mode dark
    ============================================================ */
 body.theme-sombre {
