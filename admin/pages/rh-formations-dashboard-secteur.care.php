@@ -445,7 +445,10 @@ $fmtN = fn($n, $d=0) => number_format((float)$n, $d, ',', "'");
           <button class="fds-btn-mini" onclick="window.print()"><i class="bi bi-printer"></i></button>
         </div>
         <?php if ($topCollabs && $topCollabs[0]['heures_an'] > 0): ?>
-          <?php $maxH = max(array_column($topCollabs, 'heures_an'), 1); ?>
+          <?php
+            $heuresValues = array_column($topCollabs, 'heures_an');
+            $maxH = $heuresValues ? max((float) max($heuresValues), 1.0) : 1.0;
+          ?>
           <div class="fds-top-list">
             <?php foreach ($topCollabs as $c): if ($c['heures_an'] <= 0) continue; ?>
               <div class="fds-top-row">
