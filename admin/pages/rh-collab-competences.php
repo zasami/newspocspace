@@ -72,6 +72,32 @@ $referents = Db::fetchAll(
     [$userId]
 );
 
+// ── Entretiens annuels ────────────────────────────────────────
+$entretiens = Db::fetchAll(
+    "SELECT * FROM entretiens_annuels WHERE user_id = ? ORDER BY date_entretien DESC LIMIT 10",
+    [$userId]
+);
+$nbEntretiens = count($entretiens);
+$dernierEntretien = $entretiens[0] ?? null;
+
+// ── Toutes les formations (pour tab détaillé) ────────────────
+$formationsAll = Db::fetchAll(
+    "SELECT f.id, f.titre, f.statut, f.date_debut, f.duree_heures, f.lieu, f.modalite,
+            p.id AS participant_id, p.statut AS participant_statut, p.heures_realisees,
+            p.date_realisation, p.certificat_url, p.evaluation_manager
+     FROM formation_participants p JOIN formations f ON f.id = p.formation_id
+     WHERE p.user_id = ? ORDER BY COALESCE(p.date_realisation, f.date_debut) DESC",
+    [$userId]
+);
+$nbFormationsAll = count($formationsAll);
+$nbFormationsSansCert = count(array_filter($formationsAll, fn($f) =>
+    in_array($f['participant_statut'], ['present','valide']) && empty($f['certificat_url'])
+));
+
+// ── Documents (formations avec certificat upload) ─────────────
+$documents = array_filter($formationsAll, fn($f) => !empty($f['certificat_url']));
+$nbDocuments = count($documents);
+
 // ── Préparer regroupement par priorité ────────────────────────
 $grouped = ['haute' => [], 'moyenne' => [], 'basse' => [], 'a_jour' => []];
 foreach ($competences as $c) {
@@ -195,6 +221,39 @@ foreach ($radarGroups as $axe => $codes) {
   </div>
 </div>
 
+<!-- Tabs -->
+<ul class="nav nav-tabs comp-tabs mb-3" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-comp" type="button" role="tab">
+      <i class="bi bi-grid-3x3"></i> Compétences <span class="badge bg-secondary ms-1"><?= count($competences) ?></span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-form" type="button" role="tab">
+      <i class="bi bi-mortarboard"></i> Formations <span class="badge bg-secondary ms-1"><?= $nbFormationsAll ?></span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-docs" type="button" role="tab">
+      <i class="bi bi-file-text"></i> Documents <span class="badge bg-secondary ms-1"><?= $nbDocuments ?></span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-entr" type="button" role="tab">
+      <i class="bi bi-chat-square-text"></i> Entretiens <span class="badge bg-secondary ms-1"><?= $nbEntretiens ?></span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-hist" type="button" role="tab">
+      <i class="bi bi-clock-history"></i> Historique
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+<!-- ═══ TAB Compétences ═══ -->
+<div class="tab-pane fade show active" id="tab-comp" role="tabpanel">
 <div class="row g-3">
   <!-- Colonne gauche : radar + détail thématiques -->
   <div class="col-lg-8">
@@ -494,3 +553,233 @@ foreach ($radarGroups as $axe => $codes) {
     <?php endif ?>
   </div>
 </div>
+</div><!-- /#tab-comp -->
+
+<!-- ═══ TAB Formations ═══ -->
+<div class="tab-pane fade" id="tab-form" role="tabpanel">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0" style="font-weight:600">Toutes les formations</h5>
+        <div class="text-muted small mt-1"><?= $nbFormationsAll ?> au total · <?= $nbFormationsSansCert ?> sans certificat uploadé</div>
+      </div>
+    </div>
+    <?php if ($formationsAll): ?>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead style="background:var(--cl-bg)">
+            <tr>
+              <th class="small text-muted text-uppercase" style="font-size:.7rem;letter-spacing:.06em">Formation</th>
+              <th class="small text-muted text-uppercase" style="font-size:.7rem;letter-spacing:.06em">Date</th>
+              <th class="small text-muted text-uppercase" style="font-size:.7rem;letter-spacing:.06em">Modalité</th>
+              <th class="small text-muted text-uppercase text-end" style="font-size:.7rem;letter-spacing:.06em">Heures</th>
+              <th class="small text-muted text-uppercase" style="font-size:.7rem;letter-spacing:.06em">Statut</th>
+              <th class="small text-muted text-uppercase text-center" style="font-size:.7rem;letter-spacing:.06em">Cert.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($formationsAll as $f):
+              $statutCls = match($f['participant_statut']) {
+                'valide','present' => 'success',
+                'inscrit' => 'info',
+                'absent' => 'danger',
+                default => 'secondary',
+              };
+              $statutLbl = match($f['participant_statut']) {
+                'valide' => 'Validée', 'present' => 'Présent',
+                'inscrit' => 'Inscrit', 'absent' => 'Absent', default => '—',
+              };
+              $hasCert = !empty($f['certificat_url']);
+            ?>
+              <tr>
+                <td>
+                  <div class="fw-semibold"><?= h($f['titre']) ?></div>
+                  <?php if ($f['lieu']): ?><div class="small text-muted"><?= h($f['lieu']) ?></div><?php endif ?>
+                </td>
+                <td class="small" style="font-family:monospace"><?php $dt = $f['date_realisation'] ?: $f['date_debut']; echo $dt ? date('d.m.Y', strtotime($dt)) : '—'; ?></td>
+                <td class="small"><?= h(ucfirst($f['modalite'] ?: '—')) ?></td>
+                <td class="text-end small" style="font-family:monospace"><?= $f['heures_realisees'] ?: $f['duree_heures'] ?: '—' ?>h</td>
+                <td><span class="badge text-bg-<?= $statutCls ?>" style="font-size:.7rem"><?= h($statutLbl) ?></span></td>
+                <td class="text-center">
+                  <?php if ($hasCert): ?>
+                    <a href="<?= h($f['certificat_url']) ?>" target="_blank" class="text-success" title="Voir certificat"><i class="bi bi-paperclip"></i></a>
+                  <?php elseif (in_array($f['participant_statut'], ['present','valide'])): ?>
+                    <span class="text-warning" title="Certificat manquant"><i class="bi bi-exclamation-circle"></i></span>
+                  <?php else: ?>
+                    <span class="text-muted">—</span>
+                  <?php endif ?>
+                </td>
+              </tr>
+            <?php endforeach ?>
+          </tbody>
+        </table>
+      </div>
+    <?php else: ?>
+      <div class="comp-empty"><i class="bi bi-mortarboard"></i><p class="mb-0">Aucune formation enregistrée pour ce collaborateur.</p></div>
+    <?php endif ?>
+  </div>
+</div><!-- /#tab-form -->
+
+<!-- ═══ TAB Documents ═══ -->
+<div class="tab-pane fade" id="tab-docs" role="tabpanel">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0" style="font-weight:600">Documents · attestations &amp; certificats</h5>
+      <div class="text-muted small mt-1"><?= $nbDocuments ?> document<?= $nbDocuments > 1 ? 's' : '' ?> uploadé<?= $nbDocuments > 1 ? 's' : '' ?></div>
+    </div>
+    <?php if ($documents): ?>
+      <div class="list-group list-group-flush">
+        <?php foreach ($documents as $d): ?>
+          <a href="<?= h($d['certificat_url']) ?>" target="_blank" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+            <i class="bi bi-file-earmark-pdf" style="font-size:1.3rem;color:var(--comp-danger)"></i>
+            <div class="flex-grow-1">
+              <div class="fw-semibold"><?= h($d['titre']) ?></div>
+              <div class="small text-muted">
+                <?= $d['date_realisation'] ? date('d.m.Y', strtotime($d['date_realisation'])) : 'Date inconnue' ?>
+                <?php if ($d['heures_realisees']): ?> · <?= h($d['heures_realisees']) ?>h<?php endif ?>
+              </div>
+            </div>
+            <i class="bi bi-arrow-up-right text-muted"></i>
+          </a>
+        <?php endforeach ?>
+      </div>
+    <?php else: ?>
+      <div class="comp-empty">
+        <i class="bi bi-folder2-open"></i>
+        <p class="mb-0">Aucun certificat uploadé.</p>
+        <p class="small mt-2 text-muted">Le collaborateur peut téléverser ses attestations depuis son espace SpocSpace &gt; Formations.</p>
+      </div>
+    <?php endif ?>
+  </div>
+</div><!-- /#tab-docs -->
+
+<!-- ═══ TAB Entretiens ═══ -->
+<div class="tab-pane fade" id="tab-entr" role="tabpanel">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0" style="font-weight:600">Entretiens annuels</h5>
+        <div class="text-muted small mt-1"><?= $nbEntretiens ?> au total<?= $dernierEntretien ? ' · dernier le ' . date('d.m.Y', strtotime($dernierEntretien['date_entretien'])) : '' ?></div>
+      </div>
+      <a href="?page=rh-entretiens&user_id=<?= h($userId) ?>" data-page-link class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-plus-lg"></i> Nouveau
+      </a>
+    </div>
+    <?php if ($entretiens): ?>
+      <div class="list-group list-group-flush">
+        <?php foreach ($entretiens as $e):
+          $stCls = match($e['statut']) {
+            'realise' => 'success', 'planifie' => 'info', 'reporte' => 'warning', default => 'secondary',
+          };
+        ?>
+          <a href="?page=rh-entretiens-fiche&id=<?= h($e['id']) ?>" data-page-link class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--cl-bg);display:grid;place-items:center;flex-shrink:0">
+              <i class="bi bi-chat-square-text" style="color:var(--comp-teal-600);font-size:1.2rem"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">Entretien <?= h($e['annee']) ?></div>
+              <div class="small text-muted" style="font-family:monospace"><?= h(date('d.m.Y', strtotime($e['date_entretien']))) ?></div>
+            </div>
+            <span class="badge text-bg-<?= $stCls ?>"><?= h(strtoupper($e['statut'])) ?></span>
+            <i class="bi bi-arrow-right text-muted"></i>
+          </a>
+        <?php endforeach ?>
+      </div>
+    <?php else: ?>
+      <div class="comp-empty">
+        <i class="bi bi-chat-square-text"></i>
+        <p class="mb-0">Aucun entretien annuel.</p>
+        <p class="small mt-2"><a href="?page=rh-entretiens&user_id=<?= h($userId) ?>" data-page-link>Planifier un entretien</a>.</p>
+      </div>
+    <?php endif ?>
+  </div>
+</div><!-- /#tab-entr -->
+
+<!-- ═══ TAB Historique ═══ -->
+<div class="tab-pane fade" id="tab-hist" role="tabpanel">
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0" style="font-weight:600">Historique formation &amp; compétences</h5>
+      <div class="text-muted small mt-1">Chronologie des évènements récents</div>
+    </div>
+    <div class="card-body">
+      <?php
+      // Construire la timeline : formations + entretiens triés par date desc
+      $timeline = [];
+      foreach ($formationsAll as $f) {
+          $d = $f['date_realisation'] ?: $f['date_debut'];
+          if (!$d) continue;
+          $timeline[] = ['date' => $d, 'kind' => 'formation', 'item' => $f];
+      }
+      foreach ($entretiens as $e) {
+          $timeline[] = ['date' => $e['date_entretien'], 'kind' => 'entretien', 'item' => $e];
+      }
+      usort($timeline, fn($a, $b) => strcmp($b['date'], $a['date']));
+      $timeline = array_slice($timeline, 0, 20);
+      ?>
+
+      <?php if (!$timeline): ?>
+        <div class="comp-empty"><i class="bi bi-clock-history"></i><p class="mb-0">Aucun évènement enregistré.</p></div>
+      <?php else: ?>
+        <div class="d-flex flex-column gap-3">
+          <?php foreach ($timeline as $t):
+            $isForm = $t['kind'] === 'formation';
+            $i = $t['item'];
+          ?>
+            <div class="d-flex gap-3 align-items-start">
+              <div style="width:40px;height:40px;border-radius:50%;background:<?= $isForm ? '#ecf5f3' : '#fef3c7' ?>;color:<?= $isForm ? '#1f6359' : '#92400e' ?>;display:grid;place-items:center;flex-shrink:0;font-size:1rem">
+                <i class="bi bi-<?= $isForm ? 'mortarboard' : 'chat-square-text' ?>"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <div class="fw-semibold"><?= h($isForm ? $i['titre'] : 'Entretien ' . $i['annee']) ?></div>
+                    <div class="small text-muted" style="font-family:monospace">
+                      <?= date('d.m.Y', strtotime($t['date'])) ?>
+                      <?php if ($isForm && $i['heures_realisees']): ?> · <?= $i['heures_realisees'] ?>h<?php endif ?>
+                    </div>
+                  </div>
+                  <?php if ($isForm): ?>
+                    <span class="badge text-bg-secondary" style="font-size:.7rem"><?= h(strtoupper($i['participant_statut'] ?? '—')) ?></span>
+                  <?php else: ?>
+                    <span class="badge text-bg-secondary" style="font-size:.7rem"><?= h(strtoupper($i['statut'] ?? '—')) ?></span>
+                  <?php endif ?>
+                </div>
+              </div>
+            </div>
+          <?php endforeach ?>
+        </div>
+      <?php endif ?>
+    </div>
+  </div>
+</div><!-- /#tab-hist -->
+
+</div><!-- /.tab-content -->
+
+<style>
+.comp-tabs .nav-link {
+  color: var(--cl-text-muted, #6b6b6b);
+  border: 0; border-bottom: 2px solid transparent;
+  padding: 10px 16px; font-weight: 500; font-size: .92rem;
+  background: transparent;
+  transition: all .15s ease;
+}
+.comp-tabs .nav-link:hover {
+  color: var(--cl-text, #1a1a1a);
+  border-bottom-color: var(--cl-border-hover, #d4d0ca);
+}
+.comp-tabs .nav-link.active {
+  color: var(--cl-primary, #191918) !important;
+  border-bottom-color: var(--cl-primary, #191918) !important;
+  background: transparent;
+  font-weight: 600;
+}
+.comp-tabs .nav-link .badge {
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  padding: 2px 6px; vertical-align: middle;
+}
+.comp-tabs .nav-link.active .badge {
+  background: var(--cl-primary, #191918) !important;
+  color: #fff;
+}
+</style>
