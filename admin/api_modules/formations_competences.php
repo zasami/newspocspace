@@ -998,7 +998,8 @@ CONTRAINTES DE FORMAT
 Rédige maintenant.
 PROMPT;
 
-    $prompt = sprintf($prompt, json_encode($payloadAnonyme, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    // str_replace au lieu de sprintf (le prompt contient des '%' littéraux qui cassent sprintf)
+    $prompt = str_replace('%s', json_encode($payloadAnonyme, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), $prompt);
 
     // ── APPEL IA ──
     $startTime = microtime(true);

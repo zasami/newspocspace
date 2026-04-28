@@ -541,8 +541,13 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
         de données <strong>anonymisées</strong> de votre EMS. Un seul clic, présentable en conseil.</p>
     </div>
     <div class="fp-export-actions">
-      <button class="fp-export-btn primary" id="fpGenAi">
+      <button class="fp-export-btn fp-export-btn--ai" id="fpGenAi">
         <i class="bi bi-stars"></i> Générer synthèse IA · 4 ans
+        <span class="fp-export-btn-sub">2 pages · présentation CA</span>
+      </button>
+      <button class="fp-export-btn primary" id="fpGenPdf">
+        <i class="bi bi-file-earmark-pdf"></i> Générer PDF · Plan 4 ans
+        <span class="fp-export-btn-sub">12 pages · document complet</span>
       </button>
       <button class="fp-export-btn" id="fpGenXlsx">
         <i class="bi bi-file-earmark-spreadsheet"></i> Export Excel matrice
@@ -615,8 +620,8 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
       </label>
     </div>
     <div class="fpai-modal-foot">
-      <button class="fp-btn" data-close>Annuler</button>
-      <button class="fp-btn fp-btn-primary" id="fpaiAccept" disabled>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-close>Annuler</button>
+      <button type="button" class="btn btn-sm fpai-btn-ai" id="fpaiAccept" disabled>
         <i class="bi bi-stars"></i> Générer la synthèse
       </button>
     </div>
@@ -633,10 +638,10 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
         <h3 id="fpaiResultTitle" style="color:#fff">Plan formation pluriannuel — Synthèse exécutive</h3>
       </div>
       <div class="fpai-result-actions">
-        <button class="fp-btn" id="fpaiCopyBtn" title="Copier" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)">
+        <button type="button" class="btn btn-sm fpai-btn-ondark" id="fpaiCopyBtn" title="Copier">
           <i class="bi bi-clipboard"></i> Copier
         </button>
-        <button class="fp-btn" id="fpaiPrintBtn" title="Imprimer" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)">
+        <button type="button" class="btn btn-sm fpai-btn-ondark" id="fpaiPrintBtn" title="Imprimer">
           <i class="bi bi-printer"></i> Imprimer
         </button>
         <button class="fpai-modal-close" data-close-result style="color:#fff"><i class="bi bi-x-lg"></i></button>
@@ -1342,17 +1347,56 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
 .fp-export-panel p strong { color: var(--fp-teal-700); }
 .fp-export-actions { display: flex; flex-direction: column; gap: 8px; }
 .fp-page .fp-export-btn {
-  padding: 11px 18px; font-family: inherit; font-size: 13.5px; font-weight: 500;
+  display: grid; grid-template-columns: auto 1fr; column-gap: 10px;
+  align-items: center; padding: 10px 16px;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
   border-radius: 9px; border: 1px solid var(--fp-teal-300);
   background: #fff; color: var(--fp-teal-700); cursor: pointer;
-  display: inline-flex; align-items: center; gap: 8px; transition: .15s;
+  transition: all .15s ease; text-align: left;
+  min-width: 220px;
 }
-.fp-page .fp-export-btn:hover { background: var(--fp-teal-50); }
+.fp-page .fp-export-btn > i:first-child {
+  grid-row: 1 / span 2; font-size: 18px; align-self: center;
+}
+.fp-export-btn-sub {
+  grid-column: 2; font-size: 10.5px; font-weight: 400;
+  opacity: .75; letter-spacing: .02em; margin-top: 1px;
+}
+.fp-page .fp-export-btn:hover {
+  background: var(--fp-teal-50); transform: translateY(-1px);
+  box-shadow: 0 4px 10px -4px rgba(13,42,38,.15);
+}
 .fp-page .fp-export-btn.primary {
   background: var(--fp-teal-600); color: #fff; border-color: var(--fp-teal-600);
 }
 .fp-page .fp-export-btn.primary:hover {
-  background: var(--fp-teal-700); border-color: var(--fp-teal-700);
+  background: var(--fp-teal-700); border-color: var(--fp-teal-700); color: #fff;
+}
+.fp-page .fp-export-btn.primary .fp-export-btn-sub { opacity: .85; }
+
+.fp-page .fp-export-btn--ai {
+  background: linear-gradient(135deg, #1f6359 0%, #2d8074 60%, #5cad9b 100%);
+  color: #fff; border: 0; padding: 11px 17px;
+  box-shadow: 0 4px 12px -4px rgba(31,99,89,.5), 0 2px 4px rgba(31,99,89,.2);
+  position: relative; overflow: hidden;
+}
+.fp-page .fp-export-btn--ai::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(168,230,201,.3) 0%, transparent 50%);
+  pointer-events: none;
+}
+.fp-page .fp-export-btn--ai:hover {
+  background: linear-gradient(135deg, #164a42 0%, #1f6359 60%, #2d8074 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(31,99,89,.6), 0 4px 8px rgba(31,99,89,.3);
+  color: #fff;
+}
+.fp-page .fp-export-btn--ai > i:first-child {
+  background: rgba(255,255,255,.18); padding: 4px 5px; border-radius: 6px;
+  font-size: 14px;
+}
+.fp-page .fp-export-btn--ai .fp-export-btn-sub {
+  color: #a8e6c9; opacity: .95;
 }
 
 @media (max-width: 1280px) {
