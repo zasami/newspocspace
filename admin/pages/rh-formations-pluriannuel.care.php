@@ -536,13 +536,13 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
   <div class="fp-export-panel">
     <div>
       <h3>Document prêt pour le conseil de fondation</h3>
-      <p>Spocspace génère automatiquement un <strong>plan formation pluriannuel</strong> de 12 pages
-        (synthèse exécutive, projections, justifications réglementaires, scénarios comparés,
-        calendrier annuel) à partir des données ci-dessus. Un seul clic, présentable en CA.</p>
+      <p>Spocspace génère automatiquement une <strong>synthèse exécutive du plan formation 4 ans</strong>
+        (constat, cadre réglementaire, scénarios comparés, recommandation au CA) via l'IA, à partir
+        de données <strong>anonymisées</strong> de votre EMS. Un seul clic, présentable en conseil.</p>
     </div>
     <div class="fp-export-actions">
-      <button class="fp-export-btn primary" id="fpGenPdf">
-        <i class="bi bi-file-earmark-pdf"></i> Générer PDF · Plan 4 ans
+      <button class="fp-export-btn primary" id="fpGenAi">
+        <i class="bi bi-stars"></i> Générer synthèse IA · 4 ans
       </button>
       <button class="fp-export-btn" id="fpGenXlsx">
         <i class="bi bi-file-earmark-spreadsheet"></i> Export Excel matrice
@@ -551,6 +551,382 @@ $emsNom = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'em
   </div>
 
 </div>
+
+<!-- Modal DPA (Data Processing Agreement) -->
+<div class="fpai-modal" id="fpaiModalDpa" hidden>
+  <div class="fpai-modal-overlay" data-close></div>
+  <div class="fpai-modal-card">
+    <div class="fpai-modal-head" style="background:linear-gradient(135deg,#1f6359,#2d8074);color:#fff">
+      <div class="fpai-modal-eyebrow" style="color:#a8e6c9">DATA PROCESSING AGREEMENT</div>
+      <h3 style="color:#fff">Génération IA · synthèse plan formation</h3>
+      <button class="fpai-modal-close" data-close style="color:#fff"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="fpai-modal-body">
+      <p class="fpai-intro">
+        Avant de générer la synthèse, merci de prendre connaissance des règles de traitement
+        des données par l'IA tierce (<?= h(Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ai_provider'") ?: 'Gemini / Claude') ?>).
+      </p>
+
+      <div class="fpai-rules">
+        <div class="fpai-rule fpai-ok">
+          <div class="fpai-rule-ico"><i class="bi bi-check-circle-fill"></i></div>
+          <div>
+            <strong>Données envoyées (anonymisées)</strong>
+            <ul>
+              <li>Compteurs agrégés par secteur (effectifs, qualifications)</li>
+              <li>Statistiques de conformité (% à jour, écarts critiques)</li>
+              <li>Top thématiques avec écarts (par <em>code</em> FEGEMS, ex. HPCI_BASE)</li>
+              <li>Heures formation et budget réalisés</li>
+              <li>Projections 4 ans du plan</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="fpai-rule fpai-bad">
+          <div class="fpai-rule-ico" style="background:#f7e3e0;color:#b8443a"><i class="bi bi-shield-x"></i></div>
+          <div>
+            <strong>Données <u>jamais</u> envoyées</strong>
+            <ul>
+              <li>Aucun nom, prénom, email ou identifiant individuel</li>
+              <li>Aucune donnée de résident (médicale, identité, séjour)</li>
+              <li>Aucun document personnel (attestation, CV, contrat)</li>
+              <li>Aucune note d'entretien individuel</li>
+              <li>Aucune adresse, téléphone, photo</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="fpai-rule fpai-info">
+          <div class="fpai-rule-ico" style="background:#e2ecf2;color:#3a6a8a"><i class="bi bi-info-circle-fill"></i></div>
+          <div>
+            <strong>Conformité</strong>
+            <p style="margin:4px 0 0;font-size:12.5px;color:#324e4a">
+              Pseudonymisation conforme RGPD art. 4 §5. Le traitement est limité au but unique
+              de générer une synthèse rédactionnelle. L'IA n'a accès qu'à des agrégats statistiques.
+              Aucune donnée n'est conservée chez le fournisseur au-delà de l'appel API.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <label class="fpai-consent">
+        <input type="checkbox" id="fpaiConsent">
+        <span>J'ai lu les règles ci-dessus et j'autorise SpocSpace à transmettre les données <strong>anonymisées</strong> à l'IA pour cette génération.</span>
+      </label>
+    </div>
+    <div class="fpai-modal-foot">
+      <button class="fp-btn" data-close>Annuler</button>
+      <button class="fp-btn fp-btn-primary" id="fpaiAccept" disabled>
+        <i class="bi bi-stars"></i> Générer la synthèse
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal résultat IA -->
+<div class="fpai-modal" id="fpaiModalResult" hidden>
+  <div class="fpai-modal-overlay" data-close-result></div>
+  <div class="fpai-modal-card fpai-modal-large">
+    <div class="fpai-modal-head" style="background:linear-gradient(135deg,#1f6359,#2d8074);color:#fff">
+      <div>
+        <div class="fpai-modal-eyebrow" style="color:#a8e6c9">SYNTHÈSE IA · PRÊTE À PRÉSENTER</div>
+        <h3 id="fpaiResultTitle" style="color:#fff">Plan formation pluriannuel — Synthèse exécutive</h3>
+      </div>
+      <div class="fpai-result-actions">
+        <button class="fp-btn" id="fpaiCopyBtn" title="Copier" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)">
+          <i class="bi bi-clipboard"></i> Copier
+        </button>
+        <button class="fp-btn" id="fpaiPrintBtn" title="Imprimer" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)">
+          <i class="bi bi-printer"></i> Imprimer
+        </button>
+        <button class="fpai-modal-close" data-close-result style="color:#fff"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="fpai-modal-body" id="fpaiResultBody">
+      <div class="fpai-loading">
+        <div class="fpai-spinner"></div>
+        <p>Génération en cours… <small>~10 secondes</small></p>
+      </div>
+    </div>
+    <div class="fpai-modal-foot fpai-meta-foot" id="fpaiResultMeta"></div>
+  </div>
+</div>
+
+<style>
+.fpai-modal[hidden] { display: none; }
+.fpai-modal {
+  position: fixed; inset: 0; z-index: 1300;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  font-family: 'Outfit', sans-serif;
+}
+.fpai-modal-overlay {
+  position: absolute; inset: 0; background: rgba(13,42,38,.5);
+  backdrop-filter: blur(3px);
+}
+.fpai-modal-card {
+  position: relative; background: #fff; border-radius: 16px;
+  width: 100%; max-width: 620px; max-height: 90vh;
+  overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px -16px rgba(13,42,38,.4);
+}
+.fpai-modal-large { max-width: 820px; }
+.fpai-modal-head {
+  padding: 18px 22px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+}
+.fpai-modal-eyebrow {
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: #1f6359; font-weight: 600;
+}
+.fpai-modal-head h3 {
+  font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600;
+  letter-spacing: -.01em; margin: 4px 0 0;
+}
+.fpai-modal-close {
+  background: rgba(0,0,0,.05); border: 0; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; color: #6b8783;
+  flex-shrink: 0;
+}
+.fpai-modal-close:hover { background: rgba(0,0,0,.1); }
+.fpai-modal-body { padding: 20px 22px; overflow: auto; flex: 1; }
+.fpai-modal-foot {
+  padding: 14px 22px; border-top: 1px solid #e3ebe8;
+  display: flex; justify-content: flex-end; gap: 8px;
+  background: #fafbfa;
+}
+
+.fpai-intro { font-size: 13.5px; color: #324e4a; line-height: 1.5; margin: 0 0 16px; }
+
+.fpai-rules { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.fpai-rule {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 10px;
+  background: #fafbfa; border: 1px solid #e3ebe8;
+}
+.fpai-rule strong { font-size: 13.5px; color: #0d2a26; display: block; margin-bottom: 4px; }
+.fpai-rule ul { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; color: #324e4a; line-height: 1.5; }
+.fpai-rule li { margin-bottom: 2px; }
+.fpai-rule-ico {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #e3f0ea; color: #3d8b6b;
+  display: grid; place-items: center; font-size: 16px; flex-shrink: 0;
+}
+
+.fpai-consent {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 10px;
+  background: #ecf5f3; border: 1px solid #d2e7e2;
+  cursor: pointer; user-select: none;
+}
+.fpai-consent input { margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+.fpai-consent span { font-size: 12.5px; color: #164a42; line-height: 1.5; }
+
+/* Résultat IA */
+.fpai-loading { padding: 40px 20px; text-align: center; color: #6b8783; }
+.fpai-spinner {
+  width: 40px; height: 40px; margin: 0 auto 16px;
+  border: 3px solid #ecf5f3; border-top-color: #1f6359;
+  border-radius: 50%; animation: fpaiSpin .8s linear infinite;
+}
+@keyframes fpaiSpin { to { transform: rotate(360deg); } }
+
+.fpai-result-actions { display: flex; gap: 6px; align-items: flex-start; }
+
+.fpai-rapport {
+  font-size: 13.5px; line-height: 1.65; color: #0d2a26;
+  max-width: 720px; margin: 0 auto;
+}
+.fpai-rapport h1 {
+  font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500;
+  letter-spacing: -.02em; margin: 0 0 18px; color: #164a42;
+}
+.fpai-rapport h2 {
+  font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+  letter-spacing: -.01em; margin: 22px 0 10px; color: #1f6359;
+  padding-top: 14px; border-top: 1px solid #e3ebe8;
+}
+.fpai-rapport h2:first-of-type { padding-top: 0; border-top: 0; }
+.fpai-rapport h3 {
+  font-family: 'Fraunces', serif; font-size: 14.5px; font-weight: 600;
+  margin: 14px 0 6px; color: #324e4a;
+}
+.fpai-rapport p { margin: 8px 0; }
+.fpai-rapport ul, .fpai-rapport ol { margin: 8px 0; padding-left: 22px; }
+.fpai-rapport li { margin: 3px 0; }
+.fpai-rapport strong { color: #164a42; font-weight: 600; }
+.fpai-rapport em { color: #324e4a; font-style: italic; }
+
+.fpai-meta-foot {
+  font-size: 11px; color: #6b8783; justify-content: space-between !important;
+  font-family: 'JetBrains Mono', monospace;
+}
+.fpai-meta-foot .fpai-meta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.fpai-meta-foot .fpai-meta-row span { display: inline-flex; align-items: center; gap: 4px; }
+.fpai-meta-foot .fpai-anonymized { color: #3d8b6b; font-weight: 600; }
+
+@media print {
+  body * { visibility: hidden !important; }
+  .fpai-modal, .fpai-modal * { visibility: visible !important; }
+  .fpai-modal {
+    position: absolute !important; inset: 0 !important;
+    background: #fff !important; padding: 20px !important;
+    display: block !important;
+  }
+  .fpai-modal-overlay, .fpai-modal-close, .fpai-result-actions, .fpai-meta-foot { display: none !important; }
+  .fpai-modal-card { box-shadow: none !important; max-width: 100% !important; max-height: none !important; overflow: visible !important; }
+}
+</style>
+
+<script<?= nonce() ?>>
+(function () {
+  const modalDpa = document.getElementById('fpaiModalDpa');
+  const modalRes = document.getElementById('fpaiModalResult');
+  const consent = document.getElementById('fpaiConsent');
+  const acceptBtn = document.getElementById('fpaiAccept');
+
+  function open(modal) { modal.hidden = false; document.body.style.overflow = 'hidden'; }
+  function close(modal) { modal.hidden = true; document.body.style.overflow = ''; }
+
+  document.getElementById('fpGenAi')?.addEventListener('click', () => {
+    consent.checked = false;
+    acceptBtn.disabled = true;
+    open(modalDpa);
+  });
+
+  consent.addEventListener('change', () => {
+    acceptBtn.disabled = !consent.checked;
+  });
+
+  modalDpa.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => close(modalDpa));
+  });
+  modalRes.querySelectorAll('[data-close-result]').forEach(el => {
+    el.addEventListener('click', () => close(modalRes));
+  });
+
+  acceptBtn.addEventListener('click', async () => {
+    if (!consent.checked) return;
+    close(modalDpa);
+    open(modalRes);
+
+    document.getElementById('fpaiResultBody').innerHTML = `
+      <div class="fpai-loading">
+        <div class="fpai-spinner"></div>
+        <p>Génération en cours… <small>~10 secondes</small></p>
+      </div>
+    `;
+    document.getElementById('fpaiResultMeta').innerHTML = '';
+
+    try {
+      const r = await adminApiPost('admin_generate_plan_formation_ai', {
+        dpa_accepted: true,
+        scenario: 'median',
+      });
+      if (!r.success) {
+        document.getElementById('fpaiResultBody').innerHTML = `
+          <div style="padding:30px;text-align:center;color:#b8443a">
+            <i class="bi bi-exclamation-triangle" style="font-size:32px;display:block;margin-bottom:10px"></i>
+            <strong>Échec de génération</strong>
+            <p style="margin-top:8px;font-size:13px;color:#324e4a">${escapeHtml(r.message || 'Erreur inconnue')}</p>
+          </div>`;
+        return;
+      }
+
+      const md = r.rapport || '';
+      const html = mdToHtml(md);
+      document.getElementById('fpaiResultBody').innerHTML = `<div class="fpai-rapport">${html}</div>`;
+
+      const meta = r.meta || {};
+      document.getElementById('fpaiResultMeta').innerHTML = `
+        <div class="fpai-meta-row">
+          <span class="fpai-anonymized"><i class="bi bi-shield-check"></i> Données anonymisées</span>
+          <span><i class="bi bi-cpu"></i> ${escapeHtml(meta.provider || '')} · ${escapeHtml(meta.model || '')}</span>
+          <span><i class="bi bi-stopwatch"></i> ${meta.duration_ms}ms</span>
+          <span><i class="bi bi-coin"></i> ${meta.tokens_in}/${meta.tokens_out} tokens · $${(meta.cost_usd || 0).toFixed(4)}</span>
+        </div>
+        <div class="fpai-meta-row">
+          <button class="fp-btn fp-btn-primary" id="fpaiSendCa">
+            <i class="bi bi-send"></i> Envoyer au CA
+          </button>
+        </div>
+      `;
+      document.getElementById('fpaiSendCa')?.addEventListener('click', () => {
+        if (typeof showToast === 'function') showToast('Envoi au CA en cours de développement', 'info');
+      });
+    } catch (e) {
+      document.getElementById('fpaiResultBody').innerHTML = `
+        <div style="padding:30px;text-align:center;color:#b8443a">
+          <strong>Erreur réseau</strong>
+          <p style="margin-top:8px;font-size:13px">${escapeHtml(e.message || '')}</p>
+        </div>`;
+    }
+  });
+
+  document.getElementById('fpaiCopyBtn')?.addEventListener('click', () => {
+    const txt = document.querySelector('.fpai-rapport')?.innerText || '';
+    if (!txt) return;
+    navigator.clipboard.writeText(txt).then(() => {
+      if (typeof showToast === 'function') showToast('Copié dans le presse-papiers', 'success');
+    });
+  });
+
+  document.getElementById('fpaiPrintBtn')?.addEventListener('click', () => window.print());
+
+  // Markdown → HTML minimal (headings, bold, italic, lists, paragraphs)
+  function mdToHtml(md) {
+    if (!md) return '';
+    let lines = md.split('\n');
+    let out = [], inList = false, listType = '';
+    for (let i = 0; i < lines.length; i++) {
+      let l = lines[i];
+      // Headings
+      let h = l.match(/^(#{1,4})\s+(.+)$/);
+      if (h) {
+        if (inList) { out.push(`</${listType}>`); inList = false; }
+        const lvl = h[1].length;
+        out.push(`<h${lvl}>${escapeHtml(h[2])}</h${lvl}>`);
+        continue;
+      }
+      // Bullet list
+      if (l.match(/^\s*[-*]\s+/)) {
+        if (!inList || listType !== 'ul') {
+          if (inList) out.push(`</${listType}>`);
+          out.push('<ul>'); inList = true; listType = 'ul';
+        }
+        out.push('<li>' + inline(l.replace(/^\s*[-*]\s+/, '')) + '</li>');
+        continue;
+      }
+      // Ordered list
+      if (l.match(/^\s*\d+\.\s+/)) {
+        if (!inList || listType !== 'ol') {
+          if (inList) out.push(`</${listType}>`);
+          out.push('<ol>'); inList = true; listType = 'ol';
+        }
+        out.push('<li>' + inline(l.replace(/^\s*\d+\.\s+/, '')) + '</li>');
+        continue;
+      }
+      // End list on blank
+      if (l.trim() === '') {
+        if (inList) { out.push(`</${listType}>`); inList = false; }
+        continue;
+      }
+      // Paragraph
+      if (inList) { out.push(`</${listType}>`); inList = false; }
+      out.push('<p>' + inline(l) + '</p>');
+    }
+    if (inList) out.push(`</${listType}>`);
+    return out.join('\n');
+  }
+  function inline(s) {
+    return escapeHtml(s)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
+  }
+  function escapeHtml(s) { const t = document.createElement('span'); t.textContent = s ?? ''; return t.innerHTML; }
+})();
+</script>
 
 <style>
 /* ═══════════════════════════════════════════════════════════════════

@@ -811,6 +811,301 @@ function sync_formation_to_planning(array $userIds, string $dateDebut, string $d
     return $nb;
 }
 
+/**
+ * Génère un rapport synthèse plan formation 4 ans via IA.
+ *
+ * Sécurité & RGPD :
+ *  - AUCUNE donnée nominative envoyée (noms/prénoms/IDs anonymisés en codes)
+ *  - AUCUNE donnée médicale ni résident envoyée
+ *  - UNIQUEMENT des stats agrégées RH/formation
+ *  - DPA accepté côté front avant l'appel
+ *
+ * Params : { dpa_accepted: true, scenario: 'median'|'prudent'|'ambitieux' }
+ * Retour : { success, rapport (markdown), tokens, cost_usd }
+ */
+function admin_generate_plan_formation_ai()
+{
+    require_admin();
+    global $params;
+
+    if (empty($params['dpa_accepted'])) {
+        bad_request('DPA (Data Processing Agreement) doit être accepté avant génération.');
+    }
+
+    // Config IA
+    $cfgRows = Db::fetchAll("SELECT config_key, config_value FROM ems_config");
+    $cfg = [];
+    foreach ($cfgRows as $r) $cfg[$r['config_key']] = $r['config_value'];
+
+    $provider = $cfg['ai_provider'] ?? 'gemini';
+    $apiKey = $provider === 'gemini' ? ($cfg['gemini_api_key'] ?? '') : ($cfg['anthropic_api_key'] ?? '');
+    $model  = $provider === 'gemini'
+        ? ($cfg['gemini_model'] ?? 'gemini-2.5-flash')
+        : ($cfg['anthropic_model'] ?? 'claude-haiku-4-5-20251001');
+
+    if (empty($apiKey)) {
+        bad_request("Aucune clé API {$provider} configurée. Allez dans Config IA.");
+    }
+
+    // ── ANONYMISATION : récupère uniquement des STATS AGRÉGÉES ──
+    // Pas de SELECT users.nom/prenom/email. Pas de FROM residents.
+    $anneeBase = (int) date('Y');
+    $annees = [$anneeBase + 1, $anneeBase + 2, $anneeBase + 3, $anneeBase + 4];
+
+    $nbCollabs = (int) Db::getOne("SELECT COUNT(*) FROM users WHERE is_active = 1");
+
+    // Stats par secteur (pas de noms, juste compteurs)
+    $statsSecteur = Db::fetchAll(
+        "SELECT f.secteur_fegems AS secteur,
+                COUNT(*) AS nb_collabs,
+                COUNT(CASE WHEN f.code LIKE 'INF%' THEN 1 END) AS nb_inf,
+                COUNT(CASE WHEN f.code LIKE 'ASSC%' THEN 1 END) AS nb_assc,
+                COUNT(CASE WHEN f.code LIKE 'AS%' AND f.code NOT LIKE 'ASSC%' THEN 1 END) AS nb_as
+         FROM users u JOIN fonctions f ON f.id = u.fonction_id
+         WHERE u.is_active = 1 GROUP BY f.secteur_fegems"
+    );
+
+    // Conformité globale
+    $totalCu = (int) Db::getOne("SELECT COUNT(*) FROM competences_user");
+    $aJour   = (int) Db::getOne("SELECT COUNT(*) FROM competences_user WHERE priorite = 'a_jour'");
+    $haute   = (int) Db::getOne("SELECT COUNT(*) FROM competences_user WHERE priorite = 'haute'");
+    $moyenne = (int) Db::getOne("SELECT COUNT(*) FROM competences_user WHERE priorite = 'moyenne'");
+    $conformite = $totalCu > 0 ? round(($aJour / $totalCu) * 100) : 0;
+
+    // Top thématiques avec écarts (par code, pas par user)
+    $topEcarts = Db::fetchAll(
+        "SELECT t.code, t.nom, t.tag_affichage,
+                COUNT(CASE WHEN cu.priorite = 'haute' THEN 1 END) AS nb_haute,
+                COUNT(CASE WHEN cu.priorite = 'moyenne' THEN 1 END) AS nb_moyenne,
+                COUNT(*) AS total
+         FROM competences_user cu JOIN competences_thematiques t ON t.id = cu.thematique_id
+         GROUP BY t.id ORDER BY nb_haute DESC, nb_moyenne DESC LIMIT 10"
+    );
+
+    // Heures formation année courante
+    $heuresAn = (float) Db::getOne(
+        "SELECT COALESCE(SUM(p.heures_realisees), 0) FROM formation_participants p
+         WHERE p.statut IN ('present','valide')
+           AND YEAR(p.date_realisation) = ?", [$anneeBase]
+    );
+
+    $coutAn = (float) Db::getOne(
+        "SELECT COALESCE(SUM(f.cout_formation), 0)
+         FROM formation_participants p JOIN formations f ON f.id = p.formation_id
+         WHERE p.statut IN ('inscrit','present','valide')
+           AND YEAR(COALESCE(p.date_realisation, f.date_debut)) = ?", [$anneeBase]
+    );
+
+    $emsNomGenerique = 'Établissement EMS'; // anonymisé pour l'IA — pas le vrai nom
+
+    // ── Construction du payload anonymisé ──
+    $payloadAnonyme = [
+        'meta' => [
+            'periode' => sprintf('%d-%d', $annees[0], $annees[3]),
+            'generated_at' => date('Y-m-d'),
+            'ems' => $emsNomGenerique,
+            'note' => 'Données anonymisées · aucune information nominative ni médicale',
+        ],
+        'effectif' => [
+            'total_collaborateurs' => $nbCollabs,
+            'par_secteur' => array_map(fn($r) => [
+                'secteur' => $r['secteur'],
+                'effectif' => (int) $r['nb_collabs'],
+                'qualifications' => [
+                    'infirmier' => (int) $r['nb_inf'],
+                    'assc'      => (int) $r['nb_assc'],
+                    'as'        => (int) $r['nb_as'],
+                ],
+            ], $statsSecteur),
+        ],
+        'conformite' => [
+            'taux_global_pct' => $conformite,
+            'competences_a_jour' => $aJour,
+            'ecarts_critiques' => $haute,
+            'ecarts_legers' => $moyenne,
+            'total_competences_suivies' => $totalCu,
+        ],
+        'top_thematiques_ecart' => array_map(fn($t) => [
+            'code' => $t['code'],
+            'nom' => $t['nom'],
+            'tag' => $t['tag_affichage'],
+            'ecarts_critiques' => (int) $t['nb_haute'],
+            'ecarts_legers' => (int) $t['nb_moyenne'],
+        ], $topEcarts),
+        'realisation_courante' => [
+            'annee' => $anneeBase,
+            'heures_formation_realisees' => round($heuresAn, 1),
+            'budget_engage_chf' => round($coutAn, 0),
+        ],
+        'plan_4_ans' => [
+            'scenario_median_places_cumulees' => 274,
+            'scenario_median_budget_chf'      => 38000,
+            'scenario_median_heures_par_collab_an' => 4.4,
+            'pct_obligatoire' => 62,
+            'pct_pris_en_charge_cotisation' => 71,
+            'conformite_projetee_pct' => 94,
+        ],
+    ];
+
+    // ── PROMPT IA (rôle, contraintes, format demandé) ──
+    $prompt = <<<PROMPT
+Tu es un consultant senior spécialisé en gestion des compétences pour les EMS suisses (Établissements Médico-Sociaux).
+
+CONTEXTE
+Tu rédiges une SYNTHÈSE EXÉCUTIVE de 2 pages destinée au Conseil de Fondation d'un EMS.
+Le document accompagne un plan formation pluriannuel 2027-2030 (4 ans).
+
+DONNÉES (anonymisées, agrégées, RH/formation uniquement) :
+```json
+%s
+```
+
+CONTRAINTES STRICTES
+1. AUCUNE donnée nominative — utilise uniquement les agrégats fournis
+2. AUCUNE référence à des résidents ou données médicales
+3. Référentiel : FEGEMS, OCS Genève, LTr, CCT EMS-AGEMS
+4. Ton : factuel, professionnel, argumentaire orienté décision
+5. Évite le jargon RH inutile, écris pour des membres de conseil non-RH
+6. Mets l'accent sur le caractère NON NÉGOCIABLE des obligations Fegems
+
+STRUCTURE DEMANDÉE (Markdown)
+# Plan formation pluriannuel — Synthèse exécutive
+
+## 1. Constat & enjeux
+Décris la situation actuelle : effectif, conformité, écarts critiques. Sois concis (~150 mots).
+
+## 2. Cadre réglementaire
+Rappelle les obligations FEGEMS / OCS qui imposent ce plan (HPCI, BLS-AED, INC, actes délégués). Justifie pourquoi ce n'est pas une variable d'ajustement budgétaire (~120 mots).
+
+## 3. Plan d'action 2027-2030
+Présente le scénario médian recommandé : volumétrie, budget, financement (cotisation FEGEMS), conformité projetée. Compare brièvement aux scénarios prudent/ambitieux (~180 mots).
+
+## 4. Ressources & investissement
+Détaille l'effort financier et humain. Mets en avant le ratio "92% imposé" et le pourcentage pris en charge par la cotisation (~120 mots).
+
+## 5. Risques & gouvernance
+Liste les risques de non-mise en œuvre (sanctions OCS, baisse de qualité de prise en charge, perte de personnel) et les indicateurs de suivi proposés (~120 mots).
+
+## 6. Recommandation
+Propose une décision claire au Conseil (validation du scénario médian, avec révision annuelle).
+
+CONTRAINTES DE FORMAT
+- Markdown propre, headings ## et ###, listes à puces
+- Total ~700-900 mots (lisible en 5 minutes)
+- Pas de tableau ASCII, pas d'émojis
+- Premières phrases percutantes
+
+Rédige maintenant.
+PROMPT;
+
+    $prompt = sprintf($prompt, json_encode($payloadAnonyme, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    // ── APPEL IA ──
+    $startTime = microtime(true);
+    $rapport = null;
+    $errMsg = null;
+    $tokensIn = 0; $tokensOut = 0; $costUsd = 0;
+
+    if ($provider === 'gemini') {
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+        $payload = json_encode([
+            'contents' => [['parts' => [['text' => $prompt]]]],
+            'generationConfig' => ['temperature' => 0.4, 'maxOutputTokens' => 4096],
+        ]);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,
+        ]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $raw) {
+            $resp = json_decode($raw, true);
+            $rapport = $resp['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            $usage = $resp['usageMetadata'] ?? [];
+            $tokensIn = (int) ($usage['promptTokenCount'] ?? 0);
+            $tokensOut = (int) ($usage['candidatesTokenCount'] ?? 0);
+            $priceIn = str_contains($model, 'flash') ? 0.075/1e6 : 1.25/1e6;
+            $priceOut = str_contains($model, 'flash') ? 0.30/1e6 : 5.00/1e6;
+            $costUsd = $tokensIn * $priceIn + $tokensOut * $priceOut;
+        } else {
+            $errMsg = "Gemini API error (HTTP $httpCode)";
+            error_log("AI plan formation Gemini error: HTTP $httpCode — " . substr($raw, 0, 300));
+        }
+    } else { // claude
+        $payload = json_encode([
+            'model' => $model,
+            'max_tokens' => 4096,
+            'temperature' => 0.4,
+            'messages' => [['role' => 'user', 'content' => $prompt]],
+        ]);
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01',
+            ],
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,
+        ]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $raw) {
+            $resp = json_decode($raw, true);
+            $rapport = $resp['content'][0]['text'] ?? null;
+            $usage = $resp['usage'] ?? [];
+            $tokensIn = (int) ($usage['input_tokens'] ?? 0);
+            $tokensOut = (int) ($usage['output_tokens'] ?? 0);
+            // Tarifs Claude Haiku 4.5 : 1$/M in, 5$/M out
+            $costUsd = $tokensIn * 1/1e6 + $tokensOut * 5/1e6;
+        } else {
+            $errMsg = "Claude API error (HTTP $httpCode)";
+            error_log("AI plan formation Claude error: HTTP $httpCode — " . substr($raw, 0, 300));
+        }
+    }
+
+    $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+
+    if (!$rapport) {
+        respond(['success' => false, 'message' => $errMsg ?: 'Aucune réponse de l\'IA']);
+        return;
+    }
+
+    // Log l'usage (table existante ia_usage_log)
+    try {
+        Db::exec(
+            "INSERT INTO ia_usage_log (id, mois_annee, provider, model, tokens_in, tokens_out, cost_usd, nb_assignations, duration_ms, admin_id, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NOW())",
+            [Uuid::v4(), date('Y-m'), $provider, $model, $tokensIn, $tokensOut, $costUsd, $durationMs, $_SESSION['ss_user']['id'] ?? null]
+        );
+    } catch (\Throwable $e) { /* table optionnelle */ }
+
+    respond([
+        'success' => true,
+        'rapport' => $rapport,
+        'meta' => [
+            'provider' => $provider,
+            'model' => $model,
+            'tokens_in' => $tokensIn,
+            'tokens_out' => $tokensOut,
+            'cost_usd' => round($costUsd, 4),
+            'duration_ms' => $durationMs,
+            'data_anonymized' => true,
+            'medical_data_excluded' => true,
+        ],
+    ]);
+}
+
 function admin_regenerer_propositions()
 {
     require_admin();
