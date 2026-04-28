@@ -26,14 +26,17 @@ $coutPriseEnCharge = 71;
 
 // Catalogue : sessions ouvertes futures
 $sessions = Db::fetchAll(
-    "SELECT fs.id AS session_id, fs.code_session, fs.date_debut, fs.date_fin, fs.lieu, fs.heures, fs.modalite,
-            fs.places_total, fs.places_restantes,
+    "SELECT fs.id AS session_id, fs.date_debut, fs.date_fin,
+            fs.heure_debut, fs.heure_fin, fs.lieu, fs.modalite,
+            fs.capacite_max AS places_total,
+            (fs.capacite_max - COALESCE(fs.places_inscrites, 0)) AS places_restantes,
+            fs.cout_membre, fs.cout_non_membre, fs.statut,
             f.id AS formation_id, f.titre, f.type, f.duree_heures, f.image_url,
             f.public_cible, f.modalite AS form_modalite, f.tarif_membres
      FROM formation_sessions fs
      JOIN formations f ON f.id = fs.formation_id
      WHERE fs.date_debut >= ?
-       AND fs.statut IN ('ouverte','presque_pleine','liste_attente')
+       AND fs.statut IN ('ouverte','liste_attente')
      ORDER BY fs.date_debut ASC LIMIT 30",
     [$today]
 );
@@ -165,7 +168,12 @@ foreach ($sessions as $s) {
               $moisFr = ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
               $mois = $moisFr[(int) $dt->format('n') - 1];
           }
-          $heuresAffichage = $s['heures'] ?: ($s['duree_heures'] . 'h');
+          $heuresAffichage = '';
+          if ($s['heure_debut'] && $s['heure_fin']) {
+              $heuresAffichage = substr($s['heure_debut'], 0, 5) . '–' . substr($s['heure_fin'], 0, 5);
+          } elseif ($s['duree_heures']) {
+              $heuresAffichage = $s['duree_heures'] . 'h';
+          }
           $places = (int) $s['places_total'];
           $restantes = (int) $s['places_restantes'];
           $pris = $places - $restantes;
