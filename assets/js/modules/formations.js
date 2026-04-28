@@ -38,21 +38,44 @@ export function destroy() {
 // ─── Load API ────────────────────────────────────────────────────────────────
 
 async function loadMesFormations() {
-    const r = await apiPost('get_mes_formations');
-    if (!r.success) { toast('Erreur chargement', 'error'); return; }
-    data.passees = r.passees || [];
-    data.a_venir = r.a_venir || [];
-    data.souhaits = r.souhaits || [];
-    renderAVenir();
-    renderPassees();
+    try {
+        const r = await apiPost('get_mes_formations');
+        if (!r.success) {
+            showError('formAVenirList', r.message || 'Erreur API');
+            showError('formPasseesList', r.message || 'Erreur API');
+            return;
+        }
+        data.passees = r.passees || [];
+        data.a_venir = r.a_venir || [];
+        data.souhaits = r.souhaits || [];
+        renderAVenir();
+        renderPassees();
+    } catch (e) {
+        console.error('loadMesFormations', e);
+        showError('formAVenirList', 'Erreur réseau : ' + e.message);
+        showError('formPasseesList', 'Erreur réseau : ' + e.message);
+    }
 }
 
 async function loadCatalogue() {
-    const r = await apiPost('get_catalogue_formations');
-    if (!r.success) return;
-    data.catalogue = r.formations || [];
-    data.secteur_user = r.secteur_user;
-    renderCatalogue();
+    try {
+        const r = await apiPost('get_catalogue_formations');
+        if (!r.success) {
+            showError('formCatalogueList', r.message || 'Erreur API');
+            return;
+        }
+        data.catalogue = r.formations || [];
+        data.secteur_user = r.secteur_user;
+        renderCatalogue();
+    } catch (e) {
+        console.error('loadCatalogue', e);
+        showError('formCatalogueList', 'Erreur réseau : ' + e.message);
+    }
+}
+
+function showError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (el) el.innerHTML = `<div class="fmt-empty"><i class="bi bi-exclamation-triangle text-danger"></i><p class="mb-0 text-danger">${escapeHtml(msg)}</p></div>`;
 }
 
 // ─── Renderers ───────────────────────────────────────────────────────────────
