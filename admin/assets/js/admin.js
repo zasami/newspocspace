@@ -43,11 +43,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = document.querySelector(`[data-cat-body="${catId}"]`);
         if (!body) return;
 
-        // Restore saved state (keep open if contains active link)
+        // Resolve initial state. Priority:
+        //   1. Section/module contains the active link → always expanded (override saved + server)
+        //   2. User explicitly toggled it → respect saved pref (true=collapsed, false=expanded)
+        //   3. Otherwise → leave server-rendered default in place (modules collapse all but the active one)
         const hasActive = body.querySelector('.sidebar-link.active');
-        if (savedCats[catId] && !hasActive) {
+        const userPref  = Object.prototype.hasOwnProperty.call(savedCats, catId) ? savedCats[catId] : null;
+
+        if (hasActive) {
+            body.classList.remove('collapsed');
+            catEl.classList.remove('cat-collapsed');
+        } else if (userPref === true) {
             body.classList.add('collapsed');
             catEl.classList.add('cat-collapsed');
+        } else if (userPref === false) {
+            body.classList.remove('collapsed');
+            catEl.classList.remove('cat-collapsed');
         }
 
         catEl.addEventListener('click', () => {

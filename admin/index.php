@@ -209,135 +209,232 @@ try { $cntChg = (int) Db::getOne("SELECT COUNT(*) FROM changements WHERE statut 
 try { $cntEch = (int) Db::getOne("SELECT COUNT(*) FROM echanges WHERE statut = 'en_attente'"); } catch (\Throwable $e) { $cntEch = 0; }
 $cntMsg = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$adminUserId]);
 
-// Sidebar — module Planning (focus mockup avril 2026, autres modules à venir)
-$sidebarCategories = [
-    'pilotage' => [
-        'label' => 'Pilotage',
-        'items' => [
-            'dashboard'     => ['label' => 'Tableau de bord',  'icon' => 'house'],
-            'planning'      => ['label' => 'Plannings',        'icon' => 'calendar3'],
-            'users'         => ['label' => 'Collaborateurs',   'icon' => 'people'],
+// Sidebar — 6 modules unifiés (Planning · RH · Formation · Communication · Établissement · Configuration)
+$sidebarModules = [
+    'planning' => [
+        'label' => 'Planning',
+        'icon'  => 'calendar3',
+        'sections' => [
+            'planning-pilotage' => [
+                'label' => 'Pilotage',
+                'items' => [
+                    'dashboard' => ['label' => 'Tableau de bord', 'icon' => 'house'],
+                    'planning'  => ['label' => 'Plannings',       'icon' => 'calendar3'],
+                    'users'     => ['label' => 'Collaborateurs',  'icon' => 'people'],
+                ],
+            ],
+            'planning-demandes' => [
+                'label' => 'Demandes',
+                'items' => [
+                    'absences'    => ['label' => 'Absences',    'icon' => 'chat-square-text', 'badge' => $cntAbs,    'badge_tone' => 'warn'],
+                    'desirs'      => ['label' => 'Désirs',      'icon' => 'star',             'badge' => $cntDesirs, 'badge_tone' => 'warn'],
+                    'changements' => ['label' => 'Changements', 'icon' => 'arrow-left-right', 'badge' => $cntChg,    'badge_tone' => 'warn'],
+                    'echanges'    => ['label' => 'Échanges',    'icon' => 'arrow-down-up',    'badge' => $cntEch,    'badge_tone' => 'warn'],
+                ],
+            ],
+            'planning-couverture' => [
+                'label' => 'Couverture',
+                'items' => [
+                    'vacances'    => ['label' => 'Vacances',    'icon' => 'sun'],
+                    'besoins'     => ['label' => 'Besoins',     'icon' => 'grid-3x3'],
+                    'repartition' => ['label' => 'Répartition', 'icon' => 'grid-3x3-gap'],
+                ],
+            ],
+            'planning-config' => [
+                'label' => 'Configuration',
+                'items' => [
+                    'modules'            => ['label' => 'Modules & Unités', 'icon' => 'building'],
+                    'horaires'           => ['label' => "Types d'horaires", 'icon' => 'clock'],
+                    'affichage-planning' => ['label' => 'Affichage',        'icon' => 'sliders'],
+                    'config-ia'          => ['label' => 'Config IA',        'icon' => 'cpu'],
+                ],
+            ],
         ],
     ],
-    'demandes' => [
-        'label' => 'Demandes',
-        'items' => [
-            'absences'    => ['label' => 'Absences',     'icon' => 'chat-square-text', 'badge' => $cntAbs, 'badge_tone' => 'warn'],
-            'desirs'      => ['label' => 'Désirs',       'icon' => 'star',             'badge' => $cntDesirs, 'badge_tone' => 'warn'],
-            'changements' => ['label' => 'Changements',  'icon' => 'arrow-left-right', 'badge' => $cntChg, 'badge_tone' => 'warn'],
-            'echanges'    => ['label' => 'Échanges',     'icon' => 'arrow-down-up',    'badge' => $cntEch, 'badge_tone' => 'warn'],
+    'rh' => [
+        'label' => 'RH',
+        'icon'  => 'people',
+        'sections' => [
+            'rh-recrutement' => [
+                'label' => 'Recrutement',
+                'items' => [
+                    'rh-offres'       => ['label' => "Offres d'emploi", 'icon' => 'briefcase'],
+                    'rh-candidatures' => ['label' => 'Candidatures',    'icon' => 'person-lines-fill'],
+                    'rh-stagiaires'   => ['label' => 'Stagiaires',      'icon' => 'person-badge'],
+                ],
+            ],
+            'rh-suivi' => [
+                'label' => 'Suivi',
+                'items' => [
+                    'rh-entretiens'         => ['label' => 'Entretiens annuels', 'icon' => 'chat-square-text'],
+                    'rh-collab-competences' => ['label' => 'Fiches compétences', 'icon' => 'shield-check'],
+                    'fiches-salaire'        => ['label' => 'Fiches de salaire',  'icon' => 'receipt'],
+                ],
+            ],
         ],
     ],
-    'outils' => [
-        'label' => 'Outils',
-        'items' => [
-            'messages' => ['label' => 'Messagerie', 'icon' => 'chat-dots', 'badge' => $cntMsg, 'badge_tone' => 'info'],
+    'formation' => [
+        'label' => 'Formation',
+        'icon'  => 'mortarboard',
+        'sections' => [
+            'formation-pilotage' => [
+                'label' => 'Pilotage',
+                'items' => [
+                    'rh-formations-dashboard'      => ['label' => 'Tableau de bord',      'icon' => 'speedometer2'],
+                    'rh-formations-collaborateurs' => ['label' => 'Collaborateurs',       'icon' => 'people-fill'],
+                    'rh-formations'                => ['label' => 'Liste des formations', 'icon' => 'list-ul'],
+                ],
+            ],
+            'formation-planif' => [
+                'label' => 'Planification',
+                'items' => [
+                    'rh-formations-sessions'     => ['label' => 'Sessions & catalogue',     'icon' => 'calendar3'],
+                    'rh-formations-pluriannuel'  => ['label' => 'Plan pluriannuel',         'icon' => 'graph-up-arrow'],
+                    'rh-formations-cartographie' => ['label' => "Cartographie d'équipe",    'icon' => 'diagram-3'],
+                    'rh-formations-profil'       => ['label' => "Profil d'équipe attendu",  'icon' => 'bullseye'],
+                ],
+            ],
+            'formation-inscriptions' => [
+                'label' => 'Inscriptions',
+                'items' => [
+                    'rh-formations-fegems' => ['label' => 'FEGEMS', 'icon' => 'cloud-arrow-up'],
+                ],
+            ],
+            'formation-suivi' => [
+                'label' => 'Suivi',
+                'items' => [
+                    'rh-formations-stats'      => ['label' => 'Statistiques', 'icon' => 'graph-up'],
+                    'rh-formations-parametres' => ['label' => 'Paramètres',   'icon' => 'gear'],
+                ],
+            ],
         ],
     ],
-    /* Catégories archivées — non affichées dans le sidebar du module Planning,
-       mais toujours accessibles via /admin/?page=X et via la dropdown module future */
-    '_archive_planning' => [
-        'label' => 'Planning (avancé)',
-        'items' => [
-            'vacances' => ['label' => 'Vacances',                 'icon' => 'sun'],
-            'besoins'    => ['label' => 'Besoins couverture',     'icon' => 'grid-3x3'],
-            'repartition' => ['label' => 'Répartition',           'icon' => 'grid-3x3-gap'],
+    'communication' => [
+        'label' => 'Communication',
+        'icon'  => 'chat-dots',
+        'sections' => [
+            'comm-messagerie' => [
+                'label' => 'Messagerie',
+                'items' => [
+                    'messages'        => ['label' => 'Messages',          'icon' => 'chat-dots',       'badge' => $cntMsg, 'badge_tone' => 'info'],
+                    'email-externe'   => ['label' => 'Email externe',     'icon' => 'envelope'],
+                    'email-config'    => ['label' => 'Config Email',      'icon' => 'envelope-at'],
+                    'email-templates' => ['label' => "Templates d'email", 'icon' => 'envelope-paper'],
+                ],
+            ],
+            'comm-diffusion' => [
+                'label' => 'Diffusion',
+                'items' => [
+                    'annonces'       => ['label' => 'Annonces officielles', 'icon' => 'megaphone'],
+                    'mur'            => ['label' => 'Mur social',           'icon' => 'chat-square-heart'],
+                    'alertes'        => ['label' => 'Alertes',              'icon' => 'megaphone'],
+                    'wiki'           => ['label' => 'Wiki',                 'icon' => 'book'],
+                    'wiki-analytics' => ['label' => 'Analytics Wiki',       'icon' => 'graph-up'],
+                ],
+            ],
+            'comm-contacts' => [
+                'label' => 'Contacts',
+                'items' => [
+                    'contacts' => ['label' => 'Contacts', 'icon' => 'person-rolodex'],
+                    'annuaire' => ['label' => 'Annuaire', 'icon' => 'telephone'],
+                ],
+            ],
+            'comm-evenements' => [
+                'label' => 'Événements',
+                'items' => [
+                    'agenda'     => ['label' => 'Agenda',     'icon' => 'calendar-week'],
+                    'evenements' => ['label' => 'Événements', 'icon' => 'calendar-event'],
+                    'salles'     => ['label' => 'Salles',     'icon' => 'door-open'],
+                ],
+            ],
         ],
     ],
-    '_archive_config' => [
+    'etablissement' => [
+        'label' => 'Établissement',
+        'icon'  => 'hospital',
+        'sections' => [
+            'etab-residents' => [
+                'label' => 'Résidents',
+                'items' => [
+                    'residents' => ['label' => 'Résidents',      'icon' => 'people'],
+                    'famille'   => ['label' => 'Espace famille', 'icon' => 'heart'],
+                ],
+            ],
+            'etab-services' => [
+                'label' => 'Services',
+                'items' => [
+                    'cuisine'      => ['label' => 'Cuisine',           'icon' => 'cup-hot'],
+                    'reservations' => ['label' => 'Réservations',      'icon' => 'calendar-check'],
+                    'marquage'     => ['label' => 'Marquage lingerie', 'icon' => 'tag'],
+                ],
+            ],
+            'etab-documents' => [
+                'label' => 'Documents',
+                'items' => [
+                    'documents' => ['label' => 'Documents',      'icon' => 'folder2'],
+                    'pv'        => ['label' => 'Procès-Verbaux', 'icon' => 'file-earmark-text'],
+                    'sondages'  => ['label' => 'Sondages',       'icon' => 'clipboard2-check'],
+                ],
+            ],
+            'etab-qualite' => [
+                'label' => 'Qualité',
+                'items' => [
+                    'fiches-amelioration' => ['label' => 'Amélioration continue', 'icon' => 'lightbulb'],
+                    'suggestions'         => ['label' => 'Suggestions',           'icon' => 'chat-square-quote'],
+                ],
+            ],
+        ],
+    ],
+    'configuration' => [
         'label' => 'Configuration',
-        'items' => [
-            'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
-            'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
-        ],
-    ],
-    '_archive_outils' => [
-        'label' => 'Outils',
-        'items' => [
-            'agenda'   => ['label' => 'Agenda',                 'icon' => 'calendar-week'],
-            'salles'   => ['label' => 'Réservation salles',     'icon' => 'door-open'],
-            'todos'    => ['label' => 'Tâches',                'icon' => 'check2-square'],
-            'notes'    => ['label' => 'Notes',                 'icon' => 'journal-text'],
-            'pv'       => ['label' => 'Procès-Verbaux',       'icon' => 'file-earmark-text'],
-            'sondages' => ['label' => 'Sondages',             'icon' => 'clipboard2-check'],
-            'mur'      => ['label' => 'Mur social',            'icon' => 'chat-square-heart'],
-            'wiki'     => ['label' => 'Base de connaissances', 'icon' => 'book'],
-            'wiki-analytics' => ['label' => 'Analytics Wiki',  'icon' => 'graph-up'],
-            'annonces' => ['label' => 'Annonces officielles',  'icon' => 'megaphone'],
-            'evenements' => ['label' => 'Événements',            'icon' => 'calendar-event'],
-        ],
-    ],
-    '_archive_rh' => [
-        'label' => 'Recrutement & RH',
-        'items' => [
-            'rh-offres'       => ['label' => 'Offres d\'emploi',     'icon' => 'briefcase'],
-            'rh-candidatures' => ['label' => 'Candidatures',         'icon' => 'person-lines-fill'],
-            'rh-stagiaires'   => ['label' => 'Stagiaires',           'icon' => 'person-badge'],
-        ],
-    ],
-    '_archive_formations' => [
-        'label' => 'Formations',
-        'items' => [
-            'rh-formations-dashboard'        => ['label' => 'Tableau de bord',          'icon' => 'speedometer2'],
-            'rh-formations-collaborateurs'   => ['label' => 'Collaborateurs',           'icon' => 'people-fill'],
-            'rh-formations'                  => ['label' => 'Liste des formations',     'icon' => 'list-ul'],
-            'rh-formations-cartographie'     => ['label' => 'Cartographie d\'équipe',   'icon' => 'diagram-3'],
-            'rh-formations-fegems'       => ['label' => 'Inscriptions FEGEMS',      'icon' => 'cloud-arrow-up'],
-            'rh-formations-sessions'     => ['label' => 'Sessions & catalogue',     'icon' => 'calendar3'],
-            'rh-formations-profil'       => ['label' => 'Profil d\'équipe attendu', 'icon' => 'bullseye'],
-            'rh-formations-stats'        => ['label' => 'Statistiques',             'icon' => 'graph-up'],
-            'rh-formations-pluriannuel'  => ['label' => 'Plan pluriannuel',         'icon' => 'graph-up-arrow'],
-            'rh-formations-parametres'   => ['label' => 'Paramètres',               'icon' => 'gear'],
-        ],
-    ],
-    '_archive_entretiens' => [
-        'label' => 'Entretiens',
-        'items' => [
-            'rh-entretiens'        => ['label' => 'Entretiens annuels', 'icon' => 'chat-square-text'],
-        ],
-    ],
-    '_archive_autres' => [
-        'label' => 'Autres',
-        'items' => [
-            'documents' => ['label' => 'Documents',             'icon' => 'folder2'],
-            'fiches-salaire' => ['label' => 'Fiches de salaire', 'icon' => 'receipt'],
-            'messages' => ['label' => 'Messagerie',            'icon' => 'chat-dots'],
-            'email-externe' => ['label' => 'Email',              'icon' => 'envelope'],
-            'contacts'      => ['label' => 'Contacts',           'icon' => 'person-rolodex'],
-            'annuaire'      => ['label' => 'Annuaire',           'icon' => 'telephone'],
-            'alertes'  => ['label' => 'Alertes',               'icon' => 'megaphone'],
-            'fiches-amelioration' => ['label' => 'Amélioration continue', 'icon' => 'lightbulb'],
-            'stats'    => ['label' => 'Statistiques',        'icon' => 'graph-up'],
-            'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
-            'roadmap'      => ['label' => 'Roadmap',          'icon' => 'rocket-takeoff'],
-            'connexions'   => ['label' => 'Connexions',        'icon' => 'person-check'],
-        ],
-    ],
-    '_archive_parametres' => [
-        'label' => 'Paramètres',
-        'items' => [
-            'etablissement'      => ['label' => 'Établissement',       'icon' => 'hospital'],
-            'affichage-planning' => ['label' => 'Affichage planning',  'icon' => 'sliders'],
-            'apparence'          => ['label' => 'Apparence',           'icon' => 'palette'],
-            'config-ia'          => ['label' => 'Config IA',           'icon' => 'cpu'],
-            'email-config'       => ['label' => 'Config Email',        'icon' => 'envelope-at'],
-            'email-templates'    => ['label' => "Templates d'email",    'icon' => 'envelope-paper'],
-            'securite'           => ['label' => 'Sécurité',            'icon' => 'shield-check'],
-            'sauvegardes'        => ['label' => 'Sauvegardes',          'icon' => 'database-down'],
+        'icon'  => 'gear',
+        'sections' => [
+            'config-systeme' => [
+                'label' => 'Système',
+                'items' => [
+                    'etablissement' => ['label' => 'Établissement', 'icon' => 'hospital'],
+                    'apparence'     => ['label' => 'Apparence',     'icon' => 'palette'],
+                    'securite'      => ['label' => 'Sécurité',      'icon' => 'shield-check'],
+                    'sauvegardes'   => ['label' => 'Sauvegardes',   'icon' => 'database-down'],
+                ],
+            ],
+            'config-outils' => [
+                'label' => 'Outils internes',
+                'items' => [
+                    'todos'         => ['label' => 'Tâches',          'icon' => 'check2-square'],
+                    'notes'         => ['label' => 'Notes',           'icon' => 'journal-text'],
+                    'roadmap'       => ['label' => 'Roadmap',         'icon' => 'rocket-takeoff'],
+                    'connexions'   => ['label' => 'Connexions',       'icon' => 'person-check'],
+                    'stats'         => ['label' => 'Statistiques',    'icon' => 'graph-up'],
+                    'import-export' => ['label' => 'Import / Export', 'icon' => 'arrow-down-up'],
+                ],
+            ],
         ],
     ],
 ];
 
-// Module Suggestions : visible uniquement direction/admin ET si flag activé
+// Module Suggestions : retirer si flag désactivé ou rôle non autorisé
 $sugFlag = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'allow_feature_requests'");
-if ($sugFlag === '1' && in_array($admin['role'] ?? '', ['admin', 'direction'])) {
-    $sidebarCategories['outils']['items']['suggestions'] = ['label' => 'Suggestions', 'icon' => 'lightbulb'];
+if ($sugFlag !== '1' || !in_array($admin['role'] ?? '', ['admin', 'direction'])) {
+    unset($sidebarModules['etablissement']['sections']['etab-qualite']['items']['suggestions']);
 }
 
 $activeSection = match($page) {
     'user-edit', 'user-detail' => 'users',
     default => $page,
 };
+
+// Détecter le module qui contient la page active (pour ouvrir uniquement celui-ci par défaut)
+$activeModule = null;
+foreach ($sidebarModules as $modId => $mod) {
+    foreach ($mod['sections'] as $secId => $sec) {
+        if (isset($sec['items'][$activeSection])) {
+            $activeModule = $modId;
+            break 2;
+        }
+    }
+}
+if ($activeModule === null) $activeModule = 'planning'; // fallback : Planning ouvert
 
 // Préférence de thème de l'utilisateur (default | sombre | care)
 $themePref = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$admin['id']]) ?: 'default';
@@ -388,58 +485,73 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
     </button>
   </div>
 
-  <!-- ── Module selector (dropdown placeholder pour switch entre modules) ── -->
-  <button type="button" id="moduleDropdownBtn"
-          class="flex items-center justify-between gap-2 w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] rounded-[10px] px-3 py-2.5 text-left transition-colors group"
-          title="Changer de module">
-    <div class="flex items-center gap-2.5 min-w-0">
-      <div class="w-9 h-9 rounded-lg bg-teal-700/60 grid place-items-center text-[#7dd3a8] shrink-0">
-        <?= ss_icon('calendar3', 'w-5 h-5') ?>
-      </div>
-      <div class="min-w-0">
-        <div class="text-[9.5px] tracking-[0.14em] uppercase text-sb-sub font-medium">Module</div>
-        <div class="font-display text-sm font-semibold text-white truncate">Planning</div>
-      </div>
-    </div>
-    <svg class="w-4 h-4 text-sb-sub group-hover:text-white transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-  </button>
-
-  <!-- ── Navigation dynamique (filtre _archive_* hors-mockup) ── -->
+  <!-- ── Navigation 3 niveaux : Module → Section → Item ── -->
   <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded">
-    <?php foreach ($sidebarCategories as $catId => $cat): if (str_starts_with($catId, '_')) continue; ?>
-    <div class="sidebar-cat flex items-center justify-between text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-4 first:mt-0 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
-         data-cat-toggle="<?= $catId ?>">
-      <span><?= h($cat['label']) ?></span>
-      <svg class="sidebar-cat-chevron w-3 h-3 opacity-60 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <?php foreach ($sidebarModules as $modId => $mod):
+      $modCatId  = 'mod-' . $modId;
+      $isActiveModule = ($modId === $activeModule);
+    ?>
+    <!-- ─── Module (niveau 1) ─── -->
+    <div class="sidebar-module flex items-center gap-2.5 mt-3 first:mt-0 px-2 py-2 rounded-lg cursor-pointer select-none transition-colors
+                <?= $isActiveModule ? 'bg-white/[0.05] text-white' : 'text-sb-text hover:bg-white/[0.03] hover:text-sb-text-hover' ?>
+                <?= $isActiveModule ? '' : 'cat-collapsed' ?>"
+         data-cat-toggle="<?= $modCatId ?>">
+      <div class="w-7 h-7 rounded-md grid place-items-center shrink-0 transition-colors
+                  <?= $isActiveModule ? 'bg-teal-700/60 text-[#7dd3a8]' : 'bg-white/[0.04] text-sb-sub' ?>">
+        <?= ss_icon($mod['icon'], 'w-4 h-4') ?>
+      </div>
+      <span class="font-display text-[13.5px] font-semibold flex-1 truncate tracking-[-0.005em]"><?= h($mod['label']) ?></span>
+      <svg class="sidebar-cat-chevron w-3.5 h-3.5 opacity-50 transition-transform shrink-0
+                  [.cat-collapsed_&]:-rotate-90"
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="6 9 12 15 18 9"/>
       </svg>
     </div>
-    <div class="sidebar-cat-items flex flex-col gap-0.5 [&.collapsed]:hidden" data-cat-body="<?= $catId ?>">
-      <?php foreach ($cat['items'] as $key => $item):
-        $hasBadge = !empty($item['badge']);
-        $badgeTone = $item['badge_tone'] ?? 'warn';
-        $badgeClasses = match ($badgeTone) {
-            'info'   => 'bg-info-bg text-info border border-info-line',
-            'danger' => 'bg-danger-bg text-danger border border-danger-line',
-            'ok'     => 'bg-ok-bg text-ok border border-ok-line',
-            default  => 'bg-warn-bg text-warn border border-warn-line',
-        };
-      ?>
-      <a href="<?= admin_url($key) ?>"
-         class="sidebar-link relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
-                <?= $activeSection === $key ? 'active pl-[15px] bg-[#7dd3a8]/[0.12] !text-white font-medium before:content-[\'\'] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]' : '' ?>"
-         title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
-        <?= ss_icon($item['icon'], 'w-4 h-4 opacity-85 shrink-0') ?>
-        <span class="nav-label flex-1 truncate"><?= h($item['label']) ?></span>
-        <?php if ($hasBadge && $item['badge'] > 0): ?>
-        <span class="ml-auto text-[10px] font-mono font-bold rounded-full px-1.5 py-px shrink-0 <?= $badgeClasses ?>"<?= $key === 'messages' ? ' id="sidebarMsgBadge"' : '' ?>><?= (int) $item['badge'] ?></span>
-        <?php elseif ($key === 'messages'): ?>
-        <span id="sidebarMsgBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
-        <?php elseif ($key === 'email-externe'): ?>
-        <span id="sidebarEmailBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
-        <?php endif; ?>
-      </a>
+
+    <!-- ─── Sections du module (niveau 2 + 3) ─── -->
+    <div class="sidebar-module-body flex flex-col gap-0.5 pl-2 mb-1 [&.collapsed]:hidden
+                <?= $isActiveModule ? '' : 'collapsed' ?>"
+         data-cat-body="<?= $modCatId ?>">
+
+      <?php foreach ($mod['sections'] as $secId => $sec): ?>
+      <!-- Section (niveau 2) -->
+      <div class="sidebar-cat flex items-center justify-between text-[10px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-3 first:mt-2 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
+           data-cat-toggle="<?= $secId ?>">
+        <span><?= h($sec['label']) ?></span>
+        <svg class="sidebar-cat-chevron w-3 h-3 opacity-60 transition-transform [.cat-collapsed_&]:-rotate-90"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="sidebar-cat-items flex flex-col gap-0.5 [&.collapsed]:hidden" data-cat-body="<?= $secId ?>">
+        <?php foreach ($sec['items'] as $key => $item):
+          $hasBadge = !empty($item['badge']);
+          $badgeTone = $item['badge_tone'] ?? 'warn';
+          $badgeClasses = match ($badgeTone) {
+              'info'   => 'bg-info-bg text-info border border-info-line',
+              'danger' => 'bg-danger-bg text-danger border border-danger-line',
+              'ok'     => 'bg-ok-bg text-ok border border-ok-line',
+              default  => 'bg-warn-bg text-warn border border-warn-line',
+          };
+        ?>
+        <!-- Item (niveau 3) -->
+        <a href="<?= admin_url($key) ?>"
+           class="sidebar-link relative flex items-center gap-3 px-2.5 py-1.5 rounded-lg text-[13px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
+                  <?= $activeSection === $key ? 'active pl-[15px] bg-[#7dd3a8]/[0.12] !text-white font-medium before:content-[\'\'] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]' : '' ?>"
+           title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
+          <?= ss_icon($item['icon'], 'w-4 h-4 opacity-85 shrink-0') ?>
+          <span class="nav-label flex-1 truncate"><?= h($item['label']) ?></span>
+          <?php if ($hasBadge && $item['badge'] > 0): ?>
+          <span class="ml-auto text-[10px] font-mono font-bold rounded-full px-1.5 py-px shrink-0 <?= $badgeClasses ?>"<?= $key === 'messages' ? ' id="sidebarMsgBadge"' : '' ?>><?= (int) $item['badge'] ?></span>
+          <?php elseif ($key === 'messages'): ?>
+          <span id="sidebarMsgBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+          <?php elseif ($key === 'email-externe'): ?>
+          <span id="sidebarEmailBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+          <?php endif; ?>
+        </a>
+        <?php endforeach; ?>
+      </div>
       <?php endforeach; ?>
     </div>
     <?php endforeach; ?>

@@ -149,6 +149,16 @@ function ss_icon(string $name, string $class = 'w-4 h-4 opacity-85 shrink-0'): s
             '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
         'plus' =>
             '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+        'heart' =>
+            '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>',
+        'cup-hot' =>
+            '<path d="M3 8h14a2 2 0 012 2v3a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M17 10h3a2 2 0 010 4h-3"/><path d="M7 4c0 1 1 1 1 2s-1 1-1 2"/><path d="M11 3c0 1 1 1 1 2s-1 1-1 2"/>',
+        'calendar-check' =>
+            '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>',
+        'tag' =>
+            '<path d="M20 12l-8 8a2 2 0 01-2.83 0L2 12.83V4a2 2 0 012-2h8.83L20 9.17a2 2 0 010 2.83z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/>',
+        'chat-square-quote' =>
+            '<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M9 10h-.5a1 1 0 100 2h.5v1a1 1 0 01-1 1"/><path d="M14 10h-.5a1 1 0 100 2h.5v1a1 1 0 01-1 1"/>',
         default =>
             '<circle cx="12" cy="12" r="3" fill="currentColor"/>',
     };
