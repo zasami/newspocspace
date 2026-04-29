@@ -18,7 +18,7 @@ $csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 $cspNonce = base64_encode(random_bytes(16));
 define('CSP_NONCE', $cspNonce);
 function nonce(): string { return ' nonce="' . CSP_NONCE . '"'; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' blob: https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; media-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob: https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; media-src 'self' blob:;");
 
 // EMS config
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -161,10 +161,11 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <meta name="apple-mobile-web-app-capable" content="yes">
 <base href="/spoccare/">
 <title><?= h($pageTitle) ?> — SpocCare</title>
-<link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap retiré (newspocspace = base Tailwind/Spocspace Care). bootstrap-icons gardé temporairement pour les pages non-migrées. -->
 <link href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/newspocspace/care/assets/css/care.css?v=<?= APP_VERSION ?>">
+<?php include __DIR__ . '/../tailwind-config.php'; ?>
 </head>
 <body>
 
@@ -248,8 +249,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
     </div>
   </header>
 
-  <!-- Scripts needed BEFORE page content (pages use bootstrap.Modal, adminApiPost, etc.) -->
-  <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS retiré : pages care utilisant bootstrap.Modal seront migrées en Tailwind/JS natif au cas par cas -->
   <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
   <script nonce="<?= $cspNonce ?>">
   // Override AdminURL base for SpocCare

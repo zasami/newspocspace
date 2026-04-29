@@ -185,8 +185,7 @@ if ($user && !empty($deniedPerms)) {
 <link rel="manifest" href="/newspocspace/manifest.json">
 <link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
 <link rel="icon" href="/newspocspace/assets/icons/icon-96x96.png" type="image/png">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
+<!-- Bootstrap retiré (newspocspace = base Tailwind/Spocspace Care). bootstrap-icons gardé temporairement pour les pages non-migrées. -->
 <link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/css/ss-colors.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/spocspace.css?v=<?= $v ?>">
@@ -194,17 +193,7 @@ if ($user && !empty($deniedPerms)) {
 <link rel="stylesheet" href="assets/css/annonces.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/pages-all.css?v=<?= $v ?>">
 <link rel="stylesheet" href="assets/css/themes.css?v=<?= $v ?>">
-<?php if ($themePref === 'care'): ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<?php endif ?>
-<?php if ($cssMode === 'tailwind'): ?>
-<script nonce="<?= $cspNonce ?>" src="/newspocspace/assets/js/vendor/tailwind-browser.min.js"></script>
-<style type="text/tailwindcss">
-@theme { --prefix: tw; }
-</style>
-<?php endif; ?>
+<?php include __DIR__ . '/tailwind-config.php'; ?>
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
@@ -359,7 +348,7 @@ window.__SS__ = {
   pageLabels: <?= json_encode(array_merge(['profile' => 'Mon profil', 'cuisine' => 'Cuisine', 'cuisine-home' => 'Tableau de bord cuisine', 'suggestion-new' => 'Nouvelle suggestion', 'suggestion-detail' => 'Suggestion'], ...array_values(array_map(fn($c) => array_combine(array_keys($c['items']), array_column($c['items'], 'label')), $sidebarNav))), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>
 };
 </script>
-<script nonce="<?= $cspNonce ?>" src="assets/js/vendor/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS retiré : modales/dropdowns Bootstrap des pages non-migrées seront silencieusement no-op jusqu'à leur migration en Tailwind/JS natif -->
 <script nonce="<?= $cspNonce ?>" src="assets/js/zerda-select.js?v=<?= $v ?>"></script>
 <script nonce="<?= $cspNonce ?>" type="module" src="assets/js/app.js?v=<?= $v ?>"></script>
 <script nonce="<?= $cspNonce ?>">

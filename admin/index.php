@@ -35,7 +35,7 @@ $csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 $cspNonce = base64_encode(random_bytes(16));
 define('CSP_NONCE', $cspNonce);
 function nonce(): string { return ' nonce="' . CSP_NONCE . '"'; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:11434 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$cspNonce}' 'strict-dynamic' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob: http://localhost:5876 http://localhost:5877 http://localhost:5878 http://localhost:11434 https://api.deepgram.com wss://api.deepgram.com; worker-src 'self' blob:; media-src 'self' blob:;");
 
 // Load EMS logo + name for sidebar
 $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '';
@@ -332,17 +332,13 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
 <base href="/newspocspace/admin/">
 <title>Admin — SpocSpace</title>
-<link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap retiré (newspocspace = base Tailwind/Spocspace Care). bootstrap-icons gardé temporairement pour les pages non-migrées. -->
 <link href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/themes.css?v=<?= APP_VERSION ?>">
-<?php if ($themePref === 'care'): ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<?php endif ?>
+<?php include __DIR__ . '/../tailwind-config.php'; ?>
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
@@ -446,7 +442,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
     </div>
   </header>
 
-<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS retiré : appels bootstrap.Modal des modales (session expirée, confirm, prompt, raccourcis) seront migrés au cas par cas en JS natif/Tailwind -->
 <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>

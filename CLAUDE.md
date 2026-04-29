@@ -1,234 +1,122 @@
-# CLAUDE.md
+# CLAUDE.md — Newspocspace
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Ce fichier guide tout le travail dans `newspocspace/`. Il **remplace** localement le CLAUDE.md de spocspace pour ce qui concerne le **visuel et le styling**. Le backend, l'API et la logique métier suivent toujours les conventions de [../spocspace/CLAUDE.md](../spocspace/CLAUDE.md).
 
-## Git — Règle obligatoire
+## 1 — Contexte du projet
 
-**IMPORTANT** : Avant de modifier un fichier, toujours committer l'état actuel avec `git add -A && git commit -m "backup avant modif"` pour pouvoir revenir en arrière si besoin.
+**Newspocspace** est un fork visuel de Spocspace, démarré en avril 2026 pour migrer l'app de Bootstrap 5 vers Tailwind CSS avec un design system propre appelé **Spocspace Care**.
 
-## Project Overview
+- **Métier** : SaaS de gestion d'EMS (Établissements Médico-Sociaux) genevois — affilié Fegems.
+- **Vocabulaire EMS à respecter dans les textes UI** : EMS, Fegems, HPCI, BLS-AED, INC, BPSD ; ASSC, ASA, ASE, AFP, CFC ; référent·e, actes délégués, cartographie de compétences. Toujours en français de Suisse romande.
+- **Backend partagé** : la BDD (MariaDB) et la logique PHP/api sont partagées avec spocspace pour l'instant. **Ne pas toucher** à la logique métier ; uniquement au visuel.
+- **Origine du fork** : commit `066d4b3` — les chemins `/spocspace/` ont été remplacés par `/newspocspace/`, le service worker renommé (`ns-v*`), Bootstrap retiré, Tailwind CDN installé.
 
-SpocSpace is an EMS (care home) staff scheduling application for EMS in Geneva. PHP+vanilla JS SPA for employees, server-rendered Bootstrap admin panel for managers. No build tools, no framework — plain PHP backend, ES modules frontend.
+## 2 — Stack visuelle
 
-## Architecture
+### Tailwind CSS (Play CDN)
 
-### Two separate apps sharing one backend
+Configuration globale dans [tailwind-config.php](tailwind-config.php) — **ne PAS modifier la palette** sans en parler. Ce fichier est inclus depuis chaque shell PHP :
 
-1. **Employee SPA** (`/newspocspace/`) — `index.php` shell + SPA router in `assets/js/app.js`
-   - Pages loaded via `fetch()` from `pages/*.php`, JS modules from `assets/js/modules/*.js`
-   - Each module exports `init()` and `destroy()`, dynamically imported via `moduleMap` in `app.js`
-   - API calls go to `api.php` → `api_modules/_routes.php` → action function in module file
-
-2. **Admin panel** (`/newspocspace/admin/`) — server-rendered, `index.php?page=dashboard`
-   - Uses Bootstrap 5, pages in `admin/pages/*.php`
-   - API calls go to `admin/api.php` → `admin/api_modules/_routes.php` → action function
-   - Admin actions prefixed `admin_*` (e.g. `admin_get_users`, `admin_save_assignation`)
-
-### Request flow
-
-```
-POST /newspocspace/api.php  { action: "get_planning_hebdo", ... }
-  → api.php reads _routes.php to find module file
-  → requires api_modules/{module}.php
-  → calls the function named $action()
-```
-
-### Key conventions
-
-- **DB**: `Db::fetch()`, `Db::fetchAll()`, `Db::exec()`, `Db::getOne()` — static methods, prepared statements built-in
-- **IDs**: `Uuid::v4()` — all PKs are CHAR(36) UUIDs
-- **Auth guards**: `require_auth()`, `require_responsable()`, `require_admin()` — defined in `init.php`
-- **Responses**: `respond($data)`, `bad_request()`, `unauthorized()`, `forbidden()`, `not_found()`
-- **Input**: `global $params;` in API action functions (merged from GET/POST/JSON body)
-- **Sanitization**: `Sanitize::email()`, `Sanitize::text()`, `Sanitize::date()`, `Sanitize::int()`, etc.
-- **HTML escaping**: `h($val)` (alias for `htmlspecialchars`)
-- **CSRF**: Auto-sent via `X-CSRF-Token` header; `get_*` actions and auth flow are exempt
-- **Session prefix**: `$_SESSION['ss_user']`, `$_SESSION['ss_csrf_token']`, `$_SESSION['ss_last_activity']`
-
-### JS helpers
-
-- **Employee**: `import { apiPost } from '../helpers.js'` — `apiPost('action_name', {data})`
-- **Admin**: `adminApiPost('action_name', {data})` — global function in `admin/assets/js/helpers.js`
-- Utilities: `escapeHtml()`, `toast()`, `formatDate()`, `statusBadge()`, `absenceTypeBadge()`, `debounce()`
-
-### SPA navigation
-
-Links use `data-link="pageId"` attribute. `app.js` intercepts clicks, calls `loadPage(pageId)` which fetches HTML from `pages/{pageId}.php` and dynamically imports `modules/{pageId}.js`.
-
-### Roles
-
-`collaborateur` < `responsable` < `admin`/`direction`. The admin panel requires `responsable`+.
-
-### Config
-
-- `config/config.php` — loads `.env` file, defines constants (`DB_*`, `APP_*`, pagination, rate limits)
-- `APP_VERSION` used for cache-busting (`?v=` on CSS/JS)
-- Domain-specific: `MAX_DESIRS_PAR_MOIS = 4`, desir submission window days 1-10
-
-### Database schema
-
-Tables: `users`, `fonctions`, `modules`, `etages`, `groupes`, `horaires_types`, `plannings`, `planning_assignations`, `desirs`, `absences`, `besoins_couverture`, `messages`, `rate_limits`. Migrations in `migrations/`.
-
-### Adding a new API action
-
-1. Add the function in the appropriate `api_modules/{module}.php` file
-2. Register the action name in `api_modules/_routes.php` under the module key
-3. For admin actions: same in `admin/api_modules/` with `admin_` prefix
-
-### Adding a new SPA page
-
-1. Create `pages/{name}.php` (HTML template)
-2. Create `assets/js/modules/{name}.js` with `export function init()` and `export function destroy()`
-3. Add entry to `moduleMap` in `assets/js/app.js`
-4. Add nav link with `data-link="{name}"`
-
-### Test data
-
-- **Seed script**: `php migrations/003_seed_employees.php` — crée 100 employés fictifs + plannings + désirs + absences + messages + besoins couverture
-- **Login admin**: `admin@terrassiere.ch` / `Admin2026!`
-- **Login employé**: `{prenom}.{nom}@terrassiere.ch` / `Terr2026!`
-- Le formulaire login a les identifiants admin pré-remplis (temporaire pour tests)
-
-### Planning admin API
-
-Actions dans `admin/api_modules/planning.php` :
-- `admin_get_planning` — planning + assignations d'un mois
-- `admin_create_planning` — créer planning vide (brouillon)
-- `admin_generate_planning` — génération automatique basée sur besoins, taux, désirs, absences
-- `admin_get_planning_stats` — stats heures/user, gaps couverture, totaux
-- `admin_get_planning_refs` — données de référence (users, horaires, modules, fonctions)
-- `admin_save_assignation` — upsert une cellule (horaire, module, statut)
-- `admin_delete_assignation` — supprimer une assignation
-- `admin_clear_planning` — vider un planning (ou un module)
-- `admin_finalize_planning` — passer en provisoire/final
-
-### Admin sidebar
-
-Sidebar rétractable style zasamix : bouton hamburger desktop + mobile. État mini/full persisté dans `localStorage` (`ss_sidebar_mini`). Catégories collapsibles avec persistence (`ss_sidebar_cats`). Sur mobile : sidebar off-canvas + overlay.
-
-### Config EMS
-
-Table `ems_config` (clé-valeur). API dans `admin/api_modules/config.php` :
-- `admin_get_config` — toutes les valeurs + modules avec responsables
-- `admin_save_config` — batch update (clés whitelistées)
-- `admin_assign_module_responsable` — assigner un responsable à un module
-- `admin_generate_structure` — auto-crée N modules + N étages, répartition round-robin
-- `admin_update_module_config` — modifier un module (code, nom, étages, responsable)
-
-Page admin `etablissement` : identité EMS, direction, infirmière chef, RH, structure modules (générateur + cards individuelles), règles planning.
-
-## Architecture de rendu — Migration SSR (2026-04-15+)
-
-Les nouvelles pages et migrations de la SPA employé utilisent le **pattern SSR** : PHP génère le HTML avec les données, JS uniquement pour les interactions. Plan détaillé : [docs/Migration_SSR_Plan.md](docs/Migration_SSR_Plan.md).
-
-### Helpers PHP partagés (`pages/_partials/helpers.php`)
-- `render_stat_card($label, $value, $icon, $variant, $sub=null)` — carte stat palette
-- `render_page_header($title, $icon, $backLink, $backLabel, $actions)` — header + breadcrumb
-- `render_statut_badge($statut)` / `render_type_badge($type)` — badges palette
-- `render_empty_state($message, $icon, $hint=null)` — état vide
-- `render_progress_bar($percent, $label)` — progression
-- `fmt_date_fr($date)` / `fmt_relative($date)` — formatage dates
-
-### Template standard page SPA migrée
 ```php
-<?php
-require_once __DIR__ . '/../init.php';
-if (empty($_SESSION['ss_user'])) { http_response_code(401); exit; }
-require_once __DIR__ . '/_partials/helpers.php';
-// Chargement DB + calculs ici
-?>
-<div class="page-wrap">
-  <?= render_page_header('Titre', 'bi-icon', 'parent', 'Parent') ?>
-  <div class="row g-3 mb-3">
-    <?= render_stat_card('Label', $n, 'bi-check', 'teal') ?>
-  </div>
-  <?php foreach ($items as $i): ?>
-    <div><?= h($i['nom']) ?> <?= render_statut_badge($i['statut']) ?></div>
-  <?php endforeach ?>
-  <?php if (!$items) echo render_empty_state('Aucun élément') ?>
-</div>
+<?php include __DIR__ . '/tailwind-config.php'; ?>      // depuis index.php (racine)
+<?php include __DIR__ . '/../tailwind-config.php'; ?>   // depuis admin/index.php ou care/index.php
 ```
 
-### Règles strictes
-- **`h()` systématique** sur variables user (alias htmlspecialchars)
-- **`nonce="<?= CSP_NONCE ?>"`** sur chaque `<script>`
-- **Check session + role** en tête de chaque page PHP
-- **Prepared statements** uniquement (`Db::fetch`, `Db::fetchAll`, `Db::exec`)
-- **JS minimal** : handlers d'interaction ; après mutation → `location.reload()` (le SW re-cache la page rendue)
-- **API JSON** conservée pour : mutations POST, polling live, long-polling notifications
+> Le fichier expose le design system « Spocspace Care » via `tailwind.config = {...}` au moment du load CDN. Toutes les classes custom (teal-*, ink, muted, line, surface, ok/warn/danger/info, sec-*) sont définies là.
 
-### Ordre de migration
-1. **Phase 1 simples** : mon-stage (prototype), profile, annuaire, fiches-salaire, annonces, documents
-2. **Phase 2 moyennes** : mes-stagiaires, stagiaire-detail, collegues, covoiturage, desirs, vacances, absences, changements, votes, sondages, pv
-3. **Phase 3 complexes** : planning, emails, mur, wiki, report-edit (garde TipTap), repartition, cuisine-*, home
+### Layout de référence
 
-### Sauvegardes & Restauration
+[_layout_tailwind.php](_layout_tailwind.php) — gabarit complet (sidebar + topbar + cards + boutons + badges + progress) en Tailwind/Spocspace Care. Visitable directement via `/newspocspace/_layout_tailwind.php`. Sert de **base de copie** pour les futures pages migrées.
 
-Système de backup/restore à deux niveaux : per-user (admin) et global.
+## 3 — INTERDICTIONS
 
-**Table DB** : `backups` (id, user_id NULL=global, type ENUM user/global, filename, file_size, tables_included JSON, row_counts JSON, checksum_sha256, created_at, created_by)
+- ❌ **PAS de Bootstrap** (CSS ni JS). Retiré du chargement global. Si un appel `bootstrap.Modal(...)` apparaît dans une page non-migrée, c'est attendu (la page sera no-op au niveau modal jusqu'à sa migration).
+- ❌ **PAS de classes Bootstrap** (`btn`, `btn-primary`, `card`, `container`, `row`, `col-*`, `d-flex`, `bg-light`, etc.) dans toute nouvelle page ou modification.
+- ❌ **PAS de couleurs Tailwind par défaut** : `bg-blue-*`, `bg-emerald-*`, `bg-green-*`, `bg-red-*`, `bg-yellow-*`, `bg-gray-*`, `bg-slate-*` interdits.
+- ❌ **PAS de Font Awesome**, pas d'emoji comme icônes UI.
+- ❌ **PAS de hex hardcodés** (sauf `text-[#cfe0db]` typo douce sur sidebar — déjà couvert dans le layout de réf).
 
-**Stockage** : `data/backups/users/{user_id}/` et `data/backups/global/` — protégé par `.htaccess` Deny from all
+## 4 — Règles de styling (obligatoires)
 
-**Format** : ZIP via `ZipArchive` natif PHP. Chaque ZIP contient :
-- `manifest.json` (métadonnées, date, version, checksums)
-- `*.sql` (INSERT statements par table)
-- `files/` (documents uploadés)
-- `checksum.sha256` (intégrité)
+### Couleurs
 
-**Per-user** (admin) :
-- Déclenchement manuel (bouton)
-- Max 5 par user (rotation auto)
-- Scope : documents, messages, emails de l'utilisateur
+| Usage | Tokens à utiliser |
+|---|---|
+| Primaire | `bg-teal-600` `text-teal-600` `border-teal-600` |
+| Hover primaire | `hover:bg-teal-700` |
+| Titres | `text-ink` |
+| Texte courant | `text-ink-2` |
+| Texte secondaire | `text-ink-3` ou `text-muted` |
+| Statut OK | `text-ok` + `bg-ok-bg` + `border-ok-line` |
+| Statut WARN | `text-warn` + `bg-warn-bg` + `border-warn-line` |
+| Statut DANGER | `text-danger` + `bg-danger-bg` + `border-danger-line` |
+| Statut INFO | `text-info` + `bg-info-bg` + `border-info-line` |
+| Bordures | `border-line` (par défaut), `border-line-2`, `border-line-3` |
+| Surfaces | `bg-surface` (cards), `bg-surface-2` (zones secondaires), `bg-surface-3` (input bg) |
+| Fond global | `bg-bg` |
+| Secteurs EMS Fegems | `bg-sec-soins` `bg-sec-hotel` `bg-sec-anim` `bg-sec-int` `bg-sec-tech` `bg-sec-admin` `bg-sec-mgmt` (chacun a son `-bg`) |
 
-**Global** :
-- Automatique : cron quotidien 3h (`scripts/backup_daily.php`)
-- Manuel : bouton admin
-- Rétention : 14 jours quotidiens + 8 hebdomadaires
-- Restauration protégée par code spécial (hashé dans `ems_config`, rate-limited 3 tentatives/h)
+### Polices
 
-**API admin** (`admin/api_modules/backups.php`) :
-- `admin_create_backup` — créer ZIP per-user
-- `admin_list_backups` — lister par user ou global
-- `admin_compare_backup` — diff backup vs état actuel
-- `admin_restore_backup` — restauration (merge ou écrasement)
-- `admin_delete_backup` — suppression manuelle
-- `admin_create_global_backup` — dump complet
-- `admin_restore_global_backup` — restauration totale (code spécial requis)
+- **Titres** (h1-h6) : `font-display` (Fraunces) — appliqué automatiquement
+- **Corps** (body) : `font-body` (Outfit) — appliqué automatiquement
+- **Données techniques, codes, chiffres** : `font-mono tabular-nums` (JetBrains Mono)
 
-**Page admin** : `sauvegardes` — 3 onglets (Mes sauvegardes / Global 🔒 / Configuration)
+### Ombres
 
-**Compatibilité de version** :
-- Table `schema_migrations` : historique de toutes les migrations appliquées
-- `ems_config.schema_version` : numéro de migration courant (ex: 072)
-- Chaque backup contient dans `manifest.json` : `schema_version` + `schema_snapshot` (colonnes de chaque table)
-- A la restauration : comparaison automatique du schéma backup vs actuel
-  - Version backup > actuelle → **refusé** (mettre à jour SpocSpace d'abord)
-  - Version backup < actuelle → **adaptation auto** (colonnes supprimées retirées, nouvelles colonnes = valeurs par défaut)
-  - Version identique → restauration directe
-- Le modal Comparer affiche le rapport de compatibilité (vert/orange/rouge) avec détail des différences de colonnes
+`shadow-sp-sm` `shadow-sp` `shadow-sp-md` `shadow-sp-lg` — calibrées pour le fond pastel.
 
-**Restauration UX** :
-- Comparer : affiche diff (+ajoutés, -supprimés, ~modifiés) → restaurer seulement les différences
-- Écraser : avertissement DANGER rouge, confirmation par saisie "RESTAURER"
-- Global : double confirmation (code spécial + saisie "RESTAURER")
+### Gradients
 
-## Cron quotidien
+`bg-grad-hero` `bg-grad-sidebar` `bg-grad-mark` `bg-grad-progress` — voir [tailwind-config.php](tailwind-config.php).
 
-Script wrapper : [scripts/cron_daily.php](scripts/cron_daily.php) — exécute en séquence :
-1. Génération propositions inscription FEGEMS (si `insc.auto_proposer` = 1)
-2. Auto-création entretiens à échéance (si `entr.auto_creer_a_echeance` = 1)
-3. Recalcul priorités compétences (refresh STORED columns)
+### Composants standards
 
-Lock file : `data/cron_daily.lock` (évite exécutions concurrentes).
+Les snippets de référence (bouton primaire/secondaire, card, badge statut, sidebar) sont dans [_layout_tailwind.php](_layout_tailwind.php). Quand on migre une page, **on copie ces patterns**, on n'invente pas.
 
-**Ligne crontab Infomaniak** (panel d'admin → Cron) :
-```
-0 3 * * *  /usr/bin/php /home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/newspocspace/scripts/cron_daily.php >> /home/clients/c81789f8de36e992da19fb6856aa48f6/logs/cron_spocspace.log 2>&1
-```
+### Icônes
 
-Pour tester manuellement : `php scripts/cron_daily.php`
+- **SVG inline** uniquement, avec `stroke="currentColor"` et `stroke-width="1.8"` ou `2`
+- Tailles standard : `width="14|16|18|20|22"` selon contexte
+- Sources recommandées : Lucide, Feather, Heroicons (outline)
 
-## Travail en cours
+## 5 — Bootstrap-icons (transition)
 
-_(section vidée quand toutes les tâches sont terminées)_
+`bootstrap-icons.min.css` est **gardé temporairement** dans le chargement des shells (`index.php`, `admin/index.php`, `care/index.php`). C'est l'icon-font, pas le framework Bootstrap. Les pages non-migrées utilisent encore `<i class="bi bi-foo">` ; sans cette CSS, elles n'auraient plus d'icônes du tout.
+
+→ **Quand toutes les pages seront migrées en SVG inline**, retirer aussi cette ligne et supprimer `assets/css/vendor/bootstrap-icons.min.css` + `admin/assets/css/vendor/bootstrap-icons.min.css`.
+
+## 6 — État de la migration (à mettre à jour à chaque page faite)
+
+| Phase | Pages | Statut |
+|---|---|---|
+| Shells | `index.php` `admin/index.php` `care/index.php` | ✓ Bootstrap retiré, Tailwind installé. **HTML interne pas encore re-stylé.** |
+| Layout référence | `_layout_tailwind.php` | ✓ |
+| Pages employé SPA | `pages/*.php` (~30) | ❌ aucune migrée |
+| Pages admin | `admin/pages/*.php` (~30) | ❌ aucune migrée |
+| Pages care | `care/pages/*.php` | ❌ aucune migrée |
+
+> Les pages **paraissent cassées visuellement** (mises en page Bootstrap qui n'existent plus). C'est normal et attendu pendant la migration. **Ne pas tenter de "réparer" automatiquement avec un script global.**
+
+## 7 — Process pour migrer une page
+
+1. Identifier la page (ex: `pages/profile.php`)
+2. Ouvrir [_layout_tailwind.php](_layout_tailwind.php) à côté pour s'inspirer du structurel
+3. Récrire le HTML/CSS en remplaçant chaque classe Bootstrap par son équivalent Tailwind/Spocspace Care
+4. Garder la **logique PHP intacte** (queries DB, sessions, sanitization — règles dans [../spocspace/CLAUDE.md](../spocspace/CLAUDE.md))
+5. Tester : la page s'affiche correctement et le backend fonctionne toujours
+6. Mettre à jour la table de §6 et committer
+
+## 8 — Setup git
+
+Repo : `git@github.com:zasami/newspocspace.git` (privé).
+
+Push depuis Infomaniak : la clé SSH dédiée `~/.ssh/id_ed25519_newspocspace` est configurée via `git config core.sshCommand` localement. Donc un `git push` suffit.
+
+## 9 — Quand un futur Claude lit ce fichier
+
+- Si on me demande **« stylise X »** : respecter scrupuleusement Spocspace Care. Pas de Bootstrap. Copier les patterns du layout de référence.
+- Si on me demande de **migrer une page** : suivre le process §7.
+- Si on me demande de **switcher en Tailwind compilé** (npm/vite plus tard) : ne pas retirer le Play CDN sans plan complet de bascule.
+- Si on me demande de **changer la palette** : refuser et renvoyer ici. La palette est validée avec l'utilisateur.
+- Si on me demande **« on fait quoi maintenant »** : la priorité est de migrer les pages **une par une**, pas d'optimiser le bundle ni d'ajouter des features.
