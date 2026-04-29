@@ -19,9 +19,7 @@
 
     <!-- Logo + brand -->
     <div class="relative flex items-center gap-3">
-      <div class="w-11 h-11 rounded-[10px] bg-mark-grad grid place-items-center font-display font-bold text-teal-900 text-xl shadow-mark">
-        S
-      </div>
+      <img src="/newspocspace/ss-logo.png" alt="Spocspace" class="w-11 h-11 shrink-0">
       <div>
         <div class="font-display text-2xl font-semibold text-white tracking-[-0.02em] leading-tight">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.14em] uppercase mt-0.5 font-medium">EMS Platform</div>
