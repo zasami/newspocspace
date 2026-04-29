@@ -198,49 +198,64 @@ if ($user && !empty($deniedPerms)) {
 <body class="<?= h($themeBodyClass) ?>">
 
 <?php if ($user): ?>
-<!-- BACKDROP (mobile) -->
-<div class="fe-sidebar-overlay" id="sidebarOverlay"></div>
+<!-- BACKDROP (mobile) — fe-sidebar-overlay garde le hook spocspace.css (.fe-sidebar-overlay.show{display:block}) -->
+<div id="sidebarOverlay" class="fe-sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden lg:!hidden"></div>
 
-<!-- SIDEBAR -->
-<aside class="fe-sidebar" id="feSidebar">
-  <div class="fe-sidebar-header">
-    <a href="/newspocspace/profile" class="fe-sidebar-brand" data-link="profile" title="Voir mon profil">
-      <?php
-        $avatarUrl = $user['photo'] ?? '';
-        $initials = h(mb_substr($user['prenom'] ?? '', 0, 1) . mb_substr($user['nom'] ?? '', 0, 1));
-      ?>
-      <?php if ($avatarUrl): ?>
-        <img src="<?= h($avatarUrl) ?>" alt="" class="fe-brand-avatar">
-      <?php else: ?>
-        <span class="fe-brand-avatar-circle"><?= $initials ?></span>
-      <?php endif; ?>
-      <span class="fe-brand-text"><?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
+<!-- SIDEBAR — fe-sidebar gardé pour le hook body.no-nav .fe-sidebar{display:none} -->
+<aside id="feSidebar" class="fe-sidebar
+  fixed lg:sticky inset-y-0 left-0 z-40
+  w-60 h-screen overflow-y-auto
+  bg-sidebar-grad text-sb-text font-body
+  p-[18px] flex flex-col gap-7
+  -translate-x-full lg:translate-x-0
+  transition-transform duration-200">
+
+  <!-- ── Brand : logo + Spocspace / EMS Platform ── -->
+  <div class="flex items-center justify-between gap-2 shrink-0">
+    <a href="/newspocspace/profile" data-link="profile" class="flex items-center gap-2.5 px-1 group min-w-0" title="<?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?> — Voir mon profil">
+      <img src="/newspocspace/ss-logo.png" alt="Spocspace" class="w-[34px] h-[34px] shrink-0 rounded-[9px]">
+      <div class="min-w-0">
+        <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
+        <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
+      </div>
     </a>
-    <button class="fe-sidebar-toggle" id="sidebarToggleBtn" title="Réduire le menu">
-      <i class="bi bi-layout-sidebar-inset"></i>
+    <button id="sidebarToggleBtn" class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0" title="Réduire le menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
     </button>
   </div>
-  <nav class="fe-sidebar-nav">
+
+  <!-- ── Navigation dynamique ── -->
+  <nav class="fe-sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1
+              [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded">
     <?php foreach ($sidebarNav as $catId => $cat): ?>
-    <div class="fe-sidebar-cat" data-cat-toggle="<?= $catId ?>">
-      <span class="fe-sidebar-cat-label"><?= h($cat['label']) ?></span>
-      <i class="bi bi-chevron-down fe-sidebar-cat-chevron"></i>
+    <div class="fe-sidebar-cat flex items-center justify-between text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-3 first:mt-0 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
+         data-cat-toggle="<?= $catId ?>">
+      <span><?= h($cat['label']) ?></span>
+      <svg class="w-3 h-3 opacity-60 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
     </div>
-    <div class="fe-sidebar-cat-items" data-cat-body="<?= $catId ?>">
+    <div class="fe-sidebar-cat-items flex flex-col gap-0.5 [&.collapsed]:hidden" data-cat-body="<?= $catId ?>">
       <?php foreach ($cat['items'] as $key => $item):
             $isDisabled = ($key === 'changements' && !$canChangement); ?>
       <a href="/newspocspace/<?= $key ?>"
-         class="fe-sidebar-link<?= $isDisabled ? ' fe-sidebar-link--disabled' : '' ?>"
+         class="fe-sidebar-link relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
+                [&.active]:pl-[15px] [&.active]:bg-[#7dd3a8]/[0.12] [&.active]:text-white [&.active]:font-medium
+                [&.active]:before:content-[''] [&.active]:before:absolute [&.active]:before:left-0 [&.active]:before:top-1/2 [&.active]:before:-translate-y-1/2 [&.active]:before:w-[3px] [&.active]:before:h-4 [&.active]:before:bg-[#7dd3a8] [&.active]:before:rounded-[3px]
+                <?= $isDisabled ? 'opacity-40 pointer-events-none' : '' ?>"
          data-link="<?= $key ?>"
          <?= $isDisabled ? 'data-disabled="1" aria-disabled="true"' : '' ?>
          title="<?= h($item['label']) ?><?= $isDisabled ? ' (non disponible — aucun collègue de même fonction)' : '' ?>">
-        <i class="bi bi-<?= $item['icon'] ?>"></i>
-        <span class="fe-nav-label"><?= h($item['label']) ?></span>
+        <i class="bi bi-<?= $item['icon'] ?> opacity-85 text-[15px] w-4 text-center shrink-0"></i>
+        <span class="flex-1 truncate"><?= h($item['label']) ?></span>
         <?php if ($key === 'emails'): ?>
-        <span class="fe-sidebar-badge" id="msgBadgeSidebar" style="display:none"></span>
+        <span id="msgBadgeSidebar" class="ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
         <?php endif; ?>
         <?php if ($key === 'annonces'): ?>
-        <span class="fe-sidebar-badge" id="annBadgeSidebar" style="display:none"></span>
+        <span id="annBadgeSidebar" class="ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
         <?php endif; ?>
       </a>
       <?php endforeach; ?>
@@ -248,17 +263,35 @@ if ($user && !empty($deniedPerms)) {
     <?php endforeach; ?>
   </nav>
 
-  <div class="fe-sidebar-footer">
-    <?php if (in_array($user['role'], ['admin', 'direction', 'responsable'])): ?>
-    <a href="/newspocspace/admin/" class="fe-sidebar-link fe-sidebar-admin-link" title="Administration">
-      <i class="bi bi-shield-lock"></i>
-      <span class="fe-nav-label">Administration</span>
-    </a>
-    <?php endif; ?>
-    <button class="fe-sidebar-link fe-sidebar-logout-btn w-100 text-start bg-transparent border-0" id="logoutBtn" title="Déconnexion">
-      <i class="bi bi-power"></i>
-      <span class="fe-nav-label">Déconnexion</span>
-    </button>
+  <!-- ── Footer : carte EMS actif + actions ── -->
+  <div class="mt-auto flex flex-col gap-2 shrink-0">
+
+    <!-- Carte EMS actif (style verre dépoli) -->
+    <div class="bg-white/[0.04] border border-white/[0.07] rounded-[10px] p-3">
+      <div class="text-[10px] tracking-[0.12em] uppercase text-sb-sub font-medium">EMS actif</div>
+      <div class="text-white font-medium mt-0.5 text-[13px] truncate"><?= h($emsNom ?: 'SpocSpace') ?></div>
+      <div class="text-[11px] text-sb-muted mt-0.5 font-mono">v<?= APP_VERSION ?></div>
+    </div>
+
+    <!-- Actions : Admin (si rôle) + Déconnexion -->
+    <div class="flex gap-1">
+      <?php if (in_array($user['role'], ['admin', 'direction', 'responsable'])): ?>
+      <a href="/newspocspace/admin/" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[12px] font-medium text-sb-text hover:bg-white/[0.05] hover:text-sb-text-hover transition-colors" title="Administration">
+        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Admin
+      </a>
+      <?php endif; ?>
+      <button id="logoutBtn" type="button" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[12px] font-medium text-sb-text hover:bg-danger/[0.18] hover:text-[#ffb8b3] transition-colors bg-transparent border-0" title="Déconnexion">
+        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sortir
+      </button>
+    </div>
   </div>
 </aside>
 
