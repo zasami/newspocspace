@@ -34,61 +34,67 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-{$
 <div class="flex">
 
   <!-- ============================================================ -->
-  <!-- SIDEBAR — gradient teal foncé                                 -->
+  <!-- SIDEBAR — gradient teal foncé (Spocspace Care)                -->
   <!-- ============================================================ -->
-  <aside class="w-60 bg-grad-sidebar text-[#cfe0db] p-5 sticky top-0 h-screen flex flex-col gap-7">
+  <aside class="w-60 bg-sidebar-grad text-sb-text p-[18px] sticky top-0 h-screen flex flex-col gap-7 font-body">
 
-    <!-- Brand -->
-    <a href="#" class="flex items-center gap-3 group">
-      <div class="w-10 h-10 rounded-xl bg-grad-mark flex items-center justify-center shadow-sp-md">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5"/>
-          <path d="M2 12l10 5 10-5"/>
-        </svg>
+    <!-- Logo : mark "S" + Spocspace + EMS Platform -->
+    <div class="flex items-center gap-2.5 px-1.5">
+      <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-display font-bold text-teal-900 text-lg shadow-mark">
+        S
       </div>
-      <div class="flex flex-col">
-        <span class="font-display text-lg font-semibold text-white tracking-tight">Spocspace</span>
-        <span class="text-xs text-[#7ab5ab] -mt-0.5">EMS Genève</span>
+      <div>
+        <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight">Spocspace</div>
+        <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
-    </a>
+    </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 flex flex-col gap-1 -mx-2 overflow-y-auto">
-      <p class="px-3 mt-2 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#7ab5ab]">Pilotage</p>
+    <nav class="flex-1 flex flex-col gap-1 overflow-y-auto">
 
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-teal-700/60 text-white text-sm font-medium">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <!-- Section : Espace -->
+      <div class="text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-2 font-semibold">Espace</div>
+
+      <a href="#" class="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Tableau de bord
       </a>
 
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-700/40 text-sm transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <a href="#" class="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Planning
       </a>
 
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-700/40 text-sm transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        Collaborateurs
-      </a>
-
-      <p class="px-3 mt-5 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#7ab5ab]">Care</p>
-
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-700/40 text-sm transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>
+      <a href="#" class="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>
         Résidents
       </a>
 
-      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-700/40 text-sm transition-colors">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <!-- Section : Ressources humaines -->
+      <div class="text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-2 mt-5 font-semibold">Ressources humaines</div>
+
+      <a href="#" class="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Collaborateurs
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         Cartographie compétences
+      </a>
+
+      <!-- Item ACTIF — barre verte 3px à gauche + fond mint 12% -->
+      <a href="#" class="relative flex items-center gap-3 pl-[15px] pr-2.5 py-2.5 rounded-lg text-[13.5px] font-medium text-white bg-[#7dd3a8]/[0.12] before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]">
+        <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Plan pluriannuel
       </a>
     </nav>
 
-    <!-- Footer sidebar -->
-    <div class="text-xs text-[#7ab5ab] border-t border-white/10 pt-4">
-      <div class="font-mono">v<?= defined('APP_VERSION') ? APP_VERSION : '0.0' ?></div>
-      <div class="mt-1">SpocSpace · Genève</div>
+    <!-- Footer : carte EMS actif -->
+    <div class="mt-auto bg-white/[0.04] border border-white/[0.07] rounded-[10px] p-3">
+      <div class="text-[10px] tracking-[0.12em] uppercase text-sb-sub font-medium">EMS actif</div>
+      <div class="text-white font-medium mt-0.5 text-[13.5px]">Résidence Les Tilleuls</div>
+      <div class="text-[11.5px] text-sb-muted mt-0.5">Plan-les-Ouates · 84 résidents</div>
     </div>
   </aside>
 

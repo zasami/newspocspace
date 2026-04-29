@@ -95,6 +95,13 @@ $_tw_nonce = $cspNonce ?? '';
           'sec-tech':   { DEFAULT: '#2d4a6b', bg: '#e6ecf2' },
           'sec-admin':  { DEFAULT: '#6b5a1f', bg: '#f0eee3' },
           'sec-mgmt':   { DEFAULT: '#8a3a30', bg: '#fde8e6' },
+
+          // === SIDEBAR (textes & nuances dégradé teal foncé) ===
+          'sb-text':       '#a8c4be',  // items inactifs
+          'sb-text-hover': '#e8f1ee',  // items au hover
+          'sb-section':    '#5d8077',  // titres de sections (Espace, RH, …)
+          'sb-sub':        '#7ea69c',  // sous-titre logo (EMS PLATFORM)
+          'sb-muted':      '#9bbab2',  // sous-texte EMS card
         },
         fontFamily: {
           display: ['Fraunces', 'Georgia', 'serif'],
@@ -106,12 +113,17 @@ $_tw_nonce = $cspNonce ?? '';
           'sp':    '0 4px 16px -4px rgba(13,42,38,0.08), 0 2px 4px rgba(13,42,38,0.04)',
           'sp-md': '0 8px 24px -6px rgba(13,42,38,0.12), 0 3px 8px rgba(13,42,38,0.05)',
           'sp-lg': '0 16px 48px -12px rgba(13,42,38,0.18), 0 4px 12px rgba(13,42,38,0.06)',
+          // Mark logo glow vert clair
+          'mark':  '0 4px 12px rgba(125,211,168,0.3)',
         },
         backgroundImage: {
           'grad-hero':     'linear-gradient(135deg,#164a42 0%, #1f6359 50%, #2d8074 100%)',
           'grad-sidebar':  'linear-gradient(180deg,#0d2a26 0%, #164a42 100%)',
           'grad-mark':     'linear-gradient(135deg,#3da896,#7dd3a8)',
           'grad-progress': 'linear-gradient(90deg,#2d8074,#5cad9b)',
+          // Alias compatibles avec la spec sidebar (bg-sidebar-grad / bg-mark-grad)
+          'sidebar-grad':  'linear-gradient(180deg,#0d2a26 0%, #164a42 100%)',
+          'mark-grad':     'linear-gradient(135deg,#3da896,#7dd3a8)',
         },
       }
     }
