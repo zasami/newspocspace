@@ -1026,17 +1026,18 @@ em{font-style:italic;color:#324e4a}
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Génération…'; }
 
     try {
-      // CSRF token (admin)
-      const csrf = document.querySelector('meta[name="csrf-token"]')?.content
-                 || (typeof window.csrfToken !== 'undefined' ? window.csrfToken : '');
+      // CSRF token (admin) — le token réside dans window.__SS_ADMIN__.csrfToken
+      const csrf = window.__SS_ADMIN__?.csrfToken || '';
 
-      const fd = new FormData();
-      fd.append('action', 'admin_export_plan_formation_pdf');
-      fd.append('html', html);
+      // L'admin api.php attend du JSON, pas FormData. Donc on envoie un JSON
+      // (le HTML est passé tel quel dans le payload).
       const res = await fetch('/spocspace/admin/api.php', {
         method: 'POST',
-        headers: csrf ? { 'X-CSRF-Token': csrf } : {},
-        body: fd,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+        },
+        body: JSON.stringify({ action: 'admin_export_plan_formation_pdf', html }),
         credentials: 'same-origin',
       });
       if (!res.ok) {
