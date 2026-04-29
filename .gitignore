@@ -16,6 +16,9 @@ uploads/
 .claude/
 .grok/
 
+# Composer dependencies (restore via `composer install`)
+vendor/
+
 # Large binaries & AI models
 whisper-local/downloads/
 assets/ai/
@@ -28,6 +31,9 @@ assets/ai/
 *.docx
 *.ogg
 *.mp3
+*.mp4
+*.mov
+*.webm
 
 # Storage (user uploads)
 storage/
