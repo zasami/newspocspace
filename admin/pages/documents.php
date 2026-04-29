@@ -374,7 +374,7 @@ $docServices = Db::fetchAll(
             const st = d.visible == 1
                 ? (d.restrictions > 0 ? '<span class="doc-badge-svc doc-badge-restricted"><i class="bi bi-shield-exclamation"></i> Restreint</span>' : '<span class="doc-badge-svc doc-badge-visible"><i class="bi bi-eye"></i> Visible</span>')
                 : '<span class="doc-badge-svc doc-badge-hidden"><i class="bi bi-eye-slash"></i> Masqué</span>';
-            const url = '/spocspace/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(d.id);
+            const url = '/newspocspace/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(d.id);
             const isArchived = !!d.archived_at;
             const vBadge = d.version > 1 ? ' <span class="doc-version-badge">v' + d.version + '</span>' : '';
             const archBadge = isArchived ? '<span class="doc-badge-svc doc-badge-archived"><i class="bi bi-archive"></i> Archivé</span>' : st;
@@ -510,7 +510,7 @@ $docServices = Db::fetchAll(
 
             // Export PDF
             document.getElementById('docLbExportPdf')?.addEventListener('click', function() {
-                const pdfUrl = '/spocspace/admin/api.php?action=admin_convert_document_pdf&id=' + encodeURIComponent(docId);
+                const pdfUrl = '/newspocspace/admin/api.php?action=admin_convert_document_pdf&id=' + encodeURIComponent(docId);
                 window.open(pdfUrl, '_blank');
             });
 
@@ -518,10 +518,10 @@ $docServices = Db::fetchAll(
             (async () => {
                 try {
                     if (!window.JSZip) {
-                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/newspocspace/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
                     }
                     if (!window.docx) {
-                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                        await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/newspocspace/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
                     }
                     const resp = await fetch(url);
                     const blob = await resp.blob();
@@ -598,7 +598,7 @@ $docServices = Db::fetchAll(
         fd.append('description',document.getElementById('upDesc').value.trim()); fd.append('service_id',zerdaSelect.getValue('#upService'));
         fd.append('file',upFile.files[0]);
         try {
-            const res = await fetch('/spocspace/admin/api.php',{method:'POST',headers:{'X-CSRF-Token':window.__SS_ADMIN__?.csrfToken||''},body:fd});
+            const res = await fetch('/newspocspace/admin/api.php',{method:'POST',headers:{'X-CSRF-Token':window.__SS_ADMIN__?.csrfToken||''},body:fd});
             const j = await res.json(); if (j.csrf) window.__SS_ADMIN__.csrfToken=j.csrf;
             if (j.success) { showToast('Document téléversé','success'); bootstrap.Modal.getInstance(document.getElementById('uploadModal'))?.hide(); document.getElementById('upTitre').value=''; document.getElementById('upDesc').value=''; upFile.value=''; upZone?.classList.remove('d-none'); upPreview?.classList.add('d-none'); loadSvcs(); loadDocs(); }
             else showToast(j.message||'Erreur','error');
@@ -657,7 +657,7 @@ $docServices = Db::fetchAll(
                 fd.append('titre','_'); fd.append('service_id','_'); // not used for versions
                 fd.append('version_note', document.getElementById('newVerNote').value);
                 fd.append('file', file);
-                const r = await fetch('/spocspace/admin/api.php', {method:'POST', headers:{'X-CSRF-Token':window.__SS_ADMIN__?.csrfToken||''}, body:fd}).then(r=>r.json());
+                const r = await fetch('/newspocspace/admin/api.php', {method:'POST', headers:{'X-CSRF-Token':window.__SS_ADMIN__?.csrfToken||''}, body:fd}).then(r=>r.json());
                 if (r.success) { showToast(r.message,'success'); bootstrap.Modal.getInstance(modal)?.hide(); loadDocs(); }
                 else showToast(r.message||'Erreur','error');
             });
@@ -699,14 +699,14 @@ $docServices = Db::fetchAll(
         h += '<div class="flex-grow-1"><strong>' + escapeHtml(cur.original_name) + '</strong> <span class="text-muted small">(' + fmtSize(cur.size) + ')</span>';
         h += '<br><span class="text-muted small">Par ' + escapeHtml((cur.prenom||'')+' '+(cur.nom||'')) + ' — ' + fmtDate(cur.updated_at) + '</span></div>';
         h += '<span class="badge" style="background:#bcd2cb;color:#2d4a43;font-size:.7rem">Actuelle</span>';
-        h += '<a href="/spocspace/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(docId) + '" target="_blank" class="doc-row-btn" title="Voir"><i class="bi bi-eye"></i></a>';
+        h += '<a href="/newspocspace/admin/api.php?action=admin_serve_document&id=' + encodeURIComponent(docId) + '" target="_blank" class="doc-row-btn" title="Voir"><i class="bi bi-eye"></i></a>';
         h += '</div>';
 
         if (!vers.length) {
             h += '<p class="text-center text-muted py-3 small">Aucune version précédente</p>';
         } else {
             vers.forEach(v => {
-                const vUrl = '/spocspace/admin/api.php?action=admin_serve_document_version&id=' + encodeURIComponent(v.id);
+                const vUrl = '/newspocspace/admin/api.php?action=admin_serve_document_version&id=' + encodeURIComponent(v.id);
                 h += '<div class="doc-ver-item">';
                 h += '<span class="doc-ver-badge doc-ver-old">v' + v.version + '</span>';
                 h += '<div class="flex-grow-1"><strong>' + escapeHtml(v.original_name) + '</strong> <span class="text-muted small">(' + fmtSize(v.size) + ')</span>';

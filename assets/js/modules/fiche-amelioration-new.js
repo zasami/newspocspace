@@ -226,7 +226,7 @@ async function submitFiche(isDraft) {
         fd.append('file', attachedFile);
         try {
             const csrf = window.__SS__?.csrfToken || '';
-            await fetch('/spocspace/api.php', {
+            await fetch('/newspocspace/api.php', {
                 method: 'POST',
                 headers: csrf ? { 'X-CSRF-Token': csrf } : {},
                 body: fd,
@@ -237,6 +237,6 @@ async function submitFiche(isDraft) {
 
     toast(isDraft ? 'Brouillon enregistré' : 'Fiche soumise — merci pour votre contribution', 'success');
     setTimeout(() => {
-        window.location.href = '/spocspace/fiches-amelioration';
+        window.location.href = '/newspocspace/fiches-amelioration';
     }, 600);
 }

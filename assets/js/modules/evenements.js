@@ -417,7 +417,7 @@ function contactOrganisateur(ev) {
     if (typeof window.__trNavigate === 'function') {
         window.__trNavigate('emails');
     } else {
-        history.pushState({}, '', '/spocspace/emails');
+        history.pushState({}, '', '/newspocspace/emails');
         window.dispatchEvent(new PopStateEvent('popstate'));
     }
 }

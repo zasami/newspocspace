@@ -182,9 +182,9 @@ if ($user && !empty($deniedPerms)) {
 <meta name="theme-color" content="#1A1A1A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/spocspace/manifest.json">
-<link rel="apple-touch-icon" href="/spocspace/assets/icons/icon-192x192.png">
-<link rel="icon" href="/spocspace/assets/icons/icon-96x96.png" type="image/png">
+<link rel="manifest" href="/newspocspace/manifest.json">
+<link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
+<link rel="icon" href="/newspocspace/assets/icons/icon-96x96.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
@@ -200,7 +200,7 @@ if ($user && !empty($deniedPerms)) {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <?php endif ?>
 <?php if ($cssMode === 'tailwind'): ?>
-<script nonce="<?= $cspNonce ?>" src="/spocspace/assets/js/vendor/tailwind-browser.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/assets/js/vendor/tailwind-browser.min.js"></script>
 <style type="text/tailwindcss">
 @theme { --prefix: tw; }
 </style>
@@ -215,7 +215,7 @@ if ($user && !empty($deniedPerms)) {
 <!-- SIDEBAR -->
 <aside class="fe-sidebar" id="feSidebar">
   <div class="fe-sidebar-header">
-    <a href="/spocspace/profile" class="fe-sidebar-brand" data-link="profile" title="Voir mon profil">
+    <a href="/newspocspace/profile" class="fe-sidebar-brand" data-link="profile" title="Voir mon profil">
       <?php
         $avatarUrl = $user['photo'] ?? '';
         $initials = h(mb_substr($user['prenom'] ?? '', 0, 1) . mb_substr($user['nom'] ?? '', 0, 1));
@@ -240,7 +240,7 @@ if ($user && !empty($deniedPerms)) {
     <div class="fe-sidebar-cat-items" data-cat-body="<?= $catId ?>">
       <?php foreach ($cat['items'] as $key => $item):
             $isDisabled = ($key === 'changements' && !$canChangement); ?>
-      <a href="/spocspace/<?= $key ?>"
+      <a href="/newspocspace/<?= $key ?>"
          class="fe-sidebar-link<?= $isDisabled ? ' fe-sidebar-link--disabled' : '' ?>"
          data-link="<?= $key ?>"
          <?= $isDisabled ? 'data-disabled="1" aria-disabled="true"' : '' ?>
@@ -261,7 +261,7 @@ if ($user && !empty($deniedPerms)) {
 
   <div class="fe-sidebar-footer">
     <?php if (in_array($user['role'], ['admin', 'direction', 'responsable'])): ?>
-    <a href="/spocspace/admin/" class="fe-sidebar-link fe-sidebar-admin-link" title="Administration">
+    <a href="/newspocspace/admin/" class="fe-sidebar-link fe-sidebar-admin-link" title="Administration">
       <i class="bi bi-shield-lock"></i>
       <span class="fe-nav-label">Administration</span>
     </a>
@@ -281,8 +281,8 @@ if ($user && !empty($deniedPerms)) {
       <button class="fe-topbar-hamburger" id="mobileToggle" title="Menu">
         <i class="bi bi-list"></i>
       </button>
-      <a href="/spocspace/home" data-link="home" class="fe-topbar-brand" title="Accueil">
-        <img src="/spocspace/ss-logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
+      <a href="/newspocspace/home" data-link="home" class="fe-topbar-brand" title="Accueil">
+        <img src="/newspocspace/ss-logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
         <span class="fe-conn-status" id="feConnStatus" title="En ligne">
           <span class="fe-conn-dot fe-conn-online"></span>
           <span class="fe-conn-count" id="feConnPending" style="display:none"></span>
@@ -301,17 +301,17 @@ if ($user && !empty($deniedPerms)) {
       <div class="fe-search-results" id="feSearchResults"></div>
     </div>
     <div class="fe-topbar-right">
-      <a href="/spocspace/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
+      <a href="/newspocspace/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
         <i class="bi bi-bell"></i>
         <span class="fe-topbar-notif" style="display:none"></span>
       </a>
       <?php if (!in_array('page_emails', $deniedPerms)): ?>
-      <a href="/spocspace/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
+      <a href="/newspocspace/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
         <i class="bi bi-chat-dots"></i>
         <span class="fe-topbar-notif" id="msgBadge" style="display:none"></span>
       </a>
       <?php endif; ?>
-      <a href="/spocspace/annuaire" data-link="annuaire" class="fe-topbar-icon-btn" title="Annuaire téléphonique">
+      <a href="/newspocspace/annuaire" data-link="annuaire" class="fe-topbar-icon-btn" title="Annuaire téléphonique">
         <i class="bi bi-telephone"></i>
       </a>
       <button class="fe-topbar-icon-btn" id="fullscreenToggle" title="Plein écran">
@@ -364,7 +364,7 @@ window.__SS__ = {
 <script nonce="<?= $cspNonce ?>" type="module" src="assets/js/app.js?v=<?= $v ?>"></script>
 <script nonce="<?= $cspNonce ?>">
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/spocspace/sw.js', { scope: '/spocspace/' }).catch(() => {});
+    navigator.serviceWorker.register('/newspocspace/sw.js', { scope: '/newspocspace/' }).catch(() => {});
 }
 </script>
 </body>

@@ -9,10 +9,10 @@
  *   3. (futur) Relances mail expirations compétences
  *
  * Usage :
- *   php /chemin/vers/spocspace/scripts/cron_daily.php
+ *   php /chemin/vers/newspocspace/scripts/cron_daily.php
  *
  * Cron Infomaniak (panel d'admin > Cron) :
- *   0 3 * * *  /usr/bin/php /home/clients/<USER>/sites/zkriva.com/spocspace/scripts/cron_daily.php >> /home/clients/<USER>/logs/cron_spocspace.log 2>&1
+ *   0 3 * * *  /usr/bin/php /home/clients/<USER>/sites/zkriva.com/newspocspace/scripts/cron_daily.php >> /home/clients/<USER>/logs/cron_spocspace.log 2>&1
  *
  * Lock file pour éviter exécutions concurrentes (en cas de cron qui se chevauche).
  */

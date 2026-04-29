@@ -371,7 +371,7 @@ $isNew = !$pageData;
         loadReviews();
 
         // Dynamic import of rich-editor module
-        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/spocspace/assets/js/rich-editor.js');
+        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/newspocspace/assets/js/rich-editor.js');
         getHTMLFn = getHTML;
         window.__editorConfirm = editorConfirm;
 
@@ -565,7 +565,7 @@ $isNew = !$pageData;
             formData.append('file', pendingUploadFile);
             formData.append('action', 'admin_upload_wiki_image');
             try {
-                const r = await fetch('/spocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken }, body: formData });
+                const r = await fetch('/newspocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken }, body: formData });
                 const res = await r.json();
                 if (res.csrf) window.__SS_CARE__.csrfToken = res.csrf;
                 if (res.success) setCover(res.url);

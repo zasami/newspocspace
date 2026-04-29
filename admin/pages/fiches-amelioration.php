@@ -557,7 +557,7 @@ $faCategorieLabels = [
 
         const attachmentsHtml = (r.attachments && r.attachments.length) ? `
             <div class="fa-section"><div class="fa-section-title"><i class="bi bi-paperclip"></i> Pièces jointes</div>
-                ${r.attachments.map(a => `<a href="/spocspace/admin/api.php?action=admin_download_fiche_amelioration_attachment&id=${esc(a.id)}" target="_blank" class="d-block small">${esc(a.original_name)}</a>`).join('')}
+                ${r.attachments.map(a => `<a href="/newspocspace/admin/api.php?action=admin_download_fiche_amelioration_attachment&id=${esc(a.id)}" target="_blank" class="d-block small">${esc(a.original_name)}</a>`).join('')}
             </div>` : '';
 
         const canPropose = (f.is_anonymous != 1);

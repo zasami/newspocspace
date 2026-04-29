@@ -16,7 +16,7 @@ export function init() {
 
     // Bouton "Ajouter mon adresse" → renvoie vers profile
     document.getElementById('addAdresseBtn')?.addEventListener('click', () => {
-        location.href = '/spocspace/profile';
+        location.href = '/newspocspace/profile';
     });
 }
 

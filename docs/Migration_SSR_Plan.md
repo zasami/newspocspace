@@ -65,7 +65,7 @@ require_once __DIR__ . '/_partials/stat_card.php'; // fonction render_stat_card(
 
 <script nonce="<?= CSP_NONCE ?>">
 // JS minimal — uniquement interactions
-import('/spocspace/assets/js/modules/page-name.js?v=<?= APP_VERSION ?>');
+import('/newspocspace/assets/js/modules/page-name.js?v=<?= APP_VERSION ?>');
 </script>
 ```
 
@@ -260,7 +260,7 @@ Pour chaque page migrée :
 - [ ] **Vérifier** : `require_auth()` ou équivalent en tête du fichier PHP
 - [ ] **Tester** :
   - [ ] Navigation depuis une autre page (via data-link)
-  - [ ] Rechargement direct (`/spocspace/page`)
+  - [ ] Rechargement direct (`/newspocspace/page`)
   - [ ] Mode offline (SW cache)
   - [ ] Responsive mobile
   - [ ] Dark mode si applicable

@@ -362,7 +362,7 @@ async function loadDetail(id) {
             <div class="email-att-grid">
             ${attachments.map(a => {
                 const isImg = a.mime_type && a.mime_type.startsWith('image/');
-                const dlUrl = '/spocspace/api.php?action=download_attachment&id=' + encodeURIComponent(a.id);
+                const dlUrl = '/newspocspace/api.php?action=download_attachment&id=' + encodeURIComponent(a.id);
                 const thumb = isImg
                     ? `<img src="${dlUrl}" class="att-preview-img" alt="">`
                     : `<i class="bi ${getFileIcon(a.mime_type)} att-preview-icon ${getFileColorClass(a.mime_type)}"></i>`;
@@ -456,7 +456,7 @@ async function loadDetail(id) {
         el.addEventListener('click', async (ev) => {
             ev.preventDefault();
             const a = document.createElement('a');
-            a.href = '/spocspace/api.php?action=download_attachment&id=' + encodeURIComponent(el.dataset.attId);
+            a.href = '/newspocspace/api.php?action=download_attachment&id=' + encodeURIComponent(el.dataset.attId);
             a.download = '';
             a.click();
         });
@@ -682,7 +682,7 @@ async function sendEmail() {
                 const headers = {};
                 if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-                const uploadRes = await fetch('/spocspace/api.php', {
+                const uploadRes = await fetch('/newspocspace/api.php', {
                     method: 'POST',
                     body: fd,
                     headers,

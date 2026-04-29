@@ -65,12 +65,12 @@ function doc_fmt_size($bytes) {
     <!-- Service filter pills -->
     <div class="doc-service-pills mb-3">
         <a class="doc-filter-pill <?= !$filterService ? 'active' : '' ?>"
-           href="/spocspace/documents" data-doc-filter="">
+           href="/newspocspace/documents" data-doc-filter="">
             <i class="bi bi-grid-fill pill-icon"></i> Tous
         </a>
         <?php foreach ($services as $s): ?>
             <a class="doc-filter-pill <?= $filterService === $s['id'] ? 'active' : '' ?>"
-               href="/spocspace/documents?service=<?= h($s['id']) ?>" data-doc-filter="<?= h($s['id']) ?>">
+               href="/newspocspace/documents?service=<?= h($s['id']) ?>" data-doc-filter="<?= h($s['id']) ?>">
                 <i class="bi bi-<?= h($s['icone']) ?> pill-icon" <?= $filterService !== $s['id'] ? 'style="color:' . h($s['couleur']) . '"' : '' ?>></i>
                 <?= h($s['nom']) ?>
             </a>
@@ -85,7 +85,7 @@ function doc_fmt_size($bytes) {
         <?php foreach ($filtered as $d):
             [$icon, $iconCls] = doc_icon($d['mime_type']);
             $isHighlight = $highlightId && $d['id'] === $highlightId;
-            $viewUrl = '/spocspace/api.php?action=serve_document&id=' . urlencode($d['id']);
+            $viewUrl = '/newspocspace/api.php?action=serve_document&id=' . urlencode($d['id']);
         ?>
             <div class="doc-card<?= $isHighlight ? ' doc-highlight' : '' ?>"
                  data-doc-id="<?= h($d['id']) ?>"

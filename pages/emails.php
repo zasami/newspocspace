@@ -14,7 +14,7 @@ $emailContacts = Db::fetchAll(
 );
 ?>
 <!-- Messagerie interne — Split-view client -->
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <div class="adm-email-split">
 

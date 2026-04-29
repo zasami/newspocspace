@@ -114,7 +114,7 @@ export function init() {
         fd.append('avatar', file);
         fd.append('action', 'upload_avatar');
         try {
-            const res = await fetch('/spocspace/api.php', {
+            const res = await fetch('/newspocspace/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS__?.csrfToken || '' },
                 body: fd,

@@ -14,7 +14,7 @@ if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['adm
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diagnostic Web Speech API</title>
-    <link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light p-5">
     <div class="container">

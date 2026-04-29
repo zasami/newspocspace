@@ -23,7 +23,7 @@ if ($pvDetailId) {
 }
 ?>
 <!-- PV Detail Page -->
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <style>
 .pv-editor-card { display: flex; flex-direction: column; overflow: hidden; }
@@ -777,7 +777,7 @@ let pvData = null;
 const ssrPvData = <?= $pvDetailData ? json_encode($pvDetailData, JSON_HEX_TAG | JSON_HEX_APOS) : 'null' ?>;
 
 async function initPvdetailPage() {
-  editorModule = await import('/spocspace/assets/js/rich-editor.js');
+  editorModule = await import('/newspocspace/assets/js/rich-editor.js');
 
   pvId = AdminURL.currentId();
   if (!pvId) {
@@ -829,7 +829,7 @@ async function initPvdetailPage() {
     var audioCard = document.getElementById('cardAudioOriginal');
     var audioPlayer = document.getElementById('pvAudioPlayer');
     audioCard.classList.remove('pv-hidden');
-    audioPlayer.src = '/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId + '&t=' + Date.now();
+    audioPlayer.src = '/newspocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId + '&t=' + Date.now();
   }
 
   // Button handlers

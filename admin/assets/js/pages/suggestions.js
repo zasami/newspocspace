@@ -171,7 +171,7 @@
 
         const attachHtml = (r.attachments || []).length
             ? r.attachments.map(a => {
-                const url = `/spocspace/admin/api.php?action=admin_download_suggestion_attachment&id=${encodeURIComponent(a.id)}`;
+                const url = `/newspocspace/admin/api.php?action=admin_download_suggestion_attachment&id=${encodeURIComponent(a.id)}`;
                 const ico = a.kind === 'photo' ? 'bi-image' : a.kind === 'audio' ? 'bi-music-note' : 'bi-file-earmark';
                 const audio = a.kind === 'audio' ? `<audio controls class="w-100 mt-1" src="${url}" preload="metadata"></audio>` : '';
                 return `<div class="border rounded p-2 mb-1 small"><i class="bi ${ico}"></i> <a href="${url}" target="_blank">${escapeHtml(a.original_name)}</a> <span class="text-muted">(${Math.round(a.size_bytes/1024)} Ko)</span>${audio}</div>`;

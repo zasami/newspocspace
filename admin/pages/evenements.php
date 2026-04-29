@@ -910,7 +910,7 @@ $initList = Db::fetchAll(
         formData.append('action', 'admin_upload_evenement_image');
 
         try {
-            const resp = await fetch('/spocspace/admin/api.php', {
+            const resp = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: formData

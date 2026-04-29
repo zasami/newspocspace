@@ -628,7 +628,7 @@ async function uploadSingle() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Upload...';
 
     try {
-        const resp = await fetch('/spocspace/admin/api.php', {
+        const resp = await fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
             body: fd,
@@ -802,7 +802,7 @@ async function uploadBulk() {
         fd.append('file', f.file);
 
         try {
-            const resp = await fetch('/spocspace/admin/api.php', {
+            const resp = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd,
@@ -839,7 +839,7 @@ async function uploadBulk() {
 }
 
 function viewFiche(id) {
-    window.open(`/spocspace/admin/api.php?action=admin_serve_fiche_salaire&id=${id}`, '_blank');
+    window.open(`/newspocspace/admin/api.php?action=admin_serve_fiche_salaire&id=${id}`, '_blank');
 }
 
 async function deleteFiche(id) {

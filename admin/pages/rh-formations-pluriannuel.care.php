@@ -1031,7 +1031,7 @@ em{font-style:italic;color:#324e4a}
 
       // L'admin api.php attend du JSON, pas FormData. Donc on envoie un JSON
       // (le HTML est passé tel quel dans le payload).
-      const res = await fetch('/spocspace/admin/api.php', {
+      const res = await fetch('/newspocspace/admin/api.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

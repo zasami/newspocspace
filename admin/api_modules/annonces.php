@@ -214,7 +214,7 @@ function admin_upload_annonce_image()
     $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
     if ($sanErr) { @unlink($storageDir . $filename); bad_request($sanErr); }
 
-    $url = '/spocspace/assets/uploads/annonces/' . $filename;
+    $url = '/newspocspace/assets/uploads/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
 
@@ -260,7 +260,7 @@ function admin_save_pixabay_annonce()
     imagewebp($img, $storageDir . $filename, 82);
     imagedestroy($img);
 
-    $url = '/spocspace/assets/uploads/annonces/' . $filename;
+    $url = '/newspocspace/assets/uploads/annonces/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
 

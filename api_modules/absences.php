@@ -103,7 +103,7 @@ function upload_absence_justificatif()
         bad_request('Erreur lors de l\'enregistrement');
     }
 
-    $path = '/spocspace/storage/justificatifs/' . $filename;
+    $path = '/newspocspace/storage/justificatifs/' . $filename;
     $originalName = basename($file['name']);
 
     Db::exec(

@@ -406,7 +406,7 @@ async function uploadJustificatif(e) {
     fd.append('file', file);
     try {
         const csrfToken = window.__SS_ADMIN__?.csrfToken || '';
-        const resp = await fetch('/spocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: fd });
+        const resp = await fetch('/newspocspace/admin/api.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: fd });
         const res = await resp.json();
         if (res.csrf) window.__SS_ADMIN__.csrfToken = res.csrf;
         if (res.success) {

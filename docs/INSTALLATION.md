@@ -44,7 +44,7 @@ log_errors          = On
    propres à chaque client).
 2. Brancher la clé sur la machine du client (ou se connecter en SFTP).
 3. Déposer le dossier `spocspace/` dans le document root du serveur web
-   (ex: `/var/www/html/spocspace/` ou `/home/clients/CLIENT/sites/DOMAINE/`).
+   (ex: `/var/www/html/newspocspace/` ou `/home/clients/CLIENT/sites/DOMAINE/`).
 
 ### Option B — Depuis git (recommandé)
 ```bash
@@ -102,10 +102,10 @@ Le script affiche :
 ════════════════════════════════════════════════════════════════
 
 Token : 3b7c...8f2a (48 caractères hex)
-Fichier : /chemin/spocspace/storage/.install-enabled
+Fichier : /chemin/newspocspace/storage/.install-enabled
 
 Ouvre cette URL dans ton navigateur :
-  https://exemple-client.ch/spocspace/install.php?key=3b7c...8f2a
+  https://exemple-client.ch/newspocspace/install.php?key=3b7c...8f2a
 ```
 
 **Copier cette URL** — c'est la seule manière d'accéder à l'installeur.
@@ -173,7 +173,7 @@ Bouton final : « Aller à la page de connexion ».
 
 ## 6. Premier login + test
 
-1. Ouvrir `https://exemple-client.ch/spocspace/login`
+1. Ouvrir `https://exemple-client.ch/newspocspace/login`
 2. Se connecter avec l'email + mot de passe admin créés à l'étape 5
 3. Vérifier l'accès au panneau admin (`/admin`)
 4. Aller dans **Établissement** et compléter la structure (modules, étages)
@@ -186,7 +186,7 @@ Bouton final : « Aller à la page de connexion ».
 - [ ] **Rotation du mot de passe MySQL** si créé par l'hébergeur
 - [ ] **Certificat HTTPS valide** (Let's Encrypt ou autre)
 - [ ] **Vérifier que `.env` et `.env.local` ne sont pas accessibles via
-      navigateur** — tester `https://client.ch/spocspace/.env` → doit
+      navigateur** — tester `https://client.ch/newspocspace/.env` → doit
       renvoyer 403
 - [ ] **Tester la sauvegarde** automatique : vérifier que `data/backups/`
       reçoit bien un fichier ZIP quotidien (cron à 3h). Si le cron n'est
@@ -195,7 +195,7 @@ Bouton final : « Aller à la page de connexion ».
       0 3 * * * cd /chemin/spocspace && php scripts/backup_daily.php > /dev/null 2>&1
       ```
 - [ ] **Activer un moniteur uptime** (ex: UptimeRobot) sur
-      `https://client.ch/spocspace/api.php?action=me` (doit répondre 401,
+      `https://client.ch/newspocspace/api.php?action=me` (doit répondre 401,
       c'est normal)
 - [ ] **Configurer SMTP** pour les emails (admin → Paramètres → Email
       externe) : sans SMTP, les emails sortants passent par `mail()` PHP

@@ -25,7 +25,7 @@ $stats = Db::fetch(
       <small class="text-muted">Demandes d'inscription en ligne (étape 1 du dossier)</small>
     </div>
     <div class="d-flex gap-2">
-      <a href="/spocspace/website/admissions.php#formulaire" target="_blank" class="btn btn-sm btn-outline-secondary">
+      <a href="/newspocspace/website/admissions.php#formulaire" target="_blank" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-box-arrow-up-right"></i> Voir formulaire public
       </a>
     </div>
@@ -295,7 +295,7 @@ $stats = Db::fetch(
 
           <div class="small text-muted">
             <i class="bi bi-link-45deg"></i> Lien de suivi famille :
-            <a href="/spocspace/website/admissions-suivi.php?token=${escapeHtml(c.token_acces)}" target="_blank">ouvrir</a>
+            <a href="/newspocspace/website/admissions-suivi.php?token=${escapeHtml(c.token_acces)}" target="_blank">ouvrir</a>
             · IP : ${escapeHtml(c.ip_soumission || 'n/a')}
           </div>
         </div>

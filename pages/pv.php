@@ -2,8 +2,8 @@
 $pvRefModules = Db::fetchAll("SELECT id, nom, code FROM modules ORDER BY ordre, nom");
 ?>
 <!-- PV Page - Split View (List + Detail) -->
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/emoji-picker.css">
 <div class="split-view">
 
 

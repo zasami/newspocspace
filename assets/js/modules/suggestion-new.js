@@ -133,7 +133,7 @@ async function uploadOne(sugId, file) {
     fd.append('action', 'upload_suggestion_attachment');
     fd.append('suggestion_id', sugId);
     fd.append('file', file);
-    const res = await fetch('/spocspace/api.php', {
+    const res = await fetch('/newspocspace/api.php', {
         method: 'POST',
         headers: { 'X-CSRF-Token': window.__SS__?.csrfToken || '' },
         body: fd,

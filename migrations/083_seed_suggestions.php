@@ -498,5 +498,5 @@ echo "  - $created suggestions créées\n";
 echo "  - $totalVotes votes ajoutés\n";
 echo "  - $totalComments commentaires ajoutés\n";
 echo "\n🔗 Accès :\n";
-echo "  - Employé : /spocspace/suggestions\n";
-echo "  - Admin   : /spocspace/admin/suggestions\n";
+echo "  - Employé : /newspocspace/suggestions\n";
+echo "  - Admin   : /newspocspace/admin/suggestions\n";

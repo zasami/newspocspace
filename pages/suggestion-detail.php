@@ -308,7 +308,7 @@ $auteurLbl = trim(($sug['auteur_prenom'] ?? '') . ' ' . ($sug['auteur_nom'] ?? '
         <div class="sgd-card-title"><i class="bi bi-paperclip"></i> Pièces jointes</div>
         <div class="sgd-att-list">
             <?php foreach ($attachments as $a):
-                $url = '/spocspace/api.php?action=download_suggestion_attachment&id=' . urlencode($a['id']);
+                $url = '/newspocspace/api.php?action=download_suggestion_attachment&id=' . urlencode($a['id']);
                 $ico = 'bi-file-earmark';
                 if ($a['kind'] === 'photo') $ico = 'bi-image';
                 elseif ($a['kind'] === 'audio') $ico = 'bi-music-note';

@@ -670,7 +670,7 @@ for ($i = 0; $i < 7; $i++) {
             if (a) {
               const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
               if (a.statut === 'absent' && absType) {
-                if (absType === 'vacances') nomContent += '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon"> ';
+                if (absType === 'vacances') nomContent += '<img src="/newspocspace/assets/webp/vacances_1.webp" class="rep-abs-icon"> ';
                 else { const icons = {maladie:'bi-bandaid',accident:'bi-exclamation-triangle',formation:'bi-mortarboard',conge_special:'bi-calendar-heart'}; nomContent += '<i class="bi ' + (icons[absType]||'bi-dash-circle') + ' rep-abs-icon"></i> '; }
               }
               nomContent += escapeHtml((a.user_prenom || '') + ' ' + (a.user_nom || ''));

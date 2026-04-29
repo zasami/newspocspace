@@ -718,7 +718,7 @@ $infChefUser = $infChefId ? Db::fetch("SELECT id, prenom, nom, email, telephone 
             const fd = new FormData();
             fd.append('image', e.target.files[0]);
             fd.append('action', 'admin_upload_pinned_image');
-            const res = await fetch('/spocspace/admin/api.php', {
+            const res = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST', body: fd,
                 headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' }
             }).then(r => r.json());
@@ -819,7 +819,7 @@ $infChefUser = $infChefId ? Db::fetch("SELECT id, prenom, nom, email, telephone 
             fd.append('logo', file);
             fd.append('action', 'admin_upload_logo');
             try {
-                const res = await fetch('/spocspace/admin/api.php', {
+                const res = await fetch('/newspocspace/admin/api.php', {
                     method: 'POST',
                     headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                     body: fd

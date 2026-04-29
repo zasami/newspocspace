@@ -91,28 +91,28 @@
   <!-- SpocSpace SPA -->
   <rect x="20" y="215" width="200" height="90" rx="14" fill="url(#gGreen)" filter="url(#shadow)"/>
   <text x="120" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">SpocSpace SPA</text>
-  <text x="120" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/</text>
+  <text x="120" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/newspocspace/</text>
   <text x="120" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Planning, Desirs, Absences</text>
   <text x="120" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Messages, Mur social, PV</text>
 
   <!-- Admin Panel -->
   <rect x="240" y="215" width="200" height="90" rx="14" fill="url(#gBlue)" filter="url(#shadow)"/>
   <text x="340" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Admin Panel</text>
-  <text x="340" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/admin/</text>
+  <text x="340" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/newspocspace/admin/</text>
   <text x="340" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Gestion users, Planning IA</text>
   <text x="340" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">RH, Config, Statistiques</text>
 
   <!-- SpocCare -->
   <rect x="460" y="215" width="200" height="90" rx="14" fill="url(#gPurple)" filter="url(#shadow)"/>
   <text x="560" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">SpocCare</text>
-  <text x="560" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/care/</text>
+  <text x="560" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/newspocspace/care/</text>
   <text x="560" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Residents, Marquage linge</text>
   <text x="560" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Menus, Protection, Hygiene</text>
 
   <!-- Site Vitrine -->
   <rect x="680" y="215" width="200" height="90" rx="14" fill="url(#gTeal)" filter="url(#shadow)"/>
   <text x="780" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Site Vitrine</text>
-  <text x="780" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/spocspace/website/</text>
+  <text x="780" y="258" text-anchor="middle" font-size="9" fill="#fff" opacity=".8">/newspocspace/website/</text>
   <text x="780" y="275" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Presentation EMS, Menus</text>
   <text x="780" y="287" text-anchor="middle" font-size="8" fill="#fff" opacity=".6">Animations, Recrutement</text>
 

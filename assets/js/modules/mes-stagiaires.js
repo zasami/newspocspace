@@ -12,7 +12,7 @@ function handleClick(e) {
     const card = e.target.closest('[data-open-stagiaire]');
     if (!card) return;
     const id = card.dataset.openStagiaire;
-    history.pushState({}, '', `/spocspace/stagiaire-detail?id=${id}`);
+    history.pushState({}, '', `/newspocspace/stagiaire-detail?id=${id}`);
     window.dispatchEvent(new PopStateEvent('popstate'));
 }
 

@@ -559,7 +559,7 @@ $expiredCount = (int)Db::getOne("SELECT COUNT(*) FROM wiki_pages WHERE archived_
         `;
 
         // Render content with TipTap viewer (same rendering as editor)
-        const { createViewer, destroyEditor } = await import('/spocspace/assets/js/rich-editor.js');
+        const { createViewer, destroyEditor } = await import('/newspocspace/assets/js/rich-editor.js');
         const mount = document.getElementById('wikiViewerMount');
         if (p.contenu) {
             currentViewer = await createViewer(mount, p.contenu);

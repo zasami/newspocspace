@@ -53,7 +53,7 @@ function handleClick(e) {
     if (pill) {
         e.preventDefault();
         const svc = pill.dataset.docFilter;
-        const url = svc ? `/spocspace/documents?service=${encodeURIComponent(svc)}` : '/spocspace/documents';
+        const url = svc ? `/newspocspace/documents?service=${encodeURIComponent(svc)}` : '/newspocspace/documents';
         history.pushState({}, '', url);
         window.dispatchEvent(new PopStateEvent('popstate'));
         return;

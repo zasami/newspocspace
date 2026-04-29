@@ -698,7 +698,7 @@ for ($i = 0; $i < 7; $i++) {
   // ─── Absence icon helper ───
   function absenceIcon(type) {
     if (type === 'vacances') {
-      return '<img src="/spocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V" title="Vacances">';
+      return '<img src="/newspocspace/assets/webp/vacances_1.webp" class="rep-abs-icon" alt="V" title="Vacances">';
     }
     const icons = {
       maladie: 'bi-bandaid', accident: 'bi-exclamation-triangle',

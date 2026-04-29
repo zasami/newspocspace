@@ -71,7 +71,7 @@ export async function apiPost(action, data = {}) {
     }
 
     try {
-        const res = await fetch('/spocspace/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
+        const res = await fetch('/newspocspace/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
         const json = await res.json();
 
         // Update CSRF token if returned

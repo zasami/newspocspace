@@ -374,7 +374,7 @@ function admin_upload_user_avatar()
     imagewebp($dest, $uploadDir . $filename, 85);
     imagedestroy($dest);
 
-    $photoUrl = '/spocspace/storage/avatars/' . $filename;
+    $photoUrl = '/newspocspace/storage/avatars/' . $filename;
     Db::exec("UPDATE users SET photo = ? WHERE id = ?", [$photoUrl, $userId]);
 
     respond(['success' => true, 'photo_url' => $photoUrl, 'message' => 'Photo mise à jour']);
@@ -393,7 +393,7 @@ function admin_delete_user_avatar()
 
     // Delete file if exists
     if ($user['photo']) {
-        $path = __DIR__ . '/../../' . ltrim($user['photo'], '/spocspace/');
+        $path = __DIR__ . '/../../' . ltrim($user['photo'], '/newspocspace/');
         if (file_exists($path)) unlink($path);
     }
 

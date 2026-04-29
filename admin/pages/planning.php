@@ -1185,7 +1185,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
                         if (absType) {
                             // Absence icon by type
                             const absIcons = {
-                                vacances: '<img src="/spocspace/assets/webp/vacances_1.webp" class="dc-abs-icon" title="Vacances">',
+                                vacances: '<img src="/newspocspace/assets/webp/vacances_1.webp" class="dc-abs-icon" title="Vacances">',
                                 maladie: '<i class="bi bi-thermometer-half dc-abs-bi" style="color:#DC2626" title="Maladie"></i>',
                                 accident: '<i class="bi bi-bandaid dc-abs-bi" style="color:#E65100" title="Accident"></i>',
                                 conge_special: '<i class="bi bi-calendar-heart dc-abs-bi" style="color:#7C3AED" title="Congé spécial"></i>',
@@ -1291,7 +1291,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
             td.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const uid = link.dataset.userId;
-                if (uid) window.location.href = '/spocspace/admin/user-detail/' + encodeURIComponent(uid);
+                if (uid) window.location.href = '/newspocspace/admin/user-detail/' + encodeURIComponent(uid);
             });
         });
 
@@ -2615,7 +2615,7 @@ $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions OR
 
         const win = window.open('', '_blank');
         win.document.write(`<!DOCTYPE html><html><head><title>Planning ${mois}</title>
-        <link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+        <link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
         <style>
           body { font-size: 10px; padding: 10px; }
           table { width: 100%; border-collapse: collapse; }

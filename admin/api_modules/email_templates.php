@@ -154,12 +154,12 @@ function admin_preview_email_template()
         'code_suivi' => 'TERR-2026-AB1234',
         'date' => date('d.m.Y'),
         'password' => 'Temp2026!',
-        'url_login' => 'https://www.zkriva.com/spocspace/login',
-        'reset_link' => 'https://www.zkriva.com/spocspace/reset/xxx',
+        'url_login' => 'https://www.zkriva.com/newspocspace/login',
+        'reset_link' => 'https://www.zkriva.com/newspocspace/reset/xxx',
         'expires_hours' => '24',
         'mois' => 'Avril',
         'annee' => date('Y'),
-        'url_planning' => 'https://www.zkriva.com/spocspace/planning',
+        'url_planning' => 'https://www.zkriva.com/newspocspace/planning',
     ];
 
     // Use provided blocks if given (preview unsaved)
@@ -297,12 +297,12 @@ function admin_send_test_email_template()
         'code_suivi' => 'TEST-' . strtoupper(substr(md5(uniqid()), 0, 6)),
         'date' => date('d.m.Y'),
         'password' => 'TestPwd2026!',
-        'url_login' => 'https://www.zkriva.com/spocspace/login',
-        'reset_link' => 'https://www.zkriva.com/spocspace/reset/test',
+        'url_login' => 'https://www.zkriva.com/newspocspace/login',
+        'reset_link' => 'https://www.zkriva.com/newspocspace/reset/test',
         'expires_hours' => '24',
         'mois' => date('F'),
         'annee' => date('Y'),
-        'url_planning' => 'https://www.zkriva.com/spocspace/planning',
+        'url_planning' => 'https://www.zkriva.com/newspocspace/planning',
     ];
 
     $ok = EmailTemplate::send($key, $toEmail, $samples, $user['id']);

@@ -124,7 +124,7 @@ async function uploadJustificatif(absenceId, file) {
         const headers = {};
         if (csrfMeta) headers['X-CSRF-Token'] = csrfMeta.content;
 
-        const resp = await fetch('/spocspace/api.php', {
+        const resp = await fetch('/newspocspace/api.php', {
             method: 'POST',
             headers,
             body: fd

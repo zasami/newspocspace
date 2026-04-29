@@ -13,7 +13,7 @@ async function handleClick(e) {
     // Éditer un report → navigation vers report-edit?id=...
     const editBtn = e.target.closest('[data-edit-report]');
     if (editBtn) {
-        history.pushState({}, '', `/spocspace/report-edit?id=${editBtn.dataset.editReport}`);
+        history.pushState({}, '', `/newspocspace/report-edit?id=${editBtn.dataset.editReport}`);
         window.dispatchEvent(new PopStateEvent('popstate'));
         return;
     }

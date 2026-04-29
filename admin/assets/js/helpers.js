@@ -12,7 +12,7 @@ window.adminApiPost = async function adminApiPost(action, data = {}) {
     }
 
     try {
-        const res = await fetch('/spocspace/admin/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
+        const res = await fetch('/newspocspace/admin/api.php', { method: 'POST', headers, body: JSON.stringify(body) });
         if (res.status === 401 && action !== 'admin_get_session_ping') {
             window.__ssShowSessionExpired?.();
             return { success: false, message: 'Session expirée' };

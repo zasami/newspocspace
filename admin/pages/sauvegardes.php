@@ -458,7 +458,7 @@
 
     // ─── Download ───
     window.bkDownload = function(id) {
-        window.open('/spocspace/admin/api.php?action=admin_download_backup&backup_id=' + id, '_blank');
+        window.open('/newspocspace/admin/api.php?action=admin_download_backup&backup_id=' + id, '_blank');
     };
 
     // ─── Delete ───

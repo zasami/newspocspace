@@ -53,15 +53,15 @@ if ($filter !== 'archived') {
 
     <!-- Filtres -->
     <div class="notif-filters mb-3">
-        <a class="notif-filter-btn <?= $filter === 'active' ? 'active' : '' ?>" href="/spocspace/notifications" data-filter="active">
+        <a class="notif-filter-btn <?= $filter === 'active' ? 'active' : '' ?>" href="/newspocspace/notifications" data-filter="active">
             <i class="bi bi-bell"></i> Toutes
             <?php if ($countAll): ?><span class="notif-filter-count"><?= $countAll ?></span><?php endif ?>
         </a>
-        <a class="notif-filter-btn <?= $filter === 'unread' ? 'active' : '' ?>" href="/spocspace/notifications/unread" data-filter="unread">
+        <a class="notif-filter-btn <?= $filter === 'unread' ? 'active' : '' ?>" href="/newspocspace/notifications/unread" data-filter="unread">
             <i class="bi bi-bell-fill"></i> Non lues
             <?php if ($countUnread): ?><span class="notif-filter-count notif-filter-count-unread"><?= $countUnread ?></span><?php endif ?>
         </a>
-        <a class="notif-filter-btn <?= $filter === 'archived' ? 'active' : '' ?>" href="/spocspace/notifications/archived" data-filter="archived">
+        <a class="notif-filter-btn <?= $filter === 'archived' ? 'active' : '' ?>" href="/newspocspace/notifications/archived" data-filter="archived">
             <i class="bi bi-archive"></i> Archivées
             <?php if ($countArchived): ?><span class="notif-filter-count"><?= $countArchived ?></span><?php endif ?>
         </a>

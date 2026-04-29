@@ -321,7 +321,7 @@ $sharedContacts = (int) Db::getOne("SELECT COUNT(*) FROM email_externe_contacts 
         if (window.ztCompose) {
             // Can't send external email via internal compose — navigate to email-externe
         }
-        window.location.href = '/spocspace/admin/email-externe';
+        window.location.href = '/newspocspace/admin/email-externe';
         // TODO: pre-fill compose with contact email
     }
 

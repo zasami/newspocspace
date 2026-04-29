@@ -252,7 +252,7 @@ $isNew = !$annonceData;
         initImageModal();
 
         // TipTap
-        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/spocspace/assets/js/rich-editor.js');
+        const { createEditor, getHTML, destroyEditor, editorConfirm } = await import('/newspocspace/assets/js/rich-editor.js');
         window.__editorConfirm = editorConfirm;
         getHTMLFn = getHTML;
         editor = await createEditor($('annEditorWrap'), { placeholder: 'Rédigez votre annonce...', content: initialContent, mode: 'full' });
@@ -339,7 +339,7 @@ $isNew = !$annonceData;
             formData.append('action', 'admin_upload_annonce_image');
 
             try {
-                const r = await fetch('/spocspace/admin/api.php', {
+                const r = await fetch('/newspocspace/admin/api.php', {
                     method: 'POST',
                     headers: { 'X-CSRF-Token': window.__SS_CARE__.csrfToken },
                     body: formData

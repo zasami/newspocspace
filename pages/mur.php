@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/emoji-picker.css">
 <div id="mur-page">
 
     <!-- Hero banner -->
@@ -7,7 +7,7 @@
         <div class="mur-hero-overlay"></div>
         <div class="mur-hero-inner">
             <div class="mur-hero-avatar" id="murHeroAvatar">
-                <img src="/spocspace/ss-logo.png" alt="" id="murHeroLogo">
+                <img src="/newspocspace/ss-logo.png" alt="" id="murHeroLogo">
             </div>
             <div class="mur-hero-info">
                 <h1 id="murHeroTitle">Mur social</h1>

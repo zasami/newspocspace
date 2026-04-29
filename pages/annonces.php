@@ -44,7 +44,7 @@ $catLabels = [
 <nav class="ann-breadcrumb-wrap" aria-label="Fil d'Ariane">
   <div class="ann-breadcrumb-inner">
     <ol class="ann-breadcrumb">
-      <li><a href="/spocspace/home" data-link="home"><i class="bi bi-house-door-fill"></i></a></li>
+      <li><a href="/newspocspace/home" data-link="home"><i class="bi bi-house-door-fill"></i></a></li>
       <li class="ann-breadcrumb-sep" id="bcMainSep"><i class="bi bi-chevron-right"></i></li>
       <li class="ann-breadcrumb-current" aria-current="page">Annonces</li>
     </ol>

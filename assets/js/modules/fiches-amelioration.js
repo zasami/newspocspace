@@ -87,7 +87,7 @@ function renderDetail(r) {
     const attachmentsHtml = (r.attachments && r.attachments.length) ? `
         <div class="fa-detail-section">
           <h6><i class="bi bi-paperclip"></i> Pièces jointes</h6>
-          ${r.attachments.map(a => `<a href="/spocspace/api.php?action=download_fiche_amelioration_attachment&id=${a.id}" target="_blank" class="d-block small">${escapeHtml(a.original_name)}</a>`).join('')}
+          ${r.attachments.map(a => `<a href="/newspocspace/api.php?action=download_fiche_amelioration_attachment&id=${a.id}" target="_blank" class="d-block small">${escapeHtml(a.original_name)}</a>`).join('')}
         </div>` : '';
 
     body.innerHTML = `

@@ -5,7 +5,7 @@
 
 import { EmojiPicker } from './modules/emoji_picker.js';
 
-const PROXY = '/spocspace/assets/js/vendor/esm/proxy.php?m=';
+const PROXY = '/newspocspace/assets/js/vendor/esm/proxy.php?m=';
 const LIB_VERSION = '3.14.0';
 
 // Library references (loaded once)

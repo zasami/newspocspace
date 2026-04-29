@@ -200,11 +200,11 @@ function upload_formation_certificat()
 
     // Supprimer ancien certificat si présent
     if ($part['certificat_url']) {
-        $oldPath = __DIR__ . '/../' . ltrim(str_replace('/spocspace/', '', $part['certificat_url']), '/');
+        $oldPath = __DIR__ . '/../' . ltrim(str_replace('/newspocspace/', '', $part['certificat_url']), '/');
         if (is_file($oldPath)) @unlink($oldPath);
     }
 
-    $url = '/spocspace/storage/certificats/' . $filename;
+    $url = '/newspocspace/storage/certificats/' . $filename;
     Db::exec(
         "UPDATE formation_participants SET certificat_url = ? WHERE id = ?",
         [$url, $participantId]

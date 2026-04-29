@@ -6,12 +6,12 @@ require_once __DIR__ . '/../init.php';
 
 /**
  * Build a clean admin URL
- * @param string $page  Page name (empty or 'dashboard' → /spocspace/admin/)
+ * @param string $page  Page name (empty or 'dashboard' → /newspocspace/admin/)
  * @param string $id    Optional ID segment
  * @param array  $extra Optional query parameters
  */
 function admin_url(string $page = '', string $id = '', array $extra = []): string {
-    $base = '/spocspace/admin';
+    $base = '/newspocspace/admin';
     if (!$page || $page === 'dashboard') {
         $url = $base . '/';
     } else {
@@ -24,7 +24,7 @@ function admin_url(string $page = '', string $id = '', array $extra = []): strin
 
 // Auth check
 if (empty($_SESSION['ss_user']) || !in_array($_SESSION['ss_user']['role'], ['admin', 'direction', 'responsable'])) {
-    header('Location: /spocspace/login');
+    header('Location: /newspocspace/login');
     exit;
 }
 
@@ -67,7 +67,7 @@ $globalComposeContacts = Db::fetchAll(
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
-    header('Location: /spocspace/login');
+    header('Location: /newspocspace/login');
     exit;
 }
 
@@ -328,16 +328,16 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <meta name="theme-color" content="#1A1A1A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/spocspace/manifest.json">
-<link rel="apple-touch-icon" href="/spocspace/assets/icons/icon-192x192.png">
-<base href="/spocspace/admin/">
+<link rel="manifest" href="/newspocspace/manifest.json">
+<link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
+<base href="/newspocspace/admin/">
 <title>Admin — SpocSpace</title>
-<link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
-<link href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/themes.css?v=<?= APP_VERSION ?>">
+<link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/themes.css?v=<?= APP_VERSION ?>">
 <?php if ($themePref === 'care'): ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -353,7 +353,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <aside class="admin-sidebar" id="adminSidebar">
   <div class="sidebar-header">
     <a href="<?= admin_url() ?>" class="sidebar-brand-link">
-      <img src="/spocspace/ss-logo.png" alt="" class="brand-logo">
+      <img src="/newspocspace/ss-logo.png" alt="" class="brand-logo">
       <span class="brand-text"><?= h($emsNom) ?></span>
     </a>
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Réduire le menu">
@@ -383,7 +383,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
       <i class="bi bi-heart-pulse" style="color:#2d4a43"></i>
       <span class="nav-label">SpocCare</span>
     </a>
-    <a href="/spocspace/" class="sidebar-link" target="_blank" title="Portail collaborateur">
+    <a href="/newspocspace/" class="sidebar-link" target="_blank" title="Portail collaborateur">
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
     </a>
@@ -446,10 +446,10 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
     </div>
   </header>
 
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
 <script nonce="<?= $cspNonce ?>">
 window.__SS_ADMIN__ = {
   csrfToken: '<?= $csrfToken ?>',
@@ -464,7 +464,7 @@ window.__SS__ = window.__SS__ || {
 </script>
 <!-- WebRTC call engine for admin (receive + make calls) -->
 <script nonce="<?= $cspNonce ?>" type="module">
-  import * as callUi from '/spocspace/assets/js/call-ui.js';
+  import * as callUi from '/newspocspace/assets/js/call-ui.js';
   callUi.initIncomingPoll();
   window.ssStartCall = callUi.startCall;
 </script>
@@ -502,7 +502,7 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
     const banner = document.createElement('div');
     banner.id = 'tempPwdBanner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#9B2C2C;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:.88rem;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-    banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>Vous utilisez un mot de passe temporaire. Changez-le avant <strong id="tempPwdCountdown"></strong></span><a href="/spocspace/profile" style="color:#fff;background:rgba(255,255,255,.2);padding:4px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:.82rem;white-space:nowrap;"><i class="bi bi-key"></i> Modifier</a>';
+    banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>Vous utilisez un mot de passe temporaire. Changez-le avant <strong id="tempPwdCountdown"></strong></span><a href="/newspocspace/profile" style="color:#fff;background:rgba(255,255,255,.2);padding:4px 14px;border-radius:6px;text-decoration:none;font-weight:600;font-size:.82rem;white-space:nowrap;"><i class="bi bi-key"></i> Modifier</a>';
     document.body.prepend(banner);
     document.body.style.paddingTop = banner.offsetHeight + 'px';
     function updateCountdown() {
@@ -578,7 +578,7 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
     // ── SPA Router — navigation AJAX, fullscreen persists ──
     var contentEl = document.getElementById('adminContent');
     var titleEl = document.querySelector('.topbar-title');
-    var BASE = '/spocspace/admin/';
+    var BASE = '/newspocspace/admin/';
     var spaActive = false; // only SPA-navigate after first click (initial page loads normally)
 
     function pageFromUrl(url) {
@@ -688,8 +688,8 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
         <h6 class="fw-bold mb-2">Session expirée</h6>
         <p class="text-muted small mb-3">Votre session a expiré par inactivité. Veuillez vous reconnecter pour continuer.</p>
         <div class="d-flex gap-2 justify-content-center">
-          <a href="/spocspace/admin/logout" class="btn btn-sm btn-outline-secondary" style="border-radius:8px"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a>
-          <a href="/spocspace/login" class="btn btn-sm btn-primary" style="border-radius:8px;background:var(--cl-accent,#bcd2cb);border-color:var(--cl-accent,#bcd2cb);color:#2d4a43"><i class="bi bi-box-arrow-in-right me-1"></i>Connexion</a>
+          <a href="/newspocspace/admin/logout" class="btn btn-sm btn-outline-secondary" style="border-radius:8px"><i class="bi bi-box-arrow-right me-1"></i>Déconnexion</a>
+          <a href="/newspocspace/login" class="btn btn-sm btn-primary" style="border-radius:8px;background:var(--cl-accent,#bcd2cb);border-color:var(--cl-accent,#bcd2cb);color:#2d4a43"><i class="bi bi-box-arrow-in-right me-1"></i>Connexion</a>
         </div>
       </div>
     </div>
@@ -708,7 +708,7 @@ if (window.__SS_ADMIN__.mustChangePassword && window.__SS_ADMIN__.tempPasswordEx
     setInterval(async () => {
         if (shown) return;
         try {
-            const res = await fetch('/spocspace/admin/api.php', {
+            const res = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'admin_get_session_ping' })
@@ -1001,7 +1001,7 @@ function adminPrompt(opts = {}) {
 }
 </script>
 
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 
 <!-- ═══ GLOBAL COMPOSE PANEL ═══ -->
 <div class="compose-panel" id="globalComposePanel">
@@ -1052,7 +1052,7 @@ function adminPrompt(opts = {}) {
     let initialized = false;
 
     async function getEditorModule() {
-        if (!editorModule) editorModule = await import('/spocspace/assets/js/rich-editor.js');
+        if (!editorModule) editorModule = await import('/newspocspace/assets/js/rich-editor.js');
         return editorModule;
     }
 
@@ -1216,7 +1216,7 @@ function adminPrompt(opts = {}) {
             const fd = new FormData();
             fd.append('action', 'admin_upload_message_attachment');
             fd.append('file', file);
-            const resp = await fetch('/spocspace/admin/api.php', {
+            const resp = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd
@@ -1302,24 +1302,24 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
     // ── Default shortcuts definition ──
     const SHORTCUTS_DEF = [
         { group: 'Navigation', items: [
-            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/spocspace/admin/') },
-            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/spocspace/admin/planning') },
-            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/spocspace/admin/users') },
-            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => goTo('/spocspace/admin/residents') },
-            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => goTo('/spocspace/admin/absences') },
-            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => goTo('/spocspace/admin/desirs') },
-            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => goTo('/spocspace/admin/vacances') },
-            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/spocspace/admin/messages') },
-            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/spocspace/admin/famille') },
-            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/spocspace/admin/documents') },
-            { id: 'nav_annuaire',     label: 'Annuaire téléphonique', default: 'Alt+H',     action: () => goTo('/spocspace/admin/annuaire') },
+            { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/newspocspace/admin/') },
+            { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/newspocspace/admin/planning') },
+            { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/newspocspace/admin/users') },
+            { id: 'nav_residents',    label: 'Résidents',             default: 'Alt+R',     action: () => goTo('/newspocspace/admin/residents') },
+            { id: 'nav_absences',     label: 'Absences',              default: 'Alt+A',     action: () => goTo('/newspocspace/admin/absences') },
+            { id: 'nav_desirs',       label: 'Désirs',                default: 'Alt+W',     action: () => goTo('/newspocspace/admin/desirs') },
+            { id: 'nav_vacances',     label: 'Vacances',              default: 'Alt+V',     action: () => goTo('/newspocspace/admin/vacances') },
+            { id: 'nav_messages',     label: 'Messagerie',            default: 'Alt+M',     action: () => goTo('/newspocspace/admin/messages') },
+            { id: 'nav_famille',      label: 'Espace Famille',        default: 'Alt+F',     action: () => goTo('/newspocspace/admin/famille') },
+            { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/newspocspace/admin/documents') },
+            { id: 'nav_annuaire',     label: 'Annuaire téléphonique', default: 'Alt+H',     action: () => goTo('/newspocspace/admin/annuaire') },
         ]},
         { group: 'Outils', items: [
-            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/spocspace/admin/todos') },
-            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/spocspace/admin/notes') },
-            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/spocspace/admin/pv') },
-            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/spocspace/admin/sondages') },
-            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/spocspace/admin/stats') },
+            { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/newspocspace/admin/todos') },
+            { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/newspocspace/admin/notes') },
+            { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/newspocspace/admin/pv') },
+            { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/newspocspace/admin/sondages') },
+            { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/newspocspace/admin/stats') },
         ]},
         { group: 'Actions rapides', items: [
             { id: 'act_email',        label: 'Nouveau message (email)', default: 'Alt+E', action: openComposeEmail },
@@ -1653,7 +1653,7 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/spocspace/sw.js', { scope: '/spocspace/' })
+        navigator.serviceWorker.register('/newspocspace/sw.js', { scope: '/newspocspace/' })
             .then(reg => {
                 console.log('[PWA] SW registered:', reg.scope);
                 // Check for updates

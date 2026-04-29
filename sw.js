@@ -3,28 +3,28 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ss-v38';
+const CACHE_VERSION = 'ns-v38';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
-const SYNC_QUEUE = 'ss-sync-queue';
+const SYNC_QUEUE = 'ns-sync-queue';
 
 // Static assets to pre-cache on install (employee SPA)
 const PRECACHE_URLS = [
-  '/spocspace/',
-  '/spocspace/login',
-  '/spocspace/ss-logo.png',
-  '/spocspace/manifest.json',
-  '/spocspace/assets/css/vendor/bootstrap.min.css',
-  '/spocspace/assets/css/vendor/bootstrap-icons.min.css',
-  '/spocspace/assets/css/spocspace.css',
-  '/spocspace/assets/js/vendor/bootstrap.bundle.min.js',
-  '/spocspace/assets/js/app.js',
-  '/spocspace/assets/js/helpers.js',
-  '/spocspace/assets/js/ss-db.js',
-  '/spocspace/assets/js/lockscreen.js',
-  '/spocspace/assets/js/zerda-select.js',
-  '/spocspace/assets/icons/icon-192x192.png',
+  '/newspocspace/',
+  '/newspocspace/login',
+  '/newspocspace/ss-logo.png',
+  '/newspocspace/manifest.json',
+  '/newspocspace/assets/css/vendor/bootstrap.min.css',
+  '/newspocspace/assets/css/vendor/bootstrap-icons.min.css',
+  '/newspocspace/assets/css/spocspace.css',
+  '/newspocspace/assets/js/vendor/bootstrap.bundle.min.js',
+  '/newspocspace/assets/js/app.js',
+  '/newspocspace/assets/js/helpers.js',
+  '/newspocspace/assets/js/ss-db.js',
+  '/newspocspace/assets/js/lockscreen.js',
+  '/newspocspace/assets/js/zerda-select.js',
+  '/newspocspace/assets/icons/icon-192x192.png',
 ];
 
 // All SPA page fragments — pre-cached for full offline support
@@ -36,7 +36,7 @@ const PAGE_URLS = [
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces',
   'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit', 'stagiaire-detail',
-].map(p => '/spocspace/pages/' + p + '.php');
+].map(p => '/newspocspace/pages/' + p + '.php');
 
 // JS modules to pre-cache for full offline support
 const MODULE_URLS = [
@@ -47,7 +47,7 @@ const MODULE_URLS = [
   'cuisine-menus', 'cuisine-reservations', 'cuisine-famille',
   'cuisine-vip', 'mur', 'wiki', 'annonces', 'offline',
   'annuaire', 'mes-stagiaires', 'mon-stage', 'report-edit', 'stagiaire-detail',
-].map(m => '/spocspace/assets/js/modules/' + m + '.js');
+].map(m => '/newspocspace/assets/js/modules/' + m + '.js');
 
 // API actions that can be cached for offline reading
 const CACHEABLE_GET_ACTIONS = [
@@ -207,7 +207,7 @@ self.addEventListener('fetch', event => {
   if (event.request.headers.get('range')) return;
 
   // Skip website subfolder entirely (public marketing site, separate concern)
-  if (url.pathname.startsWith('/spocspace/website/')) return;
+  if (url.pathname.startsWith('/newspocspace/website/')) return;
 
   // Skip website + admin + care API (let them pass through directly)
   if (url.pathname.includes('/website/api.php')) return;
@@ -284,8 +284,8 @@ async function handleNavigate(request) {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
       const p = new URL(request.url).pathname;
-      if (p.startsWith('/spocspace/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
-        cache.put(new Request('/spocspace/'), response.clone());
+      if (p.startsWith('/newspocspace/') && !p.includes('/admin/') && !p.includes('/care/') && !p.includes('/website/')) {
+        cache.put(new Request('/newspocspace/'), response.clone());
       }
     }
     return response;
@@ -294,7 +294,7 @@ async function handleNavigate(request) {
     //    essayer le shell en cache, sinon proposer un "Serveur injoignable" avec retry.
     const cached = await caches.match(request);
     if (cached) return cached;
-    const shell = await caches.match('/spocspace/');
+    const shell = await caches.match('/newspocspace/');
     if (shell) return shell;
 
     // Vraiment aucun cache dispo : page d'erreur contextuelle
@@ -490,7 +490,7 @@ async function processQueue() {
 async function getCSRFToken() {
   try {
     const cache = await caches.open(DYNAMIC_CACHE);
-    const response = await cache.match('/spocspace/');
+    const response = await cache.match('/newspocspace/');
     if (response) {
       const html = await response.text();
       const match = html.match(/csrfToken:\s*'([^']+)'/);

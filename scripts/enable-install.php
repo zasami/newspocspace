@@ -43,7 +43,7 @@ $host = trim(getenv('INSTALL_HOST') ?: '');
 if ($host === '') {
     $host = '{votre-domaine}';
 }
-$urlPath = '/spocspace/install.php';
+$urlPath = '/newspocspace/install.php';
 $url = $scheme . '://' . $host . $urlPath . '?key=' . $token;
 
 echo "\n";

@@ -19,7 +19,7 @@ $lockFile = __DIR__ . '/storage/.installed';
 $enableFile = __DIR__ . '/storage/.install-enabled';
 
 if (file_exists($lockFile)) {
-    header('Location: /spocspace/login');
+    header('Location: /newspocspace/login');
     exit;
 }
 
@@ -233,7 +233,7 @@ $allPassed = !in_array(false, $checks, true);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SpocSpace — Installation</title>
-<link rel="stylesheet" href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#F7F5F2; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
@@ -276,7 +276,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif
 
 <div class="installer">
   <div class="installer-header">
-    <img src="/spocspace/ss-logo.png" alt="SpocSpace">
+    <img src="/newspocspace/ss-logo.png" alt="SpocSpace">
     <h1>SpocSpace</h1>
     <p>Assistant d'installation</p>
   </div>
@@ -421,7 +421,7 @@ function showStep(step) {
                 <div style="width:64px;height:64px;border-radius:50%;background:#bcd2cb;color:#2d4a43;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:1rem"><i class="bi bi-check-lg"></i></div>
                 <h4 style="margin-bottom:0.5rem;font-weight:700">Installation terminée</h4>
                 <p style="color:#6B6B6B;margin-bottom:1.5rem">SpocSpace est prêt à être utilisé.</p>
-                <a href="/spocspace/login" class="btn btn-primary" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i> Se connecter</a>
+                <a href="/newspocspace/login" class="btn btn-primary" style="text-decoration:none"><i class="bi bi-box-arrow-in-right"></i> Se connecter</a>
             </div>
         `;
         prevBtn.style.visibility = 'hidden';

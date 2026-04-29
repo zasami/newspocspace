@@ -29,7 +29,7 @@ $emailStatsTrash       = (int) Db::getOne(
 );
 ?>
 <!-- Admin Emails Page — Split-view email client -->
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
 
 <style>
 /* Page header */
@@ -177,7 +177,7 @@ $emailStatsTrash       = (int) Db::getOne(
 (function() {
     let editorModule = null;
     const getEditorModule = async () => {
-        if (!editorModule) editorModule = await import('/spocspace/assets/js/rich-editor.js');
+        if (!editorModule) editorModule = await import('/newspocspace/assets/js/rich-editor.js');
         return editorModule;
     };
     let contacts = <?= json_encode(array_values($emailContacts), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
@@ -480,7 +480,7 @@ $emailStatsTrash       = (int) Db::getOne(
                 <div class="email-att-grid">
                 ${attachments.map(a => {
                     const isImg = a.mime_type && a.mime_type.startsWith('image/');
-                    const dlUrl = '/spocspace/admin/api.php?action=admin_download_message_attachment&id=' + encodeURIComponent(a.id);
+                    const dlUrl = '/newspocspace/admin/api.php?action=admin_download_message_attachment&id=' + encodeURIComponent(a.id);
                     const thumb = isImg
                         ? `<img src="${dlUrl}" alt="">`
                         : `<i class="bi ${getFileIcon(a.mime_type)} ${getFileColorClass(a.mime_type)}"></i>`;
@@ -864,7 +864,7 @@ $emailStatsTrash       = (int) Db::getOne(
             fd.append('action', 'admin_upload_message_attachment');
             fd.append('email_id', emailId);
             fd.append('file', f);
-            await fetch('/spocspace/admin/api.php', {
+            await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: fd

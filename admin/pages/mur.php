@@ -283,7 +283,7 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
         <h6 class="fw-bold mb-3"><i class="bi bi-image me-2"></i>Personnalisation du Hero</h6>
 
         <?php
-            $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/spocspace/ss-logo.png';
+            $emsLogo = Db::getOne("SELECT config_value FROM ems_config WHERE config_key = 'ems_logo_url'") ?: '/newspocspace/ss-logo.png';
             $heroColor = $cfg['hero_color'] ?? '#2d4a43';
             $accentColor = $cfg['accent_color'] ?? '#bcd2cb';
             $heroImage = $cfg['hero_image'] ?? '';
@@ -650,7 +650,7 @@ $pendingCount = (int) Db::getOne("SELECT COUNT(*) FROM mur_posts WHERE deleted_a
         const fd = new FormData();
         fd.append('action', 'admin_upload_mur_hero');
         fd.append('hero_image', uploadedFile);
-        const res = await fetch('/spocspace/admin/api.php', {
+        const res = await fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
             body: fd,

@@ -249,7 +249,7 @@ async function loadMurEvents() {
             const statusLine = isInscrit
                 ? '<div class="mur-ev-banner-inscrit"><i class="bi bi-check-circle-fill"></i> Inscrit</div>'
                 : '<div class="mur-ev-banner-reminder"><i class="bi bi-hand-index-thumb"></i> N\'oubliez pas de voter !</div>';
-            html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-ev-banner" style="text-decoration:none;color:inherit">
+            html += `<a href="/newspocspace/evenements" data-link="evenements" class="mur-ev-banner" style="text-decoration:none;color:inherit">
                 <img src="${escapeHtml(ev.image_url)}" alt="" class="mur-ev-banner-img">
                 <div class="mur-ev-banner-body">
                     <div class="mur-ev-banner-title">${escapeHtml(ev.titre)}</div>
@@ -259,7 +259,7 @@ async function loadMurEvents() {
             </a>`;
         } else {
             // Item compact sans image
-            html += `<a href="/spocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
+            html += `<a href="/newspocspace/evenements" data-link="evenements" class="mur-widget-item mur-ev-item" style="text-decoration:none;color:inherit">
                 <div class="mur-ev-date"><div class="mur-ev-day">${day}</div><div class="mur-ev-month">${escapeHtml(month)}</div></div>
                 <div style="flex:1;min-width:0">
                     <div class="mur-widget-text" style="font-weight:600;font-size:.82rem">${escapeHtml(ev.titre)}</div>
@@ -474,7 +474,7 @@ async function submitPost() {
         pendingFiles.forEach((f, i) => fd.append(`file_${i}`, f));
         if (window.__SS__?.csrfToken) fd.append('_csrf', window.__SS__.csrfToken);
 
-        await fetch('/spocspace/api.php', {
+        await fetch('/newspocspace/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': window.__SS__?.csrfToken || '' },
             body: fd,
@@ -806,7 +806,7 @@ async function openInlineEditor(postEl, postId) {
                 fd.append('post_id', postId);
                 newFiles.slice(0, 4).forEach((f, i) => fd.append(`file_${i}`, f));
                 const csrfToken = window.__SS__?.csrfToken || '';
-                const resp = await fetch('/spocspace/api.php', {
+                const resp = await fetch('/newspocspace/api.php', {
                     method: 'POST',
                     headers: { 'X-CSRF-Token': csrfToken },
                     credentials: 'same-origin',

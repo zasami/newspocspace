@@ -7,7 +7,7 @@ require_once __DIR__ . '/../init.php';
 
 // Auth check — all roles can access SpocCare
 if (empty($_SESSION['ss_user'])) {
-    header('Location: /spocspace/login?redirect=/spoccare/');
+    header('Location: /newspocspace/login?redirect=/spoccare/');
     exit;
 }
 
@@ -161,10 +161,10 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
 <meta name="apple-mobile-web-app-capable" content="yes">
 <base href="/spoccare/">
 <title><?= h($pageTitle) ?> — SpocCare</title>
-<link href="/spocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
-<link href="/spocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/spocspace/care/assets/css/care.css?v=<?= APP_VERSION ?>">
+<link href="/newspocspace/admin/assets/css/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/care/assets/css/care.css?v=<?= APP_VERSION ?>">
 </head>
 <body>
 
@@ -178,7 +178,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <?php if ($emsLogo): ?>
         <img src="<?= h($emsLogo) ?>" alt="" class="brand-logo">
       <?php else: ?>
-        <img src="/spocspace/ss-logo.png" alt="" class="brand-logo">
+        <img src="/newspocspace/ss-logo.png" alt="" class="brand-logo">
       <?php endif; ?>
       <span class="brand-text">SpocCare</span>
     </a>
@@ -204,12 +204,12 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   </nav>
   <div class="sidebar-footer">
     <?php if (in_array($user['role'], ['admin','direction','responsable'])): ?>
-    <a href="/spocspace/admin/" class="sidebar-link" title="Administration">
+    <a href="/newspocspace/admin/" class="sidebar-link" title="Administration">
       <i class="bi bi-gear"></i>
       <span class="nav-label">Administration</span>
     </a>
     <?php endif; ?>
-    <a href="/spocspace/" class="sidebar-link" title="Portail collaborateur">
+    <a href="/newspocspace/" class="sidebar-link" title="Portail collaborateur">
       <i class="bi bi-box-arrow-up-right"></i>
       <span class="nav-label">Portail collaborateur</span>
     </a>
@@ -235,22 +235,22 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       <div id="careSearchPanel" class="care-search-panel"></div>
     </div>
     <div class="topbar-right">
-      <a href="/spocspace/admin/?page=annuaire" class="topbar-icon-btn" title="Annuaire téléphonique">
+      <a href="/newspocspace/admin/?page=annuaire" class="topbar-icon-btn" title="Annuaire téléphonique">
         <i class="bi bi-telephone"></i>
       </a>
       <div class="topbar-user d-none d-sm-flex">
         <span class="topbar-user-name"><?= h($user['prenom'] . ' ' . $user['nom']) ?></span>
         <span class="topbar-user-role"><?= h($roleLabel) ?></span>
       </div>
-      <a href="/spocspace/login?action=logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
+      <a href="/newspocspace/login?action=logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
         <i class="bi bi-power"></i>
       </a>
     </div>
   </header>
 
   <!-- Scripts needed BEFORE page content (pages use bootstrap.Modal, adminApiPost, etc.) -->
-  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
-  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/vendor/bootstrap.bundle.min.js"></script>
+  <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/url-manager.js?v=<?= APP_VERSION ?>"></script>
   <script nonce="<?= $cspNonce ?>">
   // Override AdminURL base for SpocCare
   (function(){
@@ -276,8 +276,8 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
       AdminURL.go = function(page, id, params) { window.location.href = this.page(page, id, params); };
   })();
   </script>
-  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
-  <script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/helpers.js?v=<?= APP_VERSION ?>"></script>
+  <script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/zerda-select.js?v=<?= APP_VERSION ?>"></script>
   <script nonce="<?= $cspNonce ?>">
   window.__SS_CARE__ = {
       csrfToken: '<?= $csrfToken ?>',
@@ -290,7 +290,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   window.careApiPost = async function(action, data = {}) {
       data.action = action;
       try {
-          const r = await fetch('/spocspace/admin/api.php', {
+          const r = await fetch('/newspocspace/admin/api.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.__SS_CARE__.csrfToken },
               credentials: 'same-origin',
@@ -353,7 +353,7 @@ if ($fonctionCode) $roleLabel = $fonctionCode;
   </div>
 </div>
 
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/admin.js?v=<?= APP_VERSION ?>"></script>
 
 <!-- Global Search -->
 <style>

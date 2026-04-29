@@ -444,7 +444,7 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
                         <div class="rhc-docs-list">`;
                     g.items.forEach(d => {
                         const sizeKb = d.size ? Math.round(d.size / 1024) : '?';
-                        const url = '/spocspace/admin/api.php?action=admin_download_candidature_doc&id=' + encodeURIComponent(d.id);
+                        const url = '/newspocspace/admin/api.php?action=admin_download_candidature_doc&id=' + encodeURIComponent(d.id);
                         const typeLabel = typeLabels[d.type_document] || d.type_document || '';
                         html += `<div class="rhc-doc-item" data-doc-url="${escapeHtml(url)}" data-doc-ext="${d.ext}" data-doc-name="${escapeHtml(d.original_name)}">
                             <div class="rhc-doc-icon ${g.cls}"><i class="bi ${g.icon}"></i></div>
@@ -635,10 +635,10 @@ $ssrOffres = Db::fetchAll("SELECT id, titre FROM offres_emploi ORDER BY created_
         if (!container) return;
         try {
             if (!window.JSZip) {
-                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/newspocspace/assets/js/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
             }
             if (!window.docx) {
-                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/spocspace/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+                await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/newspocspace/assets/js/vendor/docx-preview.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
             }
             const resp = await fetch(url);
             const blob = await resp.blob();

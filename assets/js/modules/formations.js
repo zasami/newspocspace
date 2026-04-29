@@ -390,7 +390,7 @@ function handleClick(e) {
     const detailBtn = e.target.closest('[data-formation-detail]');
     if (detailBtn) {
         const id = detailBtn.dataset.formationDetail;
-        location.href = `/spocspace/formation-detail-emp?id=${encodeURIComponent(id)}`;
+        location.href = `/newspocspace/formation-detail-emp?id=${encodeURIComponent(id)}`;
         return;
     }
 
@@ -445,7 +445,7 @@ async function uploadCertif() {
 
     try {
         const csrf = window.__SS__?.csrfToken || '';
-        const res = await fetch('/spocspace/api.php', {
+        const res = await fetch('/newspocspace/api.php', {
             method: 'POST',
             headers: csrf ? { 'X-CSRF-Token': csrf } : {},
             body: fd,

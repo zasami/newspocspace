@@ -12,7 +12,7 @@ $alerts = Db::fetchAll(
 $modules   = Db::fetchAll("SELECT id, code, nom FROM modules ORDER BY code");
 $fonctions = Db::fetchAll("SELECT code, nom FROM fonctions ORDER BY code");
 ?>
-<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/emoji-picker.css">
 <style>
 .al-col-prio    { width: 5%; }
 .al-col-titre   { width: 30%; }

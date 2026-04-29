@@ -128,7 +128,7 @@ function admin_upload_justificatif()
         bad_request('Erreur lors de l\'enregistrement du fichier');
     }
 
-    $path = '/spocspace/storage/justificatifs/' . $filename;
+    $path = '/newspocspace/storage/justificatifs/' . $filename;
     $originalName = basename($file['name']);
 
     Db::exec(
@@ -151,7 +151,7 @@ function admin_delete_justificatif()
     if (!$absence) not_found('Absence introuvable');
 
     if ($absence['justificatif_path']) {
-        $filePath = __DIR__ . '/../../' . ltrim($absence['justificatif_path'], '/spocspace/');
+        $filePath = __DIR__ . '/../../' . ltrim($absence['justificatif_path'], '/newspocspace/');
         if (file_exists($filePath)) @unlink($filePath);
     }
 

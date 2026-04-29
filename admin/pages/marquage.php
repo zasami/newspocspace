@@ -330,7 +330,7 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             const photos = m.photo_path ? m.photo_path.split(',') : [];
             let photoHtml = '';
             if (photos.length) {
-                const firstUrl = '/spocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(photos[0]);
+                const firstUrl = '/newspocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(photos[0]);
                 photoHtml = '<div class="mrk-photo-cell"><img src="' + firstUrl + '" class="mrk-photo-thumb">'
                     + (photos.length > 1 ? '<span class="mrk-photo-count">+' + (photos.length - 1) + '</span>' : '')
                     + '</div>';
@@ -433,7 +433,7 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             h += '<div class="mrk-detail-label mt-3">Photos (' + photos.length + ')</div>';
             h += '<div class="mrk-detail-photos">';
             photos.forEach(f => {
-                const u = '/spocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
+                const u = '/newspocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
                 h += '<div class="mrk-detail-photo" data-lb-url="' + u + '"><img src="' + u + '"></div>';
             });
             h += '</div>';
@@ -517,7 +517,7 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
             fd.append('id', r.id);
             fd.append('photo', p.file);
             try {
-                const res = await fetch('/spocspace/admin/api.php', {
+                const res = await fetch('/newspocspace/admin/api.php', {
                     method: 'POST',
                     headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                     body: fd
@@ -573,7 +573,7 @@ $residents = Db::fetchAll("SELECT id, nom, prenom, chambre, etage FROM residents
                 if (histPhotos.length) {
                     h += '<div class="d-flex gap-2 flex-wrap mt-1">';
                     histPhotos.forEach(f => {
-                        const pu = '/spocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
+                        const pu = '/newspocspace/admin/api.php?action=admin_serve_marquage_photo&file=' + encodeURIComponent(f);
                         h += '<img src="' + pu + '" class="mrk-tl-photo" data-lightbox="' + pu + '">';
                     });
                     h += '</div>';

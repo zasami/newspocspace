@@ -867,7 +867,7 @@ $ssrTerminees = (int) Db::getOne("SELECT COUNT(*) FROM formations WHERE statut =
         fd.append('file', e.target.files[0]);
         fd.append('action', 'admin_import_formations_file');
 
-        fetch('/spocspace/admin/api.php', {
+        fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             body: fd,
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' }

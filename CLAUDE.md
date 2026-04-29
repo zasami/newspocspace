@@ -14,12 +14,12 @@ SpocSpace is an EMS (care home) staff scheduling application for EMS in Geneva. 
 
 ### Two separate apps sharing one backend
 
-1. **Employee SPA** (`/spocspace/`) — `index.php` shell + SPA router in `assets/js/app.js`
+1. **Employee SPA** (`/newspocspace/`) — `index.php` shell + SPA router in `assets/js/app.js`
    - Pages loaded via `fetch()` from `pages/*.php`, JS modules from `assets/js/modules/*.js`
    - Each module exports `init()` and `destroy()`, dynamically imported via `moduleMap` in `app.js`
    - API calls go to `api.php` → `api_modules/_routes.php` → action function in module file
 
-2. **Admin panel** (`/spocspace/admin/`) — server-rendered, `index.php?page=dashboard`
+2. **Admin panel** (`/newspocspace/admin/`) — server-rendered, `index.php?page=dashboard`
    - Uses Bootstrap 5, pages in `admin/pages/*.php`
    - API calls go to `admin/api.php` → `admin/api_modules/_routes.php` → action function
    - Admin actions prefixed `admin_*` (e.g. `admin_get_users`, `admin_save_assignation`)
@@ -27,7 +27,7 @@ SpocSpace is an EMS (care home) staff scheduling application for EMS in Geneva. 
 ### Request flow
 
 ```
-POST /spocspace/api.php  { action: "get_planning_hebdo", ... }
+POST /newspocspace/api.php  { action: "get_planning_hebdo", ... }
   → api.php reads _routes.php to find module file
   → requires api_modules/{module}.php
   → calls the function named $action()
@@ -224,7 +224,7 @@ Lock file : `data/cron_daily.lock` (évite exécutions concurrentes).
 
 **Ligne crontab Infomaniak** (panel d'admin → Cron) :
 ```
-0 3 * * *  /usr/bin/php /home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/spocspace/scripts/cron_daily.php >> /home/clients/c81789f8de36e992da19fb6856aa48f6/logs/cron_spocspace.log 2>&1
+0 3 * * *  /usr/bin/php /home/clients/c81789f8de36e992da19fb6856aa48f6/sites/zkriva.com/newspocspace/scripts/cron_daily.php >> /home/clients/c81789f8de36e992da19fb6856aa48f6/logs/cron_spocspace.log 2>&1
 ```
 
 Pour tester manuellement : `php scripts/cron_daily.php`

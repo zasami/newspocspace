@@ -37,8 +37,8 @@ Deux outils complémentaires intégrés à SpocCare :
 - 3 tables annonces : `annonces`, `annonce_views`, `annonce_acks`
 
 ### 2.2 Endpoints API
-- **Admin / SpocCare** : `/spocspace/admin/api.php` → `admin_api_modules/wiki.php` + `annonces.php`
-- **Employé SPA** : `/spocspace/api.php` → `api_modules/wiki.php`
+- **Admin / SpocCare** : `/newspocspace/admin/api.php` → `admin_api_modules/wiki.php` + `annonces.php`
+- **Employé SPA** : `/newspocspace/api.php` → `api_modules/wiki.php`
 - **Recherche globale unifiée** : `admin_global_search`, `admin_care_global_search`, `global_search`
 
 ### 2.3 Pages
@@ -46,9 +46,9 @@ Deux outils complémentaires intégrés à SpocCare :
 - `/spoccare/wiki-edit` — éditeur (responsables uniquement)
 - `/spoccare/annonces` — liste + lecture
 - `/spoccare/annonce-edit` — éditeur
-- `/spocspace/admin/wiki` — wrapper inclusion de la page care
-- `/spocspace/admin/annonces` — idem
-- `/spocspace/admin/wiki-analytics` — dashboard responsables
+- `/newspocspace/admin/wiki` — wrapper inclusion de la page care
+- `/newspocspace/admin/annonces` — idem
+- `/newspocspace/admin/wiki-analytics` — dashboard responsables
 
 ---
 
@@ -216,7 +216,7 @@ WHERE NOT EXISTS (SELECT 1 FROM wiki_page_permissions WHERE page_id = p.id)
 
 **Comment :**
 - Modal de choix : Upload local (jpg/png/webp, converti en webp) **ou** recherche Pixabay (banque libre de droits)
-- Stockage public dans `/spocspace/assets/uploads/wiki/`
+- Stockage public dans `/newspocspace/assets/uploads/wiki/`
 
 ---
 
@@ -350,7 +350,7 @@ adminApiPost('admin_log_wiki_search', { q: 'plaies de pression', results_count: 
 Stocké dans `wiki_search_log (id, user_id, q, results_count, created_at)`.
 
 ### 6.3 Affichage admin
-Dans `/spocspace/admin/wiki-analytics` → section "Knowledge Gaps" :
+Dans `/newspocspace/admin/wiki-analytics` → section "Knowledge Gaps" :
 - Liste triée par fréquence (la query la plus cherchée en premier)
 - Badge avec le nombre de fois où elle a été tapée
 - Bouton **"Créer"** qui ouvre l'éditeur wiki avec le titre pré-rempli

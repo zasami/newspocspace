@@ -3,7 +3,7 @@
 /**
  * Sauvegarde globale quotidienne automatique
  *
- * Cron: 0 3 * * * php /path/to/spocspace/scripts/backup_daily.php
+ * Cron: 0 3 * * * php /path/to/newspocspace/scripts/backup_daily.php
  *
  * - Cree une sauvegarde globale
  * - Applique la retention (14 jours quotidiens, 8 semaines hebdomadaires)

@@ -822,7 +822,7 @@ function admin_upload_wiki_image()
     $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
     if ($sanErr) { @unlink($storageDir . $filename); bad_request($sanErr); }
 
-    respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
+    respond(['success' => true, 'url' => '/newspocspace/assets/uploads/wiki/' . $filename]);
 }
 
 function admin_save_pixabay_wiki()
@@ -865,7 +865,7 @@ function admin_save_pixabay_wiki()
     imagewebp($img, $storageDir . $filename, 82);
     imagedestroy($img);
 
-    respond(['success' => true, 'url' => '/spocspace/assets/uploads/wiki/' . $filename]);
+    respond(['success' => true, 'url' => '/newspocspace/assets/uploads/wiki/' . $filename]);
 }
 
 /* ── Phase 3 : Analytics ──────────────────────────────── */

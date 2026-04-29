@@ -158,7 +158,7 @@ $initResidents = Db::fetchAll(
     // ── Photo URL helper (plain, no encryption) ──
     function photoUrl(r) {
         if (!r.photo_path) return null;
-        return '/spocspace/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id) + '&t=' + (r.updated_at || Date.now());
+        return '/newspocspace/admin/api.php?action=admin_serve_resident_photo&id=' + encodeURIComponent(r.id) + '&t=' + (r.updated_at || Date.now());
     }
 
     // ── Render table ──
@@ -287,7 +287,7 @@ $initResidents = Db::fetchAll(
             fd.append('resident_id', resId);
 
             const csrfToken = (window.__SS_ADMIN__?.csrfToken || '');
-            const resp = await fetch('/spocspace/admin/api.php', {
+            const resp = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': csrfToken },
                 body: fd

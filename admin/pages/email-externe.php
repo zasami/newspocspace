@@ -514,7 +514,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
         // Attachments — lightbox for images/PDF, download for others
         detail.querySelectorAll('.ext-att-chip').forEach(chip => {
             chip.addEventListener('click', () => {
-                const url = '/spocspace/admin/api.php?action=admin_email_ext_download_attachment&folder=' + encodeURIComponent(currentFolder)
+                const url = '/newspocspace/admin/api.php?action=admin_email_ext_download_attachment&folder=' + encodeURIComponent(currentFolder)
                     + '&uid=' + chip.dataset.uid + '&part_index=' + chip.dataset.part;
                 const filename = chip.querySelector('div div')?.textContent || '';
                 const ext = filename.split('.').pop().toLowerCase();
@@ -536,7 +536,7 @@ $hasConfig = (bool) Db::getOne("SELECT COUNT(*) FROM email_externe_config WHERE 
         document.getElementById('extComposeCc').value = prefill.cc || '';
         document.getElementById('extComposeSubject').value = prefill.subject || '';
 
-        if (!extEditorModule) extEditorModule = await import('/spocspace/assets/js/rich-editor.js');
+        if (!extEditorModule) extEditorModule = await import('/newspocspace/assets/js/rich-editor.js');
         const wrap = document.getElementById('extComposeEditorWrap');
         if (extEditor) extEditorModule.destroyEditor(extEditor);
         extEditor = await extEditorModule.createEditor(wrap, { placeholder: 'Écrivez votre message...', content: prefill.body || '', mode: 'mini' });

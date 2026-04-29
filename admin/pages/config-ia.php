@@ -320,7 +320,7 @@ $iaConfig['_horaires'] = $horairesRows;
               <p class="small fw-semibold mb-2 ia-text-red"><i class="bi bi-trash3 me-1"></i> Désinstallation complète :</p>
               <p class="small text-muted mb-2 ia-fs-md">Supprime Ollama, les 3 modèles IA, Vosk, Python et les raccourcis Bureau.</p>
               <ol class="small text-muted ps-3 mb-2 ia-fs-md">
-                <li class="mb-1">Branchez la clé USB ou <a href="/spocspace/whisper-local/download.php?file=uninstall.bat" class="fw-medium ia-text-red">téléchargez uninstall.bat</a></li>
+                <li class="mb-1">Branchez la clé USB ou <a href="/newspocspace/whisper-local/download.php?file=uninstall.bat" class="fw-medium ia-text-red">téléchargez uninstall.bat</a></li>
                 <li>Double-cliquez sur <code>uninstall.bat</code> et confirmez avec <strong>O</strong></li>
               </ol>
               <p class="small text-muted mb-0 ia-fs-sm">Pour réinstaller après désinstallation, relancez <code>install.bat</code> depuis la clé USB.</p>
@@ -330,7 +330,7 @@ $iaConfig['_horaires'] = $horairesRows;
             <div class="ia-box-warn-alt">
               <p class="small fw-semibold mb-2 ia-text-beige-dark"><i class="bi bi-wrench me-1"></i> Lanceur IA (Ollama + Vosk)</p>
               <p class="small text-muted mb-2 ia-fs-md">Telechargez et double-cliquez pour demarrer les serveurs IA. A placer sur le Bureau de chaque poste.</p>
-              <a href="/spocspace/admin/downloads/SpocSpace-IA.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> SpocSpace-IA.bat</a>
+              <a href="/newspocspace/admin/downloads/SpocSpace-IA.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-download"></i> SpocSpace-IA.bat</a>
             </div>
 
             <!-- Téléchargements admin -->
@@ -348,17 +348,17 @@ $iaConfig['_horaires'] = $horairesRows;
                   <tr>
                     <td><strong>SpocSpace-IA-Install.zip</strong><br><small class="text-muted">Scripts, Ollama, 3 modèles IA, Vosk, Python, ffmpeg</small></td>
                     <td class="text-end text-muted">~11 Go</td>
-                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=SpocSpace-IA-Install.zip" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-green"><i class="bi bi-download"></i> ZIP</a></td>
+                    <td class="text-center"><a href="/newspocspace/whisper-local/download.php?file=SpocSpace-IA-Install.zip" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-green"><i class="bi bi-download"></i> ZIP</a></td>
                   </tr>
                   <tr>
                     <td><strong>install.bat</strong><br><small class="text-muted">Lanceur d'installation</small></td>
                     <td class="text-end text-muted">~1 Ko</td>
-                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=install.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-terminal"></i> BAT</a></td>
+                    <td class="text-center"><a href="/newspocspace/whisper-local/download.php?file=install.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-beige"><i class="bi bi-terminal"></i> BAT</a></td>
                   </tr>
                   <tr>
                     <td><strong>uninstall.bat</strong><br><small class="text-muted">Désinstallation complète</small></td>
                     <td class="text-end text-muted">~1 Ko</td>
-                    <td class="text-center"><a href="/spocspace/whisper-local/download.php?file=uninstall.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-red"><i class="bi bi-trash3"></i> BAT</a></td>
+                    <td class="text-center"><a href="/newspocspace/whisper-local/download.php?file=uninstall.bat" class="btn btn-sm d-inline-flex align-items-center gap-1 ia-btn-dl-red"><i class="bi bi-trash3"></i> BAT</a></td>
                   </tr>
                 </tbody>
               </table>

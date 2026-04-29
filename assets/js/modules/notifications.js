@@ -26,7 +26,7 @@ async function handleClick(e) {
     if (filterBtn) {
         e.preventDefault();
         const filter = filterBtn.dataset.filter;
-        const url = filter === 'active' ? '/spocspace/notifications' : `/spocspace/notifications/${filter}`;
+        const url = filter === 'active' ? '/newspocspace/notifications' : `/newspocspace/notifications/${filter}`;
         history.pushState({}, '', url);
         reload();
         return;
@@ -58,7 +58,7 @@ async function handleClick(e) {
             updateTopbarBadge();
         }
         if (url) {
-            history.pushState({}, '', `/spocspace/${url}`);
+            history.pushState({}, '', `/newspocspace/${url}`);
             reload();
         }
         return;

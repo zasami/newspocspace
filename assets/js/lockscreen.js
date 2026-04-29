@@ -189,7 +189,7 @@ async function _handleLogout() {
     } catch (e) { /* offline logout */ }
     await db.clearAuthToken();
     window.__SS__.user = null;
-    window.location.href = '/spocspace/login';
+    window.location.href = '/newspocspace/login';
 }
 
 function _updateLockStatus() {

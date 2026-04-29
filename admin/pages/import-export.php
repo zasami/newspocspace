@@ -164,7 +164,7 @@ document.getElementById('impUsersBtn')?.addEventListener('click', async () => {
     fd.append('file', file);
 
     try {
-        const resp = await fetch('/spocspace/admin/api.php', {
+        const resp = await fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,
@@ -201,7 +201,7 @@ document.getElementById('impPolyBtn')?.addEventListener('click', async () => {
     fd.append('file', file);
 
     try {
-        const resp = await fetch('/spocspace/admin/api.php', {
+        const resp = await fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
             body: fd,

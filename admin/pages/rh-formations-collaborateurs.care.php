@@ -42,6 +42,51 @@ $collabs = Db::fetchAll(
     [$today, $annee, $annee]
 );
 
+// ── Détails par user (formations en cours + thématiques) batchés ────
+$formationsRows = Db::fetchAll(
+    "SELECT p.user_id, p.id AS pid, p.statut AS p_statut, p.certificat_url, p.date_realisation,
+            p.heures_realisees,
+            f.id AS f_id, f.titre, f.is_obligatoire AS obligatoire, f.date_debut, f.date_fin, f.duree_heures,
+            CASE
+              WHEN p.statut IN ('present','valide') AND (p.certificat_url IS NULL OR p.certificat_url = '') THEN 1
+              WHEN p.statut = 'inscrit' AND f.date_debut <= CURDATE() THEN 2
+              WHEN p.statut = 'inscrit' AND f.date_debut >  CURDATE() THEN 3
+              ELSE 4
+            END AS urgency
+       FROM formation_participants p
+       JOIN formations f ON f.id = p.formation_id
+       JOIN users u ON u.id = p.user_id
+      WHERE u.is_active = 1
+        AND ( p.statut = 'inscrit'
+              OR (p.statut IN ('present','valide') AND (p.certificat_url IS NULL OR p.certificat_url = ''))
+              OR (p.statut = 'valide' AND f.date_fin >= CURDATE() - INTERVAL 60 DAY) )
+      ORDER BY p.user_id, urgency, f.date_debut DESC"
+);
+$formationsByUser = [];
+foreach ($formationsRows as $f) { $formationsByUser[$f['user_id']][] = $f; }
+
+$thematiquesRows = Db::fetchAll(
+    "SELECT cu.user_id, ct.nom AS them_nom, cu.niveau_actuel, cu.niveau_requis,
+            cu.priorite, cu.ecart, cu.date_expiration
+       FROM competences_user cu
+       JOIN competences_thematiques ct ON ct.id = cu.thematique_id
+       JOIN users u ON u.id = cu.user_id
+      WHERE u.is_active = 1
+      ORDER BY cu.user_id, cu.ecart DESC, ct.nom"
+);
+$thematiquesByUser = [];
+foreach ($thematiquesRows as $t) { $thematiquesByUser[$t['user_id']][] = $t; }
+
+$heuresFuturesRows = Db::fetchAll(
+    "SELECT p.user_id, COALESCE(SUM(f.duree_heures), 0) AS h
+       FROM formation_participants p
+       JOIN formations f ON f.id = p.formation_id
+      WHERE p.statut = 'inscrit' AND f.date_debut > CURDATE()
+      GROUP BY p.user_id"
+);
+$heuresFuturesByUser = [];
+foreach ($heuresFuturesRows as $hr) { $heuresFuturesByUser[$hr['user_id']] = (float) $hr['h']; }
+
 // ── Stats globales (cartes filtrables) ──────────────────────────
 $nbTotal = count($collabs);
 $nbConformes = 0;
@@ -251,9 +296,163 @@ $fmtN = fn($n, $d=0) => number_format((float)$n, $d, ',', "'");
               </td>
               <td class="num t-num"><?= $fmtN($c['heures_an']) ?>h</td>
               <td>
-                <a href="?page=rh-collab-competences&id=<?= h($c['id']) ?>" data-page-link class="fcl-btn-mini" title="Historique">
-                  <i class="bi bi-clock-history"></i>
-                </a>
+                <button class="fcl-expand-btn" data-uid="<?= h($c['id']) ?>" type="button" aria-label="Voir le détail" aria-expanded="false">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Détail collapse -->
+            <?php
+              $userForm = $formationsByUser[$c['id']] ?? [];
+              $userThem = $thematiquesByUser[$c['id']] ?? [];
+              $heuresPlan = $heuresFuturesByUser[$c['id']] ?? 0;
+
+              // Niveau global = moyenne des niveaux actuels des thématiques renseignées
+              $sumLvl = 0; $cntLvl = 0; $sumReq = 0; $cntReq = 0;
+              foreach ($userThem as $t) {
+                if ($t['niveau_actuel'] !== null) { $sumLvl += (int)$t['niveau_actuel']; $cntLvl++; }
+                if ($t['niveau_requis'] !== null) { $sumReq += (int)$t['niveau_requis']; $cntReq++; }
+              }
+              $niveauGlobal = $cntLvl > 0 ? round($sumLvl / $cntLvl, 1) : 0;
+              $niveauMaxRef = $cntReq > 0 ? round($sumReq / $cntReq) : 4;
+              if ($niveauMaxRef < 4) $niveauMaxRef = 4;
+            ?>
+            <tr class="fcl-detail-row" id="fcl-det-<?= h($c['id']) ?>" hidden>
+              <td colspan="10" class="fcl-detail-cell">
+                <div class="fcl-detail">
+                  <div class="fcl-detail-grid">
+                    <!-- Formations en cours -->
+                    <div class="fcl-detail-block">
+                      <div class="fcl-detail-h">
+                        <span class="fcl-detail-tick"></span>
+                        <span class="fcl-detail-title">Formations en cours</span>
+                      </div>
+                      <?php if (!$userForm): ?>
+                        <div class="fcl-detail-empty">Aucune formation en cours ni inscription à venir.</div>
+                      <?php else: ?>
+                        <ul class="fcl-form-list">
+                          <?php foreach (array_slice($userForm, 0, 5) as $f):
+                            $u = (int)$f['urgency'];
+                            $statut = match($u) {
+                              1 => ['URGENT','urgent','bi-exclamation-circle-fill'],
+                              2 => ['EN COURS','progress','bi-arrow-clockwise'],
+                              3 => ['À PLANIFIER','planif','bi-clock-history'],
+                              default => ['OK','ok','bi-check-circle-fill'],
+                            };
+                            $sub = '';
+                            if ($u === 1) {
+                              $sub = 'À téléverser' . ($f['obligatoire'] ? ' · obligatoire' : '');
+                            } elseif ($u === 2) {
+                              $sub = 'Démarrée le ' . date('d.m.Y', strtotime($f['date_debut']));
+                            } elseif ($u === 3) {
+                              $sub = 'Prévue le ' . date('d.m.Y', strtotime($f['date_debut']));
+                              if ($f['obligatoire']) $sub .= ' · obligatoire';
+                            } else {
+                              $sub = 'Validée ' . ($f['date_realisation'] ? date('m.Y', strtotime($f['date_realisation'])) : '');
+                            }
+                          ?>
+                            <li class="fcl-form-item fcl-form-item-<?= h($statut[1]) ?>">
+                              <span class="fcl-form-icon"><i class="bi <?= h($statut[2]) ?>"></i></span>
+                              <div class="fcl-form-body">
+                                <div class="fcl-form-titre"><?= h($f['titre']) ?></div>
+                                <div class="fcl-form-sub"><?= h($sub) ?></div>
+                              </div>
+                              <span class="fcl-form-badge fcl-form-badge-<?= h($statut[1]) ?>"><?= h($statut[0]) ?></span>
+                            </li>
+                          <?php endforeach ?>
+                        </ul>
+                      <?php endif ?>
+                    </div>
+
+                    <!-- Niveau par thématique -->
+                    <div class="fcl-detail-block">
+                      <div class="fcl-detail-h">
+                        <span class="fcl-detail-tick"></span>
+                        <span class="fcl-detail-title">Niveau par thématique</span>
+                      </div>
+                      <?php if (!$userThem): ?>
+                        <div class="fcl-detail-empty">Compétences non encore évaluées.</div>
+                      <?php else: ?>
+                        <div class="fcl-them-list">
+                          <?php foreach (array_slice($userThem, 0, 5) as $t):
+                            $req = (int)($t['niveau_requis'] ?: 4);
+                            $cur = (int)($t['niveau_actuel'] ?: 0);
+                            $pct = $req > 0 ? min(100, round($cur / $req * 100)) : 0;
+                            $cls = match($t['priorite']) {
+                              'haute' => 'bad',
+                              'moyenne' => 'warn',
+                              default => 'ok',
+                            };
+                          ?>
+                            <div class="fcl-them-row">
+                              <div class="fcl-them-head">
+                                <span class="fcl-them-nom"><?= h($t['them_nom']) ?></span>
+                                <span class="fcl-them-niv">Niveau <strong><?= $cur ?></strong> / <?= $req ?> requis</span>
+                              </div>
+                              <div class="fcl-them-bar"><span class="fcl-them-fill fcl-them-fill-<?= $cls ?>" style="width: <?= $pct ?>%"></span></div>
+                            </div>
+                          <?php endforeach ?>
+                        </div>
+                      <?php endif ?>
+
+                      <!-- Stats compactes -->
+                      <div class="fcl-detail-stats">
+                        <div class="fcl-detail-stat">
+                          <div class="fcl-detail-stat-lbl">Heures <?= $annee ?></div>
+                          <div class="fcl-detail-stat-val"><?= $fmtN($c['heures_an']) ?><span>h</span></div>
+                          <?php if ($heuresPlan > 0): ?>
+                            <div class="fcl-detail-stat-sub">+ <?= $fmtN($heuresPlan) ?>h planifiées</div>
+                          <?php endif ?>
+                        </div>
+                        <div class="fcl-detail-stat">
+                          <div class="fcl-detail-stat-lbl">Niveau global</div>
+                          <div class="fcl-detail-stat-val"><?= $fmtN($niveauGlobal, 1) ?><span>/<?= $niveauMaxRef ?></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Actions rapides -->
+                  <div class="fcl-detail-actions-h">
+                    <span class="fcl-detail-tick"></span>
+                    <span class="fcl-detail-title">Actions rapides</span>
+                  </div>
+                  <div class="fcl-actions-grid">
+                    <a class="fcl-action fcl-action-primary" href="?page=rh-formations-fegems&user_id=<?= h($c['id']) ?>" data-page-link>
+                      <span class="fcl-action-icon"><i class="bi bi-mortarboard"></i></span>
+                      <div class="fcl-action-body">
+                        <div class="fcl-action-titre">Inscrire à une formation</div>
+                        <div class="fcl-action-sub">Catalogue FEGEMS · sessions disponibles</div>
+                      </div>
+                      <i class="bi bi-arrow-right fcl-action-arrow"></i>
+                    </a>
+                    <a class="fcl-action" href="?page=rh-collab-competences&id=<?= h($c['id']) ?>" data-page-link>
+                      <span class="fcl-action-icon"><i class="bi bi-file-text"></i></span>
+                      <div class="fcl-action-body">
+                        <div class="fcl-action-titre">Voir la fiche complète</div>
+                        <div class="fcl-action-sub">Compétences, historique, contrat</div>
+                      </div>
+                      <i class="bi bi-arrow-right fcl-action-arrow"></i>
+                    </a>
+                    <a class="fcl-action" href="?page=rh-entretiens-fiche&user_id=<?= h($c['id']) ?>" data-page-link>
+                      <span class="fcl-action-icon"><i class="bi bi-chat-left-text"></i></span>
+                      <div class="fcl-action-body">
+                        <div class="fcl-action-titre">Lancer un entretien</div>
+                        <div class="fcl-action-sub">Annuel · objectifs · bilan</div>
+                      </div>
+                      <i class="bi bi-arrow-right fcl-action-arrow"></i>
+                    </a>
+                    <a class="fcl-action" href="?page=user-edit&id=<?= h($c['id']) ?>" data-page-link>
+                      <span class="fcl-action-icon"><i class="bi bi-pencil"></i></span>
+                      <div class="fcl-action-body">
+                        <div class="fcl-action-titre">Modifier les informations</div>
+                        <div class="fcl-action-sub">Diplômes, taux, contrat</div>
+                      </div>
+                      <i class="bi bi-arrow-right fcl-action-arrow"></i>
+                    </a>
+                  </div>
+                </div>
               </td>
             </tr>
           <?php endforeach ?>
@@ -553,6 +752,165 @@ La direction</textarea>
 }
 .fcl-empty i { font-size: 36px; opacity: .25; display: block; margin-bottom: 12px; }
 
+/* ──── Bouton expand & ligne détail ──── */
+.fcl-page .fcl-expand-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--fcl-surface-2); border: 1px solid var(--fcl-line);
+  color: var(--fcl-muted); cursor: pointer; transition: .15s;
+  font-family: inherit;
+}
+.fcl-page .fcl-expand-btn:hover { border-color: var(--fcl-teal-300); color: var(--fcl-teal-600); background: var(--fcl-teal-50); }
+.fcl-page .fcl-expand-btn[aria-expanded="true"] {
+  background: var(--fcl-teal-600); border-color: var(--fcl-teal-600); color: #fff;
+}
+.fcl-page .fcl-expand-btn[aria-expanded="true"] i { transform: rotate(180deg); }
+.fcl-expand-btn i { transition: transform .25s; display: inline-block; }
+
+.fcl-table tbody tr.fcl-row.is-open { background: var(--fcl-teal-50); }
+.fcl-table tbody tr.fcl-row.is-open td:first-child { box-shadow: inset 3px 0 0 var(--fcl-teal-600); }
+
+.fcl-detail-row[hidden] { display: none; }
+.fcl-detail-cell {
+  padding: 0 !important;
+  background: var(--fcl-surface-2);
+  border-bottom: 1px solid var(--fcl-line) !important;
+  border-left: 3px solid var(--fcl-teal-600) !important;
+}
+.fcl-detail {
+  padding: 22px 26px 22px 30px;
+  animation: fclExpand .22s ease;
+}
+@keyframes fclExpand { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+.fcl-detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  margin-bottom: 18px;
+}
+.fcl-detail-h {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.fcl-detail-tick {
+  width: 16px; height: 2px; background: var(--fcl-teal-600); border-radius: 99px;
+}
+.fcl-detail-title {
+  font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  font-weight: 700; color: var(--fcl-muted);
+}
+.fcl-detail-empty {
+  font-size: 12.5px; color: var(--fcl-muted); padding: 8px 4px; font-style: italic;
+}
+
+/* Formations en cours */
+.fcl-form-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fcl-form-item {
+  display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--fcl-line);
+  background: #fff;
+}
+.fcl-form-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: grid; place-items: center; font-size: 13px;
+}
+.fcl-form-item-urgent .fcl-form-icon { background: var(--fcl-danger-bg); color: var(--fcl-danger); }
+.fcl-form-item-progress .fcl-form-icon { background: var(--fcl-warn-bg); color: var(--fcl-warn); }
+.fcl-form-item-planif .fcl-form-icon { background: var(--fcl-warn-bg); color: var(--fcl-warn); }
+.fcl-form-item-ok .fcl-form-icon { background: var(--fcl-ok-bg); color: var(--fcl-ok); }
+.fcl-form-titre { font-size: 13px; font-weight: 600; color: var(--fcl-ink); }
+.fcl-form-sub { font-size: 11.5px; color: var(--fcl-muted); margin-top: 1px; }
+.fcl-form-badge {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+  padding: 3px 8px; border-radius: 4px; white-space: nowrap;
+}
+.fcl-form-badge-URGENT          { background: var(--fcl-danger-bg); color: var(--fcl-danger); }
+.fcl-form-badge-EN\ COURS       { background: var(--fcl-warn-bg);   color: var(--fcl-warn); }
+.fcl-form-badge-À\ PLANIFIER    { background: var(--fcl-warn-bg);   color: var(--fcl-warn); }
+.fcl-form-badge-OK              { background: var(--fcl-ok-bg);     color: var(--fcl-ok); }
+
+/* Niveau par thématique */
+.fcl-them-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.fcl-them-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 12.5px; margin-bottom: 4px;
+}
+.fcl-them-nom { color: var(--fcl-ink); font-weight: 500; }
+.fcl-them-niv { color: var(--fcl-muted); font-size: 11.5px; font-family: 'JetBrains Mono', monospace; }
+.fcl-them-niv strong { color: var(--fcl-ink-2); font-weight: 600; }
+.fcl-them-bar {
+  height: 6px; background: var(--fcl-line); border-radius: 99px; overflow: hidden;
+}
+.fcl-them-fill { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+.fcl-them-fill-ok   { background: linear-gradient(90deg, var(--fcl-ok), #5cad8b); }
+.fcl-them-fill-warn { background: linear-gradient(90deg, var(--fcl-warn), #e0a85a); }
+.fcl-them-fill-bad  { background: linear-gradient(90deg, var(--fcl-danger), #cd6b62); }
+
+/* Stats compactes */
+.fcl-detail-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.fcl-detail-stat {
+  background: #fff; border: 1px solid var(--fcl-line); border-radius: 8px;
+  padding: 10px 14px;
+}
+.fcl-detail-stat-lbl {
+  font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--fcl-muted); font-weight: 700; margin-bottom: 4px;
+}
+.fcl-detail-stat-val {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600;
+  letter-spacing: -.02em; color: var(--fcl-ink); line-height: 1;
+}
+.fcl-detail-stat-val span {
+  font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 13px;
+  color: var(--fcl-muted); margin-left: 2px;
+}
+.fcl-detail-stat-sub {
+  font-size: 10.5px; color: var(--fcl-muted); margin-top: 4px;
+}
+
+/* Actions */
+.fcl-detail-actions-h {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.fcl-actions-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
+.fcl-page .fcl-action {
+  display: grid; grid-template-columns: 32px 1fr 16px; gap: 12px; align-items: center;
+  padding: 11px 14px; border-radius: 9px;
+  border: 1px solid var(--fcl-line); background: #fff;
+  text-decoration: none; color: var(--fcl-ink); transition: .15s;
+}
+.fcl-page .fcl-action:hover {
+  border-color: var(--fcl-teal-300);
+  background: var(--fcl-teal-50);
+  transform: translateY(-1px);
+}
+.fcl-page .fcl-action-primary {
+  background: var(--fcl-teal-700); border-color: var(--fcl-teal-700); color: #fff;
+}
+.fcl-page .fcl-action-primary .fcl-action-sub { color: rgba(255,255,255,.75); }
+.fcl-page .fcl-action-primary .fcl-action-icon { background: rgba(255,255,255,.14); color: #fff; }
+.fcl-page .fcl-action-primary:hover {
+  background: var(--fcl-teal-600); border-color: var(--fcl-teal-600);
+}
+.fcl-action-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; font-size: 14px;
+  background: var(--fcl-teal-50); color: var(--fcl-teal-600); flex-shrink: 0;
+}
+.fcl-action-titre { font-size: 13px; font-weight: 600; line-height: 1.25; }
+.fcl-action-sub { font-size: 11px; color: var(--fcl-muted); margin-top: 2px; }
+.fcl-action-arrow { font-size: 13px; color: var(--fcl-muted); }
+.fcl-page .fcl-action-primary .fcl-action-arrow { color: rgba(255,255,255,.7); }
+
+@media (max-width: 1100px) {
+  .fcl-detail-grid { grid-template-columns: 1fr; gap: 20px; }
+  .fcl-actions-grid { grid-template-columns: 1fr; }
+}
+
 /* MODAL · pattern Bootstrap SpocSpace, juste styles spécifiques pour les chips destinataires */
 #fclReminderRecipients {
   display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center;
@@ -601,6 +959,14 @@ La direction</textarea>
       const matchStat = curStatFilter === 'all' || r.classList.contains('flt-' + curStatFilter);
       const ok = matchSec && matchSearch && matchStat;
       r.hidden = !ok;
+      // Cacher également la ligne détail associée si la ligne parente est masquée
+      const det = document.getElementById('fcl-det-' + r.dataset.uid);
+      if (det && !ok) {
+        det.hidden = true;
+        r.classList.remove('is-open');
+        const btn = r.querySelector('.fcl-expand-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
       if (ok) visible++;
     });
     shownCount.textContent = visible;
@@ -608,6 +974,46 @@ La direction</textarea>
     syncSelectAll();
     updateBulkButton();
   }
+
+  // Expand/collapse détail ligne (1 seule ouverte à la fois)
+  function closeAllDetails(except) {
+    document.querySelectorAll('.fcl-row.is-open').forEach(r => {
+      if (r === except) return;
+      r.classList.remove('is-open');
+      const btn = r.querySelector('.fcl-expand-btn');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      const det = document.getElementById('fcl-det-' + r.dataset.uid);
+      if (det) det.hidden = true;
+    });
+  }
+  document.querySelectorAll('.fcl-expand-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const tr = btn.closest('tr.fcl-row');
+      const det = document.getElementById('fcl-det-' + tr.dataset.uid);
+      if (!det) return;
+      const isOpen = !det.hidden;
+      if (isOpen) {
+        det.hidden = true;
+        tr.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        closeAllDetails(tr);
+        det.hidden = false;
+        tr.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+  // Click sur le corps de la ligne (hors checkbox / lien / bouton expand) = toggle
+  document.querySelectorAll('.fcl-row').forEach(tr => {
+    tr.addEventListener('click', e => {
+      if (e.target.closest('a, input, button, .fcl-expand-btn')) return;
+      const btn = tr.querySelector('.fcl-expand-btn');
+      if (btn) btn.click();
+    });
+    tr.style.cursor = 'pointer';
+  });
 
   // Stat cards click → filter
   document.querySelectorAll('.fcl-stat').forEach(card => {

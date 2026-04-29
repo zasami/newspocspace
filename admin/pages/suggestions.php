@@ -41,7 +41,7 @@ $urgenceLabels = [
     'faible'   => ['Faible',   'sug-adm-urg-faible'],
 ];
 ?>
-<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css?v=<?= APP_VERSION ?>">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/emoji-picker.css?v=<?= APP_VERSION ?>">
 <style>
 .sug-adm-wrap { padding: 18px 22px; }
 
@@ -257,4 +257,4 @@ $urgenceLabels = [
     </div>
 </div>
 
-<script nonce="<?= $cspNonce ?>" src="/spocspace/admin/assets/js/pages/suggestions.js?v=<?= APP_VERSION ?>"></script>
+<script nonce="<?= $cspNonce ?>" src="/newspocspace/admin/assets/js/pages/suggestions.js?v=<?= APP_VERSION ?>"></script>

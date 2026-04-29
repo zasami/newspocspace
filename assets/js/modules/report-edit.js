@@ -160,7 +160,7 @@ async function save(action) {
     if (r.success) {
         toast(r.message || 'Enregistré');
         // Retour à la page mon-stage (via SPA router)
-        history.pushState({}, '', '/spocspace/mon-stage');
+        history.pushState({}, '', '/newspocspace/mon-stage');
         window.dispatchEvent(new PopStateEvent('popstate'));
     } else {
         toast(r.message || r.error || 'Erreur lors de l\'enregistrement');

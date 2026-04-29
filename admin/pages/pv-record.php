@@ -26,8 +26,8 @@ $pvRecordCfg = [];
 foreach ($pvRecordCfgRows as $r) { $pvRecordCfg[$r['config_key']] = $r['config_value']; }
 ?>
 <!-- PV Recording Page -->
-<link rel="stylesheet" href="/spocspace/admin/assets/css/editor.css">
-<link rel="stylesheet" href="/spocspace/admin/assets/css/emoji-picker.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css">
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/emoji-picker.css">
 <style>
 /* ── Server status: mic icon indicator ── */
 .srv-indicator {
@@ -1224,7 +1224,7 @@ async function initPvrecordPage() {
   setInterval(checkServers, 8000);
 
   try {
-    editorModule = await import('/spocspace/assets/js/rich-editor.js');
+    editorModule = await import('/newspocspace/assets/js/rich-editor.js');
     console.log('[PV-INIT] Editor module loaded');
   } catch (e) {
     console.error('[PV-INIT] Editor import error:', e);
@@ -1295,7 +1295,7 @@ function updatePvInfo() {
     participants.length > 0 ? participants.map(p => p.prenom + ' ' + p.nom).join(', ') : '—';
     
   if (pvData.audio_path) {
-      showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
+      showAudioPlayback('/newspocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvData.id);
   }
 }
 
@@ -1314,12 +1314,12 @@ function showAudioPlayback(url) {
 /*
 async function initLocalAI_WASM() {
     try {
-        const { pipeline, env } = await import('/spocspace/assets/ai/js/transformers.min.js');
+        const { pipeline, env } = await import('/newspocspace/assets/ai/js/transformers.min.js');
 
         env.allowLocalModels = true;
         env.allowRemoteModels = false;
-        env.localModelPath = '/spocspace/assets/ai/models/';
-        env.backends.onnx.wasm.wasmPaths = '/spocspace/assets/ai/js/';
+        env.localModelPath = '/newspocspace/assets/ai/models/';
+        env.backends.onnx.wasm.wasmPaths = '/newspocspace/assets/ai/js/';
 
         console.log("Chargement du modèle Whisper en mémoire...");
 
@@ -1479,7 +1479,7 @@ async function transcribeFullAudioBlob(blob) {
             formData.append('action', 'admin_transcribe_external');
             formData.append('audio', blob, 'audio.webm');
 
-            const res = await fetch('/spocspace/admin/api.php', {
+            const res = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: { 'X-CSRF-Token': window.__SS_ADMIN__?.csrfToken || '' },
                 body: formData,
@@ -2611,7 +2611,7 @@ async function uploadAudioBlob(blob, filename) {
             headers['X-CSRF-Token'] = window.__SS_ADMIN__.csrfToken;
         }
 
-        const res = await fetch('/spocspace/admin/api.php', {
+        const res = await fetch('/newspocspace/admin/api.php', {
             method: 'POST',
             headers: headers,
             body: formData
@@ -2621,7 +2621,7 @@ async function uploadAudioBlob(blob, filename) {
         if (json.csrf && window.__SS_ADMIN__) window.__SS_ADMIN__.csrfToken = json.csrf;
 
         if (json.success) {
-            if (json.audio_path) showAudioPlayback('/spocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
+            if (json.audio_path) showAudioPlayback('/newspocspace/admin/api.php?action=admin_serve_pv_audio&id=' + pvId);
             return true;
         } else {
             toast('Erreur: ' + (json.message || 'Échec de la sauvegarde audio'), 'error');
@@ -2724,7 +2724,7 @@ async function structurePv() {
         startProgress('Structuration IA cloud…', estSec, '#D0C4D8');
 
         try {
-            const res = await fetch('/spocspace/admin/api.php', {
+            const res = await fetch('/newspocspace/admin/api.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

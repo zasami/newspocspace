@@ -175,7 +175,7 @@ function admin_update_fiche_amelioration_statut()
                 'email'     => $auteur['email'],
                 'titre'     => $fiche['titre'],
                 'statut'    => _fa_statut_label($statut),
-                'url_fiche' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'www.zkriva.com') . '/spocspace/#/fiches-amelioration',
+                'url_fiche' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'www.zkriva.com') . '/newspocspace/#/fiches-amelioration',
             ], $admin['id']);
         }
     }
@@ -268,7 +268,7 @@ function admin_propose_fiche_amelioration_rdv()
             'date_rdv'      => date('d.m.Y à H:i', strtotime($dateProposed)),
             'lieu'          => $lieu ?: 'à préciser',
             'admin_notes'   => $notes ?: '',
-            'url_fiche'     => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'www.zkriva.com') . '/spocspace/#/fiches-amelioration',
+            'url_fiche'     => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'www.zkriva.com') . '/newspocspace/#/fiches-amelioration',
         ], $admin['id']);
     }
 

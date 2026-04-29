@@ -25,7 +25,7 @@ export function init() {
     document.querySelector('[data-sgd-edit]')?.addEventListener('click', (e) => {
         const id = e.currentTarget.dataset.sgdEdit;
         navigateTo('suggestion-new', '');
-        history.replaceState({}, '', `/spocspace/suggestion-new?id=${encodeURIComponent(id)}`);
+        history.replaceState({}, '', `/newspocspace/suggestion-new?id=${encodeURIComponent(id)}`);
         location.reload();
     });
 

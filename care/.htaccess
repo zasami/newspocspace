@@ -7,5 +7,5 @@ RewriteRule ^ - [L]
 
 # Clean URLs: pagename → index.php?page=pagename
 RewriteRule ^api\.php$ - [L]
-RewriteRule ^([a-z0-9-]+)/?$ /spocspace/care/index.php?page=$1 [L,QSA]
-RewriteRule ^([a-z0-9-]+)/([a-zA-Z0-9-]+)/?$ /spocspace/care/index.php?page=$1&id=$2 [L,QSA]
+RewriteRule ^([a-z0-9-]+)/?$ /newspocspace/care/index.php?page=$1 [L,QSA]
+RewriteRule ^([a-z0-9-]+)/([a-zA-Z0-9-]+)/?$ /newspocspace/care/index.php?page=$1&id=$2 [L,QSA]

@@ -30,7 +30,7 @@ export async function init() {
                     pageLabels: shellData.pageLabels || {},
                 };
                 await db.touchActivity();
-                window.location.href = '/spocspace/home';
+                window.location.href = '/newspocspace/home';
                 return;
             }
             // Token valid but inactive > 15 min — show login form (offline validation)
@@ -92,7 +92,7 @@ export async function init() {
                     pageLabels: shellData?.pageLabels || {},
                 };
                 toast('Connexion hors-ligne');
-                window.location.href = '/spocspace/home';
+                window.location.href = '/newspocspace/home';
                 return;
             } else if (!pwdOk && token) {
                 errorEl.textContent = 'Mot de passe incorrect (vérification hors-ligne)';
@@ -141,9 +141,9 @@ export async function init() {
             } else {
                 const role = res.user?.role;
                 if (role === 'admin' || role === 'direction') {
-                    window.location.href = '/spocspace/admin/';
+                    window.location.href = '/newspocspace/admin/';
                 } else {
-                    window.location.href = '/spocspace/home';
+                    window.location.href = '/newspocspace/home';
                 }
             }
         } else {

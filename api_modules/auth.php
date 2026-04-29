@@ -180,11 +180,11 @@ function upload_avatar()
     // Delete old avatar if exists
     $oldPhoto = Db::getOne("SELECT photo FROM users WHERE id = ?", [$user['id']]);
     if ($oldPhoto) {
-        $oldPath = __DIR__ . '/../' . ltrim($oldPhoto, '/spocspace/');
+        $oldPath = __DIR__ . '/../' . ltrim($oldPhoto, '/newspocspace/');
         if (file_exists($oldPath)) @unlink($oldPath);
     }
 
-    $photoUrl = '/spocspace/storage/avatars/' . $filename;
+    $photoUrl = '/newspocspace/storage/avatars/' . $filename;
     Db::exec("UPDATE users SET photo = ? WHERE id = ?", [$photoUrl, $user['id']]);
 
     // Update session

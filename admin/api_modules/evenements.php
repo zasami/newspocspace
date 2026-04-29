@@ -265,7 +265,7 @@ function admin_upload_evenement_image() {
     $sanErr = FileSecurity::sanitizeInPlace($storageDir . $filename, $ext);
     if ($sanErr) { @unlink($storageDir . $filename); bad_request($sanErr); }
 
-    $url = '/spocspace/assets/uploads/evenements/' . $filename;
+    $url = '/newspocspace/assets/uploads/evenements/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
 
@@ -311,7 +311,7 @@ function admin_save_pixabay_evenement() {
     imagewebp($img, $storageDir . $filename, 82);
     imagedestroy($img);
 
-    $url = '/spocspace/assets/uploads/evenements/' . $filename;
+    $url = '/newspocspace/assets/uploads/evenements/' . $filename;
     respond(['success' => true, 'url' => $url]);
 }
 

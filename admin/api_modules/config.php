@@ -165,7 +165,7 @@ function admin_upload_logo()
     imagedestroy($img);
 
     // Save URL in config
-    $logoUrl = '/spocspace/storage/logos/' . $filename;
+    $logoUrl = '/newspocspace/storage/logos/' . $filename;
     $userId = $_SESSION['ss_user']['id'];
     Db::exec(
         "INSERT INTO ems_config (config_key, config_value, updated_by) VALUES ('ems_logo_url', ?, ?)
@@ -213,7 +213,7 @@ function admin_upload_pinned_image()
     imagewebp($img, $destPath, 85);
     imagedestroy($img);
 
-    $imageUrl = '/spocspace/storage/logos/' . $filename;
+    $imageUrl = '/newspocspace/storage/logos/' . $filename;
     $userId = $_SESSION['ss_user']['id'];
     Db::exec(
         "INSERT INTO ems_config (config_key, config_value, updated_by) VALUES ('pinned_image', ?, ?)
