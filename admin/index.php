@@ -74,7 +74,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 
 // Current page
 $page = $_GET['page'] ?? 'dashboard';
-$allowedPages = ['dashboard', 'etablissement', 'users', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-formations-pluriannuel', 'rh-formations-dashboard', 'rh-formations-dashboard-secteur', 'rh-formations-collaborateurs', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
+$allowedPages = ['dashboard', 'etablissement', 'users', 'rh-collaborateurs', 'user-edit', 'user-detail', 'planning', 'modules', 'horaires', 'desirs', 'absences', 'vacances', 'changements', 'stats', 'besoins', 'messages', 'alertes', 'apparence', 'config-ia', 'repartition', 'affichage-planning', 'pv', 'pv-detail', 'pv-record', 'sondages', 'sondage-edit', 'documents', 'fiches-salaire', 'import-export', 'todos', 'notes', 'roadmap', 'residents', 'marquage', 'famille', 'cuisine', 'reservations', 'email-externe', 'email-config', 'contacts', 'recrutement', 'rh-offres', 'rh-candidatures', 'rh-formations', 'rh-formations-stats', 'rh-formations-cartographie', 'rh-formations-fegems', 'rh-formations-sessions', 'rh-formations-profil', 'rh-formations-parametres', 'rh-formations-pluriannuel', 'rh-formations-dashboard', 'rh-formations-dashboard-secteur', 'rh-formations-collaborateurs', 'rh-collab-competences', 'rh-entretiens', 'rh-entretiens-fiche', 'rh-stagiaires', 'rh-stagiaire-detail', 'connexions', 'agenda', 'mur', 'wiki', 'annonces', 'wiki-analytics', 'securite', 'annuaire', 'sauvegardes', 'salles', 'evenements', 'email-templates', 'fiches-amelioration', 'suggestions'];
 if (!in_array($page, $allowedPages)) {
     $page = 'dashboard';
 }
@@ -122,6 +122,7 @@ $pageLabels = [
     'dashboard'     => 'Tableau de bord',
     'etablissement' => 'Établissement',
     'users'         => 'Collaborateurs',
+    'rh-collaborateurs' => 'Collaborateurs (RH)',
     'user-edit'     => 'Modifier collaborateur',
     'user-detail'   => 'Fiche collaborateur',
     'planning'      => 'Planning',
@@ -255,6 +256,12 @@ $sidebarModules = [
         'label' => 'RH',
         'icon'  => 'people',
         'sections' => [
+            'rh-effectif' => [
+                'label' => 'Effectif',
+                'items' => [
+                    'rh-collaborateurs' => ['label' => 'Collaborateurs', 'icon' => 'people-fill'],
+                ],
+            ],
             'rh-recrutement' => [
                 'label' => 'Recrutement',
                 'items' => [

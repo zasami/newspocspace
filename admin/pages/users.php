@@ -1,205 +1,293 @@
 <?php
+/**
+ * Liste des collaborateurs — Module Planning
+ * Mockup utilisateur 29 avril 2026 (Tailwind/Spocspace Care).
+ */
+
 // ─── Données serveur ──────────────────────────────────────────────────────────
+$today = date('Y-m-d');
+
 $usersRaw = Db::fetchAll(
-    "SELECT u.*, f.nom AS fonction_nom, f.code AS fonction_code
+    "SELECT u.id, u.employee_id, u.email, u.nom, u.prenom, u.photo, u.taux,
+            u.type_contrat, u.solde_vacances, u.role, u.is_active,
+            f.code AS fonction_code, f.nom AS fonction_nom,
+            (SELECT m.id FROM user_modules um JOIN modules m ON m.id = um.module_id
+             WHERE um.user_id = u.id ORDER BY um.is_principal DESC, m.ordre LIMIT 1) AS module_id,
+            (SELECT m.code FROM user_modules um JOIN modules m ON m.id = um.module_id
+             WHERE um.user_id = u.id ORDER BY um.is_principal DESC, m.ordre LIMIT 1) AS module_code,
+            (SELECT m.nom FROM user_modules um JOIN modules m ON m.id = um.module_id
+             WHERE um.user_id = u.id ORDER BY um.is_principal DESC, m.ordre LIMIT 1) AS module_nom,
+            (SELECT a.type FROM absences a
+             WHERE a.user_id = u.id AND a.statut = 'valide'
+               AND a.date_debut <= ? AND a.date_fin >= ?
+             ORDER BY FIELD(a.type,'maladie','accident','vacances','formation','conge_special','autre') LIMIT 1) AS statut_today
      FROM users u
      LEFT JOIN fonctions f ON f.id = u.fonction_id
-     ORDER BY u.nom, u.prenom"
+     ORDER BY u.nom, u.prenom",
+    [$today, $today]
 );
+
+// Liste des modules pour les stat cards (top-N triés par ordre, hors POOL/NUIT)
+$modulesAll = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
+$modulesMain = array_values(array_filter($modulesAll, fn($m) => !in_array($m['code'], ['POOL', 'NUIT'])));
+
+// Compteurs par module : total, présents, absents, vacances
+$moduleStats = [];
+foreach ($modulesMain as $m) {
+    $moduleStats[$m['id']] = [
+        'id'       => $m['id'],
+        'code'     => $m['code'],
+        'nom'      => $m['nom'],
+        'total'    => 0,
+        'presents' => 0,
+        'absents'  => 0,
+        'vacances' => 0,
+    ];
+}
+$globalCounts = ['presents' => 0, 'absents' => 0, 'vacances' => 0, 'total' => 0];
+
+foreach ($usersRaw as $u) {
+    if (!$u['is_active']) continue;
+    $globalCounts['total']++;
+    $statut = $u['statut_today'] ?? null;
+    $isVac     = ($statut === 'vacances');
+    $isAbsent  = in_array($statut, ['maladie','accident','conge_special','autre'], true);
+    if ($isVac)            $globalCounts['vacances']++;
+    elseif ($isAbsent)     $globalCounts['absents']++;
+    else                   $globalCounts['presents']++;
+
+    if (!empty($u['module_id']) && isset($moduleStats[$u['module_id']])) {
+        $moduleStats[$u['module_id']]['total']++;
+        if ($isVac)        $moduleStats[$u['module_id']]['vacances']++;
+        elseif ($isAbsent) $moduleStats[$u['module_id']]['absents']++;
+        else               $moduleStats[$u['module_id']]['presents']++;
+    }
+}
+
+// Couleurs sec-* en rotation pour les cards module (ordre du module → palette)
+$secPalette = ['sec-anim', 'sec-hotel', 'sec-soins', 'sec-tech', 'sec-int', 'sec-admin', 'sec-mgmt'];
+$i = 0;
+foreach ($moduleStats as &$ms) {
+    $ms['sec'] = $secPalette[$i % count($secPalette)];
+    $i++;
+}
+unset($ms);
+
+$totalActive = $globalCounts['total'];
+$nbModulesMain = count($modulesMain);
+
+// Mapping statut absence → libellé + tonalité (pour table)
+// PRÉSENT/E (vert) · MALADIE (rouge) · ACCIDENT (orange) · VACANCES (info) · EN FORMATION (info) · AUTRE (gris)
+$statutMap = [
+    'maladie'       => ['label' => 'MALADIE',      'tone' => 'danger'],
+    'accident'      => ['label' => 'ACCIDENT',     'tone' => 'warn'],
+    'vacances'      => ['label' => 'VACANCES',     'tone' => 'info'],
+    'formation'     => ['label' => 'EN FORMATION', 'tone' => 'info'],
+    'conge_special' => ['label' => 'CONGÉ',        'tone' => 'muted'],
+    'autre'         => ['label' => 'ABSENT',       'tone' => 'muted'],
+];
+
+// Avatar palette teintes sec-* → un couleur stable par utilisateur (hash du id)
+$avatarSecs = ['sec-soins', 'sec-anim', 'sec-hotel', 'sec-tech', 'sec-int', 'sec-admin', 'sec-mgmt'];
+
+// Inject minimal data ; tout le rendu de la table se fait JS-side pour pagination/filtres
 foreach ($usersRaw as &$u) {
-    unset($u['password'], $u['reset_token'], $u['reset_expires']);
-    $u['modules'] = Db::fetchAll(
-        "SELECT m.id, m.nom, m.code, um.is_principal
-         FROM user_modules um JOIN modules m ON m.id = um.module_id
-         WHERE um.user_id = ?",
-        [$u['id']]
-    );
+    unset($u['email']); // pas besoin côté JS pour le moment, on garde le minimum
+    $u['avatar_sec'] = $avatarSecs[crc32($u['id']) % count($avatarSecs)];
+    if ($u['statut_today']) {
+        $u['statut_label'] = $statutMap[$u['statut_today']]['label'] ?? strtoupper($u['statut_today']);
+        $u['statut_tone']  = $statutMap[$u['statut_today']]['tone'] ?? 'muted';
+    } else {
+        $u['statut_label'] = ($u['nom'] && in_array(mb_strtolower(mb_substr($u['prenom'], -1)), ['e','a'])) ? 'PRÉSENTE' : 'PRÉSENT';
+        $u['statut_tone']  = 'ok';
+    }
 }
 unset($u);
-
-$fonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
 ?>
-<style>
-/* Shared action button base */
-.btn-user-edit,
-.btn-user-deactivate,
-.btn-user-activate {
-  background: var(--cl-bg); border: 1px solid var(--cl-border); color: var(--cl-text-muted);
-  border-radius: var(--cl-radius-xs); transition: all var(--cl-transition);
-}
-.btn-user-edit:hover { background: #B8C9D4; color: #3B4F6B; border-color: #B8C9D4; }
-.btn-user-deactivate:hover { background: #E2B8AE; color: #7B3B2C; border-color: #E2B8AE; }
-.btn-user-activate:hover { background: #bcd2cb; color: #2d4a43; border-color: #bcd2cb; }
 
-/* Page header */
-.users-page-title { font-weight: 700; color: var(--cl-text); }
-.users-page-icon { color: #3B4F6B; }
-
-/* Filter bar */
-.filter-bar-body { padding: .75rem 1rem; }
-.filter-col-fonction { min-width: 160px; }
-.filter-col-taux { min-width: 120px; }
-.filter-col-module { min-width: 140px; }
-.filter-col-role { min-width: 140px; }
-.filter-col-statut { min-width: 120px; }
-.filter-col-pagesize { min-width: 80px; }
-.filter-label { font-size: .75rem; font-weight: 600; }
-.filter-divider { width: 1px; height: 36px; background: var(--cl-border, #e5e7eb); align-self: flex-end; margin: 0 4px; }
-.btn-filter-reset { height: 36px; padding: 0 12px; }
-
-/* Pagination */
-.pagination-bar { border-top: 1px solid var(--cl-border, #e5e7eb); }
-.pagination-ellipsis { line-height: 31px; }
-
-/* Modal close button */
-.btn-modal-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #e5e7eb; }
-.btn-modal-close i { font-size: .85rem; }
-
-/* User avatar */
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.user-avatar-initials { width: 32px; height: 32px; border-radius: 50%; background: #B8C9D4; color: #3B4F6B; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 600; flex-shrink: 0; }
-
-/* Table row clickable */
-.tr-clickable { cursor: pointer; }
-
-/* Role badges */
-.badge-ss-admin { background: #E2B8AE; color: #7B3B2C; }
-.badge-ss-direction { background: #D0C4D8; color: #5B4B6B; }
-.badge-ss-responsable { background: #D4C4A8; color: #6B5B3E; }
-.badge-ss-collaborateur { background: #B8C9D4; color: #3B4F6B; }
-
-/* Status icons */
-.text-ss-green { color: #2d4a43; }
-.text-ss-red { color: #7B3B2C; }
-</style>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h4 class="mb-1 users-page-title"><i class="bi bi-people-fill users-page-icon"></i> Liste des collaborateurs</h4>
-    <small class="text-muted" id="usersCount"></small>
+<!-- ─── Hero : titre + sous-titre + actions ─────────────────────────────────── -->
+<div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6">
+  <div class="min-w-0">
+    <div class="flex items-center gap-2 text-[12px] text-muted mb-2">
+      <span class="text-teal-700 font-medium">Module Planning</span>
+      <svg class="w-3.5 h-3.5 text-muted-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>Collaborateurs</span>
+    </div>
+    <h1 class="font-display text-4xl lg:text-5xl font-semibold text-ink tracking-[-0.02em] leading-none mb-3">Collaborateurs</h1>
+    <p class="text-[14px] text-ink-3 max-w-2xl leading-relaxed">
+      <span class="font-mono tabular-nums font-semibold text-ink"><?= (int) $totalActive ?> collaborateurs</span>
+      répartis sur <span class="font-mono tabular-nums font-semibold text-ink"><?= $nbModulesMain ?> <?= $nbModulesMain > 1 ? 'modules' : 'module' ?></span>
+      · vue planning : présence, taux, soldes vacances et contrat.
+    </p>
   </div>
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
-    <i class="bi bi-plus-lg"></i> Nouveau collaborateur
-  </button>
+  <div class="flex items-center gap-2 shrink-0">
+    <button type="button" id="usersBtnExport" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-[13.5px] font-medium text-ink-2 hover:border-teal-300 hover:text-teal-700 hover:bg-teal-50/50 transition-colors bg-surface">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exporter
+    </button>
+    <a href="<?= admin_url('planning') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-[13.5px] font-medium text-ink-2 hover:border-teal-300 hover:text-teal-700 hover:bg-teal-50/50 transition-colors bg-surface">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Voir le planning
+    </a>
+    <button type="button" id="usersBtnAdd" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13.5px] font-medium shadow-sp-sm transition-colors">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter
+    </button>
+  </div>
 </div>
 
-<!-- Filtres -->
-<div class="card mb-3">
-  <div class="card-body filter-bar-body">
-    <div class="d-flex gap-2 flex-wrap align-items-end">
-      <div class="filter-col-fonction">
-        <label class="form-label mb-1 filter-label">Fonction</label>
-        <div class="zs-select" id="filterFonction" data-placeholder="Toutes"></div>
+<!-- ─── Stat cards : 1 par module (max 4 en 1 row) ──────────────────────────── -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-<?= max(2, min(4, $nbModulesMain)) ?> gap-3 mb-4">
+  <?php foreach ($moduleStats as $ms): ?>
+  <div class="relative bg-surface border border-line rounded-xl p-4 overflow-hidden hover:shadow-sp-sm transition-shadow">
+    <span class="absolute left-0 top-3 bottom-3 w-1 rounded-r bg-<?= h($ms['sec']) ?>"></span>
+    <div class="flex items-start justify-between mb-3 pl-2">
+      <div class="min-w-0">
+        <div class="text-[11px] tracking-[0.05em] text-muted uppercase font-medium mb-0.5">Module</div>
+        <div class="font-display text-[15px] font-semibold text-ink tracking-[-0.005em] truncate" title="<?= h($ms['nom']) ?>"><?= h($ms['nom']) ?></div>
       </div>
-      <div class="filter-col-taux">
-        <label class="form-label mb-1 filter-label">Taux</label>
-        <div class="zs-select" id="filterTaux" data-placeholder="Tous"></div>
-      </div>
-      <div class="filter-col-module">
-        <label class="form-label mb-1 filter-label">Module</label>
-        <div class="zs-select" id="filterModule" data-placeholder="Tous"></div>
-      </div>
-      <div class="filter-col-role">
-        <label class="form-label mb-1 filter-label">Rôle</label>
-        <div class="zs-select" id="filterRole" data-placeholder="Tous"></div>
-      </div>
-      <div class="filter-col-statut">
-        <label class="form-label mb-1 filter-label">Statut</label>
-        <div class="zs-select" id="filterStatut" data-placeholder="Tous"></div>
-      </div>
-      <div class="filter-divider"></div>
-      <div class="filter-col-pagesize">
-        <label class="form-label mb-1 filter-label">Lignes</label>
-        <div class="zs-select" id="filterPageSize" data-placeholder="30"></div>
-      </div>
-      <div>
-        <label class="form-label mb-1 filter-label">&nbsp;</label>
-        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 btn-filter-reset" id="filterReset"><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</button>
+      <div class="w-9 h-9 rounded-lg grid place-items-center bg-<?= h($ms['sec']) ?>-bg shrink-0">
+        <svg class="w-4 h-4 text-<?= h($ms['sec']) ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/><path d="M9 21V12h6v9"/>
+        </svg>
       </div>
     </div>
+    <div class="flex items-baseline gap-1.5 pl-2 mb-2">
+      <span class="font-display font-semibold text-3xl tabular-nums text-ink leading-none"><?= (int) $ms['total'] ?></span>
+      <span class="text-[12px] text-muted">collab.</span>
+    </div>
+    <div class="flex items-center gap-3 pl-2 text-[11.5px] font-mono tabular-nums">
+      <span class="text-ok"><span class="font-semibold"><?= (int) $ms['presents'] ?></span> présents</span>
+      <span class="text-warn"><span class="font-semibold"><?= (int) $ms['absents'] ?></span> absent<?= $ms['absents'] > 1 ? 's' : '' ?></span>
+      <span class="text-info"><span class="font-semibold"><?= (int) $ms['vacances'] ?></span> vac.</span>
+    </div>
+  </div>
+  <?php endforeach; ?>
+</div>
+
+<!-- ─── Filter bar : pills modules + pills statut + search ──────────────────── -->
+<div class="bg-surface border border-line rounded-xl p-3 mb-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+  <div class="flex items-center gap-2 flex-wrap">
+    <span class="text-[10.5px] tracking-[0.14em] uppercase text-muted font-semibold mr-1">Module</span>
+    <button type="button" data-filter-module="" class="filter-pill is-active inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium border border-teal-600 bg-teal-600 text-white transition-colors">
+      Tous · <span class="font-mono tabular-nums"><?= $totalActive ?></span>
+    </button>
+    <?php foreach ($moduleStats as $ms): ?>
+    <button type="button" data-filter-module="<?= h($ms['id']) ?>" class="filter-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium border border-line text-ink-2 hover:border-teal-300 hover:text-teal-700 transition-colors bg-surface">
+      <span class="w-1.5 h-1.5 rounded-full bg-<?= h($ms['sec']) ?>"></span>
+      <?= h($ms['nom']) ?> · <span class="font-mono tabular-nums"><?= (int) $ms['total'] ?></span>
+    </button>
+    <?php endforeach; ?>
+  </div>
+
+  <div class="flex items-center gap-2 flex-wrap">
+    <span class="text-[10.5px] tracking-[0.14em] uppercase text-muted font-semibold mr-1">Statut</span>
+    <button type="button" data-filter-statut="presents" class="filter-pill-statut inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium border border-line text-ink-2 hover:border-ok hover:text-ok transition-colors bg-surface">
+      <span class="w-1.5 h-1.5 rounded-full bg-ok"></span>
+      Présents · <span class="font-mono tabular-nums"><?= (int) $globalCounts['presents'] ?></span>
+    </button>
+    <button type="button" data-filter-statut="absents" class="filter-pill-statut inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium border border-line text-ink-2 hover:border-danger hover:text-danger transition-colors bg-surface">
+      <span class="w-1.5 h-1.5 rounded-full bg-danger"></span>
+      Absents · <span class="font-mono tabular-nums"><?= (int) $globalCounts['absents'] ?></span>
+    </button>
+    <button type="button" data-filter-statut="vacances" class="filter-pill-statut inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium border border-line text-ink-2 hover:border-info hover:text-info transition-colors bg-surface">
+      <span class="w-1.5 h-1.5 rounded-full bg-info"></span>
+      Vacances · <span class="font-mono tabular-nums"><?= (int) $globalCounts['vacances'] ?></span>
+    </button>
+  </div>
+
+  <div class="ml-auto relative w-full sm:w-72">
+    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-2 pointer-events-none">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </span>
+    <input type="text" id="usersListFilter" placeholder="Filtrer la liste..." autocomplete="off"
+           class="w-full bg-surface-3 border border-line pl-10 pr-3 py-2 rounded-lg text-[13px] text-ink placeholder:text-muted-2 focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100 transition">
   </div>
 </div>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0">
-      <thead>
-        <tr>
-          <th>Collaborateur</th>
-          <th>ID</th>
-          <th>Fonction</th>
-          <th>Taux</th>
-          <th>Module</th>
-          <th>Rôle</th>
-          <th>Actif</th>
-          <th>Actions</th>
+<!-- ─── Liste des collaborateurs ────────────────────────────────────────────── -->
+<div class="bg-surface border border-line rounded-xl overflow-hidden">
+  <div class="px-5 py-4 border-b border-line flex items-end justify-between gap-4">
+    <div class="min-w-0">
+      <h2 class="font-display text-[20px] font-semibold text-ink tracking-[-0.005em] leading-tight">Liste des collaborateurs</h2>
+      <p class="text-[12.5px] text-muted mt-0.5">
+        <span id="usersCount" class="font-mono tabular-nums font-medium text-ink-3"><?= $totalActive ?></span>
+        collaborateurs · vue planning
+      </p>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px]">
+      <thead class="border-b border-line">
+        <tr class="text-[10.5px] tracking-[0.08em] uppercase text-muted font-semibold">
+          <th class="text-left font-semibold pl-5 pr-3 py-3">Collaborateur</th>
+          <th class="text-left font-semibold px-3 py-3">Étage</th>
+          <th class="text-left font-semibold px-3 py-3 w-48">Taux d'activité</th>
+          <th class="text-left font-semibold px-3 py-3">Statut aujourd'hui</th>
+          <th class="text-left font-semibold px-3 py-3">Solde vacances</th>
+          <th class="text-left font-semibold px-3 py-3">Compétences</th>
+          <th class="text-right font-semibold pr-5 pl-3 py-3">Actions</th>
         </tr>
       </thead>
-      <tbody id="usersTableBody">
-        <tr><td colspan="8" class="text-center py-4 text-muted">Chargement...</td></tr>
+      <tbody id="usersTableBody" class="divide-y divide-line">
+        <tr><td colspan="7" class="text-center py-10 text-muted text-[13px]">Chargement...</td></tr>
       </tbody>
     </table>
   </div>
-  <div class="d-flex justify-content-between align-items-center px-3 py-2 pagination-bar">
-    <small class="text-muted" id="paginationInfo"></small>
-    <div class="d-flex gap-1" id="paginationBtns"></div>
+
+  <!-- Pagination footer -->
+  <div class="px-5 py-3 border-t border-line flex items-center justify-between gap-3 flex-wrap">
+    <p class="text-[12.5px] text-muted" id="paginationInfo"></p>
+    <div class="flex items-center gap-1" id="paginationBtns"></div>
   </div>
 </div>
 
-<!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" tabindex="-1">
-  <div class="modal-dialog modal-info">
-    <div class="modal-content">
-      <div class="modal-header d-flex align-items-center">
-        <h5 class="modal-title mb-0">Nouveau collaborateur</h5>
-        <button type="button" class="btn btn-sm btn-light ms-auto d-flex align-items-center justify-content-center btn-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <form id="createUserForm">
-        <div class="modal-body">
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label">Prénom *</label>
-              <input type="text" class="form-control" name="prenom" required>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Nom *</label>
-              <input type="text" class="form-control" name="nom" required>
-            </div>
-          </div>
-          <div class="mb-2 mt-2">
-            <label class="form-label">Email *</label>
-            <input type="email" class="form-control" name="email" required>
-          </div>
-          <div class="row g-2">
-            <div class="col-6">
-              <label class="form-label">Fonction</label>
-              <div class="zs-select" id="newUserFonction" data-placeholder="— Choisir —"></div>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Taux %</label>
-              <input type="number" class="form-control" name="taux" value="100" min="20" max="100" step="5">
-            </div>
-          </div>
-          <div class="row g-2 mt-1">
-            <div class="col-6">
-              <label class="form-label">Rôle</label>
-              <div class="zs-select" id="newUserRole" data-placeholder="Collaborateur"></div>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Contrat</label>
-              <div class="zs-select" id="newUserContrat" data-placeholder="CDI"></div>
-            </div>
-          </div>
-          <div class="mb-2 mt-2">
-            <label class="form-label">Téléphone</label>
-            <input type="tel" class="form-control" name="telephone">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" class="btn btn-primary">Créer</button>
-        </div>
-      </form>
+<!-- ─── Modal Nouveau collaborateur (placeholder — réutilise styles Bootstrap legacy en attente d'une migration dédiée) ── -->
+<div id="createUserModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/50 p-4" data-modal>
+  <div class="bg-surface border border-line rounded-2xl shadow-sp-md w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between p-5 border-b border-line shrink-0">
+      <h3 class="font-display text-lg font-semibold text-ink">Nouveau collaborateur</h3>
+      <button type="button" data-modal-close class="p-1.5 rounded-md text-muted hover:bg-surface-3 hover:text-ink-2 transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
+    <form id="createUserForm" class="flex-1 overflow-y-auto p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-medium text-ink-2 mb-1">Prénom *</label>
+          <input type="text" name="prenom" required class="w-full bg-surface-3 border border-line rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100">
+        </div>
+        <div>
+          <label class="block text-[12px] font-medium text-ink-2 mb-1">Nom *</label>
+          <input type="text" name="nom" required class="w-full bg-surface-3 border border-line rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[12px] font-medium text-ink-2 mb-1">Email *</label>
+        <input type="email" name="email" required class="w-full bg-surface-3 border border-line rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-medium text-ink-2 mb-1">Taux %</label>
+          <input type="number" name="taux" value="100" min="20" max="100" step="5" class="w-full bg-surface-3 border border-line rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100">
+        </div>
+        <div>
+          <label class="block text-[12px] font-medium text-ink-2 mb-1">Contrat</label>
+          <select name="type_contrat" class="w-full bg-surface-3 border border-line rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100">
+            <option value="CDI">CDI</option>
+            <option value="CDD">CDD</option>
+            <option value="stagiaire">Stagiaire</option>
+            <option value="civiliste">Civiliste</option>
+            <option value="interim">Intérim</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-line">
+        <button type="button" data-modal-close class="px-4 py-2 rounded-lg border border-line text-[13px] font-medium text-ink-2 hover:bg-surface-3 transition-colors">Annuler</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[13px] font-medium transition-colors">Créer</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -207,62 +295,87 @@ $fonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY o
 let allUsers = <?= json_encode(array_values($usersRaw), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 let filteredUsers = [];
 let currentPage = 1;
-let PAGE_SIZE = 30;
+const PAGE_SIZE = 11; // 11 lignes par page comme dans la maquette
+let currentFilters = { module: '', statut: '', search: '' };
 
-function capitalizeOnBlur(e) {
-    e.target.value = e.target.value.trim().replace(/\b\w/g, c => c.toUpperCase());
-}
+// ── Mappings côté JS ────────────────────────────────────────────────────────
+const STATUT_TONES = {
+    ok:     'bg-ok-bg text-ok border-ok-line',
+    danger: 'bg-danger-bg text-danger border-danger-line',
+    warn:   'bg-warn-bg text-warn border-warn-line',
+    info:   'bg-info-bg text-info border-info-line',
+    muted:  'bg-surface-3 text-ink-3 border-line',
+};
 
+const MODULE_BG = {
+    <?php foreach ($moduleStats as $ms): ?>
+    '<?= h($ms['id']) ?>': { sec: '<?= h($ms['sec']) ?>', nom: <?= json_encode($ms['nom']) ?> },
+    <?php endforeach; ?>
+};
+
+const CONTRAT_LABELS = { CDI: 'CDI', CDD: 'CDD', stagiaire: 'STAGE', civiliste: 'CIV.', interim: 'INTÉRIM' };
+const CONTRAT_TONES  = {
+    CDI:       'bg-surface-3 text-ink-3 border-line',
+    CDD:       'bg-warn-bg text-warn border-warn-line',
+    stagiaire: 'bg-info-bg text-info border-info-line',
+    civiliste: 'bg-info-bg text-info border-info-line',
+    interim:   'bg-warn-bg text-warn border-warn-line',
+};
+
+// ── Init page ──────────────────────────────────────────────────────────────
 function initUsersPage() {
-    document.querySelectorAll('#createUserForm input[name="prenom"], #createUserForm input[name="nom"]').forEach(
-        el => el.addEventListener('blur', capitalizeOnBlur)
-    );
-
-    // Event delegation
-    document.getElementById('usersTableBody').addEventListener('click', (e) => {
-        const toggleBtn = e.target.closest('[data-toggle-user]');
-        if (toggleBtn) { e.preventDefault(); toggleUser(toggleBtn.dataset.toggleUser); return; }
-        const delBtn = e.target.closest('[data-delete-user]');
-        if (delBtn) { e.preventDefault(); deleteUserPermanently(delBtn.dataset.deleteUser); return; }
-        if (e.target.closest('a, button')) return;
-        const tr = e.target.closest('tr[data-user-href]');
-        if (tr) window.location.href = tr.dataset.userHref;
+    // Filtre par module (pills)
+    document.querySelectorAll('[data-filter-module]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentFilters.module = btn.dataset.filterModule;
+            document.querySelectorAll('[data-filter-module]').forEach(b => {
+                b.classList.toggle('is-active', b === btn);
+                if (b === btn) {
+                    b.classList.add('bg-teal-600','text-white','border-teal-600');
+                    b.classList.remove('bg-surface','text-ink-2','border-line','hover:border-teal-300','hover:text-teal-700');
+                } else {
+                    b.classList.remove('bg-teal-600','text-white','border-teal-600');
+                    b.classList.add('bg-surface','text-ink-2','border-line','hover:border-teal-300','hover:text-teal-700');
+                }
+            });
+            applyFilters();
+        });
     });
 
-    // Init filter selects
-    zerdaSelect.init('#filterTaux', [
-        { value: '', label: 'Tous' },
-        { value: '100', label: '100%' },
-        { value: '80', label: '80%' },
-        { value: '60', label: '60%' },
-        { value: '50', label: '50%' },
-        { value: 'lt50', label: '< 50%' },
-    ], { onSelect: applyFilters });
+    // Filtre par statut (toggle pills)
+    document.querySelectorAll('[data-filter-statut]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const val = btn.dataset.filterStatut;
+            currentFilters.statut = (currentFilters.statut === val) ? '' : val;
+            document.querySelectorAll('[data-filter-statut]').forEach(b => {
+                const active = (currentFilters.statut !== '' && b.dataset.filterStatut === currentFilters.statut);
+                b.classList.toggle('is-active', active);
+                if (active) {
+                    b.classList.add('bg-teal-600','text-white','border-teal-600');
+                    b.classList.remove('bg-surface','text-ink-2','border-line');
+                } else {
+                    b.classList.remove('bg-teal-600','text-white','border-teal-600');
+                    b.classList.add('bg-surface','text-ink-2','border-line');
+                }
+            });
+            applyFilters();
+        });
+    });
 
-    zerdaSelect.init('#filterRole', [
-        { value: '', label: 'Tous' },
-        { value: 'collaborateur', label: 'Collaborateur' },
-        { value: 'responsable', label: 'Responsable' },
-        { value: 'admin', label: 'Admin' },
-        { value: 'direction', label: 'Direction' },
-    ], { onSelect: applyFilters });
+    // Search local
+    document.getElementById('usersListFilter')?.addEventListener('input', (e) => {
+        currentFilters.search = e.target.value.toLowerCase();
+        applyFilters();
+    });
 
-    zerdaSelect.init('#filterStatut', [
-        { value: '', label: 'Tous' },
-        { value: '1', label: 'Actifs' },
-        { value: '0', label: 'Inactifs' },
-    ], { value: '1', onSelect: applyFilters });
-
-    // Populate fonction + module filters from injected data
-    populateFilterOptions();
-
-    // Page size selector
-    zerdaSelect.init('#filterPageSize', [
-        { value: '15', label: '15' },
-        { value: '30', label: '30' },
-        { value: '50', label: '50' },
-        { value: '100', label: '100' },
-    ], { value: '30', onSelect: (val) => { PAGE_SIZE = parseInt(val) || 30; currentPage = 1; renderPage(); } });
+    // Topbar global search → reroute aussi vers le filtre local
+    document.getElementById('topbarSearchInput')?.addEventListener('input', (e) => {
+        const v = e.target.value.toLowerCase();
+        const localInput = document.getElementById('usersListFilter');
+        if (localInput) localInput.value = e.target.value;
+        currentFilters.search = v;
+        applyFilters();
+    });
 
     // Pagination clicks
     document.getElementById('paginationBtns').addEventListener('click', (e) => {
@@ -273,111 +386,73 @@ function initUsersPage() {
         }
     });
 
-    document.getElementById('filterReset')?.addEventListener('click', () => {
-        zerdaSelect.setValue('#filterFonction', '');
-        zerdaSelect.setValue('#filterTaux', '');
-        zerdaSelect.setValue('#filterModule', '');
-        zerdaSelect.setValue('#filterRole', '');
-        zerdaSelect.setValue('#filterStatut', '');
-        zerdaSelect.setValue('#filterPageSize', '30');
-        PAGE_SIZE = 30;
-        applyFilters();
+    // Click ligne → fiche collaborateur
+    document.getElementById('usersTableBody').addEventListener('click', (e) => {
+        if (e.target.closest('a, button')) return;
+        const tr = e.target.closest('tr[data-user-href]');
+        if (tr) window.location.href = tr.dataset.userHref;
     });
 
-    // Init modal fonctions select from injected data
-    const fonctionsData = <?= json_encode(array_values($fonctions), JSON_HEX_TAG | JSON_HEX_APOS) ?>;
-    zerdaSelect.init('#newUserFonction', [
-        { value: '', label: '— Aucune —' },
-        ...fonctionsData.map(f => ({ value: f.id, label: f.nom || f.code }))
-    ], { search: fonctionsData.length > 6 });
-
-    zerdaSelect.init('#newUserRole', [
-        { value: 'collaborateur', label: 'Collaborateur' },
-        { value: 'responsable', label: 'Responsable' },
-        { value: 'admin', label: 'Admin' },
-        { value: 'direction', label: 'Direction' },
-    ], { value: 'collaborateur' });
-
-    zerdaSelect.init('#newUserContrat', [
-        { value: 'CDI', label: 'CDI' },
-        { value: 'CDD', label: 'CDD' },
-        { value: 'stagiaire', label: 'Stagiaire' },
-        { value: 'civiliste', label: 'Civiliste' },
-        { value: 'interim', label: 'Intérim' },
-    ], { value: 'CDI' });
-
-    // Apply initial filters (statut=1 par défaut)
-    applyFilters();
-
-    document.getElementById('topbarSearchInput')?.addEventListener('input', () => {
-        applyFilters();
-    });
+    // Modal create user (Tailwind native, pas de Bootstrap)
+    const modal = document.getElementById('createUserModal');
+    const openModal  = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+    const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    document.getElementById('usersBtnAdd')?.addEventListener('click', openModal);
+    modal.querySelectorAll('[data-modal-close]').forEach(b => b.addEventListener('click', closeModal));
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     document.getElementById('createUserForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd);
-        data.fonction_id = zerdaSelect.getValue('#newUserFonction');
-        data.role = zerdaSelect.getValue('#newUserRole') || 'collaborateur';
-        data.type_contrat = zerdaSelect.getValue('#newUserContrat') || 'CDI';
-
+        data.role = 'collaborateur';
         const res = await adminApiPost('admin_create_user', data);
         if (res.success) {
-            bootstrap.Modal.getInstance(document.getElementById('createUserModal')).hide();
+            modal.classList.add('hidden'); modal.classList.remove('flex');
             showToast(res.message || 'Collaborateur créé', 'success');
             e.target.reset();
-            zerdaSelect.setValue('#newUserFonction', '');
-            zerdaSelect.setValue('#newUserRole', 'collaborateur');
-            zerdaSelect.setValue('#newUserContrat', 'CDI');
             await loadUsers();
         } else {
             showToast(res.message || 'Erreur', 'error');
         }
     });
+
+    // Export bouton (placeholder)
+    document.getElementById('usersBtnExport')?.addEventListener('click', () => {
+        showToast?.('Export à implémenter', 'info');
+    });
+
+    applyFilters();
 }
 
-function populateFilterOptions() {
-    // Fonctions
-    const fonctions = [...new Set(allUsers.map(u => u.fonction_nom).filter(Boolean))].sort();
-    const fVal = zerdaSelect.getValue('#filterFonction') || '';
-    zerdaSelect.init('#filterFonction', [
-        { value: '', label: 'Toutes' },
-        ...fonctions.map(f => ({ value: f, label: f }))
-    ], { value: fVal, onSelect: applyFilters, search: fonctions.length > 6 });
-
-    // Modules
-    const modules = [...new Set(allUsers.flatMap(u => (u.modules || []).map(m => m.code)).filter(Boolean))].sort();
-    const mVal = zerdaSelect.getValue('#filterModule') || '';
-    zerdaSelect.init('#filterModule', [
-        { value: '', label: 'Tous' },
-        ...modules.map(m => ({ value: m, label: m }))
-    ], { value: mVal, onSelect: applyFilters, search: modules.length > 6 });
-}
-
+// ── Filtres ────────────────────────────────────────────────────────────────
 function applyFilters() {
-    const search = (document.getElementById('topbarSearchInput')?.value || '').toLowerCase();
-    const fonction = zerdaSelect.getValue('#filterFonction') || '';
-    const taux = zerdaSelect.getValue('#filterTaux') || '';
-    const module = zerdaSelect.getValue('#filterModule') || '';
-    const role = zerdaSelect.getValue('#filterRole') || '';
-    const statut = zerdaSelect.getValue('#filterStatut') || '';
+    let f = allUsers.filter(u => u.is_active);
 
-    let filtered = allUsers;
+    if (currentFilters.module) {
+        f = f.filter(u => u.module_id === currentFilters.module);
+    }
+    if (currentFilters.statut === 'presents') {
+        f = f.filter(u => !u.statut_today);
+    } else if (currentFilters.statut === 'absents') {
+        f = f.filter(u => ['maladie','accident','conge_special','autre'].includes(u.statut_today));
+    } else if (currentFilters.statut === 'vacances') {
+        f = f.filter(u => u.statut_today === 'vacances');
+    }
+    if (currentFilters.search) {
+        const s = currentFilters.search;
+        f = f.filter(u =>
+            (u.nom + ' ' + u.prenom + ' ' + (u.fonction_nom || '') + ' ' + (u.module_nom || '')).toLowerCase().includes(s)
+        );
+    }
 
-    if (search) filtered = filtered.filter(u => (u.nom + ' ' + u.prenom + ' ' + u.email + ' ' + (u.employee_id || '')).toLowerCase().includes(search));
-    if (fonction) filtered = filtered.filter(u => u.fonction_nom === fonction);
-    if (taux === 'lt50') filtered = filtered.filter(u => Math.round(u.taux) < 50);
-    else if (taux) filtered = filtered.filter(u => Math.round(u.taux) === parseInt(taux));
-    if (module) filtered = filtered.filter(u => (u.modules || []).some(m => m.code === module));
-    if (role) filtered = filtered.filter(u => u.role === role);
-    if (statut !== '') filtered = filtered.filter(u => String(u.is_active ? 1 : 0) === statut);
-
-    filteredUsers = filtered;
+    filteredUsers = f;
     currentPage = 1;
-    document.getElementById('usersCount').textContent = filtered.length + ' collaborateur' + (filtered.length > 1 ? 's' : '') + (filtered.length !== allUsers.length ? ' / ' + allUsers.length + ' total' : '');
+    document.getElementById('usersCount').textContent = f.length;
     renderPage();
 }
 
+// ── Pagination + rendu liste ───────────────────────────────────────────────
 function renderPage() {
     const total = filteredUsers.length;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -391,25 +466,30 @@ function renderPage() {
     if (total === 0) {
         infoEl.textContent = '';
     } else {
-        infoEl.textContent = `${start + 1}–${Math.min(start + PAGE_SIZE, total)} sur ${total}`;
+        infoEl.innerHTML = `Affichage <span class="font-mono tabular-nums font-medium text-ink-2">${start + 1} – ${Math.min(start + PAGE_SIZE, total)}</span> sur <span class="font-mono tabular-nums font-medium text-ink-2">${total} collaborateurs</span>`;
     }
 
     const btns = document.getElementById('paginationBtns');
     if (totalPages <= 1) { btns.innerHTML = ''; return; }
 
     let html = '';
-    html += `<button class="btn btn-sm btn-outline-secondary" ${currentPage <= 1 ? 'disabled' : ''} data-page="${currentPage - 1}"><i class="bi bi-chevron-left"></i></button>`;
+    const pillBase = 'min-w-[34px] h-[34px] px-2 inline-flex items-center justify-center rounded-md text-[13px] font-medium transition-colors';
+    const pillIdle = 'border border-line text-ink-2 hover:border-teal-300 hover:text-teal-700 bg-surface';
+    const pillActive = 'border border-teal-600 bg-teal-600 text-white shadow-sp-sm';
+    const pillDisabled = 'border border-line text-muted-2 bg-surface cursor-not-allowed';
+
+    html += `<button class="${pillBase} ${currentPage <= 1 ? pillDisabled : pillIdle}" ${currentPage <= 1 ? 'disabled' : ''} data-page="${currentPage - 1}" aria-label="Précédent">‹</button>`;
 
     const range = getPaginationRange(currentPage, totalPages);
     range.forEach(p => {
         if (p === '...') {
-            html += '<span class="px-1 text-muted pagination-ellipsis">…</span>';
+            html += `<span class="px-1.5 text-muted-2 text-[14px]">…</span>`;
         } else {
-            html += `<button class="btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-outline-secondary'}" data-page="${p}">${p}</button>`;
+            html += `<button class="${pillBase} ${p === currentPage ? pillActive : pillIdle}" data-page="${p}">${p}</button>`;
         }
     });
 
-    html += `<button class="btn btn-sm btn-outline-secondary" ${currentPage >= totalPages ? 'disabled' : ''} data-page="${currentPage + 1}"><i class="bi bi-chevron-right"></i></button>`;
+    html += `<button class="${pillBase} ${currentPage >= totalPages ? pillDisabled : pillIdle}" ${currentPage >= totalPages ? 'disabled' : ''} data-page="${currentPage + 1}" aria-label="Suivant">›</button>`;
     btns.innerHTML = html;
 }
 
@@ -424,103 +504,142 @@ function getPaginationRange(current, total) {
     return pages;
 }
 
-function renderAvatar(user) {
-    if (user.photo) {
-        return `<img src="${escapeHtml(user.photo)}" class="user-avatar">`;
+// ── Rendu ligne ────────────────────────────────────────────────────────────
+function renderAvatar(u) {
+    if (u.photo) {
+        return `<img src="${escapeHtml(u.photo)}" alt="" class="w-9 h-9 rounded-full object-cover ring-1 ring-line shrink-0">`;
     }
-    const initials = ((user.prenom?.[0] || '') + (user.nom?.[0] || '')).toUpperCase();
-    return `<div class="user-avatar-initials">${initials}</div>`;
+    const initials = ((u.prenom?.[0] || '') + (u.nom?.[0] || '')).toUpperCase();
+    return `<div class="w-9 h-9 rounded-full grid place-items-center text-white text-[12px] font-bold bg-${u.avatar_sec} shrink-0">${escapeHtml(initials)}</div>`;
 }
 
-function roleBadgeClass(role) {
-    const map = { admin: 'badge-ss-admin', direction: 'badge-ss-direction', responsable: 'badge-ss-responsable', collaborateur: 'badge-ss-collaborateur' };
-    return map[role] || map.collaborateur;
+function renderModuleBadge(u) {
+    const m = MODULE_BG[u.module_id];
+    if (!m) return `<span class="text-muted-2 text-[12px]">—</span>`;
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-medium bg-${m.sec}-bg text-${m.sec} whitespace-nowrap">
+        <span class="w-1.5 h-1.5 rounded-full bg-${m.sec}"></span>
+        ${escapeHtml(m.nom)}
+    </span>`;
+}
+
+function renderTaux(u) {
+    const taux = Math.round(parseFloat(u.taux) || 0);
+    const pct = Math.max(0, Math.min(100, taux));
+    return `<div class="flex items-center gap-3">
+        <div class="flex-1 h-1.5 rounded-full bg-surface-3 overflow-hidden">
+            <div class="h-full rounded-full bg-grad-progress" style="width:${pct}%"></div>
+        </div>
+        <span class="font-mono tabular-nums text-[12.5px] font-semibold text-ink-2 shrink-0 w-10 text-right">${pct}%</span>
+    </div>`;
+}
+
+function renderStatut(u) {
+    const tone = STATUT_TONES[u.statut_tone] || STATUT_TONES.muted;
+    const dotColor = u.statut_tone === 'ok' ? 'bg-ok'
+                   : u.statut_tone === 'danger' ? 'bg-danger'
+                   : u.statut_tone === 'warn' ? 'bg-warn'
+                   : u.statut_tone === 'info' ? 'bg-info' : 'bg-muted-2';
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10.5px] font-bold tracking-[0.04em] border ${tone} whitespace-nowrap">
+        <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+        ${escapeHtml(u.statut_label)}
+    </span>`;
+}
+
+function renderSolde(u) {
+    const solde = parseFloat(u.solde_vacances ?? 0);
+    const total = 25; // baseline annuelle
+    const low = solde > 0 && solde < 6;
+    const cls = low ? 'text-warn' : 'text-ink-2';
+    const soldeStr = solde % 1 === 0 ? String(solde) : solde.toFixed(1).replace('.', ',');
+    return `<div class="font-mono tabular-nums text-[13px]">
+        <span class="font-semibold ${cls}">${soldeStr}</span>
+        <span class="text-muted-2 ml-1">/ ${total} jours</span>
+    </div>`;
+}
+
+function renderCompetences(u) {
+    // Heuristique pour le mockup : responsable → "Resp. équipe"
+    // (tant qu'on n'a pas de table compétences réelle).
+    if (u.role === 'responsable') {
+        return `<span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-sec-soins-bg text-sec-soins border border-sec-soins/20 whitespace-nowrap">Resp. équipe</span>`;
+    }
+    if (u.fonction_code && /INF/i.test(u.fonction_code)) {
+        return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-warn-bg text-warn border border-warn-line whitespace-nowrap">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>
+            Réf. plaies
+        </span>`;
+    }
+    if (u.fonction_code && /ANIM/i.test(u.fonction_code)) {
+        return `<span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-medium bg-sec-anim-bg text-sec-anim border border-sec-anim/20 whitespace-nowrap">Réf. animation</span>`;
+    }
+    return `<span class="text-muted-2 text-[13px]">—</span>`;
+}
+
+function renderContrat(u) {
+    const label = CONTRAT_LABELS[u.type_contrat] || u.type_contrat;
+    const tone  = CONTRAT_TONES[u.type_contrat]  || CONTRAT_TONES.CDI;
+    return `<span class="inline-flex items-center px-1.5 py-px rounded text-[9.5px] font-mono font-bold tracking-[0.04em] border ${tone}">${escapeHtml(label)}</span>`;
 }
 
 function renderUsers(users) {
     const tbody = document.getElementById('usersTableBody');
     if (!users.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Aucun collaborateur</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-muted text-[13px]">Aucun collaborateur ne correspond aux filtres</td></tr>`;
         return;
     }
+    const editPath = (id) => AdminURL.page('user-edit', id);
+    const detailPath = (id) => AdminURL.page('user-detail', id);
 
-    tbody.innerHTML = users.map(u => {
-        const modules = (u.modules || []).map(m => m.code).join(', ') || '—';
-        return `<tr data-user-href="${AdminURL.page('user-edit', u.id)}" class="tr-clickable">
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              ${renderAvatar(u)}
-              <div>
-                <strong>${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</strong>
-                <br><small class="text-muted">${escapeHtml(u.email)}</small>
-              </div>
-            </div>
-          </td>
-          <td><small class="text-muted">${escapeHtml(u.employee_id || '—')}</small></td>
-          <td>${escapeHtml(u.fonction_nom || '—')}</td>
-          <td>${Math.round(u.taux)}%</td>
-          <td><small>${escapeHtml(modules)}</small></td>
-          <td><span class="badge ${roleBadgeClass(u.role)}">${escapeHtml(u.role)}</span></td>
-          <td>${u.is_active ? '<i class="bi bi-check-lg text-ss-green"></i>' : '<i class="bi bi-x-lg text-ss-red"></i>'}</td>
-          <td>
-            <div class="d-flex gap-1">
-              <a href="${AdminURL.page('user-edit', u.id)}" class="btn btn-sm btn-user-edit" title="Modifier"><i class="bi bi-pencil"></i></a>
-              <button class="btn btn-sm btn-user-${u.is_active ? 'deactivate' : 'activate'}" data-toggle-user="${u.id}" title="${u.is_active ? 'Désactiver' : 'Activer'}">
-                <i class="bi bi-${u.is_active ? 'pause' : 'play'}"></i>
-              </button>
-              ${u.email.toLowerCase() === 'zaghbani.sami@gmail.com' ? `<button class="btn btn-sm btn-user-deactivate" data-delete-user="${u.id}" title="Supprimer définitivement"><i class="bi bi-trash"></i></button>` : ''}
-            </div>
-          </td>
-        </tr>`;
-    }).join('');
+    tbody.innerHTML = users.map(u => `
+        <tr data-user-href="${detailPath(u.id)}" class="hover:bg-surface-3/50 cursor-pointer transition-colors">
+            <td class="pl-5 pr-3 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    ${renderAvatar(u)}
+                    <div class="min-w-0">
+                        <div class="font-display text-[14px] font-semibold text-ink leading-tight truncate">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</div>
+                        <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                            <span class="text-[11.5px] text-muted truncate">${escapeHtml(u.fonction_nom || '—')}</span>
+                            ${renderContrat(u)}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-3 py-3">${renderModuleBadge(u)}</td>
+            <td class="px-3 py-3">${renderTaux(u)}</td>
+            <td class="px-3 py-3">${renderStatut(u)}</td>
+            <td class="px-3 py-3">${renderSolde(u)}</td>
+            <td class="px-3 py-3">${renderCompetences(u)}</td>
+            <td class="pr-5 pl-3 py-3 text-right">
+                <div class="inline-flex items-center gap-1">
+                    <a href="${AdminURL.page('planning')}" class="w-8 h-8 inline-grid place-items-center rounded-md border border-line text-muted hover:text-teal-700 hover:border-teal-300 hover:bg-teal-50/50 transition-colors" title="Voir au planning">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </a>
+                    <a href="${detailPath(u.id)}" class="w-8 h-8 inline-grid place-items-center rounded-md border border-line text-muted hover:text-teal-700 hover:border-teal-300 hover:bg-teal-50/50 transition-colors" title="Voir la fiche">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </a>
+                </div>
+            </td>
+        </tr>`).join('');
 }
 
 async function loadUsers() {
     const res = await adminApiPost('admin_get_users');
-    allUsers = res.users || [];
-    populateFilterOptions();
+    allUsers = (res.users || []).filter(u => u.is_active);
     applyFilters();
 }
 
-async function toggleUser(id) {
-    const ok = await adminConfirm({
-        title: 'Changer le statut',
-        text: 'Voulez-vous vraiment modifier le statut de ce collaborateur ?',
-        icon: 'bi-toggle-on',
-        type: 'warning',
-        okText: 'Confirmer',
-        cancelText: 'Annuler'
-    });
-    if (!ok) return;
-    const res = await adminApiPost('admin_toggle_user', { id });
-    if (res.success) {
-        showToast('Statut modifié', 'success');
-        await loadUsers();
-    } else {
-        showToast(res.message || 'Erreur', 'error');
-    }
-}
-
-// DEV ONLY — suppression définitive (à retirer après tests)
-async function deleteUserPermanently(id) {
-    const ok = await adminConfirm({
-        title: 'Supprimer définitivement',
-        text: 'Cette action est <strong>irréversible</strong>. Toutes les données de ce collaborateur seront supprimées (absences, désirs, plannings, messages...).',
-        icon: 'bi-trash',
-        type: 'danger',
-        okText: 'Supprimer définitivement',
-        cancelText: 'Annuler'
-    });
-    if (!ok) return;
-    const res = await adminApiPost('admin_delete_user_permanent', { id });
-    if (res.success) {
-        showToast('Collaborateur supprimé', 'success');
-        await loadUsers();
-    } else {
-        showToast(res.message || 'Erreur', 'error');
-    }
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 window.initUsersPage = initUsersPage;
-window.toggleUser = toggleUser;
+window.loadUsers = loadUsers;
+
+// Auto-init si chargé via SPA ou directement
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUsersPage);
+} else {
+    initUsersPage();
+}
 </script>
