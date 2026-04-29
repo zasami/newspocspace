@@ -342,50 +342,91 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
-<!-- BACKDROP (mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<!-- BACKDROP (mobile) — sidebar-overlay garde le hook admin.css (.sidebar-overlay.show{display:block}) -->
+<div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden lg:!hidden"></div>
 
-<!-- SIDEBAR -->
-<aside class="admin-sidebar" id="adminSidebar">
-  <div class="sidebar-header">
-    <a href="<?= admin_url() ?>" class="sidebar-brand-link">
-      <img src="/newspocspace/ss-logo.png" alt="" class="brand-logo">
-      <span class="brand-text"><?= h($emsNom) ?></span>
+<!-- SIDEBAR — admin-sidebar gardé pour les hooks JS et CSS responsive -->
+<aside id="adminSidebar" class="admin-sidebar
+  fixed lg:sticky inset-y-0 left-0 z-40
+  w-60 h-screen overflow-y-auto
+  bg-sidebar-grad text-sb-text font-body
+  p-[18px] flex flex-col gap-7
+  -translate-x-full lg:translate-x-0
+  transition-transform duration-200">
+
+  <!-- ── Brand : logo + nom EMS + 'Administration' ── -->
+  <div class="flex items-center justify-between gap-2 shrink-0">
+    <a href="<?= admin_url() ?>" class="flex items-center gap-2.5 px-1 group min-w-0" title="Tableau de bord">
+      <img src="/newspocspace/ss-logo.png" alt="" class="w-[34px] h-[34px] shrink-0 rounded-[9px]">
+      <div class="min-w-0">
+        <div class="font-display text-lg font-semibold text-white tracking-[-0.02em] leading-tight truncate"><?= h($emsNom) ?></div>
+        <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">Administration</div>
+      </div>
     </a>
-    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Réduire le menu">
-      <i class="bi bi-layout-sidebar-inset"></i>
+    <button id="sidebarToggleBtn" class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0" title="Réduire le menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
     </button>
   </div>
-  <nav class="sidebar-nav">
+
+  <!-- ── Navigation dynamique ── -->
+  <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1
+              [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded">
     <?php foreach ($sidebarCategories as $catId => $cat): ?>
-    <div class="sidebar-cat" data-cat-toggle="<?= $catId ?>">
-      <span class="sidebar-cat-label"><?= h($cat['label']) ?></span>
-      <i class="bi bi-chevron-down sidebar-cat-chevron"></i>
+    <div class="sidebar-cat flex items-center justify-between text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-3 first:mt-0 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
+         data-cat-toggle="<?= $catId ?>">
+      <span><?= h($cat['label']) ?></span>
+      <svg class="sidebar-cat-chevron w-3 h-3 opacity-60 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
     </div>
-    <div class="sidebar-cat-items" data-cat-body="<?= $catId ?>">
+    <div class="sidebar-cat-items flex flex-col gap-0.5 [&.collapsed]:hidden" data-cat-body="<?= $catId ?>">
       <?php foreach ($cat['items'] as $key => $item): ?>
-      <a href="<?= admin_url($key) ?>" class="sidebar-link <?= $activeSection === $key ? 'active' : '' ?>" title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
-        <i class="bi bi-<?= $item['icon'] ?>"></i>
-        <span class="nav-label"><?= h($item['label']) ?></span>
-        <?php if ($key === 'messages'): ?><span class="sidebar-badge" id="sidebarMsgBadge" style="display:none"></span><?php endif; ?>
-        <?php if ($key === 'email-externe'): ?><span class="sidebar-badge" id="sidebarEmailBadge" style="display:none"></span><?php endif; ?>
+      <a href="<?= admin_url($key) ?>"
+         class="sidebar-link relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
+                <?= $activeSection === $key ? 'active pl-[15px] bg-[#7dd3a8]/[0.12] !text-white font-medium before:content-[\'\'] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]' : '' ?>"
+         title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
+        <i class="bi bi-<?= $item['icon'] ?> opacity-85 text-[15px] w-4 text-center shrink-0"></i>
+        <span class="nav-label flex-1 truncate"><?= h($item['label']) ?></span>
+        <?php if ($key === 'messages'): ?><span id="sidebarMsgBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
+        <?php if ($key === 'email-externe'): ?><span id="sidebarEmailBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
       </a>
       <?php endforeach; ?>
     </div>
     <?php endforeach; ?>
   </nav>
-  <div class="sidebar-footer">
-    <a href="/spoccare/" class="sidebar-link" title="SpocCare — Résidents & Soins">
-      <i class="bi bi-heart-pulse" style="color:#2d4a43"></i>
-      <span class="nav-label">SpocCare</span>
+
+  <!-- ── Footer : actions externes + version ── -->
+  <div class="sidebar-footer mt-auto flex flex-col gap-1.5 shrink-0 pt-3 border-t border-white/[0.07]">
+
+    <!-- Liens vers SpocCare et le portail collaborateur -->
+    <a href="/spoccare/" class="sidebar-link flex items-center gap-3 px-2.5 py-2 rounded-lg text-[12.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors" title="SpocCare — Résidents & Soins">
+      <svg class="w-4 h-4 opacity-85 shrink-0 text-[#7dd3a8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+      <span class="nav-label flex-1 truncate">SpocCare</span>
     </a>
-    <a href="/newspocspace/" class="sidebar-link" target="_blank" title="Portail collaborateur">
-      <i class="bi bi-box-arrow-up-right"></i>
-      <span class="nav-label">Portail collaborateur</span>
+    <a href="/newspocspace/" target="_blank" class="sidebar-link flex items-center gap-3 px-2.5 py-2 rounded-lg text-[12.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors" title="Portail collaborateur (nouvel onglet)">
+      <svg class="w-4 h-4 opacity-85 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      <span class="nav-label flex-1 truncate">Portail collaborateur</span>
     </a>
-    <div class="sidebar-bottom-row" style="padding:6px 16px;font-size:0.7rem;color:var(--ss-text-muted,#999);opacity:.7;display:flex;align-items:center;justify-content:space-between">
-      <span class="nav-label">SpocSpace v<?= APP_SEMVER ?></span>
-      <button class="sidebar-shortcuts-btn" id="sidebarShortcutsBtn" title="Raccourcis clavier"><i class="bi bi-keyboard"></i></button>
+
+    <!-- Row version + shortcuts -->
+    <div class="sidebar-bottom-row flex items-center justify-between px-2.5 pt-1 mt-1">
+      <span class="nav-label text-[10.5px] text-sb-muted font-mono">SpocSpace v<?= APP_SEMVER ?></span>
+      <button id="sidebarShortcutsBtn" class="sidebar-shortcuts-btn text-sb-text hover:text-white p-1 rounded hover:bg-white/[0.06] transition-colors" title="Raccourcis clavier (?)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="6" width="20" height="12" rx="2"/>
+          <path d="M7 10h.01"/><path d="M11 10h.01"/><path d="M15 10h.01"/><path d="M19 10h.01"/>
+          <path d="M7 14h10"/>
+        </svg>
+      </button>
     </div>
   </div>
 </aside>
