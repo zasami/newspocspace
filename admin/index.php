@@ -483,9 +483,9 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
   <!-- ── Brand : logo "S" gradient + Spocspace + EMS PLATFORM + bouton toggle ── -->
   <div class="flex items-center justify-between gap-2 shrink-0">
     <a href="<?= admin_url() ?>" class="flex items-center gap-2.5 px-1 group min-w-0" title="Tableau de bord">
-      <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-display font-bold text-teal-900 text-lg shadow-mark shrink-0">S</div>
+      <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-bold text-teal-900 text-lg shadow-mark shrink-0">S</div>
       <div class="sidebar-brand-text min-w-0">
-        <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
+        <div class="text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
     </a>
@@ -515,7 +515,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
                   <?= $isActiveModule ? 'bg-teal-700/60 text-[#7dd3a8]' : 'bg-white/[0.04] text-sb-sub' ?>">
         <?= ss_icon($mod['icon'], 'w-4 h-4') ?>
       </div>
-      <span class="sidebar-module-label font-display text-[13.5px] font-semibold flex-1 truncate tracking-[-0.005em]"><?= h($mod['label']) ?></span>
+      <span class="sidebar-module-label text-[13.5px] font-semibold flex-1 truncate tracking-[-0.005em]"><?= h($mod['label']) ?></span>
       <svg class="sidebar-cat-chevron w-3.5 h-3.5 opacity-50 transition-transform shrink-0
                   [.cat-collapsed_&]:-rotate-90"
            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -614,7 +614,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
     </button>
 
     <!-- Page title -->
-    <h5 class="topbar-title font-display text-lg font-semibold text-ink tracking-[-0.01em] truncate"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
+    <h5 class="topbar-title text-lg font-semibold text-ink tracking-[-0.01em] truncate"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
 
     <!-- Search (centre) -->
     <div id="topbarSearch" class="topbar-search relative flex-1 max-w-lg mx-auto hidden md:block">

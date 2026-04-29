@@ -47,6 +47,18 @@ Le 29 avril 2026 l'utilisateur a tranché **« 0 Bootstrap, 0 ancien CSS, on rep
 
 **Note v4** : plus de `tailwind.config = {}` JS — toute la config passe par `--color-*`, `--font-*`, `--shadow-*`, `--background-image-*` dans un `<style type="text/tailwindcss">` avec `@theme {…}`. Les couleurs nested v3 (ex: `ok.bg`) sont aplaties en `--color-ok-bg`.
 
+### Règle typo (validée 30 avril 2026)
+
+- **Outfit (font-body)** partout : titres (h1-h6 héritent), sidebar brand, module names, table headers, body, labels
+- **Fraunces (font-display)** réservée **EXCLUSIVEMENT aux grands chiffres stats** dans les cards (ex: "22 collab" dans [users.php:156](admin/pages/users.php#L156))
+- Le `@layer base` n'applique plus `font-display` aux h1-h6 — ils héritent du body Outfit
+
+### Logos
+
+- [ss-logo.png](ss-logo.png) (642×654 RGBA, ~158 KB) : **cadre noir** + S transparent → usage sur fond clair (install, mur, fallback ems_logo_url)
+- [ss-white-logo.png](ss-white-logo.png) (642×654 RGBA, ~167 KB) : **cadre blanc** + S transparent → usage sur fond foncé (sidebar SPA employé, login hero panel)
+- Régénérer la version blanche depuis le noir : `convert ss-logo.png -channel RGB -negate ss-white-logo.png`
+
 ### CSS shell admin — [admin/assets/css/admin-shell.css](admin/assets/css/admin-shell.css)
 
 Petite feuille CSS dédiée au shell admin pour les règles **non-exprimables en utilities Tailwind** (pseudo-éléments WebKit, cascades complexes). Contient actuellement :

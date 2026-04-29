@@ -113,7 +113,7 @@ unset($u);
       <svg class="w-3.5 h-3.5 text-muted-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span>Collaborateurs</span>
     </div>
-    <h1 class="font-display text-4xl lg:text-5xl font-semibold text-ink tracking-[-0.02em] leading-none mb-3">Collaborateurs</h1>
+    <h1 class="text-4xl lg:text-5xl font-semibold text-ink tracking-[-0.02em] leading-none mb-3">Collaborateurs</h1>
     <p class="text-[14px] text-ink-3 max-w-2xl leading-relaxed">
       <span class="font-mono tabular-nums font-semibold text-ink"><?= (int) $totalActive ?> collaborateurs</span>
       répartis sur <span class="font-mono tabular-nums font-semibold text-ink"><?= $nbModulesMain ?> <?= $nbModulesMain > 1 ? 'modules' : 'module' ?></span>
@@ -144,7 +144,7 @@ unset($u);
     <div class="flex items-start justify-between mb-3 pl-2">
       <div class="min-w-0">
         <div class="font-body text-[10.5px] tracking-[0.08em] text-muted uppercase font-semibold mb-0.5">Module</div>
-        <div class="font-display text-[15px] font-semibold text-ink tracking-[-0.005em] truncate" title="<?= h($ms['nom']) ?>"><?= h($ms['nom']) ?></div>
+        <div class="text-[15px] font-semibold text-ink tracking-[-0.005em] truncate" title="<?= h($ms['nom']) ?>"><?= h($ms['nom']) ?></div>
       </div>
       <div class="w-9 h-9 rounded-lg grid place-items-center bg-<?= h($ms['sec']) ?>-bg shrink-0">
         <svg class="w-4 h-4 text-<?= h($ms['sec']) ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -209,7 +209,7 @@ unset($u);
 <div class="bg-surface border border-line rounded-xl overflow-hidden">
   <div class="px-5 py-4 border-b border-line flex items-end justify-between gap-4">
     <div class="min-w-0">
-      <h2 class="font-display text-[20px] font-semibold text-ink tracking-[-0.005em] leading-tight">Liste des collaborateurs</h2>
+      <h2 class="text-[20px] font-semibold text-ink tracking-[-0.005em] leading-tight">Liste des collaborateurs</h2>
       <p class="text-[12.5px] text-muted mt-0.5">
         <span id="usersCount" class="font-mono tabular-nums font-medium text-ink-3"><?= $totalActive ?></span>
         collaborateurs · vue planning
@@ -247,7 +247,7 @@ unset($u);
 <div id="createUserModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/50 p-4" data-modal>
   <div class="bg-surface border border-line rounded-2xl shadow-sp-md w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
     <div class="flex items-center justify-between p-5 border-b border-line shrink-0">
-      <h3 class="font-display text-lg font-semibold text-ink">Nouveau collaborateur</h3>
+      <h3 class="text-lg font-semibold text-ink">Nouveau collaborateur</h3>
       <button type="button" data-modal-close class="p-1.5 rounded-md text-muted hover:bg-surface-3 hover:text-ink-2 transition-colors">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -596,7 +596,7 @@ function renderUsers(users) {
                 <div class="flex items-center gap-3 min-w-0">
                     ${renderAvatar(u)}
                     <div class="min-w-0">
-                        <div class="font-display text-[14px] font-semibold text-ink leading-tight truncate">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</div>
+                        <div class="text-[14px] font-semibold text-ink leading-tight truncate">${escapeHtml(u.prenom)} ${escapeHtml(u.nom)}</div>
                         <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
                             <span class="text-[11.5px] text-muted truncate">${escapeHtml(u.fonction_nom || '—')}</span>
                             ${renderContrat(u)}

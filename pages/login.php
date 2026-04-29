@@ -19,16 +19,16 @@
 
     <!-- Logo + brand -->
     <div class="relative flex items-center gap-3">
-      <img src="/newspocspace/ss-logo.png" alt="Spocspace" class="w-11 h-11 shrink-0">
+      <img src="/newspocspace/ss-white-logo.png" alt="Spocspace" class="w-11 h-11 shrink-0">
       <div>
-        <div class="font-display text-2xl font-semibold text-white tracking-[-0.02em] leading-tight">Spocspace</div>
+        <div class="text-2xl font-semibold text-white tracking-[-0.02em] leading-tight">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.14em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
     </div>
 
     <!-- Hero / baseline -->
     <div class="relative mt-12 lg:mt-20 max-w-md hidden lg:block">
-      <h1 class="font-display text-4xl xl:text-5xl text-white font-medium leading-[1.15] tracking-[-0.01em]">
+      <h1 class="text-4xl xl:text-5xl text-white font-medium leading-[1.15] tracking-[-0.01em]">
         Pensée pour les soignant·e·s,<br>
         <span class="text-[#7dd3a8]">aimée par les directions.</span>
       </h1>
@@ -63,7 +63,7 @@
 
       <!-- Header form -->
       <div class="mb-8">
-        <h2 class="font-display text-3xl font-semibold text-ink tracking-[-0.01em]">Bienvenue</h2>
+        <h2 class="text-3xl font-semibold text-ink tracking-[-0.01em]">Bienvenue</h2>
         <p class="text-ink-3 mt-2 text-[15px]">Connectez-vous à votre espace.</p>
       </div>
 

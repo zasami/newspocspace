@@ -125,13 +125,17 @@ $_tw_nonce = $cspNonce ?? '';
     --background-image-mark-grad:     linear-gradient(135deg, #3da896, #7dd3a8);
   }
 
-  /* ═══ Globals Spocspace (typographie + base) ═══ */
+  /* ═══ Globals Spocspace (typographie + base) ═══
+   * Règle typo : tout le site en Outfit (font-body via la règle body{}).
+   * font-display (Fraunces) est réservée AUX SEULS GRANDS CHIFFRES STATS
+   * dans les cards (ex: "22 collab"), appliqué explicitement sur ces éléments.
+   */
   @layer base {
     body {
       @apply font-body bg-bg text-ink-2 antialiased;
     }
     h1, h2, h3, h4, h5, h6 {
-      @apply font-display tracking-tight font-semibold text-ink;
+      @apply tracking-tight font-semibold text-ink;
     }
     a {
       @apply text-teal-600 transition-colors;

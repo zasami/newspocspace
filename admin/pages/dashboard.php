@@ -114,7 +114,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
     <div class="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
       <div class="flex-1 min-w-0">
         <div class="text-[11px] tracking-[0.18em] uppercase text-[#a8d1c8] font-semibold mb-2"><?= h($dateStr) ?></div>
-        <h1 class="font-display text-3xl lg:text-4xl font-medium text-white tracking-[-0.01em] leading-tight">
+        <h1 class="text-3xl lg:text-4xl font-medium text-white tracking-[-0.01em] leading-tight">
           Bonjour <?= h($adminPrenom) ?><?php if ($adminNom): ?> <?= h($adminNom) ?><?php endif ?>
         </h1>
         <p class="mt-2 text-[15px] text-[#cfe0db] leading-relaxed">
@@ -130,15 +130,15 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
       <div class="grid grid-cols-3 gap-6 lg:gap-10 lg:pl-8 lg:border-l lg:border-white/15">
         <div class="text-center lg:text-right">
           <div class="text-[10px] tracking-[0.16em] uppercase text-[#a8d1c8] font-semibold mb-1">Présents</div>
-          <div class="font-display text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $presentsToday ?></div>
+          <div class="text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $presentsToday ?></div>
         </div>
         <div class="text-center lg:text-right">
           <div class="text-[10px] tracking-[0.16em] uppercase text-[#a8d1c8] font-semibold mb-1">Absents</div>
-          <div class="font-display text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $absentsToday ?></div>
+          <div class="text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $absentsToday ?></div>
         </div>
         <div class="text-center lg:text-right">
           <div class="text-[10px] tracking-[0.16em] uppercase text-[#a8d1c8] font-semibold mb-1">En vacances</div>
-          <div class="font-display text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $vacancesToday ?></div>
+          <div class="text-3xl lg:text-4xl font-medium text-white tabular-nums"><?= $vacancesToday ?></div>
         </div>
       </div>
     </div>
@@ -169,7 +169,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
     <div class="bg-surface border border-line rounded-xl shadow-sp-sm overflow-hidden relative">
       <span class="absolute left-0 top-0 bottom-0 w-1 bg-ok"></span>
       <div class="p-5 pl-6">
-        <div class="font-display text-3xl font-semibold text-ink tabular-nums leading-none"><?= $totalUsers ?></div>
+        <div class="text-3xl font-semibold text-ink tabular-nums leading-none"><?= $totalUsers ?></div>
         <div class="text-[13px] text-ink-2 mt-2">Collaborateurs actifs</div>
         <?php if ($newThisMonth > 0): ?>
         <div class="mt-3 pt-3 border-t border-line text-[12px] text-ok flex items-center gap-1">
@@ -183,7 +183,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
     <div class="bg-surface border border-line rounded-xl shadow-sp-sm overflow-hidden relative">
       <span class="absolute left-0 top-0 bottom-0 w-1 bg-danger"></span>
       <div class="p-5 pl-6">
-        <div class="font-display text-3xl font-semibold text-ink tabular-nums leading-none"><?= $pendingAbs ?></div>
+        <div class="text-3xl font-semibold text-ink tabular-nums leading-none"><?= $pendingAbs ?></div>
         <div class="text-[13px] text-ink-2 mt-2">Absences en attente</div>
         <?php if ($pendingAbs > 0): ?>
         <div class="mt-3 pt-3 border-t border-line text-[12px] text-danger">
@@ -196,7 +196,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
     <div class="bg-surface border border-line rounded-xl shadow-sp-sm overflow-hidden relative">
       <span class="absolute left-0 top-0 bottom-0 w-1 bg-warn"></span>
       <div class="p-5 pl-6">
-        <div class="font-display text-3xl font-semibold text-ink tabular-nums leading-none"><?= $pendingDesirs ?></div>
+        <div class="text-3xl font-semibold text-ink tabular-nums leading-none"><?= $pendingDesirs ?></div>
         <div class="text-[13px] text-ink-2 mt-2">Désirs en attente</div>
         <?php if ($pendingDesirs > 0): ?>
         <div class="mt-3 pt-3 border-t border-line text-[12px] text-warn">
@@ -209,7 +209,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
     <div class="bg-surface border border-line rounded-xl shadow-sp-sm overflow-hidden relative">
       <span class="absolute left-0 top-0 bottom-0 w-1 bg-info"></span>
       <div class="p-5 pl-6">
-        <div class="font-display text-3xl font-semibold text-ink tabular-nums leading-none"><?= $unreadMsgs ?></div>
+        <div class="text-3xl font-semibold text-ink tabular-nums leading-none"><?= $unreadMsgs ?></div>
         <div class="text-[13px] text-ink-2 mt-2">Messages non lus</div>
         <?php if ($unreadMsgs > 0): ?>
         <div class="mt-3 pt-3 border-t border-line text-[12px] text-info">
@@ -248,7 +248,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
   <section class="bg-surface border border-line rounded-xl shadow-sp-sm overflow-hidden">
     <header class="px-5 py-4 border-b border-line bg-gradient-to-b from-surface-2 to-surface flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
       <div>
-        <h3 class="font-display text-xl font-semibold text-ink tracking-[-0.01em]">Absences à traiter</h3>
+        <h3 class="text-xl font-semibold text-ink tracking-[-0.01em]">Absences à traiter</h3>
         <p class="text-[13px] text-muted mt-0.5"><?= $cntAttente ?> demande<?= $cntAttente > 1 ? 's' : '' ?> en attente de validation</p>
       </div>
       <div class="flex items-center gap-1.5 text-[12.5px] flex-wrap">
@@ -269,7 +269,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
         <div class="inline-flex w-12 h-12 rounded-full bg-ok-bg text-ok items-center justify-center mb-3">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <p class="font-display text-lg text-ink">Aucune absence à traiter</p>
+        <p class="text-lg text-ink">Aucune absence à traiter</p>
         <p class="text-muted text-[13px] mt-1">Toutes les demandes ont été validées.</p>
       </div>
     <?php else: ?>
@@ -306,7 +306,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
               <div class="flex items-start gap-3">
                 <div class="bg-surface-3 border border-line rounded-lg w-12 h-14 flex flex-col items-center justify-center shrink-0">
                   <div class="text-[9.5px] uppercase tracking-wide text-muted-2 font-semibold mt-0.5"><?= mb_substr($monthLabel, 0, 3) ?></div>
-                  <div class="font-display text-xl font-semibold text-ink leading-none"><?= $dayLabel ?></div>
+                  <div class="text-xl font-semibold text-ink leading-none"><?= $dayLabel ?></div>
                 </div>
                 <div class="text-[12px] leading-tight pt-0.5">
                   <div class="text-ink-2"><?= $isToday ? 'Aujourd\'hui' : date('d.m', $debutTs) ?></div>
@@ -324,7 +324,7 @@ $totalPending = $pendingAbs + $pendingDesirs + $pendingChg + $pendingEch;
             </td>
             <td class="px-3 py-4 align-top">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full <?= $color ?> grid place-items-center text-white font-display font-semibold text-[12.5px] shrink-0"><?= $userInitials ?></div>
+                <div class="w-9 h-9 rounded-full <?= $color ?> grid place-items-center text-white font-semibold text-[12.5px] shrink-0"><?= $userInitials ?></div>
                 <div class="min-w-0">
                   <div class="font-medium text-ink truncate"><?= h(($abs['prenom'] ?? '') . ' ' . ($abs['nom'] ?? '')) ?></div>
                   <div class="text-[11.5px] text-muted truncate">

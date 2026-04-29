@@ -208,9 +208,9 @@ if ($user && !empty($deniedPerms)) {
   <!-- ── Brand : logo + Spocspace / EMS Platform ── -->
   <div class="flex items-center justify-between gap-2 shrink-0">
     <a href="/newspocspace/profile" data-link="profile" class="flex items-center gap-2.5 px-1 group min-w-0" title="<?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?> — Voir mon profil">
-      <img src="/newspocspace/ss-logo.png" alt="Spocspace" class="w-[34px] h-[34px] shrink-0 rounded-[9px]">
+      <img src="/newspocspace/ss-white-logo.png" alt="Spocspace" class="w-[34px] h-[34px] shrink-0 rounded-[9px]">
       <div class="min-w-0">
-        <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
+        <div class="text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
     </a>
@@ -302,7 +302,7 @@ if ($user && !empty($deniedPerms)) {
 
     <!-- Page title (mis à jour par app.js via #feTopbarTitle) -->
     <div class="flex items-center gap-2 min-w-0">
-      <h5 id="feTopbarTitle" class="font-display text-lg font-semibold text-ink tracking-[-0.01em] truncate">Accueil</h5>
+      <h5 id="feTopbarTitle" class="text-lg font-semibold text-ink tracking-[-0.01em] truncate">Accueil</h5>
       <span id="feConnStatus" class="hidden sm:inline-flex items-center gap-1 ml-2 text-[11px] text-muted-2" title="État de la connexion">
         <span class="fe-conn-dot fe-conn-online w-1.5 h-1.5 rounded-full bg-ok"></span>
         <span id="feConnPending" class="font-mono" style="display:none"></span>
@@ -351,7 +351,7 @@ if ($user && !empty($deniedPerms)) {
         <?php if ($topAvatarUrl): ?>
           <img src="<?= h($topAvatarUrl) ?>" alt="" id="topbarAvatar" class="w-8 h-8 rounded-full object-cover ring-1 ring-line">
         <?php else: ?>
-          <span id="topbarAvatar" class="w-8 h-8 rounded-full bg-grad-mark flex items-center justify-center text-white font-display font-semibold text-sm"><?= $topInitials ?></span>
+          <span id="topbarAvatar" class="w-8 h-8 rounded-full bg-grad-mark flex items-center justify-center text-white font-semibold text-sm"><?= $topInitials ?></span>
         <?php endif; ?>
         <span class="hidden sm:flex flex-col items-start text-left leading-tight">
           <span class="text-[12.5px] font-medium text-ink truncate max-w-[140px]"><?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
