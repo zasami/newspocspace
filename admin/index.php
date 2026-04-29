@@ -201,35 +201,57 @@ if (!empty($_GET['_spa'])) {
     exit;
 }
 
-// Sidebar with categories
+// ─── Compteurs sidebar (badges dynamiques) ────────────────────────────────────
+$adminUserId = $admin['id'] ?? '';
+$cntAbs = (int) Db::getOne("SELECT COUNT(*) FROM absences WHERE statut = 'en_attente'");
+$cntDesirs = (int) Db::getOne("SELECT COUNT(*) FROM desirs WHERE statut = 'en_attente'");
+try { $cntChg = (int) Db::getOne("SELECT COUNT(*) FROM changements WHERE statut = 'en_attente'"); } catch (\Throwable $e) { $cntChg = 0; }
+try { $cntEch = (int) Db::getOne("SELECT COUNT(*) FROM echanges WHERE statut = 'en_attente'"); } catch (\Throwable $e) { $cntEch = 0; }
+$cntMsg = (int) Db::getOne("SELECT COUNT(*) FROM message_recipients WHERE user_id = ? AND lu = 0 AND deleted = 0", [$adminUserId]);
+
+// Sidebar — module Planning (focus mockup avril 2026, autres modules à venir)
 $sidebarCategories = [
-    'general' => [
-        'label' => 'Général',
+    'pilotage' => [
+        'label' => 'Pilotage',
         'items' => [
-            'dashboard'     => ['label' => 'Tableau de bord',  'icon' => 'speedometer2'],
+            'dashboard'     => ['label' => 'Tableau de bord',  'icon' => 'house'],
+            'planning'      => ['label' => 'Plannings',        'icon' => 'calendar3'],
+            'users'         => ['label' => 'Collaborateurs',   'icon' => 'people'],
         ],
     ],
-    'planning' => [
-        'label' => 'Planning',
+    'demandes' => [
+        'label' => 'Demandes',
         'items' => [
-            'planning' => ['label' => 'Planning',            'icon' => 'calendar3'],
-            'desirs'   => ['label' => 'Désirs',              'icon' => 'star'],
-            'absences' => ['label' => 'Absences',            'icon' => 'calendar-x'],
-            'vacances' => ['label' => 'Vacances',            'icon' => 'sun'],
-            'changements' => ['label' => 'Changements',        'icon' => 'arrow-left-right'],
-            'besoins'    => ['label' => 'Besoins couverture',  'icon' => 'grid-3x3'],
+            'absences'    => ['label' => 'Absences',     'icon' => 'chat-square-text', 'badge' => $cntAbs, 'badge_tone' => 'warn'],
+            'desirs'      => ['label' => 'Désirs',       'icon' => 'star',             'badge' => $cntDesirs, 'badge_tone' => 'warn'],
+            'changements' => ['label' => 'Changements',  'icon' => 'arrow-left-right', 'badge' => $cntChg, 'badge_tone' => 'warn'],
+            'echanges'    => ['label' => 'Échanges',     'icon' => 'arrow-down-up',    'badge' => $cntEch, 'badge_tone' => 'warn'],
+        ],
+    ],
+    'outils' => [
+        'label' => 'Outils',
+        'items' => [
+            'messages' => ['label' => 'Messagerie', 'icon' => 'chat-dots', 'badge' => $cntMsg, 'badge_tone' => 'info'],
+        ],
+    ],
+    /* Catégories archivées — non affichées dans le sidebar du module Planning,
+       mais toujours accessibles via /admin/?page=X et via la dropdown module future */
+    '_archive_planning' => [
+        'label' => 'Planning (avancé)',
+        'items' => [
+            'vacances' => ['label' => 'Vacances',                 'icon' => 'sun'],
+            'besoins'    => ['label' => 'Besoins couverture',     'icon' => 'grid-3x3'],
             'repartition' => ['label' => 'Répartition',           'icon' => 'grid-3x3-gap'],
         ],
     ],
-    'config' => [
+    '_archive_config' => [
         'label' => 'Configuration',
         'items' => [
-            'users'    => ['label' => 'Collaborateurs',      'icon' => 'people'],
             'modules'  => ['label' => 'Modules & Unités',    'icon' => 'building'],
             'horaires' => ['label' => 'Types d\'horaires',   'icon' => 'clock'],
         ],
     ],
-    'outils' => [
+    '_archive_outils' => [
         'label' => 'Outils',
         'items' => [
             'agenda'   => ['label' => 'Agenda',                 'icon' => 'calendar-week'],
@@ -245,7 +267,7 @@ $sidebarCategories = [
             'evenements' => ['label' => 'Événements',            'icon' => 'calendar-event'],
         ],
     ],
-    'rh' => [
+    '_archive_rh' => [
         'label' => 'Recrutement & RH',
         'items' => [
             'rh-offres'       => ['label' => 'Offres d\'emploi',     'icon' => 'briefcase'],
@@ -253,7 +275,7 @@ $sidebarCategories = [
             'rh-stagiaires'   => ['label' => 'Stagiaires',           'icon' => 'person-badge'],
         ],
     ],
-    'formations' => [
+    '_archive_formations' => [
         'label' => 'Formations',
         'items' => [
             'rh-formations-dashboard'        => ['label' => 'Tableau de bord',          'icon' => 'speedometer2'],
@@ -268,13 +290,13 @@ $sidebarCategories = [
             'rh-formations-parametres'   => ['label' => 'Paramètres',               'icon' => 'gear'],
         ],
     ],
-    'entretiens' => [
+    '_archive_entretiens' => [
         'label' => 'Entretiens',
         'items' => [
             'rh-entretiens'        => ['label' => 'Entretiens annuels', 'icon' => 'chat-square-text'],
         ],
     ],
-    'autres' => [
+    '_archive_autres' => [
         'label' => 'Autres',
         'items' => [
             'documents' => ['label' => 'Documents',             'icon' => 'folder2'],
@@ -291,7 +313,7 @@ $sidebarCategories = [
             'connexions'   => ['label' => 'Connexions',        'icon' => 'person-check'],
         ],
     ],
-    'parametres' => [
+    '_archive_parametres' => [
         'label' => 'Paramètres',
         'items' => [
             'etablissement'      => ['label' => 'Établissement',       'icon' => 'hospital'],
@@ -352,28 +374,41 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
   -translate-x-full lg:translate-x-0 [&.open]:translate-x-0
   transition-transform duration-200">
 
-  <!-- ── Brand : logo + nom EMS + 'Administration' ── -->
+  <!-- ── Brand : logo "S" gradient + Spocspace + EMS PLATFORM ── -->
   <div class="flex items-center justify-between gap-2 shrink-0">
     <a href="<?= admin_url() ?>" class="flex items-center gap-2.5 px-1 group min-w-0" title="Tableau de bord">
-      <img src="/newspocspace/ss-logo.png" alt="" class="w-[34px] h-[34px] shrink-0 rounded-[9px]">
+      <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-display font-bold text-teal-900 text-lg shadow-mark shrink-0">S</div>
       <div class="min-w-0">
-        <div class="font-display text-lg font-semibold text-white tracking-[-0.02em] leading-tight truncate"><?= h($emsNom) ?></div>
-        <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">Administration</div>
+        <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
+        <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
     </a>
-    <button id="sidebarToggleBtn" class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0" title="Réduire le menu">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <line x1="9" y1="3" x2="9" y2="21"/>
-      </svg>
+    <button id="sidebarToggleBtn" class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0 lg:hidden" title="Fermer le menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
-  <!-- ── Navigation dynamique ── -->
+  <!-- ── Module selector (dropdown placeholder pour switch entre modules) ── -->
+  <button type="button" id="moduleDropdownBtn"
+          class="flex items-center justify-between gap-2 w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] rounded-[10px] px-3 py-2.5 text-left transition-colors group"
+          title="Changer de module">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-9 h-9 rounded-lg bg-teal-700/60 grid place-items-center text-[#7dd3a8] shrink-0">
+        <?= ss_icon('calendar3', 'w-5 h-5') ?>
+      </div>
+      <div class="min-w-0">
+        <div class="text-[9.5px] tracking-[0.14em] uppercase text-sb-sub font-medium">Module</div>
+        <div class="font-display text-sm font-semibold text-white truncate">Planning</div>
+      </div>
+    </div>
+    <svg class="w-4 h-4 text-sb-sub group-hover:text-white transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+
+  <!-- ── Navigation dynamique (filtre _archive_* hors-mockup) ── -->
   <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded">
-    <?php foreach ($sidebarCategories as $catId => $cat): ?>
-    <div class="sidebar-cat flex items-center justify-between text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-3 first:mt-0 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
+    <?php foreach ($sidebarCategories as $catId => $cat): if (str_starts_with($catId, '_')) continue; ?>
+    <div class="sidebar-cat flex items-center justify-between text-[10.5px] tracking-[0.14em] uppercase text-sb-section px-2.5 mb-1 mt-4 first:mt-0 font-semibold cursor-pointer select-none hover:text-sb-text-hover transition-colors"
          data-cat-toggle="<?= $catId ?>">
       <span><?= h($cat['label']) ?></span>
       <svg class="sidebar-cat-chevron w-3 h-3 opacity-60 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -381,15 +416,29 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
       </svg>
     </div>
     <div class="sidebar-cat-items flex flex-col gap-0.5 [&.collapsed]:hidden" data-cat-body="<?= $catId ?>">
-      <?php foreach ($cat['items'] as $key => $item): ?>
+      <?php foreach ($cat['items'] as $key => $item):
+        $hasBadge = !empty($item['badge']);
+        $badgeTone = $item['badge_tone'] ?? 'warn';
+        $badgeClasses = match ($badgeTone) {
+            'info'   => 'bg-info-bg text-info border border-info-line',
+            'danger' => 'bg-danger-bg text-danger border border-danger-line',
+            'ok'     => 'bg-ok-bg text-ok border border-ok-line',
+            default  => 'bg-warn-bg text-warn border border-warn-line',
+        };
+      ?>
       <a href="<?= admin_url($key) ?>"
          class="sidebar-link relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
                 <?= $activeSection === $key ? 'active pl-[15px] bg-[#7dd3a8]/[0.12] !text-white font-medium before:content-[\'\'] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]' : '' ?>"
          title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
         <?= ss_icon($item['icon'], 'w-4 h-4 opacity-85 shrink-0') ?>
         <span class="nav-label flex-1 truncate"><?= h($item['label']) ?></span>
-        <?php if ($key === 'messages'): ?><span id="sidebarMsgBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
-        <?php if ($key === 'email-externe'): ?><span id="sidebarEmailBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
+        <?php if ($hasBadge && $item['badge'] > 0): ?>
+        <span class="ml-auto text-[10px] font-mono font-bold rounded-full px-1.5 py-px shrink-0 <?= $badgeClasses ?>"<?= $key === 'messages' ? ' id="sidebarMsgBadge"' : '' ?>><?= (int) $item['badge'] ?></span>
+        <?php elseif ($key === 'messages'): ?>
+        <span id="sidebarMsgBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+        <?php elseif ($key === 'email-externe'): ?>
+        <span id="sidebarEmailBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+        <?php endif; ?>
       </a>
       <?php endforeach; ?>
     </div>
