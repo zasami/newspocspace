@@ -3,6 +3,7 @@
  * SpocSpace Admin Panel - Server-rendered with retractable sidebar
  */
 require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/../_partials/icons.php';
 
 /**
  * Build a clean admin URL
@@ -332,26 +333,23 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
 <base href="/newspocspace/admin/">
 <title>Admin — SpocSpace</title>
-<!-- Bootstrap retiré (newspocspace = base Tailwind/Spocspace Care). bootstrap-icons gardé temporairement pour les pages non-migrées. -->
-<link href="/newspocspace/admin/assets/css/vendor/bootstrap-icons.min.css" rel="stylesheet">
-<link rel="stylesheet" href="/newspocspace/admin/assets/css/admin.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/newspocspace/admin/assets/css/editor.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/newspocspace/admin/assets/css/competences.css?v=<?= APP_VERSION ?>">
-<link rel="stylesheet" href="/newspocspace/admin/assets/css/themes.css?v=<?= APP_VERSION ?>">
+<!-- Clean slate Tailwind/Spocspace Care : ZÉRO Bootstrap, ZÉRO ancien CSS. Tout le visuel passe par Tailwind. -->
 <?php include __DIR__ . '/../tailwind-config.php'; ?>
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
-<!-- BACKDROP (mobile) — sidebar-overlay garde le hook admin.css (.sidebar-overlay.show{display:block}) -->
-<div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden lg:!hidden"></div>
+<div class="lg:flex min-h-screen">
 
-<!-- SIDEBAR — admin-sidebar gardé pour les hooks JS et CSS responsive -->
+<!-- BACKDROP (mobile) — JS toggle .show -->
+<div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden [&.show]:block lg:!hidden"></div>
+
+<!-- SIDEBAR — admin-sidebar gardé en hook (id seul suffirait, classe gardée pour compat) -->
 <aside id="adminSidebar" class="admin-sidebar
-  fixed lg:sticky inset-y-0 left-0 z-40
-  w-60 h-screen overflow-y-auto
+  fixed lg:sticky lg:top-0 inset-y-0 left-0 z-40
+  w-60 h-screen overflow-y-auto shrink-0
   bg-sidebar-grad text-sb-text font-body
   p-[18px] flex flex-col gap-7
-  -translate-x-full lg:translate-x-0
+  -translate-x-full lg:translate-x-0 [&.open]:translate-x-0
   transition-transform duration-200">
 
   <!-- ── Brand : logo + nom EMS + 'Administration' ── -->
@@ -388,7 +386,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
          class="sidebar-link relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13.5px] font-normal text-sb-text hover:bg-white/[0.04] hover:text-sb-text-hover transition-colors
                 <?= $activeSection === $key ? 'active pl-[15px] bg-[#7dd3a8]/[0.12] !text-white font-medium before:content-[\'\'] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-4 before:bg-[#7dd3a8] before:rounded-[3px]' : '' ?>"
          title="<?= h($item['label']) ?>" <?= in_array($key, ['messages', 'email-externe']) ? 'data-sidebar-badge="' . $key . '"' : '' ?>>
-        <i class="bi bi-<?= $item['icon'] ?> opacity-85 text-[15px] w-4 text-center shrink-0"></i>
+        <?= ss_icon($item['icon'], 'w-4 h-4 opacity-85 shrink-0') ?>
         <span class="nav-label flex-1 truncate"><?= h($item['label']) ?></span>
         <?php if ($key === 'messages'): ?><span id="sidebarMsgBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
         <?php if ($key === 'email-externe'): ?><span id="sidebarEmailBadge" class="sidebar-badge ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span><?php endif; ?>
@@ -431,40 +429,52 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
   </div>
 </aside>
 
-<!-- MAIN -->
-<div class="admin-main" id="adminMain">
+<!-- MAIN — wrapper flex column qui contient topbar + page -->
+<div id="adminMain" class="admin-main flex-1 min-h-screen flex flex-col">
   <!-- TOP BAR -->
-  <header class="admin-topbar">
-    <button class="topbar-hamburger" id="mobileToggle" title="Menu">
-      <i class="bi bi-list"></i>
+  <header class="admin-topbar bg-surface border-b border-line h-16 px-4 lg:px-6 flex items-center gap-3 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
+    <!-- Hamburger mobile -->
+    <button id="mobileToggle" type="button" class="topbar-hamburger lg:hidden p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors bg-transparent border-0" title="Menu">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <h5 class="mb-0 topbar-title"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
-    <div class="topbar-search ms-auto me-3" id="topbarSearch">
-      <i class="bi bi-search search-icon"></i>
-      <input type="text" class="form-control form-control-sm" id="topbarSearchInput" placeholder="Rechercher partout... (@ pour la page actuelle)" autocomplete="off">
-      <button type="button" class="admin-search-clear" id="adminSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
-      <div class="topbar-search-results" id="topbarSearchResults"></div>
-    </div>
-    <div class="topbar-right">
-      <a href="<?= admin_url('messages') ?>" class="topbar-icon-btn" id="topbarMsgNotif" title="Messagerie">
-        <i class="bi bi-chat-dots"></i>
-        <span class="topbar-notif-badge" id="topbarMsgBadge" style="display:none"></span>
-      </a>
-      <a href="<?= admin_url('email-externe') ?>" class="topbar-icon-btn" id="topbarEmailNotif" title="Email">
-        <i class="bi bi-envelope"></i>
-        <span class="topbar-notif-badge" id="topbarEmailBadge" style="display:none"></span>
-      </a>
-      <a href="<?= admin_url('contacts') ?>" class="topbar-icon-btn" id="topbarContactsBtn" title="Contacts">
-        <i class="bi bi-person-rolodex"></i>
-      </a>
-      <a href="<?= admin_url('annuaire') ?>" class="topbar-icon-btn" id="topbarAnnuaireBtn" title="Annuaire téléphonique">
-        <i class="bi bi-telephone"></i>
-      </a>
-      <button class="topbar-icon-btn" id="ztInstallBtn" title="Installer l'application" style="display:none">
-        <i class="bi bi-download"></i>
+
+    <!-- Page title -->
+    <h5 class="topbar-title font-display text-lg font-semibold text-ink tracking-[-0.01em] truncate"><?= h($pageLabels[$page] ?? 'Admin') ?></h5>
+
+    <!-- Search (centre) -->
+    <div id="topbarSearch" class="topbar-search relative flex-1 max-w-lg mx-auto hidden md:block">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-2 pointer-events-none">
+        <?= ss_icon('search', 'w-4 h-4') ?>
+      </span>
+      <input type="text" id="topbarSearchInput" placeholder="Rechercher partout... (@ pour la page actuelle)" autocomplete="off"
+             class="w-full bg-surface-3 border border-line pl-10 pr-9 py-1.5 rounded-lg text-sm text-ink placeholder:text-muted-2 focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100 transition">
+      <button type="button" id="adminSearchClear" class="admin-search-clear absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-2 hover:text-teal-600 hover:bg-surface-3 transition-colors bg-transparent border-0" style="display:none">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <button class="topbar-icon-btn" id="immersiveToggle" title="Plein écran">
-        <i class="bi bi-arrows-fullscreen"></i>
+      <div id="topbarSearchResults" class="topbar-search-results absolute left-0 right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-sp-md max-h-96 overflow-y-auto z-30 hidden"></div>
+    </div>
+
+    <!-- Actions droite -->
+    <div class="topbar-right flex items-center gap-1 ml-auto">
+      <a href="<?= admin_url('messages') ?>" id="topbarMsgNotif" class="topbar-icon-btn relative p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Messagerie">
+        <?= ss_icon('chat-dots', 'w-5 h-5') ?>
+        <span id="topbarMsgBadge" class="topbar-notif-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-600 text-white text-[10px] font-mono font-bold flex items-center justify-center" style="display:none"></span>
+      </a>
+      <a href="<?= admin_url('email-externe') ?>" id="topbarEmailNotif" class="topbar-icon-btn relative p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Email">
+        <?= ss_icon('envelope', 'w-5 h-5') ?>
+        <span id="topbarEmailBadge" class="topbar-notif-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-600 text-white text-[10px] font-mono font-bold flex items-center justify-center" style="display:none"></span>
+      </a>
+      <a href="<?= admin_url('contacts') ?>" id="topbarContactsBtn" class="topbar-icon-btn hidden sm:inline-flex p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Contacts">
+        <?= ss_icon('person-rolodex', 'w-5 h-5') ?>
+      </a>
+      <a href="<?= admin_url('annuaire') ?>" id="topbarAnnuaireBtn" class="topbar-icon-btn hidden sm:inline-flex p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Annuaire téléphonique">
+        <?= ss_icon('telephone', 'w-5 h-5') ?>
+      </a>
+      <button id="ztInstallBtn" type="button" class="topbar-icon-btn p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors bg-transparent border-0" title="Installer l'application" style="display:none">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button id="immersiveToggle" type="button" class="topbar-icon-btn hidden sm:inline-flex p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors bg-transparent border-0" title="Plein écran">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 8V5a2 2 0 00-2-2h-3"/><path d="M3 16v3a2 2 0 002 2h3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg>
       </button>
 <?php
   $fonctionCode = '';
@@ -473,12 +483,12 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
   }
   $roleLabel = $fonctionCode ?: ($admin['role'] === 'responsable' ? 'RUV' : ucfirst($admin['role'] ?? 'Admin'));
 ?>
-      <div class="topbar-user d-none d-sm-flex">
-        <span class="topbar-user-name"><?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?></span>
-        <span class="topbar-user-role"><?= h($roleLabel) ?></span>
+      <div class="topbar-user hidden sm:flex flex-col items-end leading-tight pl-3 ml-1 border-l border-line">
+        <span class="topbar-user-name text-[12.5px] font-medium text-ink truncate max-w-[160px]"><?= h(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? '')) ?></span>
+        <span class="topbar-user-role text-[10.5px] text-muted-2 capitalize"><?= h($roleLabel) ?></span>
       </div>
-      <a href="<?= admin_url() ?>logout" class="topbar-icon-btn topbar-logout" title="Déconnexion">
-        <i class="bi bi-power"></i>
+      <a href="<?= admin_url() ?>logout" class="topbar-icon-btn topbar-logout p-2 rounded-lg text-muted hover:bg-danger-bg hover:text-danger transition-colors" title="Déconnexion">
+        <?= ss_icon('power', 'w-5 h-5') ?>
       </a>
     </div>
   </header>
@@ -507,7 +517,7 @@ window.__SS__ = window.__SS__ || {
 </script>
 
   <!-- PAGE CONTENT -->
-  <div class="admin-content" id="adminContent">
+  <div id="adminContent" class="admin-content flex-1 min-h-0 p-4 lg:p-6">
     <?php
     // Catch fatal errors so that global compose panel + shortcuts still render
     ob_start();
@@ -520,13 +530,14 @@ window.__SS__ = window.__SS__ || {
     }
     $pageOutput = ob_get_clean();
     if ($pageError) {
-        echo '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle"></i> Erreur : ' . h($pageError) . '</div>';
+        echo '<div class="bg-danger-bg border border-danger-line text-danger px-4 py-3 rounded-lg m-3"><strong>Erreur&nbsp;:</strong> ' . h($pageError) . '</div>';
     } else {
         echo $pageOutput;
     }
     ?>
   </div>
 </div>
+</div><!-- /lg:flex min-h-screen -->
 
 <script nonce="<?= $cspNonce ?>">
 // Extend with extra properties

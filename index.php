@@ -4,6 +4,7 @@
  * Sidebar layout — same pattern as admin panel
  */
 require_once __DIR__ . '/init.php';
+require_once __DIR__ . '/_partials/icons.php';
 
 $csrfToken = $_SESSION['ss_csrf_token'] ?? '';
 $user = $_SESSION['ss_user'] ?? null;
@@ -185,29 +186,23 @@ if ($user && !empty($deniedPerms)) {
 <link rel="manifest" href="/newspocspace/manifest.json">
 <link rel="apple-touch-icon" href="/newspocspace/assets/icons/icon-192x192.png">
 <link rel="icon" href="/newspocspace/assets/icons/icon-96x96.png" type="image/png">
-<!-- Bootstrap retiré (newspocspace = base Tailwind/Spocspace Care). bootstrap-icons gardé temporairement pour les pages non-migrées. -->
-<link rel="stylesheet" href="assets/css/vendor/bootstrap-icons.min.css">
-<link rel="stylesheet" href="assets/css/ss-colors.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/css/spocspace.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/css/emoji-picker.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/css/annonces.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/css/pages-all.css?v=<?= $v ?>">
-<link rel="stylesheet" href="assets/css/themes.css?v=<?= $v ?>">
+<!-- Clean slate Tailwind/Spocspace Care : ZÉRO Bootstrap, ZÉRO ancien CSS. Tout le visuel passe par Tailwind. -->
 <?php include __DIR__ . '/tailwind-config.php'; ?>
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
 <?php if ($user): ?>
-<!-- BACKDROP (mobile) — fe-sidebar-overlay garde le hook spocspace.css (.fe-sidebar-overlay.show{display:block}) -->
-<div id="sidebarOverlay" class="fe-sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden lg:!hidden"></div>
+<div class="lg:flex min-h-screen">
+<!-- BACKDROP (mobile) — JS toggle .show via app.js -->
+<div id="sidebarOverlay" class="fe-sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden [&.show]:block lg:!hidden"></div>
 
 <!-- SIDEBAR — fe-sidebar gardé pour le hook body.no-nav .fe-sidebar{display:none} -->
 <aside id="feSidebar" class="fe-sidebar
-  fixed lg:sticky inset-y-0 left-0 z-40
-  w-60 h-screen overflow-y-auto
+  fixed lg:sticky lg:top-0 inset-y-0 left-0 z-40
+  w-60 h-screen overflow-y-auto shrink-0
   bg-sidebar-grad text-sb-text font-body
   p-[18px] flex flex-col gap-7
-  -translate-x-full lg:translate-x-0
+  -translate-x-full lg:translate-x-0 [&.open]:translate-x-0
   transition-transform duration-200">
 
   <!-- ── Brand : logo + Spocspace / EMS Platform ── -->
@@ -249,7 +244,7 @@ if ($user && !empty($deniedPerms)) {
          data-link="<?= $key ?>"
          <?= $isDisabled ? 'data-disabled="1" aria-disabled="true"' : '' ?>
          title="<?= h($item['label']) ?><?= $isDisabled ? ' (non disponible — aucun collègue de même fonction)' : '' ?>">
-        <i class="bi bi-<?= $item['icon'] ?> opacity-85 text-[15px] w-4 text-center shrink-0"></i>
+        <?= ss_icon($item['icon'], 'w-4 h-4 opacity-85 shrink-0') ?>
         <span class="flex-1 truncate"><?= h($item['label']) ?></span>
         <?php if ($key === 'emails'): ?>
         <span id="msgBadgeSidebar" class="ml-auto text-[10px] font-mono font-bold bg-[#7dd3a8] text-teal-900 rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
@@ -295,73 +290,89 @@ if ($user && !empty($deniedPerms)) {
   </div>
 </aside>
 
-<!-- MAIN WRAPPER -->
-<div class="fe-main" id="feMain">
+<!-- MAIN WRAPPER (logged-in) -->
+<div id="feMain" class="flex-1 min-h-screen flex flex-col">
+
   <!-- TOPBAR -->
-  <header class="fe-topbar">
-    <div class="fe-topbar-left">
-      <button class="fe-topbar-hamburger" id="mobileToggle" title="Menu">
-        <i class="bi bi-list"></i>
-      </button>
-      <a href="/newspocspace/home" data-link="home" class="fe-topbar-brand" title="Accueil">
-        <img src="/newspocspace/ss-logo.png" alt="SpocSpace" class="fe-topbar-brand-logo">
-        <span class="fe-conn-status" id="feConnStatus" title="En ligne">
-          <span class="fe-conn-dot fe-conn-online"></span>
-          <span class="fe-conn-count" id="feConnPending" style="display:none"></span>
-        </span>
-      </a>
-      <h5 class="fe-topbar-title" id="feTopbarTitle">Accueil</h5>
-      <span class="fe-sync-indicator" id="feSyncIndicator" title="Dernier sync" style="display:none">
-        <i class="bi bi-arrow-repeat"></i>
+  <header class="bg-surface border-b border-line h-16 px-4 lg:px-6 flex items-center gap-3 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
+    <!-- Hamburger mobile -->
+    <button id="mobileToggle" class="lg:hidden p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Menu">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <!-- Page title (mis à jour par app.js via #feTopbarTitle) -->
+    <div class="flex items-center gap-2 min-w-0">
+      <h5 id="feTopbarTitle" class="font-display text-lg font-semibold text-ink tracking-[-0.01em] truncate">Accueil</h5>
+      <span id="feConnStatus" class="hidden sm:inline-flex items-center gap-1 ml-2 text-[11px] text-muted-2" title="État de la connexion">
+        <span class="fe-conn-dot fe-conn-online w-1.5 h-1.5 rounded-full bg-ok"></span>
+        <span id="feConnPending" class="font-mono" style="display:none"></span>
+      </span>
+      <span id="feSyncIndicator" class="hidden sm:inline-flex items-center gap-1 text-[11px] text-muted-2" title="Dernier sync" style="display:none">
+        <?= ss_icon('arrow-down-up', 'w-3 h-3') ?>
         <span id="feSyncTime"></span>
       </span>
     </div>
-    <div class="fe-topbar-search" id="feTopbarSearch">
-      <i class="bi bi-search fe-search-icon"></i>
-      <input type="text" class="form-control" id="feSearchInput" placeholder="Rechercher partout..." autocomplete="off">
-      <button type="button" class="fe-search-clear" id="feSearchClear" style="display:none"><i class="bi bi-x-lg"></i></button>
-      <div class="fe-search-results" id="feSearchResults"></div>
+
+    <!-- Search (centre) -->
+    <div id="feTopbarSearch" class="relative flex-1 max-w-md mx-auto hidden md:block">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-2 pointer-events-none">
+        <?= ss_icon('search', 'w-4 h-4') ?>
+      </span>
+      <input type="text" id="feSearchInput" placeholder="Rechercher partout..." autocomplete="off"
+             class="w-full bg-surface-3 border border-line pl-10 pr-9 py-1.5 rounded-lg text-sm text-ink placeholder:text-muted-2 focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100 transition">
+      <button type="button" id="feSearchClear" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-2 hover:text-teal-600 hover:bg-surface-3 transition-colors" style="display:none">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="feSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-sp-md max-h-96 overflow-y-auto z-30 hidden"></div>
     </div>
-    <div class="fe-topbar-right">
-      <a href="/newspocspace/notifications" data-link="notifications" class="fe-topbar-icon-btn" title="Notifications">
-        <i class="bi bi-bell"></i>
-        <span class="fe-topbar-notif" style="display:none"></span>
+
+    <!-- Actions droite -->
+    <div class="flex items-center gap-1 ml-auto">
+      <a href="/newspocspace/notifications" data-link="notifications" class="relative p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Notifications">
+        <?= ss_icon('bell', 'w-5 h-5') ?>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-warn rounded-full" style="display:none"></span>
       </a>
       <?php if (!in_array('page_emails', $deniedPerms)): ?>
-      <a href="/newspocspace/emails" data-link="emails" class="fe-topbar-icon-btn" title="Messagerie interne">
-        <i class="bi bi-chat-dots"></i>
-        <span class="fe-topbar-notif" id="msgBadge" style="display:none"></span>
+      <a href="/newspocspace/emails" data-link="emails" class="relative p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Messagerie interne">
+        <?= ss_icon('chat-dots', 'w-5 h-5') ?>
+        <span id="msgBadge" class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-teal-600 text-white text-[10px] font-mono font-bold flex items-center justify-center" style="display:none"></span>
       </a>
       <?php endif; ?>
-      <a href="/newspocspace/annuaire" data-link="annuaire" class="fe-topbar-icon-btn" title="Annuaire téléphonique">
-        <i class="bi bi-telephone"></i>
+      <a href="/newspocspace/annuaire" data-link="annuaire" class="hidden sm:inline-flex p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors" title="Annuaire téléphonique">
+        <?= ss_icon('telephone', 'w-5 h-5') ?>
       </a>
-      <button class="fe-topbar-icon-btn" id="fullscreenToggle" title="Plein écran">
-        <i class="bi bi-arrows-fullscreen"></i>
+      <button id="fullscreenToggle" type="button" class="hidden sm:inline-flex p-2 rounded-lg text-muted hover:text-teal-600 hover:bg-surface-3 transition-colors bg-transparent border-0" title="Plein écran">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 8V5a2 2 0 00-2-2h-3"/><path d="M3 16v3a2 2 0 002 2h3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg>
       </button>
-      <div class="fe-topbar-user" id="avatarToggleBtn" style="cursor:pointer;" title="Ouvrir le menu">
+
+      <!-- User chip cliquable (ouvre menu profil) -->
+      <button id="avatarToggleBtn" type="button" class="flex items-center gap-2 pl-2 pr-3 py-1 ml-1 rounded-lg hover:bg-surface-3 transition-colors bg-transparent border-0" title="Ouvrir le menu">
         <?php $topAvatarUrl = $user['photo'] ?? ''; $topInitials = h(mb_substr($user['prenom'] ?? '', 0, 1) . mb_substr($user['nom'] ?? '', 0, 1)); ?>
         <?php if ($topAvatarUrl): ?>
-          <img src="<?= h($topAvatarUrl) ?>" alt="" class="fe-topbar-user-avatar" id="topbarAvatar">
+          <img src="<?= h($topAvatarUrl) ?>" alt="" id="topbarAvatar" class="w-8 h-8 rounded-full object-cover ring-1 ring-line">
         <?php else: ?>
-          <span class="fe-topbar-user-avatar" id="topbarAvatar"><?= $topInitials ?></span>
+          <span id="topbarAvatar" class="w-8 h-8 rounded-full bg-grad-mark flex items-center justify-center text-white font-display font-semibold text-sm"><?= $topInitials ?></span>
         <?php endif; ?>
-        <span class="fe-topbar-user-name d-none d-sm-inline"><?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
-      </div>
+        <span class="hidden sm:flex flex-col items-start text-left leading-tight">
+          <span class="text-[12.5px] font-medium text-ink truncate max-w-[140px]"><?= h(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
+          <span class="text-[10.5px] text-muted-2 capitalize"><?= h($user['role'] ?? '') ?></span>
+        </span>
+      </button>
     </div>
   </header>
 
   <!-- PAGE CONTENT -->
-  <main id="app-content">
-    <!-- Pages loaded here by SPA router -->
+  <main id="app-content" class="flex-1 min-h-0">
+    <!-- Pages chargées ici par le SPA router -->
   </main>
+</div>
 </div>
 <?php endif; ?>
 
 <?php if (!$user): ?>
-<!-- Login: no sidebar, just app-content -->
-<main id="app-content" class="no-nav">
-  <!-- Login page loaded here by SPA router -->
+<!-- Login : pas de shell, page login chargée plein viewport -->
+<main id="app-content" class="no-nav min-h-screen w-full">
+  <!-- Login page chargée ici par le SPA router -->
 </main>
 <?php endif; ?>
 

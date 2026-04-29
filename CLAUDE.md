@@ -1,122 +1,188 @@
 # CLAUDE.md — Newspocspace
 
-Ce fichier guide tout le travail dans `newspocspace/`. Il **remplace** localement le CLAUDE.md de spocspace pour ce qui concerne le **visuel et le styling**. Le backend, l'API et la logique métier suivent toujours les conventions de [../spocspace/CLAUDE.md](../spocspace/CLAUDE.md).
+> 🚨 **À LIRE EN PREMIER POUR CHAQUE NOUVELLE SESSION DANS CE DOSSIER.**
+> Tout le contexte design + le mode opératoire convenu avec l'utilisateur est ici.
+> Le backend, l'API et la logique métier suivent toujours [../spocspace/CLAUDE.md](../spocspace/CLAUDE.md).
 
-## 1 — Contexte du projet
+## 0 — Décision **CLEAN SLATE** (avril 2026, irréversible côté visuel)
 
-**Newspocspace** est un fork visuel de Spocspace, démarré en avril 2026 pour migrer l'app de Bootstrap 5 vers Tailwind CSS avec un design system propre appelé **Spocspace Care**.
+Le 29 avril 2026 l'utilisateur a tranché **« 0 Bootstrap, 0 ancien CSS, on repart à zéro »** :
 
-- **Métier** : SaaS de gestion d'EMS (Établissements Médico-Sociaux) genevois — affilié Fegems.
-- **Vocabulaire EMS à respecter dans les textes UI** : EMS, Fegems, HPCI, BLS-AED, INC, BPSD ; ASSC, ASA, ASE, AFP, CFC ; référent·e, actes délégués, cartographie de compétences. Toujours en français de Suisse romande.
-- **Backend partagé** : la BDD (MariaDB) et la logique PHP/api sont partagées avec spocspace pour l'instant. **Ne pas toucher** à la logique métier ; uniquement au visuel.
-- **Origine du fork** : commit `066d4b3` — les chemins `/spocspace/` ont été remplacés par `/newspocspace/`, le service worker renommé (`ns-v*`), Bootstrap retiré, Tailwind CDN installé.
+- ✅ **Tailwind Play CDN** chargé par [tailwind-config.php](tailwind-config.php) — design system Spocspace Care
+- ✅ **Helper SVG icons** [_partials/icons.php](_partials/icons.php) → `ss_icon('house', 'w-4 h-4')` — Lucide-style stroke-width 1.8
+- ❌ **bootstrap.min.css** retiré
+- ❌ **bootstrap.bundle.min.js** retiré
+- ❌ **bootstrap-icons.min.css** retiré
+- ❌ **assets/css/spocspace.css** retiré
+- ❌ **assets/css/ss-colors.css**, **emoji-picker.css**, **annonces.css**, **pages-all.css**, **themes.css** retirés
+- ❌ **admin/assets/css/admin.css**, **editor.css**, **competences.css**, **themes.css** retirés
+- ❌ Tous les `<i class="bi bi-X">` remplacés par `<?= ss_icon('X') ?>`
+
+> **Conséquence assumée** : ~70 pages internes (chargées dans le shell SPA ou dans le shell admin) sont **visuellement cassées** car elles utilisent encore les classes Bootstrap (`btn`, `card`, `row`, `col-*`, `<i class="bi-*">`, etc.). C'est l'état attendu jusqu'à ce qu'on les migre **une par une**.
+
+## 1 — Mode opératoire convenu
+
+1. **L'utilisateur fournit une maquette** (image/Figma/description) pour chaque écran à migrer.
+2. **Claude implémente** en pur Tailwind/Spocspace Care, **en s'inspirant de [_layout_tailwind.php](_layout_tailwind.php)**.
+3. **Logique PHP / API / data → intacte** (queries DB, routes, sessions, sanitization). On ne touche que le HTML + classes.
+4. **Pas de script de migration globale** — chaque page est faite à la main. *« 5 pages magnifiques plutôt que 70 moches »*.
+
+### Règle d'or git
+
+**TOUJOURS** `pwd` avant `git push` — vérifier qu'on est dans `/sites/zkriva.com/newspocspace/` (jamais `/spocspace/`). Mauvaise erreur déjà commise une fois (push accidentel d'un commit vers `zasami/SpocSpace`).
 
 ## 2 — Stack visuelle
 
-### Tailwind CSS (Play CDN)
+### Tailwind CSS (Play CDN) — [tailwind-config.php](tailwind-config.php)
 
-Configuration globale dans [tailwind-config.php](tailwind-config.php) — **ne PAS modifier la palette** sans en parler. Ce fichier est inclus depuis chaque shell PHP :
+**Inclus depuis** :
+- [index.php](index.php) (shell SPA employé) : `<?php include __DIR__ . '/tailwind-config.php'; ?>`
+- [admin/index.php](admin/index.php) (shell admin) : `<?php include __DIR__ . '/../tailwind-config.php'; ?>`
+- [care/index.php](care/index.php) (shell care/SpocCare) : idem
+- [_layout_tailwind.php](_layout_tailwind.php) (référence visuelle)
+
+**Définit** : Google Fonts Fraunces+Outfit+JetBrains Mono · palette teal-* · ink/muted/line/surface · ok/warn/danger/info · sec-* (secteurs Fegems) · sb-* (textes sidebar) · gradients (sidebar-grad / mark-grad / hero / progress) · ombres sp-* + mark.
+
+### Helper SVG icons — [_partials/icons.php](_partials/icons.php)
 
 ```php
-<?php include __DIR__ . '/tailwind-config.php'; ?>      // depuis index.php (racine)
-<?php include __DIR__ . '/../tailwind-config.php'; ?>   // depuis admin/index.php ou care/index.php
+<?= ss_icon('house') ?>                              // 4x4 par défaut, opacity 85, stroke 1.8
+<?= ss_icon('star', 'w-5 h-5 text-teal-600') ?>     // taille / couleur custom
 ```
 
-> Le fichier expose le design system « Spocspace Care » via `tailwind.config = {...}` au moment du load CDN. Toutes les classes custom (teal-*, ink, muted, line, surface, ok/warn/danger/info, sec-*) sont définies là.
+**Ajouter une icône** : éditer le `match` dans la fonction. Format SVG (Lucide-style outline). Si nom inconnu → cercle de fallback.
 
-### Layout de référence
+### Layout de référence — [_layout_tailwind.php](_layout_tailwind.php)
 
-[_layout_tailwind.php](_layout_tailwind.php) — gabarit complet (sidebar + topbar + cards + boutons + badges + progress) en Tailwind/Spocspace Care. Visitable directement via `/newspocspace/_layout_tailwind.php`. Sert de **base de copie** pour les futures pages migrées.
+Page autonome visitable sur `/newspocspace/_layout_tailwind.php`. Contient le design canonique : sidebar gradient teal foncé + topbar surface + cards stats + badges + progress + boutons. **Toute nouvelle page doit s'inspirer de ce gabarit.**
 
-## 3 — INTERDICTIONS
+## 3 — INTERDICTIONS (hard rules)
 
-- ❌ **PAS de Bootstrap** (CSS ni JS). Retiré du chargement global. Si un appel `bootstrap.Modal(...)` apparaît dans une page non-migrée, c'est attendu (la page sera no-op au niveau modal jusqu'à sa migration).
-- ❌ **PAS de classes Bootstrap** (`btn`, `btn-primary`, `card`, `container`, `row`, `col-*`, `d-flex`, `bg-light`, etc.) dans toute nouvelle page ou modification.
-- ❌ **PAS de couleurs Tailwind par défaut** : `bg-blue-*`, `bg-emerald-*`, `bg-green-*`, `bg-red-*`, `bg-yellow-*`, `bg-gray-*`, `bg-slate-*` interdits.
-- ❌ **PAS de Font Awesome**, pas d'emoji comme icônes UI.
-- ❌ **PAS de hex hardcodés** (sauf `text-[#cfe0db]` typo douce sur sidebar — déjà couvert dans le layout de réf).
+- ❌ **PAS de Bootstrap** (CSS ni JS ni icons)
+- ❌ **PAS de classes Bootstrap** (`btn`, `card`, `row`, `col-*`, `d-flex`, `bg-light`, `mb-3`, etc.) — sauf en lecture pour comprendre l'ancien code à migrer
+- ❌ **PAS de `<i class="bi bi-X">`** — utiliser `<?= ss_icon('X') ?>`
+- ❌ **PAS de couleurs Tailwind par défaut** : `bg-blue-*`, `bg-emerald-*`, `bg-green-*`, `bg-red-*`, `bg-yellow-*`, `bg-gray-*`, `bg-slate-*` interdits
+- ❌ **PAS de Font Awesome**, pas d'emoji comme icône UI
+- ❌ **PAS de hex hardcodés** sauf cas justifiés du design system (déjà couverts)
+- ❌ **PAS de réimport** des CSS retirés (admin.css, spocspace.css, etc.) — ils sont volontairement supprimés
 
-## 4 — Règles de styling (obligatoires)
+## 4 — Tokens à utiliser
 
 ### Couleurs
 
-| Usage | Tokens à utiliser |
+| Usage | Tokens |
 |---|---|
-| Primaire | `bg-teal-600` `text-teal-600` `border-teal-600` |
-| Hover primaire | `hover:bg-teal-700` |
-| Titres | `text-ink` |
-| Texte courant | `text-ink-2` |
-| Texte secondaire | `text-ink-3` ou `text-muted` |
-| Statut OK | `text-ok` + `bg-ok-bg` + `border-ok-line` |
-| Statut WARN | `text-warn` + `bg-warn-bg` + `border-warn-line` |
-| Statut DANGER | `text-danger` + `bg-danger-bg` + `border-danger-line` |
-| Statut INFO | `text-info` + `bg-info-bg` + `border-info-line` |
-| Bordures | `border-line` (par défaut), `border-line-2`, `border-line-3` |
-| Surfaces | `bg-surface` (cards), `bg-surface-2` (zones secondaires), `bg-surface-3` (input bg) |
-| Fond global | `bg-bg` |
-| Secteurs EMS Fegems | `bg-sec-soins` `bg-sec-hotel` `bg-sec-anim` `bg-sec-int` `bg-sec-tech` `bg-sec-admin` `bg-sec-mgmt` (chacun a son `-bg`) |
+| Primaire | `bg-teal-600` `text-teal-600` `border-teal-600` `hover:bg-teal-700` |
+| Texte | `text-ink` (titres) · `text-ink-2` (corps) · `text-ink-3` / `text-muted` (secondaire) · `text-muted-2` (placeholder) |
+| Statut | `text-ok` + `bg-ok-bg` + `border-ok-line` (idem warn/danger/info) |
+| Bordures | `border-line` · `border-line-2` · `border-line-3` |
+| Surfaces | `bg-surface` (cards) · `bg-surface-2` · `bg-surface-3` (input bg) · `bg-bg` (fond global) |
+| Sidebar | `bg-sidebar-grad` · `text-sb-text` · `text-sb-text-hover` · `text-sb-section` · `text-sb-sub` · `text-sb-muted` |
+| Mark logo | `bg-mark-grad` · `shadow-mark` |
+| Item actif sidebar | `bg-[#7dd3a8]/[0.12]` + `before:bg-[#7dd3a8]` (barre 3×16px à gauche) |
+| Secteurs Fegems | `sec-soins` `sec-hotel` `sec-anim` `sec-int` `sec-tech` `sec-admin` `sec-mgmt` |
 
 ### Polices
 
-- **Titres** (h1-h6) : `font-display` (Fraunces) — appliqué automatiquement
-- **Corps** (body) : `font-body` (Outfit) — appliqué automatiquement
-- **Données techniques, codes, chiffres** : `font-mono tabular-nums` (JetBrains Mono)
+- **h1-h6** : `font-display` (Fraunces) — auto via @layer base
+- **Body** : `font-body` (Outfit) — auto
+- **Données / chiffres / mono** : `font-mono tabular-nums` (JetBrains Mono)
 
-### Ombres
+### Composants standard
 
-`shadow-sp-sm` `shadow-sp` `shadow-sp-md` `shadow-sp-lg` — calibrées pour le fond pastel.
+Voir [_layout_tailwind.php](_layout_tailwind.php) pour copier-coller :
+- Sidebar (mark "S" gradient + brand + sections + items + EMS card footer)
+- Topbar (search + notif + avatar)
+- Bouton primaire / secondaire / destructif
+- Card (header gradient subtil + corps)
+- Badge statut
+- Progress bar
+- Stat card
 
-### Gradients
+## 5 — État de la migration
 
-`bg-grad-hero` `bg-grad-sidebar` `bg-grad-mark` `bg-grad-progress` — voir [tailwind-config.php](tailwind-config.php).
+### Shells (déjà migrés)
 
-### Composants standards
-
-Les snippets de référence (bouton primaire/secondaire, card, badge statut, sidebar) sont dans [_layout_tailwind.php](_layout_tailwind.php). Quand on migre une page, **on copie ces patterns**, on n'invente pas.
-
-### Icônes
-
-- **SVG inline** uniquement, avec `stroke="currentColor"` et `stroke-width="1.8"` ou `2`
-- Tailles standard : `width="14|16|18|20|22"` selon contexte
-- Sources recommandées : Lucide, Feather, Heroicons (outline)
-
-## 5 — Bootstrap-icons (transition)
-
-`bootstrap-icons.min.css` est **gardé temporairement** dans le chargement des shells (`index.php`, `admin/index.php`, `care/index.php`). C'est l'icon-font, pas le framework Bootstrap. Les pages non-migrées utilisent encore `<i class="bi bi-foo">` ; sans cette CSS, elles n'auraient plus d'icônes du tout.
-
-→ **Quand toutes les pages seront migrées en SVG inline**, retirer aussi cette ligne et supprimer `assets/css/vendor/bootstrap-icons.min.css` + `admin/assets/css/vendor/bootstrap-icons.min.css`.
-
-## 6 — État de la migration (à mettre à jour à chaque page faite)
-
-| Phase | Pages | Statut |
+| Shell | Fichier | Statut |
 |---|---|---|
-| Shells | `index.php` `admin/index.php` `care/index.php` | ✓ Bootstrap retiré, Tailwind installé. **HTML interne pas encore re-stylé.** |
-| Layout référence | `_layout_tailwind.php` | ✓ |
-| Pages employé SPA | `pages/*.php` (~30) | ❌ aucune migrée |
-| Pages admin | `admin/pages/*.php` (~30) | ❌ aucune migrée |
-| Pages care | `care/pages/*.php` | ❌ aucune migrée |
+| Employé SPA | [index.php](index.php) | ✓ Tailwind clean (sidebar + topbar + main wrapper) |
+| Admin | [admin/index.php](admin/index.php) | ✓ Tailwind clean (sidebar + topbar + main wrapper) |
+| Care/SpocCare | [care/index.php](care/index.php) | ⚠️ Tailwind config inclus mais HTML pas encore migré (à faire quand le user demande) |
 
-> Les pages **paraissent cassées visuellement** (mises en page Bootstrap qui n'existent plus). C'est normal et attendu pendant la migration. **Ne pas tenter de "réparer" automatiquement avec un script global.**
+### Pages migrées
 
-## 7 — Process pour migrer une page
+| Page | Fichier | Maquette source |
+|---|---|---|
+| Login | [pages/login.php](pages/login.php) | Auto (puis raffiné avec footer trust badges Chiffré AES-256 + Hébergé en Suisse) |
 
-1. Identifier la page (ex: `pages/profile.php`)
-2. Ouvrir [_layout_tailwind.php](_layout_tailwind.php) à côté pour s'inspirer du structurel
-3. Récrire le HTML/CSS en remplaçant chaque classe Bootstrap par son équivalent Tailwind/Spocspace Care
-4. Garder la **logique PHP intacte** (queries DB, sessions, sanitization — règles dans [../spocspace/CLAUDE.md](../spocspace/CLAUDE.md))
-5. Tester : la page s'affiche correctement et le backend fonctionne toujours
-6. Mettre à jour la table de §6 et committer
+### Pages à migrer (~70)
+
+Tous les autres `pages/*.php` (employé) et `admin/pages/*.php` (admin) et `care/pages/*.php` (care). Elles fonctionnent côté backend mais sont **visuellement cassées**.
+
+## 6 — Process pour migrer une page (workflow validé)
+
+1. **L'utilisateur dit** : « migre `pages/profile.php` » (ou similaire) et fournit éventuellement une maquette
+2. Claude **lit** le fichier actuel pour comprendre :
+   - Ce qu'il affiche (queries DB, données affichées)
+   - Les hooks JS (IDs, classes querySelected dans `assets/js/modules/{name}.js`)
+   - Les forms (action, fields, IDs requis par auth.js / handler JS)
+3. Claude **récrit** le HTML en Tailwind/Spocspace Care, **en gardant intact** :
+   - PHP queries
+   - IDs JS critiques
+   - data-* attributes nécessaires aux modules JS
+   - Form action / field names
+4. Claude **commit + push** avec `pwd` vérifié, message clair
+5. L'utilisateur teste et raffine si besoin
+
+## 7 — Hooks JS à connaître (sidebar/topbar shells)
+
+Pour ne pas casser quand on retouche les shells :
+
+### Shell SPA employé (`index.php`)
+
+| Élément | Hook | Utilisé par |
+|---|---|---|
+| Sidebar | `id="feSidebar"`, `class="fe-sidebar"` | `assets/js/app.js` (toggle mobile, no-nav) |
+| Backdrop | `id="sidebarOverlay"` | `app.js` (mobile show/close) |
+| Toggle btn | `id="sidebarToggleBtn"` | `app.js` (collapse desktop) |
+| Items nav | `class="fe-sidebar-link"` + `data-link="page"` | `app.js` ligne 125 (active state matcher) |
+| Catégories | `class="fe-sidebar-cat"` + `data-cat-toggle="catId"` | `app.js` (collapsibles) |
+| Cat-items | `class="fe-sidebar-cat-items"` + `data-cat-body="catId"` + classe `.collapsed` | `app.js` |
+| Logout | `id="logoutBtn"` | `app.js` ligne 286 (apiPost logout) |
+| Topbar mobile menu | `id="mobileToggle"` | `app.js` (open sidebar mobile) |
+| Search | `id="feSearchInput"`, `id="feSearchClear"`, `id="feSearchResults"` | `app.js` search module |
+| Avatar topbar | `id="avatarToggleBtn"`, `id="topbarAvatar"` | menu profil dropdown |
+| Sync indicator | `id="feSyncIndicator"`, `id="feSyncTime"` | sync status |
+| Conn status | `id="feConnStatus"`, `id="feConnPending"` | online/offline |
+| Title | `id="feTopbarTitle"` | mis à jour à chaque page load |
+| Badges | `id="msgBadge"`, `id="msgBadgeSidebar"`, `id="annBadgeSidebar"` | notifications counters |
+
+### Shell admin (`admin/index.php`)
+
+| Élément | Hook |
+|---|---|
+| Sidebar | `id="adminSidebar"`, `class="admin-sidebar"` |
+| Backdrop | `id="sidebarOverlay"`, `class="sidebar-overlay"` |
+| Toggle btn | `id="sidebarToggleBtn"`, `id="sidebarShortcutsBtn"` |
+| Items nav | `class="sidebar-link"` + active state via `$activeSection === $key` (server-side) |
+| Topbar | `id="topbarSearch"`, `id="topbarSearchInput"`, `id="adminSearchClear"`, `id="topbarSearchResults"`, `id="topbarMsgNotif"`, `id="topbarMsgBadge"`, `id="topbarEmailNotif"`, `id="topbarEmailBadge"`, `id="topbarContactsBtn"`, `id="topbarAnnuaireBtn"`, `id="ztInstallBtn"`, `id="immersiveToggle"`, `id="mobileToggle"` |
+| Cat | `class="sidebar-cat"` + `data-cat-toggle`, `class="sidebar-cat-items"` + `data-cat-body` |
+| Badges sidebar | `id="sidebarMsgBadge"`, `id="sidebarEmailBadge"` |
+
+⚠️ **Avant de modifier un shell**, grep les hooks ci-dessus dans `assets/js/app.js`, `admin/assets/js/helpers.js`, `admin/assets/js/url-manager.js` pour confirmer ce qui tape sur ces IDs/classes.
 
 ## 8 — Setup git
 
 Repo : `git@github.com:zasami/newspocspace.git` (privé).
+Clé SSH dédiée : `~/.ssh/id_ed25519_newspocspace` (clé personnelle séparée des autres).
+Push depuis Infomaniak : la config git locale a `core.sshCommand` configuré → un simple `git push origin main` suffit. **Toujours `pwd` avant**.
 
-Push depuis Infomaniak : la clé SSH dédiée `~/.ssh/id_ed25519_newspocspace` est configurée via `git config core.sshCommand` localement. Donc un `git push` suffit.
+## 9 — Quand un futur Claude ouvre une session ici
 
-## 9 — Quand un futur Claude lit ce fichier
-
-- Si on me demande **« stylise X »** : respecter scrupuleusement Spocspace Care. Pas de Bootstrap. Copier les patterns du layout de référence.
-- Si on me demande de **migrer une page** : suivre le process §7.
-- Si on me demande de **switcher en Tailwind compilé** (npm/vite plus tard) : ne pas retirer le Play CDN sans plan complet de bascule.
-- Si on me demande de **changer la palette** : refuser et renvoyer ici. La palette est validée avec l'utilisateur.
-- Si on me demande **« on fait quoi maintenant »** : la priorité est de migrer les pages **une par une**, pas d'optimiser le bundle ni d'ajouter des features.
+1. **Lire ce fichier en entier** (tu y es).
+2. **Ne pas re-questionner** les choix tranchés (clean slate, pas de Bootstrap, mockups par l'utilisateur).
+3. **Demander une maquette** si l'utilisateur dit « migre X » sans en fournir.
+4. **S'inspirer de [_layout_tailwind.php](_layout_tailwind.php)** systématiquement.
+5. **Préserver les hooks JS** (cf §7). Grep avant d'éditer un shell.
+6. **`pwd` avant chaque `git push`**.
+7. **Ne pas restaurer** les anciennes CSS retirées même si une page semble "cassée" — c'est attendu, on attend le mockup pour migrer.
