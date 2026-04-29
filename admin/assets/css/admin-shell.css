@@ -1,0 +1,109 @@
+/* =================================================================
+ * admin-shell.css — Styles non-utility-Tailwind du shell admin
+ *
+ * Contient uniquement les règles qui ne s'expriment pas (ou mal)
+ * avec les utilities Tailwind :
+ *   - Pseudo-éléments WebKit (::-webkit-scrollbar*)
+ *   - Mode mini-sidebar (combinaison de cascades sur descendants)
+ *
+ * Le reste du visuel passe par les classes Tailwind dans le HTML.
+ * Chargé via <link> depuis admin/index.php après tailwind-config.php.
+ * ================================================================= */
+
+/* ─── Scrollbar discrète sur le sidebar ────────────────────────────
+ * Invisible au repos, fade-in au hover, fine 4px, blanc semi-transparent.
+ * Cross-browser : Firefox via scrollbar-* + WebKit via ::-webkit-*.
+ */
+#adminSidebar,
+#adminSidebar .sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+#adminSidebar:hover,
+#adminSidebar .sidebar-nav:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+#adminSidebar::-webkit-scrollbar,
+#adminSidebar .sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+#adminSidebar::-webkit-scrollbar-track,
+#adminSidebar .sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+#adminSidebar::-webkit-scrollbar-thumb,
+#adminSidebar .sidebar-nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  transition: background 0.18s ease;
+}
+#adminSidebar:hover::-webkit-scrollbar-thumb,
+#adminSidebar .sidebar-nav:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+}
+#adminSidebar:hover::-webkit-scrollbar-thumb:hover,
+#adminSidebar .sidebar-nav:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* ─── Mini sidebar (mode rétracté desktop ≥ 1024px) ────────────────
+ * Activé via la classe .mini sur #adminSidebar (toggle JS persisté en
+ * localStorage 'ss_sidebar_mini'). Sur mobile la classe est ignorée
+ * via le @media (le sidebar est en overlay translatable, pas mini).
+ */
+@media (min-width: 1024px) {
+  #adminSidebar.mini {
+    width: 68px !important;
+    padding: 14px 8px;
+    gap: 16px;
+  }
+
+  /* Tout ce qui est texte se cache : labels, sections, chevrons, badges */
+  #adminSidebar.mini .sidebar-brand-text,
+  #adminSidebar.mini .sidebar-module-label,
+  #adminSidebar.mini .sidebar-cat-chevron,
+  #adminSidebar.mini .sidebar-cat,
+  #adminSidebar.mini .nav-label,
+  #adminSidebar.mini .sidebar-bottom-row,
+  #adminSidebar.mini [data-mini-hide] {
+    display: none !important;
+  }
+
+  /* Hide les badges de notification (msg/email) : pas la place dans 68px */
+  #adminSidebar.mini .sidebar-link .ml-auto {
+    display: none !important;
+  }
+
+  /* Les modules + items se centrent autour de leur icône */
+  #adminSidebar.mini .sidebar-module {
+    justify-content: center;
+    padding: 8px 6px;
+  }
+  #adminSidebar.mini .sidebar-module-body {
+    padding-left: 0;
+  }
+  #adminSidebar.mini .sidebar-link {
+    justify-content: center;
+    padding: 8px 6px;
+    gap: 0;
+  }
+
+  /* La barre teal de l'item actif disparaît (déborde en mini) */
+  #adminSidebar.mini .sidebar-link.active {
+    padding-left: 6px !important;
+  }
+  #adminSidebar.mini .sidebar-link.active::before {
+    display: none !important;
+  }
+
+  /* Footer compact (icônes centrées) */
+  #adminSidebar.mini .sidebar-footer {
+    align-items: center;
+  }
+
+  /* Bouton toggle : retourne l'icône (suggère "ré-ouvrir") */
+  #adminSidebar.mini #sidebarToggleBtn svg {
+    transform: rotate(180deg);
+  }
+}

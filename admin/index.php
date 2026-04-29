@@ -461,6 +461,8 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <title>Admin — SpocSpace</title>
 <!-- Clean slate Tailwind/Spocspace Care : ZÉRO Bootstrap, ZÉRO ancien CSS. Tout le visuel passe par Tailwind. -->
 <?php include __DIR__ . '/../tailwind-config.php'; ?>
+<!-- Styles shell admin non-utility-Tailwind (scrollbar custom + mini sidebar) -->
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/admin-shell.css?v=<?= APP_VERSION ?>">
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 
@@ -469,32 +471,37 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <!-- BACKDROP (mobile) — JS toggle .show -->
 <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-ink/60 z-30 hidden [&.show]:block lg:!hidden"></div>
 
-<!-- SIDEBAR — admin-sidebar gardé en hook (id seul suffirait, classe gardée pour compat) -->
+<!-- SIDEBAR — admin-sidebar gardé en hook (id seul suffirait, classe gardée pour compat). .mini = mode rétracté desktop (toggle persisté en localStorage 'ss_sidebar_mini'). -->
 <aside id="adminSidebar" class="admin-sidebar
   fixed lg:sticky lg:top-0 inset-y-0 left-0 z-40
   w-60 h-screen overflow-y-auto shrink-0
   bg-sidebar-grad text-sb-text font-body
   p-[18px] flex flex-col gap-7
   -translate-x-full lg:translate-x-0 [&.open]:translate-x-0
-  transition-transform duration-200">
+  transition-[transform,width,padding] duration-200">
 
-  <!-- ── Brand : logo "S" gradient + Spocspace + EMS PLATFORM ── -->
+  <!-- ── Brand : logo "S" gradient + Spocspace + EMS PLATFORM + bouton toggle ── -->
   <div class="flex items-center justify-between gap-2 shrink-0">
     <a href="<?= admin_url() ?>" class="flex items-center gap-2.5 px-1 group min-w-0" title="Tableau de bord">
       <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-display font-bold text-teal-900 text-lg shadow-mark shrink-0">S</div>
-      <div class="min-w-0">
+      <div class="sidebar-brand-text min-w-0">
         <div class="font-display text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>
       </div>
     </a>
-    <button id="sidebarToggleBtn" class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0 lg:hidden" title="Fermer le menu">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <button id="sidebarToggleBtn" type="button"
+            class="text-sb-text hover:text-white p-1.5 rounded-md hover:bg-white/[0.06] transition-colors shrink-0"
+            title="Réduire le menu" aria-label="Basculer mini sidebar">
+      <!-- Icône panel-left-collapse (rectangle + ligne verticale gauche) -->
+      <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
     </button>
   </div>
 
-  <!-- ── Navigation 3 niveaux : Module → Section → Item ── -->
-  <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1
-              [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded">
+  <!-- ── Navigation 3 niveaux : Module → Section → Item — scrollbar custom dans le <style> du <head> ── -->
+  <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1">
     <?php foreach ($sidebarModules as $modId => $mod):
       $modCatId  = 'mod-' . $modId;
       $isActiveModule = ($modId === $activeModule);
@@ -508,7 +515,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
                   <?= $isActiveModule ? 'bg-teal-700/60 text-[#7dd3a8]' : 'bg-white/[0.04] text-sb-sub' ?>">
         <?= ss_icon($mod['icon'], 'w-4 h-4') ?>
       </div>
-      <span class="font-display text-[13.5px] font-semibold flex-1 truncate tracking-[-0.005em]"><?= h($mod['label']) ?></span>
+      <span class="sidebar-module-label font-display text-[13.5px] font-semibold flex-1 truncate tracking-[-0.005em]"><?= h($mod['label']) ?></span>
       <svg class="sidebar-cat-chevron w-3.5 h-3.5 opacity-50 transition-transform shrink-0
                   [.cat-collapsed_&]:-rotate-90"
            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

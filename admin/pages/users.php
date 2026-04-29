@@ -143,7 +143,7 @@ unset($u);
     <span class="absolute left-0 top-3 bottom-3 w-1 rounded-r bg-<?= h($ms['sec']) ?>"></span>
     <div class="flex items-start justify-between mb-3 pl-2">
       <div class="min-w-0">
-        <div class="text-[11px] tracking-[0.05em] text-muted uppercase font-medium mb-0.5">Module</div>
+        <div class="font-body text-[10.5px] tracking-[0.08em] text-muted uppercase font-semibold mb-0.5">Module</div>
         <div class="font-display text-[15px] font-semibold text-ink tracking-[-0.005em] truncate" title="<?= h($ms['nom']) ?>"><?= h($ms['nom']) ?></div>
       </div>
       <div class="w-9 h-9 rounded-lg grid place-items-center bg-<?= h($ms['sec']) ?>-bg shrink-0">
@@ -154,12 +154,12 @@ unset($u);
     </div>
     <div class="flex items-baseline gap-1.5 pl-2 mb-2">
       <span class="font-display font-semibold text-3xl tabular-nums text-ink leading-none"><?= (int) $ms['total'] ?></span>
-      <span class="text-[12px] text-muted">collab.</span>
+      <span class="font-body text-[12px] text-muted">collab.</span>
     </div>
-    <div class="flex items-center gap-3 pl-2 text-[11.5px] font-mono tabular-nums">
-      <span class="text-ok"><span class="font-semibold"><?= (int) $ms['presents'] ?></span> présents</span>
-      <span class="text-warn"><span class="font-semibold"><?= (int) $ms['absents'] ?></span> absent<?= $ms['absents'] > 1 ? 's' : '' ?></span>
-      <span class="text-info"><span class="font-semibold"><?= (int) $ms['vacances'] ?></span> vac.</span>
+    <div class="flex items-center gap-3 pl-2 text-[11.5px] font-body tabular-nums">
+      <span class="text-ok"><span class="font-semibold tabular-nums"><?= (int) $ms['presents'] ?></span> présents</span>
+      <span class="text-warn"><span class="font-semibold tabular-nums"><?= (int) $ms['absents'] ?></span> absent<?= $ms['absents'] > 1 ? 's' : '' ?></span>
+      <span class="text-info"><span class="font-semibold tabular-nums"><?= (int) $ms['vacances'] ?></span> vac.</span>
     </div>
   </div>
   <?php endforeach; ?>

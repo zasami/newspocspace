@@ -33,7 +33,9 @@ Le 29 avril 2026 l'utilisateur a tranché **« 0 Bootstrap, 0 ancien CSS, on rep
 
 ## 2 — Stack visuelle
 
-### Tailwind CSS (Play CDN) — [tailwind-config.php](tailwind-config.php)
+### Tailwind CSS v4 self-hosted — [tailwind-config.php](tailwind-config.php)
+
+**Script** : [assets/js/vendor/tailwind-browser.min.js](assets/js/vendor/tailwind-browser.min.js) (~266 KB, `@tailwindcss/browser@4.2.2`, offline-friendly, sans dépendance CDN tiers).
 
 **Inclus depuis** :
 - [index.php](index.php) (shell SPA employé) : `<?php include __DIR__ . '/tailwind-config.php'; ?>`
@@ -41,7 +43,15 @@ Le 29 avril 2026 l'utilisateur a tranché **« 0 Bootstrap, 0 ancien CSS, on rep
 - [care/index.php](care/index.php) (shell care/SpocCare) : idem
 - [_layout_tailwind.php](_layout_tailwind.php) (référence visuelle)
 
-**Définit** : Google Fonts Fraunces+Outfit+JetBrains Mono · palette teal-* · ink/muted/line/surface · ok/warn/danger/info · sec-* (secteurs Fegems) · sb-* (textes sidebar) · gradients (sidebar-grad / mark-grad / hero / progress) · ombres sp-* + mark.
+**Définit** (via `@theme` directive CSS-first v4) : Google Fonts Fraunces+Outfit+JetBrains Mono · palette teal-* · ink/muted/line/surface · ok/warn/danger/info · sec-* (secteurs Fegems) · sb-* (textes sidebar) · gradients (sidebar-grad / mark-grad / hero / progress) · ombres sp-* + mark.
+
+**Note v4** : plus de `tailwind.config = {}` JS — toute la config passe par `--color-*`, `--font-*`, `--shadow-*`, `--background-image-*` dans un `<style type="text/tailwindcss">` avec `@theme {…}`. Les couleurs nested v3 (ex: `ok.bg`) sont aplaties en `--color-ok-bg`.
+
+### CSS shell admin — [admin/assets/css/admin-shell.css](admin/assets/css/admin-shell.css)
+
+Petite feuille CSS dédiée au shell admin pour les règles **non-exprimables en utilities Tailwind** (pseudo-éléments WebKit, cascades complexes). Contient actuellement :
+- Scrollbar discrète (`::-webkit-scrollbar*` + `scrollbar-color` Firefox), invisible au repos, fade-in au hover
+- Mini sidebar (`#adminSidebar.mini`) : largeur 68px, hide labels/sections/chevrons/badges, centre les icônes
 
 ### Helper SVG icons — [_partials/icons.php](_partials/icons.php)
 

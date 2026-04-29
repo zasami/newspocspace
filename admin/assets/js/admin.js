@@ -17,8 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     toggleBtn?.addEventListener('click', () => {
-        sidebar.classList.toggle('mini');
-        localStorage.setItem(SIDEBAR_KEY, sidebar.classList.contains('mini') ? '1' : '0');
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+        if (isDesktop) {
+            // Desktop : bascule mini ↔ full + persiste la pref user
+            sidebar.classList.toggle('mini');
+            localStorage.setItem(SIDEBAR_KEY, sidebar.classList.contains('mini') ? '1' : '0');
+        } else {
+            // Mobile : ferme l'overlay
+            closeMobile();
+        }
     });
 
     // ── Mobile: open / close ──
