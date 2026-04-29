@@ -137,9 +137,28 @@
       </form>
 
       <!-- Footer page -->
-      <div class="mt-12 flex items-center justify-between text-[11.5px] text-muted-2">
-        <span>SpocSpace · Genève</span>
-        <span class="font-mono">v<?= defined('APP_VERSION') ? APP_VERSION : '0.0' ?></span>
+      <div class="mt-12 pt-6 border-t border-line text-center">
+        <div class="text-[13px] text-ink-3">
+          SpocSpace — <span class="font-semibold text-ink-2">Genève</span>
+        </div>
+        <div class="mt-2 flex items-center justify-center gap-3 text-[11.5px] text-muted">
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            Chiffré AES-256
+          </span>
+          <span class="text-line-3" aria-hidden="true">·</span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 rounded-sm shrink-0" viewBox="0 0 32 32" aria-hidden="true">
+              <rect width="32" height="32" fill="#DA291C"/>
+              <rect x="13" y="6" width="6" height="20" fill="#FFFFFF"/>
+              <rect x="6" y="13" width="20" height="6" fill="#FFFFFF"/>
+            </svg>
+            Hébergé en Suisse
+          </span>
+        </div>
       </div>
     </div>
   </main>
