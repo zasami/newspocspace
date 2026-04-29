@@ -2,7 +2,7 @@
  * SpocSpace - SPA Router + Sidebar + Search
  */
 
-const BASE = '/spocspace';
+const BASE = '/newspocspace';
 
 // Save initial URL params before SPA routing replaces them
 window.__SS_INITIAL_PARAMS__ = new URLSearchParams(window.location.search);

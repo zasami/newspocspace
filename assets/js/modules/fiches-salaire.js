@@ -4,7 +4,7 @@
  * - Navigation entre années
  * - Highlight scroll si ?highlight=id
  */
-const BASE = '/spocspace';
+const BASE = '/newspocspace';
 
 export function init() {
     document.addEventListener('click', handleClick);

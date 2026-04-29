@@ -3,7 +3,7 @@
  * Offline-first with cache + background sync
  */
 
-const CACHE_VERSION = 'ns-v38';
+const CACHE_VERSION = 'ns-v39';
 const STATIC_CACHE = CACHE_VERSION + '-static';
 const DYNAMIC_CACHE = CACHE_VERSION + '-dynamic';
 const API_CACHE = CACHE_VERSION + '-api';
@@ -227,7 +227,7 @@ self.addEventListener('fetch', event => {
   }
 
   // SPA page fragments (pages/*.php fetched by app.js)
-  if (url.pathname.match(/\/spocspace\/pages\/.*\.php/)) {
+  if (url.pathname.match(/\/newspocspace\/pages\/.*\.php/)) {
     event.respondWith(networkFirst(event.request, DYNAMIC_CACHE));
     return;
   }
