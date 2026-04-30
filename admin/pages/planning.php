@@ -500,7 +500,13 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             <td class="<?= $day['weekend'] ? 'weekend' : '' ?> <?= $day['today'] ? 'today' : '' ?> day-cell"
                 data-uid="<?= h($u['id']) ?>"
                 data-date="<?= h($day['iso']) ?>"
-                <?php if ($sh): ?>data-assign-id="<?= h($sh['id']) ?>" data-updated-at="<?= h($sh['updated_at'] ?? '') ?>"<?php endif; ?>>
+                <?php if ($sh): ?>data-assign-id="<?= h($sh['id']) ?>"
+                  data-updated-at="<?= h($sh['updated_at'] ?? '') ?>"
+                  data-horaire-type-id="<?= h($sh['horaire_type_id'] ?? '') ?>"
+                  data-horaire-code="<?= h($sh['code'] ?? '') ?>"
+                  data-module-id="<?= h($sh['module_id'] ?? '') ?>"
+                  data-statut="<?= h($sh['statut'] ?? 'present') ?>"
+                  data-notes="<?= h($sh['notes'] ?? '') ?>"<?php endif; ?>>
               <?php if ($code): ?>
               <span class="shift <?= h($code) ?>" data-shift="<?= h($code) ?>"><?= strtoupper(h($code)) ?></span>
               <?php endif; ?>
@@ -1009,7 +1015,7 @@ window.PL_DATA = {
         const date   = td.dataset.date;
         if (!userId || !date) return;
 
-        // Cherche les infos du user
+        // Infos user pour le titre + module principal de fallback
         const user = (window.PL_DATA?.users || []).find(u => u.id === userId);
         plModalTitle.textContent = (user ? `${user.prenom} ${user.nom}` : 'Collaborateur') + ' — ' + date;
         plModalUserId.value   = userId;
@@ -1017,24 +1023,33 @@ window.PL_DATA = {
         plModalAssignId.value = td.dataset.assignId || '';
         plModalUpdated.value  = td.dataset.updatedAt || '';
 
-        // Pré-sélection horaire (highlight la card active)
-        const currentHoraireCode = td.querySelector('.shift')?.dataset.shift || '';
+        // Horaire pré-sélectionné : par horaire_type_id si dispo, sinon code
+        const targetHoraireId   = td.dataset.horaireTypeId || '';
+        const targetHoraireCode = td.dataset.horaireCode || '';
         document.querySelectorAll('.pl-horaire-card').forEach(card => {
-            const isActive = (card.dataset.horaireCode || '') === currentHoraireCode;
+            const isActive = targetHoraireId
+                ? (card.dataset.horaireId === targetHoraireId)
+                : (targetHoraireCode && card.dataset.horaireCode === targetHoraireCode);
             card.classList.toggle('!border-teal-600', isActive);
             card.classList.toggle('!bg-teal-50', isActive);
             card.dataset.selected = isActive ? '1' : '';
         });
+        // Si aucune horaire sélectionnée, sélectionne la card "—" (repos)
+        if (!targetHoraireId && !targetHoraireCode) {
+            const noneCard = document.querySelector('.pl-horaire-none');
+            if (noneCard) {
+                noneCard.classList.add('!border-teal-600', '!bg-teal-50');
+                noneCard.dataset.selected = '1';
+            }
+        }
 
-        // Module par défaut : module principal du user
+        // Module : valeur existante > module principal du user > vide
         const userModuleIds = (user?.module_ids || '').split(',').filter(Boolean);
-        plModalModule.value = userModuleIds[0] || '';
-        plModalStatut.value = 'present';
-        plModalNotes.value  = '';
+        plModalModule.value = td.dataset.moduleId || userModuleIds[0] || '';
 
-        // Si l'assignation existe, on pourrait pré-charger les vraies valeurs
-        // (module_id, statut, notes) — pour l'instant on a juste data-assign-id
-        // sur le td. TODO: ajouter ces data-attrs côté PHP si besoin.
+        // Statut + notes : valeurs existantes ou défaut
+        plModalStatut.value = td.dataset.statut || 'present';
+        plModalNotes.value  = td.dataset.notes || '';
 
         plModalDelete.classList.toggle('hidden', !td.dataset.assignId);
 
