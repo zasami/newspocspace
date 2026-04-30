@@ -461,8 +461,10 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 <title>Admin — SpocSpace</title>
 <!-- Clean slate Tailwind/Spocspace Care : ZÉRO Bootstrap, ZÉRO ancien CSS. Tout le visuel passe par Tailwind. -->
 <?php include __DIR__ . '/../tailwind-config.php'; ?>
-<!-- Styles shell admin non-utility-Tailwind (scrollbar custom + mini sidebar) -->
+<!-- Styles shell admin non-utility-Tailwind (scrollbar custom + mini sidebar + modal Raccourcis) -->
 <link rel="stylesheet" href="/newspocspace/admin/assets/css/admin-shell.css?v=<?= APP_VERSION ?>">
+<!-- Styles dédiés à la page Planning (chargé en permanence pour éviter le FOUC quand on entre sur /admin/planning via SPA) -->
+<link rel="stylesheet" href="/newspocspace/admin/assets/css/planning.css?v=<?= APP_VERSION ?>">
 </head>
 <body class="<?= h($themeBodyClass) ?>">
 

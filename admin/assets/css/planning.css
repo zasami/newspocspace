@@ -1,0 +1,1043 @@
+/* =================================================================
+ * planning.css — Styles dédiés à la page Planning (admin/pages/planning.php)
+ *
+ * Repose sur les CSS variables exposées par @theme dans tailwind-config.php
+ * (--color-*, --font-*, --color-warm*, etc.) + définit les couleurs de
+ * shifts spécifiques au planning (--pl-shift-*).
+ *
+ * Chargé via <link> depuis admin/index.php <head>.
+ * ================================================================= */
+
+/* ─── Variables locales : couleurs des shifts ──────────────────────
+ * Spécifiques au planning, ne polluent pas le @theme global.
+ */
+.planning-page {
+  --pl-shift-c1:    #5cad9b;  --pl-shift-c1-bg:    #e0f0ec;  /* Couvre 1 — matin */
+  --pl-shift-c2:    #3d8b6b;  --pl-shift-c2-bg:    #e3f0ea;  /* Couvre 2 — après-midi */
+  --pl-shift-d1:    #5a9bd8;  --pl-shift-d1-bg:    #e6eef8;  /* Doublure 1 */
+  --pl-shift-d3:    #d96b5a;  --pl-shift-d3-bg:    #fbe4e0;  /* Doublure 3 */
+  --pl-shift-d4:    #e0a85a;  --pl-shift-d4-bg:    #fbf0e1;  /* Doublure 4 */
+  --pl-shift-s3:    #9268b3;  --pl-shift-s3-bg:    #f0e8f5;  /* Soir 3 */
+  --pl-shift-s4:    #e08aa0;  --pl-shift-s4-bg:    #fbe7ed;  /* Soir 4 */
+  --pl-shift-a2:    #1f6359;  --pl-shift-a2-bg:    #d2e7e2;  /* Aprem 2 */
+  --pl-shift-a3:    #7a4f9e;  --pl-shift-a3-bg:    #ebe0f3;  /* Aprem 3 */
+  --pl-shift-n:     #2d3e6b;  --pl-shift-n-bg:     #e0e4ed;  /* Nuit */
+}
+
+/* ============================================================
+ * COMMAND BAR — barre supérieure unifiée du planning
+ * ============================================================ */
+.pl-command-bar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 19;
+  box-shadow: 0 1px 0 rgba(13, 42, 38, 0.02);
+}
+
+/* ─── Bloc gauche : période + vue groupées ─── */
+.pl-period-group {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--color-line);
+  border-radius: 11px;
+  padding: 1px;
+  border: 1px solid var(--color-line);
+  height: 42px;
+  position: relative;
+}
+.pl-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+.pl-period-btn:first-child { border-radius: 10px 0 0 10px; }
+.pl-period-btn:last-child  { border-radius: 0 10px 10px 0; }
+.pl-period-btn:hover { background: var(--color-teal-50); }
+.pl-period-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--color-teal-100), var(--color-teal-50));
+  display: grid;
+  place-items: center;
+  color: var(--color-teal-600);
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.pl-period-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+.pl-period-label {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.pl-period-value {
+  font-size: 14px;
+  color: var(--color-ink);
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+}
+.pl-period-chev {
+  color: var(--color-muted);
+  transition: transform 0.2s ease;
+}
+
+/* ─── Nav arrows (prev / today / next) ─── */
+.pl-nav {
+  display: flex;
+  gap: 3px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 3px;
+  height: 38px;
+}
+.pl-nav-btn {
+  width: 32px;
+  height: 30px;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.pl-nav-btn:hover {
+  background: #fff;
+  color: var(--color-teal-600);
+  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+}
+.pl-nav-today {
+  width: auto;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-teal-600);
+}
+
+/* ─── Status badge (Brouillon / Validé) ─── */
+.pl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--color-warm-bg);
+  border: 1px solid rgba(212, 160, 74, 0.3);
+  font-size: 13px;
+  color: var(--color-warn);
+  font-weight: 600;
+  height: 38px;
+}
+.pl-status-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-warm);
+  box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.5);
+  animation: plPulse 2s infinite;
+}
+@keyframes plPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(212, 160, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 160, 74, 0); }
+}
+
+/* ─── Compteur d'assignations (mono) ─── */
+.pl-meta {
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+.pl-meta strong {
+  color: var(--color-ink);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.pl-spacer { flex: 1; }
+
+/* ─── Boutons principaux ─── */
+.pl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  color: var(--color-ink-2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 38px;
+}
+.pl-btn:hover {
+  border-color: var(--color-teal-300);
+  color: var(--color-teal-600);
+}
+.pl-btn-primary {
+  background: var(--color-teal-600);
+  color: #fff;
+  border-color: var(--color-teal-600);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(31, 99, 89, 0.2);
+}
+.pl-btn-primary:hover {
+  background: var(--color-teal-700);
+  border-color: var(--color-teal-700);
+  color: #fff;
+}
+/* Bouton "dark" pour Générer planning (action primaire dominante) */
+.pl-btn-dark {
+  background: var(--color-teal-900);
+  color: #fff;
+  border-color: var(--color-teal-900);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(13, 42, 38, 0.18);
+}
+.pl-btn-dark:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+/* ─── Boutons icône (mini, isolés) ─── */
+.pl-btn-icon {
+  width: 38px;
+  height: 38px;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  color: var(--color-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+.pl-btn-icon:hover {
+  border-color: var(--color-teal-300);
+  color: var(--color-teal-600);
+  background: var(--color-teal-50);
+}
+.pl-btn-icon.is-active {
+  background: var(--color-teal-50);
+  color: var(--color-teal-700);
+  border-color: var(--color-teal-300);
+}
+.pl-btn-icon svg { width: 16px; height: 16px; }
+
+/* ─── Groupe icônes accolées (outils, exports) — hauteur uniforme 38px ─── */
+.pl-icon-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+  height: 38px;
+}
+.pl-icon-group .pl-btn-icon {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+}
+.pl-icon-group .pl-btn-icon:hover {
+  background: #fff;
+  color: var(--color-teal-600);
+  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+}
+.pl-icon-group .pl-btn-icon.is-active {
+  background: #fff;
+  color: var(--color-teal-700);
+  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+}
+.pl-icon-group .pl-btn-icon svg { width: 15px; height: 15px; }
+
+/* ─── Toggle Provisoire / Finaliser ─── */
+.pl-finalize {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 1px;
+  height: 38px;
+}
+.pl-finalize button {
+  padding: 0 18px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+.pl-finalize button:first-child { border-radius: 9px 0 0 9px; }
+.pl-finalize button:last-child  { border-radius: 0 9px 9px 0; }
+.pl-finalize button.on {
+  background: var(--color-teal-900);
+  color: #fff;
+}
+.pl-finalize button:hover:not(.on) {
+  color: var(--color-ink-2);
+  background: var(--color-surface-2);
+}
+
+/* ============================================================
+ * TEAM FILTERS — pills horizontales
+ * ============================================================ */
+.pl-team-filters {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pl-team-filters::-webkit-scrollbar { display: none; }
+.pl-team-pill {
+  padding: 6px 13px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  border-radius: 99px;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.pl-team-pill:hover {
+  background: var(--color-teal-50);
+  color: var(--color-teal-700);
+}
+.pl-team-pill.on {
+  background: var(--color-teal-900);
+  color: #fff;
+}
+.pl-team-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-line);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+ * PLANNING GRID — wrap + tableau scrollable
+ * ============================================================ */
+.pl-grid-wrap {
+  flex: 1;
+  background: var(--color-surface);
+  margin: 18px 24px 24px;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+.pl-grid-scroll {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* Variables qui pilotent les dimensions de la grille (cell-w, cell-h, etc.). */
+.pl-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 13px;
+  --pl-cell-w: 64px;
+  --pl-cell-h: 50px;
+  --pl-collab-w: 240px;
+  --pl-shift-min-w: 36px;
+  --pl-shift-h: 28px;
+  --pl-shift-fs: 11px;
+  --pl-day-num-size: 28px;
+  --pl-day-num-fs: 14px;
+}
+
+/* En-tête sticky en haut */
+.pl-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-line);
+  padding: 10px 0 8px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-muted);
+  letter-spacing: 0.04em;
+  min-width: var(--pl-cell-w);
+}
+.pl-table thead th.pl-day-head { padding: 8px 4px; }
+.pl-day-name {
+  display: block;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+.pl-day-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pl-day-num-size);
+  height: var(--pl-day-num-size);
+  border-radius: 7px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--pl-day-num-fs);
+  color: var(--color-ink);
+  margin-top: 3px;
+  letter-spacing: 0;
+}
+.pl-table thead th.pl-weekend { background: var(--color-warm-bg); }
+.pl-table thead th.pl-weekend .pl-day-name { color: var(--color-warm); }
+.pl-table thead th.pl-today .pl-day-num { background: var(--color-teal-600); color: #fff; }
+.pl-table thead th.pl-today .pl-day-name { color: var(--color-teal-700); font-weight: 700; }
+
+/* Colonnes fixes (sticky left) */
+.pl-table .pl-col-collab {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: var(--color-surface);
+  min-width: var(--pl-collab-w);
+  width: var(--pl-collab-w);
+  border-right: 1px solid var(--color-line);
+}
+.pl-table thead .pl-col-collab {
+  z-index: 7;
+  background: var(--color-surface-2);
+  text-align: left;
+  padding: 10px 16px 8px;
+}
+.pl-collab-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.pl-table .pl-col-pct {
+  position: sticky;
+  left: var(--pl-collab-w);
+  z-index: 6;
+  background: var(--color-surface);
+  min-width: 54px;
+  width: 54px;
+  border-right: 1px solid var(--color-line);
+  text-align: center;
+}
+.pl-table thead .pl-col-pct { z-index: 7; background: var(--color-surface-2); }
+
+.pl-table .pl-col-hours {
+  position: sticky;
+  right: 0;
+  z-index: 6;
+  background: var(--color-surface);
+  min-width: 90px;
+  width: 90px;
+  border-left: 1px solid var(--color-line);
+  text-align: center;
+}
+.pl-table thead .pl-col-hours { z-index: 7; background: var(--color-surface-2); }
+
+/* Section header (sous-équipe : INF, ASSC, etc.) */
+.pl-table tr.pl-section td {
+  background: linear-gradient(180deg, var(--color-teal-50), var(--color-surface-3));
+  padding: 6px 16px;
+  border-top: 1px solid var(--color-teal-100);
+  border-bottom: 1px solid var(--color-teal-100);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-teal-700);
+  font-weight: 700;
+}
+.pl-table tr.pl-section td.pl-col-collab {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: linear-gradient(90deg, var(--color-teal-50), var(--color-surface-3));
+}
+.pl-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pl-section-count {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  background: var(--color-teal-100);
+  color: var(--color-teal-700);
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+/* Lignes collaborateurs : hover row */
+.pl-table tbody tr { transition: background 0.12s ease; }
+.pl-table tbody tr:hover td             { background-color: var(--color-teal-50); }
+.pl-table tbody tr:hover .pl-col-collab { background: var(--color-teal-50); }
+.pl-table tbody tr:hover .pl-col-pct    { background: var(--color-teal-50); }
+.pl-table tbody tr:hover .pl-col-hours  { background: var(--color-teal-50); }
+
+.pl-table tbody td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--color-line);
+  text-align: center;
+  height: var(--pl-cell-h);
+  vertical-align: middle;
+  position: relative;
+}
+.pl-table tbody td.pl-weekend { background: rgba(253, 245, 227, 0.4); }
+.pl-table tbody td.pl-today {
+  box-shadow: inset 2px 0 0 var(--color-teal-300), inset -2px 0 0 var(--color-teal-300);
+}
+
+/* Cellule collaborateur (nom + role-tag) */
+.pl-collab-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 14px;
+  text-align: left;
+}
+.pl-role-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 22px;
+  padding: 0 7px;
+  background: var(--color-surface-3);
+  color: var(--color-ink-2);
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+.pl-role-tag.pl-role-inf  { background: var(--color-teal-100); color: var(--color-teal-700); }
+.pl-role-tag.pl-role-assc { background: #e6eef8; color: #2d5586; }
+.pl-role-tag.pl-role-as   { background: #fbe7ed; color: #a04863; }
+.pl-role-tag.pl-role-anim { background: #f0e8f5; color: #5e3a78; }
+.pl-role-tag.pl-role-ruv  { background: #d2e7e2; color: var(--color-teal-700); }
+.pl-collab-info { min-width: 0; flex: 1; }
+.pl-collab-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cellule taux (% + barre mini) */
+.pl-pct {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+.pl-pct-bar {
+  width: 38px;
+  height: 3px;
+  background: var(--color-line);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 3px auto 0;
+}
+.pl-pct-bar > div {
+  height: 100%;
+  background: var(--color-teal-500);
+  border-radius: 99px;
+}
+
+/* ─── Shifts ─── */
+.pl-shift {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pl-shift-min-w);
+  height: var(--pl-shift-h);
+  padding: 0 8px;
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--pl-shift-fs);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  position: relative;
+  border: 1px solid transparent;
+  color: #fff;
+}
+.pl-shift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(13, 42, 38, 0.2);
+  z-index: 2;
+}
+.pl-shift.pl-shift-c1 { background: var(--pl-shift-c1); }
+.pl-shift.pl-shift-c2 { background: var(--pl-shift-c2); }
+.pl-shift.pl-shift-d1 { background: var(--pl-shift-d1); }
+.pl-shift.pl-shift-d3 { background: var(--pl-shift-d3); }
+.pl-shift.pl-shift-d4 { background: var(--pl-shift-d4); }
+.pl-shift.pl-shift-s3 { background: var(--pl-shift-s3); }
+.pl-shift.pl-shift-s4 { background: var(--pl-shift-s4); }
+.pl-shift.pl-shift-a2 { background: var(--pl-shift-a2); }
+.pl-shift.pl-shift-a3 { background: var(--pl-shift-a3); }
+.pl-shift.pl-shift-n  { background: var(--pl-shift-n);  }
+
+/* Cellule heures totales */
+.pl-hours {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  line-height: 1.2;
+}
+.pl-hours-main {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.pl-hours-target {
+  font-size: 10px;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  margin-top: 1px;
+}
+.pl-hours-target.pl-hours-over  { color: var(--color-ok); }
+.pl-hours-target.pl-hours-under { color: var(--color-warn); }
+
+/* Application des variables sur les cellules (jour + shift + day-num) */
+.pl-table thead th.pl-day-head {
+  width: var(--pl-cell-w);
+  min-width: var(--pl-cell-w);
+  max-width: var(--pl-cell-w);
+}
+.pl-table tbody td.pl-day-cell {
+  width: var(--pl-cell-w);
+  min-width: var(--pl-cell-w);
+  max-width: var(--pl-cell-w);
+  height: var(--pl-cell-h);
+}
+.pl-table tbody td { height: var(--pl-cell-h); }
+
+/* ============================================================
+ * SIZE CONTROLS — 5 boutons (XS / SM / MD / STD / LG)
+ * ============================================================ */
+.pl-size-cell {
+  padding: 4px 8px !important;
+  background: linear-gradient(180deg, var(--color-teal-50), var(--color-surface-3)) !important;
+}
+.pl-size-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  background: #fff;
+  border: 1px solid var(--color-teal-100);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+}
+.pl-size-btn {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+.pl-size-btn:hover {
+  background: var(--color-teal-50);
+  color: var(--color-teal-600);
+}
+.pl-size-btn.is-active {
+  background: var(--color-teal-600);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(31, 99, 89, 0.2);
+}
+.pl-size-btn.is-active:hover {
+  background: var(--color-teal-700);
+  color: #fff;
+}
+
+/* ============================================================
+ * DROPDOWNS — période (mois) + vue
+ * ============================================================ */
+.pl-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px -12px rgba(13, 42, 38, 0.18), 0 4px 12px rgba(13, 42, 38, 0.08);
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
+}
+.pl-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Dropdown période (sélecteur de mois 3×4) */
+.pl-dd-period {
+  left: 0;
+  width: 340px;
+  padding: 14px;
+}
+.pl-dd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-line);
+}
+.pl-year-nav {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.pl-year-nav:hover {
+  background: var(--color-teal-50);
+  color: var(--color-teal-600);
+}
+.pl-year {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.pl-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pl-month {
+  position: relative;
+  background: var(--color-surface-2);
+  border: 1.5px solid transparent;
+  border-radius: 11px;
+  padding: 9px 8px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.pl-month:hover {
+  background: var(--color-teal-50);
+  border-color: var(--color-teal-100);
+  transform: translateY(-1px);
+}
+.pl-month.is-active {
+  background: #fff;
+  border-color: var(--color-teal-700);
+  box-shadow: 0 4px 12px rgba(31, 99, 89, 0.15);
+}
+.pl-month.is-past::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-teal-500);
+}
+.pl-month-emoji {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--color-teal-50), var(--color-teal-100));
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+.pl-month.is-active .pl-month-emoji {
+  background: linear-gradient(135deg, #d2e7e2, #7ab5ab);
+}
+.pl-month-num {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.pl-month.is-active .pl-month-num { color: var(--color-teal-700); }
+.pl-month-name {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+.pl-month.is-active .pl-month-name {
+  color: var(--color-teal-700);
+  font-weight: 700;
+}
+.pl-dd-foot {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  justify-content: flex-end;
+}
+.pl-dd-foot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-teal-50);
+  color: var(--color-teal-700);
+  border: 1px solid var(--color-teal-100);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.pl-dd-foot-btn:hover {
+  background: var(--color-teal-100);
+  border-color: var(--color-teal-300);
+}
+
+/* Dropdown vue (semaine / mois) */
+.pl-dd-view {
+  left: auto;
+  right: 0;
+  width: 260px;
+  padding: 5px;
+}
+.pl-dd-view-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-align: left;
+  font-family: inherit;
+}
+.pl-dd-view-item:hover { background: var(--color-teal-50); }
+.pl-dd-view-item.is-active { background: var(--color-surface-3); }
+.pl-dd-view-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--color-teal-50);
+  color: var(--color-teal-700);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--color-teal-100);
+}
+.pl-dd-view-item.is-active .pl-dd-view-icon {
+  background: var(--color-teal-600);
+  color: #fff;
+  border-color: var(--color-teal-600);
+}
+.pl-dd-view-text { flex: 1; min-width: 0; }
+.pl-dd-view-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+.pl-dd-view-desc {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+.pl-dd-view-check {
+  color: var(--color-teal-600);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  flex-shrink: 0;
+}
+.pl-dd-view-item.is-active .pl-dd-view-check { opacity: 1; }
+
+/* ============================================================
+ * FOOTER planning : légende + stats
+ * ============================================================ */
+.pl-foot {
+  background: var(--color-surface-2);
+  border-top: 1px solid var(--color-line);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.pl-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--color-muted);
+}
+.pl-legend-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.pl-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+.pl-legend-sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.pl-foot-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+}
+.pl-foot-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pl-foot-stat-num {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-ink);
+}
+.pl-foot-stat-lbl {
+  color: var(--color-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* ============================================================
+ * FULLSCREEN MODE — masque shell admin (sidebar + topbar)
+ * ============================================================ */
+body.pl-is-fullscreen #adminSidebar,
+body.pl-is-fullscreen .admin-topbar { display: none; }
+body.pl-is-fullscreen .admin-main { padding: 0; }
+body.pl-is-fullscreen .pl-grid-wrap { margin: 0; border-radius: 0; border: 0; }
+
+/* ============================================================
+ * RESPONSIVE
+ * ============================================================ */
+@media (max-width: 1100px) {
+  .pl-command-bar { padding: 12px 14px; gap: 8px; }
+  .pl-spacer { display: none; }
+  .pl-grid-wrap { margin: 14px; }
+}
+/* Sous 980px : on retire les éléments secondaires pour garder
+ * visible Période · Vue · Générer · Créer · Toggle (l'essentiel). */
+@media (max-width: 980px) {
+  .pl-status,
+  .pl-meta,
+  .pl-icon-group:nth-of-type(2) { /* groupe export (2e groupe icônes) */
+    display: none;
+  }
+}
