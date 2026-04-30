@@ -318,13 +318,13 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
     <!-- Groupe icônes outils (stats / filtres / supprimer / fullscreen) -->
     <div class="cb-icon-group">
-      <button type="button" class="cb-btn-mini" title="Statistiques">
+      <button type="button" class="cb-btn-mini" id="plStatsBtn" title="Statistiques du planning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
       </button>
-      <button type="button" class="cb-btn-mini" title="Filtres avancés">
+      <button type="button" class="cb-btn-mini" id="plFiltersBtn" title="Filtres avancés (TODO)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="11" y2="6"/><line x1="14" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="13" y2="18"/><line x1="16" y1="18" x2="20" y2="18"/><circle cx="12.5" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="14.5" cy="18" r="2"/></svg>
       </button>
-      <button type="button" class="cb-btn-mini" title="Supprimer">
+      <button type="button" class="cb-btn-mini" id="plClearBtn" title="Vider le planning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
       </button>
       <button type="button" class="cb-btn-mini cb-fullscreen" id="plFullscreenBtn" title="Plein écran (F11)">
@@ -334,16 +334,16 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
     <!-- Groupe icônes export (imprimer / PDF / email / CSV) -->
     <div class="cb-icon-group">
-      <button type="button" class="cb-btn-mini" title="Imprimer">
+      <button type="button" class="cb-btn-mini" id="plPrintBtn" title="Imprimer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
       </button>
-      <button type="button" class="cb-btn-mini" title="Exporter PDF">
+      <button type="button" class="cb-btn-mini" id="plPdfBtn" title="Exporter PDF (via impression)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
       </button>
-      <button type="button" class="cb-btn-mini" title="Envoyer par email">
+      <button type="button" class="cb-btn-mini" id="plEmailBtn" title="Envoyer par email">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg>
       </button>
-      <button type="button" class="cb-btn-mini" title="Exporter CSV">
+      <button type="button" class="cb-btn-mini" id="plCsvBtn" title="Exporter CSV">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
       </button>
     </div>
@@ -1156,12 +1156,129 @@ window.PL_DATA = {
         }
     });
 
-    // ── Boutons restants (TODO Phase 2.x) ───────────────────────────────────
+    // ── Bouton Vider planning ───────────────────────────────────────────────
+    $('plClearBtn')?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Aucun planning à vider', 'info');
+            return;
+        }
+        if (!confirm('Vider TOUTES les assignations du planning ' + (window.PL_DATA.moisAnnee || '') + ' ? Cette action est irréversible.')) return;
+        const res = await plApiPost('admin_clear_planning', { planning_id: window.PL_DATA.planning.id });
+        if (res?.success) {
+            plToast(res.message || 'Planning vidé', 'ok');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            plToast(res?.message || 'Erreur', 'error');
+        }
+    });
+
+    // ── Bouton Imprimer (browser native + style print) ──────────────────────
+    $('plPrintBtn')?.addEventListener('click', () => window.print());
+    $('plPdfBtn')?.addEventListener('click', () => {
+        plToast('Choisissez "Enregistrer en PDF" dans la boîte d\'impression', 'info');
+        window.print();
+    });
+
+    // ── Bouton Email — TODO modal email ─────────────────────────────────────
+    $('plEmailBtn')?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Aucun planning à envoyer', 'info');
+            return;
+        }
+        const email = prompt('Adresse email du destinataire ?\n(laisse vide pour envoyer à tous les collaborateurs actifs)');
+        if (email === null) return; // cancel
+        const res = await plApiPost('admin_send_planning_email', {
+            planning_id: window.PL_DATA.planning.id,
+            email: email.trim() || null,
+        });
+        if (res?.success) {
+            plToast(res.message || 'Email envoyé', 'ok');
+        } else {
+            plToast(res?.message || 'Erreur envoi email', 'error');
+        }
+    });
+
+    // ── Bouton CSV (download direct via endpoint dédié) ─────────────────────
+    $('plCsvBtn')?.addEventListener('click', () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Aucun planning à exporter', 'info');
+            return;
+        }
+        // Download direct : on utilise un endpoint Excel/CSV legacy si dispo.
+        // Sinon on génère un CSV côté JS depuis la grille rendue.
+        plExportCsv();
+    });
+
+    function plExportCsv() {
+        const rows = [];
+        // Header
+        const headRow = ['Collaborateur', '%'];
+        document.querySelectorAll('#plTable thead th.day-head').forEach(th => {
+            const name = th.querySelector('.day-name')?.textContent.trim() || '';
+            const num = th.querySelector('.day-num')?.textContent.trim() || '';
+            headRow.push(`${name} ${num}`);
+        });
+        headRow.push('Heures');
+        rows.push(headRow);
+
+        // Body
+        document.querySelectorAll('#plTable tbody tr.user-row').forEach(tr => {
+            const r = [];
+            r.push(tr.querySelector('.collab-cell-name')?.textContent.trim() || '');
+            r.push(tr.querySelector('.pct-cell')?.textContent.trim() || '');
+            tr.querySelectorAll('td.day-cell').forEach(td => {
+                r.push(td.querySelector('.shift')?.textContent.trim() || '');
+            });
+            r.push(tr.querySelector('.hours-main')?.textContent.trim() || '');
+            rows.push(r);
+        });
+
+        const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }); // BOM UTF-8 pour Excel
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'planning-' + (window.PL_DATA?.moisAnnee || 'export') + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ── Bouton Stats : modale simple avec admin_get_planning_stats ──────────
+    $('plStatsBtn')?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Aucun planning — créez-en un d\'abord', 'info');
+            return;
+        }
+        const res = await plApiPost('admin_get_planning_stats', { mois: window.PL_DATA.moisAnnee });
+        if (!res?.success || !res.stats) {
+            plToast('Aucune statistique disponible', 'info');
+            return;
+        }
+        const s = res.stats;
+        // Affichage minimal en alert pour l'instant — TODO modal Tailwind dédiée
+        const lines = [];
+        lines.push('═══ Statistiques planning ' + (window.PL_DATA.moisAnnee || '') + ' ═══\n');
+        if (s.heures_par_user?.length) {
+            lines.push('Heures par collaborateur :');
+            s.heures_par_user.slice(0, 20).forEach(u => {
+                lines.push('  ' + u.prenom + ' ' + u.nom + ' : ' + (u.total_heures || 0) + 'h');
+            });
+            if (s.heures_par_user.length > 20) lines.push('  … (' + (s.heures_par_user.length - 20) + ' autres)');
+        }
+        alert(lines.join('\n'));
+    });
+
+    // ── Filtres avancés / Génération IA / Proposition : TODO ────────────────
+    $('plFiltersBtn')?.addEventListener('click', () => {
+        plToast('Filtres avancés — TODO', 'info');
+    });
     $('plGenerateBtn')?.addEventListener('click', () => {
-        plToast('Génération IA — TODO Phase 2', 'info');
+        plToast('Génération IA — TODO (gros morceau, à porter)', 'info');
     });
     $('plPropositionBtn')?.addEventListener('click', () => {
-        plToast('Propositions — TODO Phase 2', 'info');
+        plToast('Propositions — TODO', 'info');
     });
 
     // ── Toggle Provisoire / Finaliser : branche admin_finalize_planning ────
