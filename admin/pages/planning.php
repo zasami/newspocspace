@@ -627,12 +627,14 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     });
 
     // ── 5 presets de zoom : XS / SM / MD / STD / LG (STD = défaut) ──────────
+    // XS calé exactement sur le legacy spocspace/admin/assets/css/admin.css
+    // (.tr-grid .dc { min-width:36px; height:28px }) puis progression douce.
     const SIZE_PRESETS = {
-        xs:  { cellW: 36, cellH: 32, shiftMinW: 22, shiftH: 18, shiftFs: 9,    dayNumSize: 20, dayNumFs: 11 },
-        sm:  { cellW: 48, cellH: 40, shiftMinW: 28, shiftH: 22, shiftFs: 10,   dayNumSize: 24, dayNumFs: 12 },
-        md:  { cellW: 56, cellH: 44, shiftMinW: 32, shiftH: 25, shiftFs: 10.5, dayNumSize: 26, dayNumFs: 13 },
-        std: { cellW: 64, cellH: 50, shiftMinW: 36, shiftH: 28, shiftFs: 11,   dayNumSize: 28, dayNumFs: 14 },
-        lg:  { cellW: 84, cellH: 64, shiftMinW: 50, shiftH: 36, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16 },
+        xs:  { cellW: 36, cellH: 28, shiftMinW: 28, shiftH: 20, shiftFs: 10,   dayNumSize: 20, dayNumFs: 11 },
+        sm:  { cellW: 46, cellH: 36, shiftMinW: 32, shiftH: 24, shiftFs: 10.5, dayNumSize: 22, dayNumFs: 12 },
+        md:  { cellW: 56, cellH: 44, shiftMinW: 38, shiftH: 27, shiftFs: 11,   dayNumSize: 26, dayNumFs: 13 },
+        std: { cellW: 64, cellH: 50, shiftMinW: 42, shiftH: 30, shiftFs: 11.5, dayNumSize: 28, dayNumFs: 14 },
+        lg:  { cellW: 84, cellH: 64, shiftMinW: 56, shiftH: 38, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16 },
     };
     const planningTable = $('plTable');
 
