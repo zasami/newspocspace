@@ -282,16 +282,6 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       </div>
     </div>
 
-    <!-- Nav arrows -->
-    <div class="cb-nav">
-      <button type="button" class="cb-nav-btn" id="plNavPrev" title="Mois précédent">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <button type="button" class="cb-nav-btn cb-nav-today" id="plNavToday" title="Aujourd'hui">Auj.</button>
-      <button type="button" class="cb-nav-btn" id="plNavNext" title="Mois suivant">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-    </div>
 
     <!-- Status badge -->
     <div class="cb-status">
@@ -937,22 +927,6 @@ window.PL_DATA = {
             item.classList.add('active');
             setTimeout(closeAllDropdowns, 200);
         });
-    });
-
-    // ── Nav arrows ──────────────────────────────────────────────────────────
-    $('plNavPrev')?.addEventListener('click', () => {
-        let m = currentMonth - 1, y = currentYear;
-        if (m < 1) { m = 12; y--; }
-        gotoMonth(y, m);
-    });
-    $('plNavNext')?.addEventListener('click', () => {
-        let m = currentMonth + 1, y = currentYear;
-        if (m > 12) { m = 1; y++; }
-        gotoMonth(y, m);
-    });
-    $('plNavToday')?.addEventListener('click', () => {
-        const now = new Date();
-        gotoMonth(now.getFullYear(), now.getMonth() + 1);
     });
 
     // ── Toggle Provisoire / Finaliser ───────────────────────────────────────
