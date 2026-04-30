@@ -15,18 +15,34 @@
     <div aria-hidden="true" class="absolute inset-0 pointer-events-none">
       <svg class="absolute inset-0 w-full h-full text-white">
         <defs>
-          <!-- Carrés arrondis superposés (tile 320×320, rotation diagonale)
-               + animation SMIL drift seamless : x: 0 → 320 sur 60s, y: 0 → 320 sur 90s.
-               Comme 320 = la taille du tile, le retour à 0 est invisible (loop sans saccade). -->
+          <!-- Carrés arrondis superposés (tile 320×320, rotation diagonale).
+               2 animations SMIL combinées :
+                 1. DRIFT seamless : x:0→320 sur 60s, y:0→320 sur 90s
+                    (tile = 320 → retour à 0 invisible, loop sans saccade)
+                 2. RAINDROP : chaque carré apparaît/disparaît en fondu (fill-opacity)
+                    avec un cycle décalé pour un effet organique de gouttes de pluie. -->
           <pattern id="loginShapesPattern" width="320" height="320" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
             <animate attributeName="x" from="0" to="320" dur="60s" repeatCount="indefinite"/>
             <animate attributeName="y" from="0" to="320" dur="90s" repeatCount="indefinite"/>
-            <rect x="30"  y="20"  width="110" height="110" rx="16" fill="currentColor" fill-opacity="0.04"/>
-            <rect x="80"  y="90"  width="80"  height="80"  rx="13" fill="currentColor" fill-opacity="0.05"/>
-            <rect x="180" y="40"  width="70"  height="70"  rx="11" fill="currentColor" fill-opacity="0.04"/>
-            <rect x="160" y="180" width="60"  height="60"  rx="10" fill="currentColor" fill-opacity="0.06"/>
-            <rect x="40"  y="200" width="45"  height="45"  rx="8"  fill="currentColor" fill-opacity="0.05"/>
-            <rect x="240" y="200" width="55"  height="55"  rx="9"  fill="currentColor" fill-opacity="0.04"/>
+
+            <rect x="30"  y="20"  width="110" height="110" rx="16" fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.05;0.05;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="11s" begin="0s" repeatCount="indefinite"/>
+            </rect>
+            <rect x="80"  y="90"  width="80"  height="80"  rx="13" fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.06;0.06;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="13s" begin="2s"  repeatCount="indefinite"/>
+            </rect>
+            <rect x="180" y="40"  width="70"  height="70"  rx="11" fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.05;0.05;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="10s" begin="4s"  repeatCount="indefinite"/>
+            </rect>
+            <rect x="160" y="180" width="60"  height="60"  rx="10" fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.07;0.07;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="12s" begin="6s"  repeatCount="indefinite"/>
+            </rect>
+            <rect x="40"  y="200" width="45"  height="45"  rx="8"  fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.06;0.06;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="9s"  begin="1s"  repeatCount="indefinite"/>
+            </rect>
+            <rect x="240" y="200" width="55"  height="55"  rx="9"  fill="currentColor" fill-opacity="0">
+              <animate attributeName="fill-opacity" values="0;0.05;0.05;0" keyTimes="0;0.3;0.6;1" calcMode="spline" keySplines="0.4 0 0.2 1;0 0 1 1;0.4 0 0.2 1" dur="14s" begin="3s"  repeatCount="indefinite"/>
+            </rect>
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#loginShapesPattern)"/>

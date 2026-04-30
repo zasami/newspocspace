@@ -119,10 +119,50 @@ function pl_role_class(string $code): string {
 function pl_target_hours(float $taux): float {
     return round($taux * 1.82, 1);
 }
+
+// ─── Shifts démo (Phase 1) — déterministes pour rendu visuel ────────────────
+// Génère des shifts factices stables par user_id × jour pour donner vie au mockup.
+// Sera remplacé Phase 2 par les vrais shifts assignés depuis la DB.
+$plShiftCodes = ['c1', 'c2', 'd1', 'd3', 'd4', 's3', 's4', 'a2', 'a3', 'n'];
+$plShiftHours = ['c1' => 8, 'c2' => 8, 'd1' => 8, 'd3' => 8, 'd4' => 8,
+                 's3' => 8, 's4' => 8, 'a2' => 7, 'a3' => 7, 'n' => 10];
+
+function pl_demo_shifts(string $userId, array $days, array $codes): array {
+    $shifts = [];
+    $seed = abs(crc32($userId));
+    foreach ($days as $idx => $day) {
+        // ~25% jours vides (repos), 75% un shift assigné
+        $rng = ($seed + $idx * 37 + ($idx * $idx * 13)) % 100;
+        if ($day['weekend'] && $rng < 60) continue; // plus de repos le weekend
+        if (!$day['weekend'] && $rng < 22) continue;
+        $code = $codes[($seed + $idx * 7) % count($codes)];
+        $shifts[$day['iso']] = $code;
+    }
+    return $shifts;
+}
+
+// Pré-calcul de tous les shifts démo + totaux
+$plUserShifts  = [];
+$plTotalShifts = 0;
+foreach ($planningUsers as $u) {
+    $sh = pl_demo_shifts((string) $u['id'], $plDays, $plShiftCodes);
+    $plUserShifts[$u['id']] = $sh;
+    $plTotalShifts += count($sh);
+}
+// "Manquants" = créneaux non couverts (démo : ~17 sur l'ensemble du mois)
+$plMissingShifts = max(0, (int) round($plTotalShifts * 0.0085));
+
+// Top-N fonctions affichées dans la barre de filtres (mockup en montre 8)
+$plFonctionsForFilter = array_filter(
+    $planningFonctions,
+    fn($f) => !empty($plCountByFonction[$f['code']]) && $plCountByFonction[$f['code']] >= 1
+);
+uasort($plFonctionsForFilter, fn($a, $b) => ($plCountByFonction[$b['code']] ?? 0) - ($plCountByFonction[$a['code']] ?? 0));
+$plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 ?>
 
 <!-- ═══ Page Planning ═══════════════════════════════════════════════════════ -->
-<div class="planning-page flex flex-col min-h-[calc(100vh-64px)]" id="planningPage">
+<div class="planning-page flex flex-col min-w-0 min-h-[calc(100vh-64px)]" id="planningPage">
 
   <!-- ── Command bar : période + vue + nav + status + actions ─────────────── -->
   <div class="pl-command-bar">
@@ -219,7 +259,7 @@ function pl_target_hours(float $taux): float {
     </div>
 
     <!-- Compteur d'assignations -->
-    <div class="pl-meta"><strong id="plAssignCount">0</strong> assignations</div>
+    <div class="pl-meta"><strong id="plAssignCount"><?= number_format($plTotalShifts, 0, ',', "'") ?></strong> assignations</div>
 
     <div class="pl-spacer"></div>
 
@@ -297,9 +337,9 @@ function pl_target_hours(float $taux): float {
     <?php foreach ($planningModules as $m): if (!in_array($m['code'], ['POOL','NUIT'], true)) continue; ?>
     <button type="button" class="pl-team-pill" data-team-filter="<?= h($m['code']) ?>" data-team-type="module"><?= h($m['code']) ?></button>
     <?php endforeach; ?>
-    <?php if (!empty($plCountByFonction)): ?>
+    <?php if (!empty($plFonctionsForFilter)): ?>
     <span class="pl-team-divider"></span>
-    <?php foreach ($planningFonctions as $f): if (empty($plCountByFonction[$f['code']])) continue; ?>
+    <?php foreach ($plFonctionsForFilter as $f): ?>
     <button type="button" class="pl-team-pill" data-team-filter="<?= h($f['code']) ?>" data-team-type="fonction" title="<?= h($f['nom']) ?>"><?= h($f['code']) ?></button>
     <?php endforeach; ?>
     <?php endif; ?>
@@ -343,21 +383,18 @@ function pl_target_hours(float $taux): float {
             <td colspan="<?= $plNbDays ?>"></td>
             <?php if ($isFirstSection): // Le sélecteur de taille n'apparaît que sur la 1ère section pour le mockup ?>
             <td class="pl-col-hours pl-size-cell">
-              <div class="pl-size-controls" role="group" aria-label="Taille du tableau">
+              <div class="pl-size-controls" role="group" aria-label="Zoom de la grille">
                 <button type="button" class="pl-size-btn" data-size="xs" title="Très petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
+                  <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
                 </button>
                 <button type="button" class="pl-size-btn" data-size="sm" title="Petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/></svg>
                 </button>
-                <button type="button" class="pl-size-btn" data-size="md" title="Moyen">
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
-                </button>
-                <button type="button" class="pl-size-btn is-active" data-size="std" title="Standard (défaut)">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+                <button type="button" class="pl-size-btn is-active" data-size="md" title="Moyen (défaut)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
                 </button>
                 <button type="button" class="pl-size-btn" data-size="lg" title="Grand">
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
                 </button>
               </div>
             </td>
@@ -370,8 +407,10 @@ function pl_target_hours(float $taux): float {
             $taux = (float) ($u['taux'] ?? 0);
             $tauxRounded = (int) round($taux);
             $cible = pl_target_hours($taux);
-            $heuresCourant = 0; // Phase 1 : pas de calcul heures courantes
-            $diff = $heuresCourant - $cible;
+            $userShifts = $plUserShifts[$u['id']] ?? [];
+            $heuresCourant = 0;
+            foreach ($userShifts as $code) { $heuresCourant += $plShiftHours[$code] ?? 8; }
+            $diff = round($heuresCourant - $cible, 1);
             $modCodes = explode(',', (string) ($u['module_codes'] ?? ''));
           ?>
           <tr data-user-id="<?= h($u['id']) ?>"
@@ -389,15 +428,19 @@ function pl_target_hours(float $taux): float {
               <div class="pl-pct"><?= $tauxRounded ?>%</div>
               <div class="pl-pct-bar"><div style="width:<?= $tauxRounded ?>%"></div></div>
             </td>
-            <?php foreach ($plDays as $day): ?>
+            <?php foreach ($plDays as $day):
+              $code = $userShifts[$day['iso']] ?? null;
+            ?>
             <td class="pl-day-cell <?= $day['weekend'] ? 'pl-weekend' : '' ?> <?= $day['today'] ? 'pl-today' : '' ?>">
-              <!-- Phase 2 : injecter ici les shifts assignés (ex: <span class="pl-shift pl-shift-c1">C1</span>) -->
+              <?php if ($code): ?>
+              <span class="pl-shift pl-shift-<?= h($code) ?>" data-shift="<?= h($code) ?>"><?= strtoupper(h($code)) ?></span>
+              <?php endif; ?>
             </td>
             <?php endforeach; ?>
             <td class="pl-col-hours">
               <div class="pl-hours">
-                <div class="pl-hours-main"><?= $heuresCourant ?>h</div>
-                <div class="pl-hours-target <?= $diff < 0 ? 'pl-hours-under' : ($diff > 0 ? 'pl-hours-over' : '') ?>"><?= $cible ?>h<?= $diff !== 0.0 ? ' · ' . ($diff > 0 ? '+' : '') . $diff : '' ?></div>
+                <div class="pl-hours-main"><?= (int) $heuresCourant ?>h</div>
+                <div class="pl-hours-target <?= $diff < 0 ? 'pl-hours-under' : ($diff > 0 ? 'pl-hours-over' : '') ?>"><?= $cible ?>h<?= $diff !== 0.0 ? ' · ' . ($diff > 0 ? '+' : '') . $diff : ' · ✓' ?></div>
               </div>
             </td>
           </tr>
@@ -419,12 +462,13 @@ function pl_target_hours(float $taux): float {
     <div class="pl-foot">
       <div class="pl-legend">
         <span class="pl-legend-label">Shifts</span>
-        <?php foreach ($planningHoraires as $hor): if (empty($hor['couleur'])) continue; ?>
-        <span class="pl-legend-item">
-          <span class="pl-legend-sw" style="background: <?= h($hor['couleur']) ?>"></span>
-          <?= h($hor['code']) ?> · <?= h(substr($hor['heure_debut'] ?? '', 0, 5)) ?>-<?= h(substr($hor['heure_fin'] ?? '', 0, 5)) ?>
-        </span>
-        <?php endforeach; ?>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-c1)"></span>C1 · 7h-15h</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-c2)"></span>C2 · 14h-22h</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-d1)"></span>D1 doublure</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-s3)"></span>S3 soir</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-s4)"></span>S4 soir</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-a2)"></span>A2 aprem</span>
+        <span class="pl-legend-item"><span class="pl-legend-sw" style="background: var(--pl-shift-n)"></span>N nuit</span>
       </div>
       <div class="pl-foot-stats">
         <div class="pl-foot-stat">
@@ -432,11 +476,11 @@ function pl_target_hours(float $taux): float {
           <span class="pl-foot-stat-lbl">Collab.</span>
         </div>
         <div class="pl-foot-stat">
-          <span class="pl-foot-stat-num" id="plFootShifts">0</span>
+          <span class="pl-foot-stat-num" id="plFootShifts"><?= number_format($plTotalShifts, 0, ',', "'") ?></span>
           <span class="pl-foot-stat-lbl">Shifts</span>
         </div>
         <div class="pl-foot-stat">
-          <span class="pl-foot-stat-num text-warn" id="plFootMissing">—</span>
+          <span class="pl-foot-stat-num text-warn" id="plFootMissing"><?= (int) $plMissingShifts ?></span>
           <span class="pl-foot-stat-lbl">Manquants</span>
         </div>
       </div>
@@ -548,13 +592,14 @@ function pl_target_hours(float $taux): float {
         });
     });
 
-    // ── 5 presets de taille ─────────────────────────────────────────────────
+    // ── 4 presets de zoom : XS / SM / MD (défaut) / LG ──────────────────────
+    // Chaque preset scale TOUTES les dimensions de la grille (cellules, badges,
+    // fonts, day-num) — c'est un vrai zoom, mais limité à la grille.
     const SIZE_PRESETS = {
-        xs:  { cellW: 36, cellH: 32, shiftMinW: 22, shiftH: 18, shiftFs: 9,    dayNumSize: 20, dayNumFs: 11 },
-        sm:  { cellW: 48, cellH: 40, shiftMinW: 28, shiftH: 22, shiftFs: 10,   dayNumSize: 24, dayNumFs: 12 },
-        md:  { cellW: 56, cellH: 44, shiftMinW: 32, shiftH: 25, shiftFs: 10.5, dayNumSize: 26, dayNumFs: 13 },
-        std: { cellW: 64, cellH: 50, shiftMinW: 36, shiftH: 28, shiftFs: 11,   dayNumSize: 28, dayNumFs: 14 },
-        lg:  { cellW: 84, cellH: 64, shiftMinW: 50, shiftH: 36, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16 },
+        xs: { cellW: 32, cellH: 30, shiftMinW: 22, shiftH: 17, shiftFs: 8.5, dayNumSize: 20, dayNumFs: 11 },
+        sm: { cellW: 44, cellH: 38, shiftMinW: 30, shiftH: 22, shiftFs: 10,  dayNumSize: 24, dayNumFs: 12 },
+        md: { cellW: 56, cellH: 46, shiftMinW: 36, shiftH: 26, shiftFs: 11,  dayNumSize: 28, dayNumFs: 13.5 },
+        lg: { cellW: 80, cellH: 60, shiftMinW: 48, shiftH: 34, shiftFs: 12.5, dayNumSize: 32, dayNumFs: 15 },
     };
     const planningTable = $('plTable');
 
@@ -573,13 +618,18 @@ function pl_target_hours(float $taux): float {
         });
         try { localStorage.setItem('ss_planning_size', size); } catch(e) {}
     }
+
     document.querySelectorAll('.pl-size-btn').forEach(btn => {
         btn.addEventListener('click', () => applySize(btn.dataset.size));
     });
+
+    // Init : restaure preset utilisateur, sinon défaut = MD (Moyen)
+    let initialSize = 'md';
     try {
         const saved = localStorage.getItem('ss_planning_size');
-        if (saved && SIZE_PRESETS[saved]) applySize(saved);
+        if (saved && SIZE_PRESETS[saved]) initialSize = saved;
     } catch(e) {}
+    applySize(initialSize);
 
     // ── Fullscreen toggle (masque sidebar + topbar) ─────────────────────────
     const fullscreenBtn  = $('plFullscreenBtn');

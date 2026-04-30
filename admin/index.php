@@ -607,7 +607,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
 </aside>
 
 <!-- MAIN — wrapper flex column qui contient topbar + page -->
-<div id="adminMain" class="admin-main flex-1 min-h-screen flex flex-col">
+<div id="adminMain" class="admin-main flex-1 min-w-0 min-h-screen flex flex-col">
   <!-- TOP BAR -->
   <header class="admin-topbar bg-surface border-b border-line h-16 px-4 lg:px-6 flex items-center gap-3 sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
     <!-- Hamburger mobile -->
@@ -694,7 +694,7 @@ window.__SS__ = window.__SS__ || {
 </script>
 
   <!-- PAGE CONTENT -->
-  <div id="adminContent" class="admin-content flex-1 min-h-0 p-4 lg:p-6">
+  <div id="adminContent" class="admin-content flex-1 min-w-0 min-h-0 p-4 lg:p-6">
     <?php
     // Catch fatal errors so that global compose panel + shortcuts still render
     ob_start();
