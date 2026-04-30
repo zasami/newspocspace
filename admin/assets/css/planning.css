@@ -2026,3 +2026,28 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.11
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.12 — Hover lecture sur weekend : superposition teal-50 + dorée
+ *
+ * Avant (v9.2) : weekend en hover row → background-color rgba(212,160,74,.18)
+ * pur doré renforcé. La couleur teal-50 du hover row était perdue.
+ *
+ * Après : superposition teal-50 (overlay) sur weekend-bg (dorée pâle de
+ * fond). Même technique que le hover edit-mode sur weekend (v9.9) :
+ * background-color = base dorée, background-image = layer teal.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage table#plTable tbody tr.user-row:hover td.weekend {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+  background-image: linear-gradient(
+    rgba(125, 211, 168, 0.22),
+    rgba(125, 211, 168, 0.22)
+  ) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.12
+ * ════════════════════════════════════════════════════════════════════════════ */
