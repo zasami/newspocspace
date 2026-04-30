@@ -559,7 +559,117 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   </div>
 
+  <!-- ═══ Modale édition cellule ═══════════════════════════════════════════ -->
+  <div id="plCellModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plCellModalTitle">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" id="plCellModal">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <h3 id="plCellModalTitle" class="font-display text-base font-semibold text-ink truncate">Modifier l'assignation</h3>
+        <button type="button" id="plCellClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-5 py-4 overflow-y-auto flex-1">
+        <input type="hidden" id="plCellUserId">
+        <input type="hidden" id="plCellDate">
+        <input type="hidden" id="plCellAssignId">
+        <input type="hidden" id="plCellUpdatedAt">
+
+        <!-- Horaires : grille de cards -->
+        <div class="mb-4">
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-2">Horaire</label>
+          <div id="plCellHoraireGrid" class="grid grid-cols-3 gap-2">
+            <?php foreach ($planningHoraires as $ht):
+              $color = $ht['couleur'] ?? '#6b8783';
+              $code  = strtolower($ht['code'] ?? '');
+            ?>
+            <button type="button" class="pl-horaire-card relative px-3 py-2.5 rounded-lg border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex items-center gap-2.5" data-horaire-id="<?= h($ht['id']) ?>" data-horaire-code="<?= h($code) ?>">
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:<?= h($color) ?>"></span>
+              <span class="flex-1 min-w-0">
+                <span class="block font-mono text-[11px] font-bold text-ink leading-tight"><?= h(strtoupper($code)) ?></span>
+                <span class="block text-[10px] text-muted truncate"><?= h(substr((string)($ht['heure_debut'] ?? ''), 0, 5)) ?>–<?= h(substr((string)($ht['heure_fin'] ?? ''), 0, 5)) ?></span>
+              </span>
+            </button>
+            <?php endforeach; ?>
+            <button type="button" class="pl-horaire-card pl-horaire-none relative px-3 py-2.5 rounded-lg border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex items-center gap-2.5" data-horaire-id="" data-horaire-code="">
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-line bg-white"></span>
+              <span class="flex-1 min-w-0">
+                <span class="block font-mono text-[11px] font-bold text-ink-2 leading-tight">—</span>
+                <span class="block text-[10px] text-muted">Repos</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Module + Statut -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Module</label>
+            <select id="plCellModule" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
+              <option value="">— Aucun —</option>
+              <?php foreach ($planningModules as $m): ?>
+              <option value="<?= h($m['id']) ?>"><?= h($m['code']) ?> · <?= h($m['nom']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Statut</label>
+            <select id="plCellStatut" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
+              <option value="present">Présent</option>
+              <option value="absent">Absent</option>
+              <option value="formation">Formation</option>
+              <option value="conge">Congé</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Notes</label>
+          <textarea id="plCellNotes" rows="2" maxlength="500" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 resize-none"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between px-5 py-3 border-t border-line bg-surface-2">
+        <button type="button" id="plCellDelete" class="hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-danger text-white text-sm font-medium hover:bg-danger/90 transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Supprimer
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button type="button" id="plCellCancel" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Annuler</button>
+          <button type="button" id="plCellSave" class="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors">Enregistrer</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
+
+<script<?= nonce() ?>>
+// ═════════════════════════════════════════════════════════════════════════════
+// Données serveur exposées au JS
+// ═════════════════════════════════════════════════════════════════════════════
+window.PL_DATA = {
+    planning: <?= $plPlanning ? json_encode([
+        'id'         => $plPlanning['id'],
+        'mois_annee' => $plPlanning['mois_annee'],
+        'statut'     => $plPlanning['statut'],
+    ], JSON_UNESCAPED_UNICODE) : 'null' ?>,
+    moisAnnee: <?= json_encode($plMoisAnnee) ?>,
+    csrfToken: <?= json_encode($_SESSION['ss_csrf_token'] ?? '') ?>,
+    users: <?= json_encode(array_map(fn($u) => [
+        'id'         => $u['id'],
+        'prenom'     => $u['prenom'],
+        'nom'        => $u['nom'],
+        'module_ids' => $u['module_ids'] ?? '',
+    ], $planningUsers), JSON_UNESCAPED_UNICODE) ?>,
+};
+</script>
 
 <script<?= nonce() ?>>
 // ═════════════════════════════════════════════════════════════════════════════
@@ -859,16 +969,209 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         });
     });
 
-    // ── Boutons d'action (Phase 2) ──────────────────────────────────────────
-    $('plGenerateBtn')?.addEventListener('click', () => {
-        if (typeof showToast === 'function') showToast('Génération IA — fonctionnalité Phase 2', 'info');
-        else alert('Génération IA — fonctionnalité Phase 2');
+    // ── API helper ──────────────────────────────────────────────────────────
+    // adminApiPost est défini dans admin/assets/js/helpers.js (chargé en
+    // amont par le shell admin). Si indisponible, fallback fetch direct.
+    async function plApiPost(action, data = {}) {
+        if (typeof adminApiPost === 'function') {
+            return await adminApiPost(action, data);
+        }
+        const csrf = window.PL_DATA?.csrfToken || '';
+        const res = await fetch('/newspocspace/admin/api.php?action=' + encodeURIComponent(action), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify(data),
+            credentials: 'same-origin',
+        });
+        return await res.json();
+    }
+    function plToast(msg, type = 'info') {
+        if (typeof showToast === 'function') showToast(msg, type);
+        else if (type === 'error') alert(msg); else console.log('[planning]', type, msg);
+    }
+
+    // ── Modale d'édition cellule ────────────────────────────────────────────
+    const plModalBackdrop = $('plCellModalBackdrop');
+    const plModalTitle    = $('plCellModalTitle');
+    const plModalUserId   = $('plCellUserId');
+    const plModalDate     = $('plCellDate');
+    const plModalAssignId = $('plCellAssignId');
+    const plModalUpdated  = $('plCellUpdatedAt');
+    const plModalModule   = $('plCellModule');
+    const plModalStatut   = $('plCellStatut');
+    const plModalNotes    = $('plCellNotes');
+    const plModalDelete   = $('plCellDelete');
+    const plModalSave     = $('plCellSave');
+
+    function plOpenCellModal(td) {
+        if (!plModalBackdrop) return;
+        const userId = td.dataset.uid;
+        const date   = td.dataset.date;
+        if (!userId || !date) return;
+
+        // Cherche les infos du user
+        const user = (window.PL_DATA?.users || []).find(u => u.id === userId);
+        plModalTitle.textContent = (user ? `${user.prenom} ${user.nom}` : 'Collaborateur') + ' — ' + date;
+        plModalUserId.value   = userId;
+        plModalDate.value     = date;
+        plModalAssignId.value = td.dataset.assignId || '';
+        plModalUpdated.value  = td.dataset.updatedAt || '';
+
+        // Pré-sélection horaire (highlight la card active)
+        const currentHoraireCode = td.querySelector('.shift')?.dataset.shift || '';
+        document.querySelectorAll('.pl-horaire-card').forEach(card => {
+            const isActive = (card.dataset.horaireCode || '') === currentHoraireCode;
+            card.classList.toggle('!border-teal-600', isActive);
+            card.classList.toggle('!bg-teal-50', isActive);
+            card.dataset.selected = isActive ? '1' : '';
+        });
+
+        // Module par défaut : module principal du user
+        const userModuleIds = (user?.module_ids || '').split(',').filter(Boolean);
+        plModalModule.value = userModuleIds[0] || '';
+        plModalStatut.value = 'present';
+        plModalNotes.value  = '';
+
+        // Si l'assignation existe, on pourrait pré-charger les vraies valeurs
+        // (module_id, statut, notes) — pour l'instant on a juste data-assign-id
+        // sur le td. TODO: ajouter ces data-attrs côté PHP si besoin.
+
+        plModalDelete.classList.toggle('hidden', !td.dataset.assignId);
+
+        plModalBackdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function plCloseCellModal() {
+        plModalBackdrop?.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Sélection d'une carte horaire
+    document.querySelectorAll('.pl-horaire-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.pl-horaire-card').forEach(c => {
+                c.classList.remove('!border-teal-600', '!bg-teal-50');
+                c.dataset.selected = '';
+            });
+            card.classList.add('!border-teal-600', '!bg-teal-50');
+            card.dataset.selected = '1';
+        });
     });
-    $('plCreateBtn')?.addEventListener('click', () => {
-        if (typeof showToast === 'function') showToast('Création — fonctionnalité Phase 2', 'info');
+
+    // Click sur cellule jour → ouvre la modale (uniquement si planning existe)
+    document.querySelectorAll('td.day-cell').forEach(td => {
+        td.addEventListener('click', (e) => {
+            // N'ouvre pas si on était en train de drag-scroll (déjà géré par drag)
+            if (!window.PL_DATA?.planning) {
+                plToast('Aucun planning créé pour ce mois — clic sur Créer', 'info');
+                return;
+            }
+            plOpenCellModal(td);
+        });
+    });
+
+    // Boutons fermeture
+    $('plCellClose')?.addEventListener('click', plCloseCellModal);
+    $('plCellCancel')?.addEventListener('click', plCloseCellModal);
+    plModalBackdrop?.addEventListener('click', (e) => {
+        if (e.target === plModalBackdrop) plCloseCellModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !plModalBackdrop.classList.contains('hidden')) plCloseCellModal();
+    });
+
+    // Save
+    plModalSave?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) return;
+        const selectedCard = document.querySelector('.pl-horaire-card[data-selected="1"]');
+        const horaireId = selectedCard?.dataset.horaireId || null;
+        const res = await plApiPost('admin_save_assignation', {
+            planning_id: window.PL_DATA.planning.id,
+            user_id: plModalUserId.value,
+            date_jour: plModalDate.value,
+            horaire_type_id: horaireId || null,
+            module_id: plModalModule.value || null,
+            statut: plModalStatut.value || 'present',
+            notes: plModalNotes.value || '',
+            expected_updated_at: plModalUpdated.value || undefined,
+        });
+        if (res?.conflict) {
+            plToast('⚠ Conflit : la cellule a été modifiée ailleurs. Rechargement…', 'error');
+            plCloseCellModal();
+            setTimeout(() => location.reload(), 800);
+        } else if (res?.success) {
+            plCloseCellModal();
+            location.reload();
+        } else {
+            plToast(res?.message || 'Erreur lors de l\'enregistrement', 'error');
+        }
+    });
+
+    // Delete
+    plModalDelete?.addEventListener('click', async () => {
+        const assignId = plModalAssignId.value;
+        if (!assignId) return;
+        if (!confirm('Supprimer cette assignation ?')) return;
+        const res = await plApiPost('admin_delete_assignation', {
+            id: assignId,
+            expected_updated_at: plModalUpdated.value || undefined,
+        });
+        if (res?.success) {
+            plCloseCellModal();
+            location.reload();
+        } else {
+            plToast(res?.message || 'Erreur lors de la suppression', 'error');
+        }
+    });
+
+    // ── Bouton Créer planning ───────────────────────────────────────────────
+    $('plCreateBtn')?.addEventListener('click', async () => {
+        if (window.PL_DATA?.planning) {
+            plToast('Un planning existe déjà pour ce mois', 'info');
+            return;
+        }
+        if (!confirm('Créer un planning vide pour ' + (window.PL_DATA?.moisAnnee || 'ce mois') + ' ?')) return;
+        const res = await plApiPost('admin_create_planning', { mois: window.PL_DATA.moisAnnee });
+        if (res?.success) {
+            plToast(res.message || 'Planning créé', 'ok');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            plToast(res?.message || 'Erreur création planning', 'error');
+        }
+    });
+
+    // ── Boutons restants (TODO Phase 2.x) ───────────────────────────────────
+    $('plGenerateBtn')?.addEventListener('click', () => {
+        plToast('Génération IA — TODO Phase 2', 'info');
     });
     $('plPropositionBtn')?.addEventListener('click', () => {
-        if (typeof showToast === 'function') showToast('Propositions — fonctionnalité Phase 2', 'info');
+        plToast('Propositions — TODO Phase 2', 'info');
+    });
+
+    // ── Toggle Provisoire / Finaliser : branche admin_finalize_planning ────
+    document.querySelectorAll('.cb-finalize button').forEach(btn => {
+        // Le toggle visuel est déjà géré plus haut. On surcharge ici pour
+        // appeler l'API quand on bascule.
+        btn.addEventListener('click', async () => {
+            if (!window.PL_DATA?.planning) {
+                plToast('Aucun planning à finaliser — clic sur Créer', 'info');
+                return;
+            }
+            const targetStatut = btn.dataset.finalize === 'finaliser' ? 'final' : 'provisoire';
+            // Évite les double-appels si déjà dans cet état
+            if (window.PL_DATA.planning.statut === targetStatut) return;
+            const res = await plApiPost('admin_finalize_planning', {
+                id: window.PL_DATA.planning.id,
+                statut: targetStatut,
+            });
+            if (res?.success) {
+                plToast('Planning ' + (targetStatut === 'final' ? 'finalisé' : 'remis en provisoire'), 'ok');
+                setTimeout(() => location.reload(), 600);
+            } else {
+                plToast(res?.message || 'Erreur', 'error');
+            }
+        });
     });
 
 })();
