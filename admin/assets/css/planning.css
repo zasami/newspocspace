@@ -1769,3 +1769,26 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.6
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.7 — Edit-mode : les weekends sont éditables comme les autres jours
+ *
+ * v9.6 préservait la teinte dorée pâle des weekends en mode édition pour ne
+ * pas masquer l'info "c'est un weekend". Mais les weekends sont AUSSI des
+ * cellules éditables (on peut y poser un shift) : le visuel doit être
+ * cohérent avec les autres jours de la ligne.
+ *
+ * v9.7 : reset weekend à transparent en edit-mode (override de v9.6).
+ *        La cellule weekend survolée garde le warm bg (déjà géré v9.6).
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.weekend:not(:hover) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.7
+ * ════════════════════════════════════════════════════════════════════════════ */
