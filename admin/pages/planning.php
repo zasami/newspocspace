@@ -686,6 +686,56 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         }
     });
 
+    // ── Drag-to-scroll : clic-glisser sur la grille pour scroller ───────────
+    const plGridEl = document.querySelector('#plGridWrap .planning-grid');
+    if (plGridEl) {
+        let pgIsDown = false, pgStartX = 0, pgStartY = 0, pgScrollL = 0, pgScrollT = 0, pgDidDrag = false;
+        const PG_DRAG_THRESHOLD = 6; // px avant que ça compte comme un drag
+
+        plGridEl.addEventListener('mousedown', (e) => {
+            // N'active pas le drag sur les éléments interactifs
+            if (e.target.closest('.shift, button, a, input, select, .module-toggle')) return;
+            if (e.button !== 0) return; // bouton gauche uniquement
+            pgIsDown = true;
+            pgDidDrag = false;
+            pgStartX = e.pageX;
+            pgStartY = e.pageY;
+            pgScrollL = plGridEl.scrollLeft;
+            pgScrollT = plGridEl.scrollTop;
+        });
+
+        plGridEl.addEventListener('mousemove', (e) => {
+            if (!pgIsDown) return;
+            const dx = e.pageX - pgStartX;
+            const dy = e.pageY - pgStartY;
+            if (!pgDidDrag && Math.abs(dx) < PG_DRAG_THRESHOLD && Math.abs(dy) < PG_DRAG_THRESHOLD) return;
+            if (!pgDidDrag) {
+                pgDidDrag = true;
+                plGridEl.classList.add('grabbing');
+            }
+            e.preventDefault();
+            plGridEl.scrollLeft = pgScrollL - dx;
+            plGridEl.scrollTop  = pgScrollT - dy;
+        });
+
+        function pgStop(e) {
+            if (!pgIsDown) return;
+            pgIsDown = false;
+            plGridEl.classList.remove('grabbing');
+            // Empêche le click suivant après un drag (pour ne pas ouvrir un éditeur)
+            if (pgDidDrag) {
+                const blocker = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    plGridEl.removeEventListener('click', blocker, true);
+                };
+                plGridEl.addEventListener('click', blocker, true);
+            }
+        }
+        plGridEl.addEventListener('mouseup', pgStop);
+        plGridEl.addEventListener('mouseleave', pgStop);
+    }
+
     // ── Module collapse / expand ────────────────────────────────────────────
     function setModuleCollapsed(moduleCode, collapsed) {
         const moduleRow = document.querySelector(`tr.module-row[data-module-row="${CSS.escape(moduleCode)}"]`);

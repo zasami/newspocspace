@@ -1636,3 +1636,88 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.3
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.4 — col-hours au-dessus du mode édition + drag-to-scroll
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ─── Mode édition : col-hours reste blanche et au-dessus du rectangle warm
+ * Bug v9.3 : la classe col-hours recevait quand même le warm bg + dashed
+ * (via la règle générale sur tous les td) → "146h" devenait illisible et
+ * le pointillé débordait par-dessus le sticky-right. Ici on remet
+ * explicitement col-hours en blanc avec ses borders normales pendant le
+ * mode édition. ──────────────────────────────────────────────────────── */
+
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-hours {
+  border-top: 1px solid var(--color-line, #e3ebe8) !important;
+  border-bottom: 1px solid var(--color-line, #e3ebe8) !important;
+  border-left: 1px solid var(--color-line, #e3ebe8) !important;
+  border-right: 0 !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+
+/* ─── Drag-to-scroll : curseur grab/grabbing sur la grille ────────────── */
+
+#planningPage .planning-grid {
+  cursor: grab;
+}
+
+#planningPage .planning-grid.grabbing {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* Pendant le drag, le curseur "grabbing" remplace les pointer:cursor des
+ * shifts/boutons/etc. — sans bloquer pointer-events (sinon le scroll ne
+ * fonctionne plus dans certains navigateurs). */
+#planningPage .planning-grid.grabbing * {
+  cursor: grabbing !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.4
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.5 — Edit-mode : warm bg UNIQUEMENT sur la cellule active
+ *
+ * Correction v9.3/v9.4 : seule la cellule survolée doit afficher le fond
+ * warm. Le reste de la ligne ne reçoit QUE le pointillé (top + bottom). Les
+ * cellules sticky col-collab/col-pct gardent leur fond blanc, les weekends
+ * gardent leur teinte dorée pâle.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* Reset : pas de warm bg sur les cellules non survolées en mode édition */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td {
+  background-color: initial !important;
+}
+
+/* Cellules sticky col-collab et col-pct : fond blanc préservé */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-collab,
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-pct {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* Weekend en mode édition : garde sa teinte dorée pâle (pas de surcouche) */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.weekend {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+}
+
+/* SEULE la cellule survolée reçoit le warm bg marqué */
+#planningPage table#plTable tbody tr.user-row td:not(.col-collab):not(.col-pct):not(.col-hours):hover {
+  background-color: rgba(212, 160, 74, 0.22) !important;
+  cursor: pointer;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.5
+ * ════════════════════════════════════════════════════════════════════════════ */
