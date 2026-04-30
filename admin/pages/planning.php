@@ -483,7 +483,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
 </div>
 
-<script<?= isset($nonce) ? ' nonce="' . h($nonce) . '"' : '' ?>>
+<script<?= nonce() ?>>
 // ═════════════════════════════════════════════════════════════════════════════
 // Planning page — interactions JS
 // ═════════════════════════════════════════════════════════════════════════════
