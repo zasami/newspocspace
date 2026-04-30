@@ -4,15 +4,34 @@
     #loginForm, #loginEmail, #loginPassword, #loginBtn, #loginError,
     #forgotPasswordLink, .pwd-eye[data-target]
 -->
-<div class="min-h-screen w-full flex flex-col lg:flex-row bg-bg">
+<div class="min-h-screen w-full flex flex-col lg:flex-row bg-bg lg:h-screen lg:overflow-hidden">
 
   <!-- ================================================================ -->
   <!-- PANNEAU BRAND (gauche desktop / haut mobile)                     -->
   <!-- ================================================================ -->
-  <aside class="relative bg-sidebar-grad text-sb-text overflow-hidden lg:w-[42%] lg:min-h-screen p-8 lg:p-12 flex flex-col">
+  <aside class="relative bg-grad-login text-sb-text overflow-hidden lg:w-[42%] p-8 lg:p-12 flex flex-col">
 
-    <!-- Décoration : blobs radiaux discrets -->
+    <!-- Décoration : carrés arrondis superposés (diagonale, 4-6% opacité) + blobs radiaux -->
     <div aria-hidden="true" class="absolute inset-0 pointer-events-none">
+      <svg class="absolute inset-0 w-full h-full text-white">
+        <defs>
+          <!-- Carrés arrondis superposés (tile 320×320, rotation diagonale)
+               + animation SMIL drift seamless : x: 0 → 320 sur 60s, y: 0 → 320 sur 90s.
+               Comme 320 = la taille du tile, le retour à 0 est invisible (loop sans saccade). -->
+          <pattern id="loginShapesPattern" width="320" height="320" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+            <animate attributeName="x" from="0" to="320" dur="60s" repeatCount="indefinite"/>
+            <animate attributeName="y" from="0" to="320" dur="90s" repeatCount="indefinite"/>
+            <rect x="30"  y="20"  width="110" height="110" rx="16" fill="currentColor" fill-opacity="0.04"/>
+            <rect x="80"  y="90"  width="80"  height="80"  rx="13" fill="currentColor" fill-opacity="0.05"/>
+            <rect x="180" y="40"  width="70"  height="70"  rx="11" fill="currentColor" fill-opacity="0.04"/>
+            <rect x="160" y="180" width="60"  height="60"  rx="10" fill="currentColor" fill-opacity="0.06"/>
+            <rect x="40"  y="200" width="45"  height="45"  rx="8"  fill="currentColor" fill-opacity="0.05"/>
+            <rect x="240" y="200" width="55"  height="55"  rx="9"  fill="currentColor" fill-opacity="0.04"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#loginShapesPattern)"/>
+      </svg>
+      <!-- Blobs radiaux (devant les patterns — leur blur adoucit la texture en surimpression) -->
       <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#3da896]/[0.08] blur-3xl"></div>
       <div class="absolute bottom-[-100px] right-[-50px] w-80 h-80 rounded-full bg-[#7dd3a8]/[0.06] blur-3xl"></div>
     </div>
@@ -50,7 +69,7 @@
       </div>
       <div class="flex items-center gap-2 text-sb-text">
         <svg class="w-4 h-4 opacity-90 shrink-0 text-[#7dd3a8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-        Genève · Plan-les-Ouates
+        Genève
       </div>
     </div>
   </aside>
@@ -58,7 +77,7 @@
   <!-- ================================================================ -->
   <!-- PANNEAU FORMULAIRE                                               -->
   <!-- ================================================================ -->
-  <main class="flex-1 flex flex-col justify-center items-center px-6 py-10 lg:py-16">
+  <main class="flex-1 flex flex-col justify-center items-center px-6 py-10 lg:py-16 lg:overflow-y-auto">
     <div class="w-full max-w-[400px]">
 
       <!-- Header form -->

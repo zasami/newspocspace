@@ -121,8 +121,8 @@ if ($_themePrefDispatch === 'care') {
 $pageLabels = [
     'dashboard'     => 'Tableau de bord',
     'etablissement' => 'Établissement',
-    'users'         => 'Collaborateurs',
-    'rh-collaborateurs' => 'Collaborateurs (RH)',
+    'users'         => 'Horaires collaborateurs',
+    'rh-collaborateurs' => 'Collaborateurs',
     'user-edit'     => 'Modifier collaborateur',
     'user-detail'   => 'Fiche collaborateur',
     'planning'      => 'Planning',
@@ -1470,41 +1470,55 @@ function adminPrompt(opts = {}) {
 </script>
 
 <!-- ═══ MODAL: Raccourcis clavier ═══ -->
-<div class="modal fade" id="shortcutsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-keyboard"></i> Raccourcis clavier</h5>
-        <div class="d-flex gap-2 ms-auto">
-          <button class="btn btn-sm btn-outline-secondary" id="scResetBtn" title="Réinitialiser"><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</button>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- ═══ MODAL: Raccourcis clavier (Tailwind natif + admin-shell.css) ═══ -->
+<div id="shortcutsModal" class="fixed inset-0 z-50 hidden items-center justify-center p-5 bg-ink/35 backdrop-blur-sm" data-modal role="dialog" aria-labelledby="scModalTitle">
+  <div class="sc-modal-card">
+
+    <!-- Header gradient teal + titre + actions -->
+    <div class="sc-modal-header">
+      <div class="sc-title-wrap">
+        <div class="sc-modal-icon">
+          <?= ss_icon('keyboard', 'w-5 h-5') ?>
+        </div>
+        <div>
+          <h2 class="sc-modal-title" id="scModalTitle">Raccourcis clavier</h2>
+          <div class="sc-modal-subtitle">Personnalisez votre navigation Spocspace</div>
         </div>
       </div>
-      <div class="modal-body" style="max-height:65vh;overflow-y:auto">
-        <p class="text-muted small mb-3">Cliquez sur un raccourci pour le modifier. Appuyez sur la combinaison souhaitée (Ctrl/Alt/Shift + touche).</p>
-        <div id="scList"></div>
-      </div>
-      <div class="modal-footer">
-        <small class="text-muted me-auto">Appuyez sur <kbd>?</kbd> n'importe où pour afficher ce panneau</small>
-        <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+      <div class="sc-modal-actions">
+        <button id="scResetBtn" type="button" class="btn-sc-reset" title="Réinitialiser tous les raccourcis">
+          <?= ss_icon('arrow-rotate-ccw', 'w-3.5 h-3.5') ?>
+          <span>Réinitialiser</span>
+        </button>
+        <button data-modal-close type="button" class="btn-sc-close" aria-label="Fermer">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
       </div>
     </div>
+
+    <!-- Info bar (instructions) -->
+    <div class="sc-modal-info">
+      <?= ss_icon('info-circle', 'w-3.5 h-3.5') ?>
+      <span>Cliquez sur un raccourci pour le modifier. Appuyez sur la combinaison souhaitée (<strong>Ctrl</strong> / <strong>Alt</strong> / <strong>Shift</strong> + touche).</span>
+    </div>
+
+    <!-- Body : sections + raccourcis (rendus par JS dans #scList) -->
+    <div class="sc-modal-body">
+      <div id="scList"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="sc-modal-footer">
+      <div class="sc-footer-hint">
+        <span>Appuyez sur</span>
+        <span class="kbd result">?</span>
+        <span>n'importe où pour afficher ce panneau</span>
+      </div>
+      <button data-modal-close type="button" class="btn-sc-fermer">Fermer</button>
+    </div>
+
   </div>
 </div>
-
-<style>
-.sc-group-title { font-weight: 700; font-size: .85rem; color: var(--cl-text-secondary); text-transform: uppercase; letter-spacing: .5px; padding: 8px 0 4px; border-bottom: 1.5px solid var(--cl-border); margin-top: 16px; margin-bottom: 8px; }
-.sc-group-title:first-child { margin-top: 0; }
-.sc-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; transition: background .15s; }
-.sc-row:hover { background: var(--cl-bg); }
-.sc-label { flex: 1; font-size: .9rem; }
-.sc-key-wrap { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px 8px; border-radius: 6px; border: 1.5px solid transparent; transition: border-color .2s; }
-.sc-key-wrap:hover { border-color: var(--cl-accent); }
-.sc-key-wrap.recording { border-color: var(--cl-accent); background: rgba(25,25,24,.04); }
-.sc-key-wrap.recording::after { content: 'Appuyez...'; font-size: .75rem; color: var(--cl-accent); margin-left: 8px; }
-kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-radius: 4px; padding: 2px 7px; font-size: .8rem; font-family: inherit; color: var(--cl-text); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.sc-key-none { font-size: .8rem; color: var(--cl-text-muted); font-style: italic; }
-</style>
 
 <script nonce="<?= $cspNonce ?>">
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1522,9 +1536,13 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         }
     }
 
-    // ── Default shortcuts definition ──
+    // ── Default shortcuts definition (icon = SVG inline rendu dans le titre de section) ──
+    const ICON_NAV = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>';
+    const ICON_TOOLS = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>';
+    const ICON_BOLT = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
+
     const SHORTCUTS_DEF = [
-        { group: 'Navigation', items: [
+        { group: 'Navigation', icon: ICON_NAV, items: [
             { id: 'nav_dashboard',    label: 'Tableau de bord',       default: 'Alt+D',     action: () => goTo('/newspocspace/admin/') },
             { id: 'nav_planning',     label: 'Planning',              default: 'Alt+P',     action: () => goTo('/newspocspace/admin/planning') },
             { id: 'nav_users',        label: 'Collaborateurs',        default: 'Alt+U',     action: () => goTo('/newspocspace/admin/users') },
@@ -1537,14 +1555,14 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
             { id: 'nav_documents',    label: 'Documents',             default: 'Alt+O',     action: () => goTo('/newspocspace/admin/documents') },
             { id: 'nav_annuaire',     label: 'Annuaire téléphonique', default: 'Alt+H',     action: () => goTo('/newspocspace/admin/annuaire') },
         ]},
-        { group: 'Outils', items: [
+        { group: 'Outils', icon: ICON_TOOLS, items: [
             { id: 'nav_todos',        label: 'Tâches (Todos)',        default: 'Alt+T',     action: () => goTo('/newspocspace/admin/todos') },
             { id: 'nav_notes',        label: 'Notes',                 default: 'Alt+N',     action: () => goTo('/newspocspace/admin/notes') },
             { id: 'nav_pv',           label: 'Procès-Verbaux',        default: 'Alt+J',     action: () => goTo('/newspocspace/admin/pv') },
             { id: 'nav_sondages',     label: 'Sondages',              default: 'Alt+G',     action: () => goTo('/newspocspace/admin/sondages') },
             { id: 'nav_stats',        label: 'Statistiques',          default: 'Alt+S',     action: () => goTo('/newspocspace/admin/stats') },
         ]},
-        { group: 'Actions rapides', items: [
+        { group: 'Actions rapides', icon: ICON_BOLT, items: [
             { id: 'act_email',        label: 'Nouveau message (email)', default: 'Alt+E', action: openComposeEmail },
             { id: 'act_search',       label: 'Focus recherche',        default: 'Ctrl+K', action: focusSearch },
             { id: 'act_fullscreen',   label: 'Plein écran',            default: 'F11',    action: toggleFullscreen },
@@ -1571,10 +1589,32 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         document.getElementById('sidebarToggleBtn')?.click();
     }
 
+    // ── Modal show/hide (Tailwind natif, pas de Bootstrap) ──
     function showShortcutsModal() {
-        var m = bootstrap.Modal.getOrCreateInstance(document.getElementById('shortcutsModal'));
-        m.show();
+        var m = document.getElementById('shortcutsModal');
+        if (!m) return;
+        m.classList.remove('hidden');
+        m.classList.add('flex');
     }
+    function hideShortcutsModal() {
+        var m = document.getElementById('shortcutsModal');
+        if (!m) return;
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+        // Sortie du mode recording si actif au moment de la fermeture
+        if (recordingEl) cancelRecording();
+    }
+    // Wire up close buttons + backdrop click (conteneur extérieur fixe inset-0)
+    (function() {
+        var m = document.getElementById('shortcutsModal');
+        if (!m) return;
+        m.querySelectorAll('[data-modal-close]').forEach(function(btn) {
+            btn.addEventListener('click', hideShortcutsModal);
+        });
+        m.addEventListener('click', function(e) {
+            if (e.target === m) hideShortcutsModal(); // clic sur l'overlay (hors carte)
+        });
+    })();
 
     // ── Parse / format key combos ──
     function parseCombo(str) {
@@ -1598,9 +1638,18 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         return parts.join('+');
     }
 
-    function comboToKbd(str) {
+    // Génère le markup d'une combinaison : modifier kbd + "+" + result kbd
+    function comboToKeys(str) {
         if (!str) return '<span class="sc-key-none">Non défini</span>';
-        return str.split('+').map(function(p) { return '<kbd>' + p.trim() + '</kbd>'; }).join(' + ');
+        var parts = str.split('+').map(function(s) { return s.trim(); }).filter(Boolean);
+        var modifiers = ['Ctrl', 'Alt', 'Shift', 'Meta', 'Cmd'];
+        var html = '';
+        parts.forEach(function(p, i) {
+            if (i > 0) html += '<span class="key-plus">+</span>';
+            var isMod = modifiers.includes(p);
+            html += '<span class="kbd ' + (isMod ? 'modifier' : 'result') + '">' + p + '</span>';
+        });
+        return html;
     }
 
     function matchEvent(e, combo) {
@@ -1642,34 +1691,41 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         var html = '';
 
         SHORTCUTS_DEF.forEach(function(group) {
-            html += '<div class="sc-group-title">' + group.group + '</div>';
+            html += '<div class="sc-section">';
+            html += '<div class="sc-section-title"><span class="sc-section-icon">' + (group.icon || '') + '</span>' + group.group + '</div>';
             group.items.forEach(function(item) {
                 var combo = getStrForItem(item);
-                html += '<div class="sc-row">'
-                    + '<span class="sc-label">' + item.label + '</span>'
-                    + '<div class="sc-key-wrap" data-sc-id="' + item.id + '">' + comboToKbd(combo) + '</div>'
+                html += '<div class="sc-row" data-sc-id="' + item.id + '">'
+                    + '<span class="sc-name">' + item.label + '</span>'
+                    + '<div class="sc-keys">' + comboToKeys(combo) + '</div>'
                     + '</div>';
             });
+            html += '</div>';
         });
 
         container.innerHTML = html;
 
-        // Click to edit
-        container.querySelectorAll('.sc-key-wrap').forEach(function(el) {
+        // Click ligne entière → entre en recording
+        container.querySelectorAll('.sc-row').forEach(function(el) {
             el.addEventListener('click', function() { startRecording(el); });
         });
     }
 
-    // ── Recording mode ──
-    var recordingEl = null;
+    // ── Recording mode (.recording sur la <div class="sc-row">) ──
+    var recordingEl = null; // c'est la <div class="sc-row"> qui prend la classe .recording
     var recordingId = null;
 
-    function startRecording(el) {
-        if (recordingEl) recordingEl.classList.remove('recording');
-        recordingEl = el;
-        recordingId = el.dataset.scId;
-        el.classList.add('recording');
-        el.innerHTML = '';
+    function getKeysWrap(rowEl) {
+        return rowEl ? rowEl.querySelector('.sc-keys') : null;
+    }
+
+    function startRecording(rowEl) {
+        if (recordingEl) cancelRecording();
+        recordingEl = rowEl;
+        recordingId = rowEl.dataset.scId;
+        rowEl.classList.add('recording');
+        var keys = getKeysWrap(rowEl);
+        if (keys) keys.innerHTML = '<span class="key-plus">Appuyez…</span>';
     }
 
     function stopRecording(combo) {
@@ -1678,8 +1734,10 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         var custom = loadCustom();
         custom[recordingId] = str;
         saveCustom(custom);
-        recordingEl.classList.remove('recording');
-        recordingEl.innerHTML = comboToKbd(str);
+        var row = recordingEl;
+        var keys = getKeysWrap(row);
+        row.classList.remove('recording');
+        if (keys) keys.innerHTML = comboToKeys(str);
         recordingEl = null;
         recordingId = null;
     }
@@ -1687,8 +1745,10 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
     function cancelRecording() {
         if (!recordingEl) return;
         var item = findItem(recordingId);
-        recordingEl.classList.remove('recording');
-        recordingEl.innerHTML = comboToKbd(getStrForItem(item));
+        var row = recordingEl;
+        var keys = getKeysWrap(row);
+        row.classList.remove('recording');
+        if (keys && item) keys.innerHTML = comboToKeys(getStrForItem(item));
         recordingEl = null;
         recordingId = null;
     }
@@ -1708,18 +1768,31 @@ kbd { background: var(--cl-surface); border: 1px solid var(--cl-border); border-
         var tag = (e.target.tagName || '').toLowerCase();
         var isInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
 
+        // Escape : prioritaire — annule recording si actif, sinon ferme le modal s'il est ouvert
+        if (e.key === 'Escape') {
+            if (recordingEl) { e.preventDefault(); cancelRecording(); return; }
+            var modalEl = document.getElementById('shortcutsModal');
+            if (modalEl && !modalEl.classList.contains('hidden')) {
+                e.preventDefault();
+                hideShortcutsModal();
+                return;
+            }
+        }
+
         // Recording mode
         if (recordingEl) {
             e.preventDefault();
             e.stopPropagation();
             if (e.key === 'Escape') { cancelRecording(); return; }
             if (e.key === 'Backspace' || e.key === 'Delete') {
-                // Clear shortcut
+                // Effacer le raccourci → "Non défini"
                 var custom = loadCustom();
                 custom[recordingId] = '';
                 saveCustom(custom);
-                recordingEl.classList.remove('recording');
-                recordingEl.innerHTML = '<span class="sc-key-none">Non défini</span>';
+                var row = recordingEl;
+                var keys = getKeysWrap(row);
+                row.classList.remove('recording');
+                if (keys) keys.innerHTML = '<span class="sc-key-none">Non défini</span>';
                 recordingEl = null;
                 recordingId = null;
                 return;

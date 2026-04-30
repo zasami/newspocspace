@@ -5,10 +5,412 @@
  * avec les utilities Tailwind :
  *   - Pseudo-éléments WebKit (::-webkit-scrollbar*)
  *   - Mode mini-sidebar (combinaison de cascades sur descendants)
+ *   - Masquage des modales Bootstrap legacy (en attente de migration
+ *     en Tailwind natif page par page)
  *
  * Le reste du visuel passe par les classes Tailwind dans le HTML.
  * Chargé via <link> depuis admin/index.php après tailwind-config.php.
  * ================================================================= */
+
+/* ─── Modales / panneaux Bootstrap legacy ──────────────────────────
+ * Bootstrap (CSS + JS) a été retiré (clean-slate avril 2026) mais les
+ * éléments HTML <div class="modal fade"> et <div class="compose-panel">
+ * sont restés dans admin/index.php — sans le CSS Bootstrap, ils
+ * s'affichaient en plein écran. On les masque ici jusqu'à leur
+ * migration individuelle en Tailwind natif (cf. modal Nouveau
+ * collaborateur dans admin/pages/users.php pour le pattern cible).
+ */
+.modal,
+.compose-panel,
+.modal-backdrop {
+  display: none !important;
+}
+
+/* ─── Modale Raccourcis clavier (#shortcutsModal) ──────────────────
+ * Design mockup validé 30 avril 2026.
+ * Toutes les couleurs / fontes / gradients viennent du @theme
+ * (tailwind-config.php) via var(--*).
+ *
+ * Hiérarchie :
+ *   #shortcutsModal                       (overlay : Tailwind utilities)
+ *     .sc-modal-card                      (container avec animation slideUp)
+ *       .sc-modal-header                  (gradient teal + glow radial)
+ *         .sc-modal-icon                  (icône glassmorphism)
+ *         .sc-modal-actions / .btn-reset / .btn-modal-close
+ *       .sc-modal-info                    (bar info teal-50)
+ *       .sc-modal-body                    (scroll, sections)
+ *         .sc-section / .sc-section-title / .sc-section-icon
+ *         .sc-row                         (un raccourci, hover + recording)
+ *           .sc-name / .sc-keys / .kbd.modifier / .kbd.result / .key-plus
+ *       .sc-modal-footer                  (footer surface-2)
+ *
+ * NB : les noms de classes sont concaténés en string par le JS
+ * (renderShortcutsList), donc impossible à exprimer en utilities Tailwind.
+ */
+
+/* ─ Animations ─ */
+@keyframes scFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#shortcutsModal:not(.hidden) {
+  animation: scFadeIn 0.25s ease;
+}
+#shortcutsModal .sc-modal-card {
+  animation: scSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─ Carte modale ─ */
+#shortcutsModal .sc-modal-card {
+  width: 100%;
+  max-width: 780px;
+  max-height: 90vh;
+  background: var(--color-surface);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px -12px rgba(13, 42, 38, 0.25), 0 8px 24px rgba(13, 42, 38, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─ Header gradient (couleurs hardcodées : Tailwind v4 ne fiabilise pas
+ *   l'exposition de --background-image-* en CSS variable runtime depuis
+ *   le browser script. Le gradient reste cohérent avec le token
+ *   --background-image-grad-modal-header défini dans @theme — toute
+ *   modif des couleurs doit être répercutée aux 2 endroits.)
+ */
+#shortcutsModal .sc-modal-header {
+  background-image: linear-gradient(135deg, #1f6359 0%, #2d8074 60%, #5cad9b 100%);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+}
+#shortcutsModal .sc-modal-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+}
+#shortcutsModal .sc-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+#shortcutsModal .sc-modal-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+  color: #fff;
+}
+#shortcutsModal .sc-modal-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #fff;
+  line-height: 1.2;
+}
+#shortcutsModal .sc-modal-subtitle {
+  font-size: 11.5px;
+  color: #a8e6c9;
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+#shortcutsModal .sc-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+#shortcutsModal .btn-sc-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+#shortcutsModal .btn-sc-reset:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+#shortcutsModal .btn-sc-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+#shortcutsModal .btn-sc-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─ Info bar ─ */
+#shortcutsModal .sc-modal-info {
+  padding: 13px 24px;
+  background: var(--color-teal-50);
+  border-bottom: 1px solid var(--color-teal-100);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--color-teal-700);
+  flex-shrink: 0;
+  line-height: 1.45;
+}
+#shortcutsModal .sc-modal-info svg {
+  flex-shrink: 0;
+  color: var(--color-teal-600);
+}
+#shortcutsModal .sc-modal-info strong {
+  color: var(--color-teal-900);
+  font-weight: 600;
+}
+
+/* ─ Body (scrollable) ─ */
+#shortcutsModal .sc-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 24px 24px;
+}
+#shortcutsModal .sc-modal-body::-webkit-scrollbar { width: 8px; }
+#shortcutsModal .sc-modal-body::-webkit-scrollbar-track { background: transparent; }
+#shortcutsModal .sc-modal-body::-webkit-scrollbar-thumb {
+  background: var(--color-line-2);
+  border-radius: 99px;
+}
+#shortcutsModal .sc-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* ─ Section + titre ─ */
+#shortcutsModal .sc-section {
+  margin-bottom: 24px;
+}
+#shortcutsModal .sc-section:last-child {
+  margin-bottom: 0;
+}
+#shortcutsModal .sc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-line);
+  margin-bottom: 6px;
+}
+#shortcutsModal .sc-section-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--color-teal-50);
+  color: var(--color-teal-600);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* ─ Ligne raccourci ─ */
+#shortcutsModal .sc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin: 0 -8px;
+}
+#shortcutsModal .sc-row:hover {
+  background: var(--color-teal-50);
+}
+#shortcutsModal .sc-row.recording {
+  background: var(--color-warm-bg);
+  border: 1px solid var(--color-warm);
+  padding: 10px 13px; /* compense les 1px de border */
+}
+#shortcutsModal .sc-name {
+  font-size: 14px;
+  color: var(--color-ink);
+  font-weight: 500;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+#shortcutsModal .sc-row:hover .sc-name {
+  color: var(--color-teal-900);
+}
+
+/* ─ Touches (kbd) ─ */
+#shortcutsModal .sc-keys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+#shortcutsModal .key-plus {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-weight: 600;
+  margin: 0 1px;
+  font-family: var(--font-body);
+}
+#shortcutsModal .kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 9px;
+  background: #fff;
+  border: 1px solid var(--color-line-2);
+  border-bottom: 2px solid var(--color-line-2);
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  letter-spacing: 0.02em;
+  transition: all 0.15s ease;
+  box-shadow: inset 0 -1px 0 rgba(13, 42, 38, 0.04);
+}
+#shortcutsModal .sc-row:hover .kbd {
+  border-color: var(--color-teal-300);
+  border-bottom-color: var(--color-teal-500);
+  color: var(--color-teal-700);
+  background: var(--color-surface);
+  box-shadow: 0 2px 4px rgba(31, 99, 89, 0.08), inset 0 -1px 0 rgba(31, 99, 89, 0.05);
+}
+#shortcutsModal .sc-row.recording .kbd {
+  border-color: var(--color-warm);
+  border-bottom-color: var(--color-warm);
+  color: var(--color-warm);
+  background: #fff;
+}
+
+/* Modificateurs (Alt, Ctrl, Shift) — style atténué */
+#shortcutsModal .kbd.modifier {
+  background: linear-gradient(180deg, #fff 0%, #fafbfa 100%);
+  font-weight: 500;
+  color: var(--color-muted);
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+#shortcutsModal .sc-row:hover .kbd.modifier {
+  color: var(--color-teal-700);
+}
+
+/* Touche résultat (lettre, chiffre) — accentuée */
+#shortcutsModal .kbd.result {
+  background: #fff;
+  color: var(--color-ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* État "non défini" */
+#shortcutsModal .sc-key-none {
+  font-size: 12px;
+  color: var(--color-muted-2);
+  font-style: italic;
+}
+
+/* ─ Footer ─ */
+#shortcutsModal .sc-modal-footer {
+  padding: 14px 24px;
+  background: var(--color-surface-2);
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+#shortcutsModal .sc-footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+#shortcutsModal .sc-footer-hint .kbd {
+  min-width: 24px;
+  height: 24px;
+  font-size: 11px;
+  padding: 0 7px;
+}
+#shortcutsModal .btn-sc-fermer {
+  padding: 8px 18px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff;
+  border: 1px solid var(--color-line-2);
+  color: var(--color-ink-2);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+#shortcutsModal .btn-sc-fermer:hover {
+  border-color: var(--color-teal-300);
+  color: var(--color-teal-600);
+  background: var(--color-teal-50);
+}
+
+/* ─ Responsive (< 640 px) ─ */
+@media (max-width: 640px) {
+  #shortcutsModal .sc-modal-card {
+    border-radius: 20px;
+    max-height: 92vh;
+  }
+  #shortcutsModal .sc-modal-header { padding: 16px 18px; }
+  #shortcutsModal .sc-modal-title { font-size: 17px; }
+  #shortcutsModal .sc-modal-info { padding: 11px 18px; font-size: 11.5px; }
+  #shortcutsModal .sc-modal-body { padding: 14px 18px 20px; }
+  #shortcutsModal .sc-modal-footer { padding: 12px 18px; flex-wrap: wrap; justify-content: center; }
+  #shortcutsModal .sc-row { padding: 10px 11px; }
+  #shortcutsModal .sc-name { font-size: 13px; }
+  #shortcutsModal .kbd { min-width: 28px; height: 26px; font-size: 11px; padding: 0 7px; }
+  #shortcutsModal .btn-sc-reset span { display: none; }
+}
 
 /* ─── Scrollbar discrète sur le sidebar ────────────────────────────
  * Invisible au repos, fade-in au hover, fine 4px, blanc semi-transparent.

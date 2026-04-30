@@ -137,6 +137,16 @@ function ss_icon(string $name, string $class = 'w-4 h-4 opacity-85 shrink-0'): s
             '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/><polyline points="3 13 7 13 9 10 12 16 14 13 21 13"/>',
         'keyboard' =>
             '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M19 10h.01M7 14h10"/>',
+        'arrow-counterclockwise' =>
+            '<path d="M3 12a9 9 0 109-9"/><polyline points="3 4 3 9 8 9"/>',
+        'arrow-rotate-ccw' =>
+            '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+        'wrench' =>
+            '<path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>',
+        'lightning', 'bolt' =>
+            '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+        'info-circle' =>
+            '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
         'layout-sidebar-inset' =>
             '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>',
         'power' =>

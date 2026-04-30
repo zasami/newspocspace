@@ -80,6 +80,9 @@ $_tw_nonce = $cspNonce ?? '';
     --color-info-bg:   #e2ecf2;
     --color-info-line: #b5cad8;
 
+    --color-warm:      #d4a04a;
+    --color-warm-bg:   #fdf5e3;
+
     /* ═══ SECTEURS EMS Fegems ═══ */
     --color-sec-soins:    #1f6359;
     --color-sec-soins-bg: #ecf5f3;
@@ -120,6 +123,10 @@ $_tw_nonce = $cspNonce ?? '';
     --background-image-grad-sidebar:  linear-gradient(180deg, #0d2a26 0%, #164a42 100%);
     --background-image-grad-mark:     linear-gradient(135deg, #3da896, #7dd3a8);
     --background-image-grad-progress: linear-gradient(90deg, #2d8074, #5cad9b);
+    /* Login : sombre bas-gauche → clair haut-droit (lumière diagonale) */
+    --background-image-grad-login:    linear-gradient(to top right, #0d2a26 0%, #164a42 55%, #1f6359 100%);
+    /* Modal header (Raccourcis + autres modales premium) : teal foncé → mid-teal → menthe lumineuse */
+    --background-image-grad-modal-header: linear-gradient(135deg, #1f6359 0%, #2d8074 60%, #5cad9b 100%);
     /* Alias compatibles avec les classes existantes (bg-sidebar-grad / bg-mark-grad) */
     --background-image-sidebar-grad:  linear-gradient(180deg, #0d2a26 0%, #164a42 100%);
     --background-image-mark-grad:     linear-gradient(135deg, #3da896, #7dd3a8);
