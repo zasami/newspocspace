@@ -619,7 +619,7 @@
 .dropdown-view {
   left: auto;
   right: 0;
-  width: 280px;
+  width: 260px;
   padding: 5px;
 }
 
@@ -711,20 +711,20 @@
   position: relative;
 }
 
-/* Variables pilotant les dimensions de la grille */
+/* Variables pilotant les dimensions de la grille (preset std par défaut) */
 .planning {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
   font-size: 13px;
-  --cell-w: 56px;
-  --cell-h: 46px;
+  --cell-w: 64px;
+  --cell-h: 50px;
   --collab-w: 240px;
   --shift-min-w: 36px;
-  --shift-h: 26px;
+  --shift-h: 28px;
   --shift-fs: 11px;
   --day-num-size: 28px;
-  --day-num-fs: 13.5px;
+  --day-num-fs: 14px;
 }
 
 
@@ -1075,10 +1075,10 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 6 · SIZE CONTROLS — boutons taille (XS / SM / MD / LG)
+ * 6 · SIZE CONTROLS — boutons taille (XS / SM / MD / STD / LG)
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.section-size-cell {
+.section-controls-cell {
   padding: 4px 8px !important;
   background: linear-gradient(180deg, var(--teal-50), var(--surface-3)) !important;
 }
