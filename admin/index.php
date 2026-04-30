@@ -443,9 +443,13 @@ foreach ($sidebarModules as $modId => $mod) {
 }
 if ($activeModule === null) $activeModule = 'planning'; // fallback : Planning ouvert
 
-// Préférence de thème de l'utilisateur (default | sombre | care)
+// Préférence de thème — TEMPORAIREMENT NEUTRALISÉE (clean-slate avril 2026).
+// Le système de thèmes original (default/sombre/care) modifiait la structure
+// (typo, tailles, layouts) en plus des couleurs. On le réactivera plus tard
+// avec uniquement des overrides de couleurs sur les tokens @theme Tailwind.
+// La page /apparence sauvegarde toujours la préférence en DB pour la restaurer.
 $themePref = Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$admin['id']]) ?: 'default';
-$themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
+$themeBodyClass = 'theme-care'; // forcé : pas de switch structurel
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -485,7 +489,7 @@ $themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
   <!-- ── Brand : logo "S" gradient + Spocspace + EMS PLATFORM + bouton toggle ── -->
   <div class="flex items-center justify-between gap-2 shrink-0">
     <a href="<?= admin_url() ?>" class="flex items-center gap-2.5 px-1 group min-w-0" title="Tableau de bord">
-      <div class="w-[34px] h-[34px] rounded-[9px] bg-mark-grad grid place-items-center font-bold text-teal-900 text-lg shadow-mark shrink-0">S</div>
+      <img src="/newspocspace/ss-white-logo.png" alt="Spocspace" class="w-[34px] h-[34px] rounded-[9px] shrink-0 object-contain">
       <div class="sidebar-brand-text min-w-0">
         <div class="text-xl font-semibold text-white tracking-[-0.02em] leading-tight truncate">Spocspace</div>
         <div class="text-[10.5px] text-sb-sub tracking-[0.12em] uppercase mt-0.5 font-medium">EMS Platform</div>

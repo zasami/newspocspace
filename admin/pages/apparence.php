@@ -214,11 +214,15 @@ $themes = [
           document.head.append(pre1, pre2, css);
         }
 
-        // Appliquer immédiatement la classe
-        document.body.className = document.body.className.replace(/\btheme-\w+\b/g, '').trim();
-        document.body.classList.add('theme-' + theme);
+        // Application immédiate désactivée temporairement (clean-slate) :
+        // la préférence est sauvegardée en DB mais le body class reste fixé
+        // sur 'theme-care' pour ne pas casser la structure Tailwind.
+        // Quand le système de couleurs par thème sera prêt, ré-activer ces
+        // 2 lignes (cf. admin/index.php pour le détail).
+        // document.body.className = document.body.className.replace(/\btheme-\w+\b/g, '').trim();
+        // document.body.classList.add('theme-' + theme);
 
-        state.textContent = '✓ Thème appliqué';
+        state.textContent = '✓ Préférence enregistrée (système de thèmes désactivé temporairement)';
         state.className = 'small text-success';
         setTimeout(() => { state.textContent = ''; }, 2200);
       } catch (e) {

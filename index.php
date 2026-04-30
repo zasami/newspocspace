@@ -36,9 +36,12 @@ if ($user && !isset($user['type_employe'])) {
 // Per-user denied permissions
 $deniedPerms = $user ? ($_SESSION['ss_user']['denied_perms'] ?? []) : [];
 
-// Préférence de thème (default | sombre | care)
+// Préférence de thème — TEMPORAIREMENT NEUTRALISÉE (clean-slate avril 2026).
+// Voir admin/index.php pour le détail. La préférence reste lue en DB pour
+// l'API future, mais le body class est forcé pour ne pas perturber la
+// structure clean-slate Tailwind.
 $themePref = $user ? (Db::getOne("SELECT theme_preference FROM users WHERE id = ?", [$user['id']]) ?: 'default') : 'default';
-$themeBodyClass = 'theme-' . preg_replace('/[^a-z]/', '', $themePref);
+$themeBodyClass = 'theme-care';
 
 $sidebarNav = [
     'main' => [
