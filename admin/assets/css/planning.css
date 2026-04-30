@@ -1114,7 +1114,7 @@
 }
 
 .planning tbody td {
-  padding: 6px 4px;
+  padding: 0;
   border-bottom: 1px solid var(--color-line, #e3ebe8);
   text-align: center;
   height: var(--cell-h, 46px);
@@ -1857,4 +1857,19 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.9
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.10 — Filtres : team-pill + filtres avancés masquent les lignes
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.planning tr[data-filtered-out],
+.planning tr[data-adv-hidden] {
+  display: none !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.10
  * ════════════════════════════════════════════════════════════════════════════ */

@@ -565,6 +565,74 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   </div>
 
+  <!-- ═══ Modale Filtres avancés ═══════════════════════════════════════════ -->
+  <div id="plFiltersModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plFiltersModalTitle">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <h3 id="plFiltersModalTitle" class="font-display text-base font-semibold text-ink">Filtres avancés</h3>
+        <button type="button" id="plFiltersClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="px-5 py-4 space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Nom du collaborateur</label>
+          <input type="text" id="plFiltersSearch" placeholder="Rechercher (Marie, Dubois...)" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" autocomplete="off">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Taux minimum</label>
+          <select id="plFiltersTaux" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
+            <option value="0">Tous</option>
+            <option value="100">100% uniquement</option>
+            <option value="80">≥ 80%</option>
+            <option value="50">≥ 50%</option>
+            <option value="20">≥ 20%</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">État cellules</label>
+          <div class="flex gap-2 flex-wrap">
+            <label class="inline-flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
+              <input type="checkbox" id="plFiltersHideEmpty" class="rounded border-line text-teal-600 focus:ring-teal-100">
+              Masquer collaborateurs sans aucun shift
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between px-5 py-3 border-t border-line bg-surface-2">
+        <button type="button" id="plFiltersReset" class="px-3 py-2 rounded-lg text-sm text-muted hover:text-ink-2 transition-colors">Réinitialiser</button>
+        <div class="flex items-center gap-2">
+          <button type="button" id="plFiltersCancel" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Fermer</button>
+          <button type="button" id="plFiltersApply" class="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors">Appliquer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Modale Propositions ══════════════════════════════════════════════ -->
+  <div id="plPropsModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <h3 class="font-display text-base font-semibold text-ink">Propositions de planning</h3>
+        <button type="button" id="plPropsClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="plPropsBody" class="px-5 py-4 overflow-y-auto flex-1">
+        <div class="text-center py-8 text-muted">Chargement…</div>
+      </div>
+
+      <div class="flex items-center justify-end px-5 py-3 border-t border-line bg-surface-2">
+        <button type="button" id="plPropsCloseBtn" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ Modale Statistiques ══════════════════════════════════════════════ -->
   <div id="plStatsModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plStatsModalTitle">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1512,12 +1580,157 @@ window.PL_DATA = {
         }
     });
 
-    // ── Filtres avancés / Proposition : TODO ────────────────────────────────
-    $('plFiltersBtn')?.addEventListener('click', () => {
-        plToast('Filtres avancés — TODO', 'info');
+    // ── Modale Filtres avancés ──────────────────────────────────────────────
+    const plFiltersBackdrop = $('plFiltersModalBackdrop');
+    function plFiltersOpen()  { plFiltersBackdrop?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+    function plFiltersClose() { plFiltersBackdrop?.classList.add('hidden');    document.body.style.overflow = ''; }
+    $('plFiltersBtn')?.addEventListener('click', plFiltersOpen);
+    $('plFiltersClose')?.addEventListener('click', plFiltersClose);
+    $('plFiltersCancel')?.addEventListener('click', plFiltersClose);
+    plFiltersBackdrop?.addEventListener('click', (e) => { if (e.target === plFiltersBackdrop) plFiltersClose(); });
+
+    function plApplyFilters() {
+        const q          = ($('plFiltersSearch')?.value || '').trim().toLowerCase();
+        const tauxMin    = parseInt($('plFiltersTaux')?.value || '0', 10);
+        const hideEmpty  = !!$('plFiltersHideEmpty')?.checked;
+
+        document.querySelectorAll('#plTable tbody tr.user-row').forEach(row => {
+            row.removeAttribute('data-adv-hidden');
+            if (q) {
+                const name = (row.querySelector('.collab-cell-name')?.textContent || '').toLowerCase();
+                if (!name.includes(q)) row.setAttribute('data-adv-hidden', '');
+            }
+            if (tauxMin > 0) {
+                const tauxText = (row.querySelector('.pct-cell')?.textContent || '0').replace('%','').trim();
+                const taux = parseInt(tauxText, 10) || 0;
+                if (taux < tauxMin) row.setAttribute('data-adv-hidden', '');
+            }
+            if (hideEmpty) {
+                const hasShift = row.querySelectorAll('td.day-cell .shift').length > 0;
+                if (!hasShift) row.setAttribute('data-adv-hidden', '');
+            }
+        });
+        plFiltersClose();
+    }
+    $('plFiltersApply')?.addEventListener('click', plApplyFilters);
+    $('plFiltersReset')?.addEventListener('click', () => {
+        $('plFiltersSearch').value = '';
+        $('plFiltersTaux').value = '0';
+        $('plFiltersHideEmpty').checked = false;
+        document.querySelectorAll('#plTable tbody tr.user-row').forEach(r => r.removeAttribute('data-adv-hidden'));
+        plToast('Filtres réinitialisés', 'info');
     });
-    $('plPropositionBtn')?.addEventListener('click', () => {
-        plToast('Propositions — TODO', 'info');
+
+    // ── Modale Propositions (sauvegarde + liste) ────────────────────────────
+    const plPropsBackdrop = $('plPropsModalBackdrop');
+    const plPropsBody     = $('plPropsBody');
+    function plPropsClose() { plPropsBackdrop?.classList.add('hidden'); document.body.style.overflow = ''; }
+    $('plPropsClose')?.addEventListener('click', plPropsClose);
+    $('plPropsCloseBtn')?.addEventListener('click', plPropsClose);
+    plPropsBackdrop?.addEventListener('click', (e) => { if (e.target === plPropsBackdrop) plPropsClose(); });
+
+    async function plLoadProposals() {
+        plPropsBody.innerHTML = '<div class="text-center py-8 text-muted">Chargement…</div>';
+        const res = await plApiPost('admin_get_proposals', { mois: window.PL_DATA?.moisAnnee });
+        const props = res?.proposals || [];
+        if (!props.length) {
+            plPropsBody.innerHTML = '<div class="text-center py-8 text-muted">Aucune proposition pour ce mois.<br><span class="text-xs">Cliquez sur le bouton Proposition pour en créer une.</span></div>';
+            return;
+        }
+        const statutBadge = {
+            ouvert:  'bg-ok/15 text-ok',
+            ferme:   'bg-surface-3 text-muted',
+            valide:  'bg-teal-100 text-teal-700',
+            rejete:  'bg-danger/15 text-danger',
+        };
+        const statutLabel = { ouvert: 'Ouvert', ferme: 'Fermé', valide: 'Validé', rejete: 'Rejeté' };
+        let html = '<div class="space-y-2">';
+        props.forEach(p => {
+            const total = (p.votes_pour || 0) + (p.votes_contre || 0);
+            const pctPour = total > 0 ? Math.round((p.votes_pour / total) * 100) : 0;
+            html += `<div class="px-3 py-2.5 rounded-lg border border-line bg-surface-2 hover:border-teal-200 transition-colors">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2 min-w-0">
+                  <strong class="text-sm text-ink truncate">${plEsc(p.label)}</strong>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${statutBadge[p.statut] || 'bg-surface-3 text-muted'}">${plEsc(statutLabel[p.statut] || p.statut)}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  ${p.statut === 'ouvert' ? `<button type="button" data-prop-toggle="${plEsc(p.id)}" data-status="ferme" class="px-2 py-1 rounded text-xs text-muted hover:text-ink hover:bg-surface-3" title="Fermer le vote">⏸</button>` : ''}
+                  ${p.statut === 'ferme' ? `<button type="button" data-prop-toggle="${plEsc(p.id)}" data-status="ouvert" class="px-2 py-1 rounded text-xs text-muted hover:text-ink hover:bg-surface-3" title="Rouvrir">▶</button>` : ''}
+                  ${(p.statut === 'ouvert' || p.statut === 'ferme') ? `<button type="button" data-prop-validate="${plEsc(p.id)}" class="px-2 py-1 rounded text-xs text-teal-600 hover:bg-teal-50" title="Valider et appliquer">✓</button>` : ''}
+                  <button type="button" data-prop-delete="${plEsc(p.id)}" class="px-2 py-1 rounded text-xs text-danger hover:bg-danger/10" title="Supprimer">🗑</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 text-[11px] text-muted">
+                <span><span class="text-ok font-semibold">${plEsc(p.votes_pour || 0)}</span> pour</span>
+                <span><span class="text-danger font-semibold">${plEsc(p.votes_contre || 0)}</span> contre</span>
+                <span>${plEsc(total)} vote${total > 1 ? 's' : ''}</span>
+                ${total > 0 ? `<span class="ml-auto font-mono">${pctPour}% favorable</span>` : ''}
+              </div>
+              ${total > 0 ? `<div class="mt-1.5 h-1 rounded-full overflow-hidden bg-surface-3"><div class="h-full bg-ok" style="width:${pctPour}%"></div></div>` : ''}
+            </div>`;
+        });
+        html += '</div>';
+        plPropsBody.innerHTML = html;
+
+        // Bind action buttons
+        plPropsBody.querySelectorAll('[data-prop-toggle]').forEach(b => b.addEventListener('click', async () => {
+            const res = await plApiPost('admin_toggle_vote_status', { id: b.dataset.propToggle, statut: b.dataset.status });
+            if (res?.success) plLoadProposals();
+            else plToast(res?.message || 'Erreur', 'error');
+        }));
+        plPropsBody.querySelectorAll('[data-prop-validate]').forEach(b => b.addEventListener('click', async () => {
+            if (!confirm('Valider cette proposition et l\'appliquer comme planning final ?')) return;
+            const res = await plApiPost('admin_validate_proposal', { id: b.dataset.propValidate });
+            if (res?.success) {
+                plToast('Proposition validée et appliquée', 'ok');
+                plPropsClose();
+                setTimeout(() => location.reload(), 600);
+            } else plToast(res?.message || 'Erreur', 'error');
+        }));
+        plPropsBody.querySelectorAll('[data-prop-delete]').forEach(b => b.addEventListener('click', async () => {
+            if (!confirm('Supprimer cette proposition ?')) return;
+            const res = await plApiPost('admin_delete_proposal', { id: b.dataset.propDelete });
+            if (res?.success) plLoadProposals();
+            else plToast(res?.message || 'Erreur', 'error');
+        }));
+    }
+
+    // Bouton Proposition (en haut) : crée une nouvelle proposition (snapshot du planning courant)
+    $('plPropositionBtn')?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Créez d\'abord un planning pour ce mois', 'info');
+            return;
+        }
+        // Compte les propositions existantes pour suggérer un nom
+        const existing = await plApiPost('admin_get_proposals', { mois: window.PL_DATA.moisAnnee });
+        const count = (existing?.proposals || []).length;
+        const moisNoms = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+        const [y, m] = (window.PL_DATA.moisAnnee || '').split('-');
+        const moisLabel = (moisNoms[parseInt(m, 10)] || '') + ' ' + y;
+        const suggested = 'Choix ' + (count + 1) + ' – planning ' + moisLabel;
+        const label = prompt('Nom de la proposition ?', suggested);
+        if (!label || !label.trim()) return;
+        const res = await plApiPost('admin_create_proposal', {
+            mois: window.PL_DATA.moisAnnee,
+            label: label.trim(),
+        });
+        if (res?.success) {
+            plToast('Proposition « ' + label.trim() + ' » créée — vote ouvert', 'ok');
+        } else {
+            plToast(res?.message || 'Erreur création proposition', 'error');
+        }
+    });
+
+    // Icône liste (à côté du bouton Proposition) : ouvre la modale liste
+    document.querySelector('button.cb-btn-mini[title="Voir toutes les propositions"]')?.addEventListener('click', async () => {
+        if (!window.PL_DATA?.planning) {
+            plToast('Aucun planning — créez-en un d\'abord', 'info');
+            return;
+        }
+        plPropsBackdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        await plLoadProposals();
     });
 
     // ── Modale Génération IA (mode local / hybrid / ai) ─────────────────────
