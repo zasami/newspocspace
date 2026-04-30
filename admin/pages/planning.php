@@ -282,6 +282,16 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       </div>
     </div>
 
+    <!-- Nav arrows : ← Auj → (synchronisé via reload) -->
+    <div class="cb-nav">
+      <button type="button" class="cb-nav-btn" id="plNavPrev" title="Mois précédent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button type="button" class="cb-nav-btn cb-nav-today" id="plNavToday" title="Aujourd'hui">Auj.</button>
+      <button type="button" class="cb-nav-btn" id="plNavNext" title="Mois suivant">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
 
     <!-- Status badge -->
     <div class="cb-status">
@@ -927,6 +937,56 @@ window.PL_DATA = {
             item.classList.add('active');
             setTimeout(closeAllDropdowns, 200);
         });
+    });
+
+    // ── Nav arrows (← Auj. →) ──────────────────────────────────────────────
+    // Sync visuel instantané AVANT le reload : MAJ label période + active mois
+    // dans le dropdown, pour feedback immédiat même sur connexion lente.
+    const MOIS_NAMES_FR = {
+        1:'Janvier', 2:'Février', 3:'Mars', 4:'Avril', 5:'Mai', 6:'Juin',
+        7:'Juillet', 8:'Août', 9:'Septembre', 10:'Octobre', 11:'Novembre', 12:'Décembre'
+    };
+    const MOIS_EMOJIS = {
+        1:'❄️', 2:'💧', 3:'🌱', 4:'🌸', 5:'🌿', 6:'☀️',
+        7:'🌻', 8:'🏖️', 9:'🍂', 10:'🎃', 11:'🍁', 12:'🎄'
+    };
+
+    function plSyncPeriodUI(year, month) {
+        // Label période
+        const lbl = $('plPeriodLabel');
+        if (lbl) lbl.textContent = (MOIS_NAMES_FR[month] || '') + ' ' + year;
+        // Emoji
+        const iconEl = document.querySelector('.cb-period-btn .cb-period-icon');
+        if (iconEl && MOIS_EMOJIS[month]) iconEl.textContent = MOIS_EMOJIS[month];
+        // Year header dans le dropdown
+        currentYear = year;
+        currentMonth = month;
+        if (yearLabel) yearLabel.textContent = year;
+        // Active mois dans la grille du dropdown
+        document.querySelectorAll('.dd-month').forEach(b => {
+            const m = parseInt(b.dataset.month, 10);
+            b.classList.toggle('active', m === month);
+            b.classList.toggle('past', m < month);
+        });
+    }
+
+    $('plNavPrev')?.addEventListener('click', () => {
+        let m = currentMonth - 1, y = currentYear;
+        if (m < 1) { m = 12; y--; }
+        plSyncPeriodUI(y, m);
+        gotoMonth(y, m);
+    });
+    $('plNavNext')?.addEventListener('click', () => {
+        let m = currentMonth + 1, y = currentYear;
+        if (m > 12) { m = 1; y++; }
+        plSyncPeriodUI(y, m);
+        gotoMonth(y, m);
+    });
+    $('plNavToday')?.addEventListener('click', () => {
+        const now = new Date();
+        const y = now.getFullYear(), m = now.getMonth() + 1;
+        plSyncPeriodUI(y, m);
+        gotoMonth(y, m);
     });
 
     // ── Toggle Provisoire / Finaliser ───────────────────────────────────────
