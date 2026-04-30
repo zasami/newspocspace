@@ -1570,3 +1570,69 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.2
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.3 — EDIT MODE hover + bordures gauche/droite col-pct
+ *
+ * Comportement attendu :
+ *  - Hover sur col-collab (nom)         → mode LECTURE : teal-50 sur la ligne
+ *    (déjà géré par les règles tr.user-row:hover de v9.2)
+ *  - Hover sur cellule jour              → mode ÉDITION : bordure dashed warm
+ *    autour de toute la ligne + fond légèrement teinté warm pour signifier
+ *    qu'un clic va éditer
+ *  - Header col-pct (%)                  → border-left + border-right visibles
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ─── 1) Bordures gauche + droite sur le header col-pct (%) ───────────── */
+
+#planningPage table#plTable thead tr th.col-pct {
+  border-left: 1px solid var(--color-line, #e3ebe8) !important;
+  border-right: 1px solid var(--color-line, #e3ebe8) !important;
+}
+
+/* Et sur tout le tbody pour la cohérence colonne entière */
+#planningPage table#plTable tbody tr td.col-pct {
+  border-left: 1px solid var(--color-line, #e3ebe8) !important;
+}
+
+
+/* ─── 2) MODE ÉDITION : hover sur cellule jour ─────────────────────────
+ * Sélecteur :has(td.day:hover) sur la ligne entière → bordure dashed warm
+ * + fond warm doux. Spécificité supérieure aux règles teal-50 de v9.2 grâce
+ * à la combinaison id + table#id + :has() + :hover.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td {
+  border-top: 1.5px dashed var(--color-warm, #d4a04a) !important;
+  border-bottom: 1.5px dashed var(--color-warm, #d4a04a) !important;
+  background-color: rgba(212, 160, 74, 0.10) !important;
+  background-image: none !important;
+}
+
+/* Bordure gauche dashed sur la 1ère cellule (col-collab) pour fermer le rectangle */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-collab {
+  border-left: 1.5px dashed var(--color-warm, #d4a04a) !important;
+}
+
+/* Bordure droite dashed sur la dernière cellule (col-hours) */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-hours {
+  border-right: 1.5px dashed var(--color-warm, #d4a04a) !important;
+}
+
+/* La cellule réellement survolée : fond plus marqué + curseur pointer */
+#planningPage table#plTable tbody tr.user-row td:not(.col-collab):not(.col-pct):not(.col-hours):hover {
+  background-color: rgba(212, 160, 74, 0.22) !important;
+  cursor: pointer;
+}
+
+/* Weekend en mode édition : reste visible avec teinte warm renforcée */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.weekend {
+  background-color: rgba(212, 160, 74, 0.20) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.3
+ * ════════════════════════════════════════════════════════════════════════════ */
