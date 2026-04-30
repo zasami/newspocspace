@@ -548,11 +548,12 @@ $themeBodyClass = 'theme-care'; // forcé : pas de switch structurel
         <?php foreach ($sec['items'] as $key => $item):
           $hasBadge = !empty($item['badge']);
           $badgeTone = $item['badge_tone'] ?? 'warn';
+          // Badges sidebar : pills pleines (background coloré + texte blanc, pas de bordure)
           $badgeClasses = match ($badgeTone) {
-              'info'   => 'bg-info-bg text-info border border-info-line',
-              'danger' => 'bg-danger-bg text-danger border border-danger-line',
-              'ok'     => 'bg-ok-bg text-ok border border-ok-line',
-              default  => 'bg-warn-bg text-warn border border-warn-line',
+              'info'   => 'bg-info text-white',
+              'danger' => 'bg-danger text-white',
+              'ok'     => 'bg-ok text-white',
+              default  => 'bg-warm text-white',
           };
         ?>
         <!-- Item (niveau 3) -->
@@ -565,9 +566,9 @@ $themeBodyClass = 'theme-care'; // forcé : pas de switch structurel
           <?php if ($hasBadge && $item['badge'] > 0): ?>
           <span class="ml-auto text-[10px] font-mono font-bold rounded-full px-1.5 py-px shrink-0 <?= $badgeClasses ?>"<?= $key === 'messages' ? ' id="sidebarMsgBadge"' : '' ?>><?= (int) $item['badge'] ?></span>
           <?php elseif ($key === 'messages'): ?>
-          <span id="sidebarMsgBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+          <span id="sidebarMsgBadge" class="ml-auto text-[10px] font-mono font-bold bg-info text-white rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
           <?php elseif ($key === 'email-externe'): ?>
-          <span id="sidebarEmailBadge" class="ml-auto text-[10px] font-mono font-bold bg-info-bg text-info border border-info-line rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
+          <span id="sidebarEmailBadge" class="ml-auto text-[10px] font-mono font-bold bg-info text-white rounded-full px-1.5 py-px shrink-0" style="display:none"></span>
           <?php endif; ?>
         </a>
         <?php endforeach; ?>
