@@ -142,32 +142,57 @@ function pl_target_hours(float $taux): float {
     return round($taux * 1.82, 1);
 }
 
-// ─── Shifts démo (Phase 1) ──────────────────────────────────────────────────
-$plShiftCodes = ['c1', 'c2', 'd1', 'd3', 'd4', 's3', 's4', 'a2', 'a3', 'n'];
-$plShiftHours = ['c1' => 8, 'c2' => 8, 'd1' => 8, 'd3' => 8, 'd4' => 8,
-                 's3' => 8, 's4' => 8, 'a2' => 7, 'a3' => 7, 'n' => 10];
+// ─── Vraies données planning depuis la DB ───────────────────────────────────
+// Format mois_annee : "YYYY-MM" (correspond à la colonne plannings.mois_annee)
+$plMoisAnnee = sprintf('%04d-%02d', $plYear, $plMonth);
 
-function pl_demo_shifts(string $userId, array $days, array $codes): array {
-    $shifts = [];
-    $seed = abs(crc32($userId));
-    foreach ($days as $idx => $day) {
-        $rng = ($seed + $idx * 37 + ($idx * $idx * 13)) % 100;
-        if ($day['weekend'] && $rng < 60) continue;
-        if (!$day['weekend'] && $rng < 22) continue;
-        $code = $codes[($seed + $idx * 7) % count($codes)];
-        $shifts[$day['iso']] = $code;
+// Planning courant (peut être null si pas encore créé)
+$plPlanning = Db::fetch(
+    "SELECT * FROM plannings WHERE mois_annee = ?",
+    [$plMoisAnnee]
+);
+
+// Map horaire_code → duree_effective (heures par shift)
+$plShiftHoursMap = [];
+foreach ($planningHoraires as $ht) {
+    $code = strtolower((string) ($ht['code'] ?? ''));
+    if ($code !== '') {
+        $plShiftHoursMap[$code] = (float) ($ht['duree_effective'] ?? 0);
     }
-    return $shifts;
 }
 
+// Assignations existantes : tableau [user_id][iso_date] = ['code'=>..., 'id'=>..., 'updated_at'=>..., ...]
 $plUserShifts  = [];
 $plTotalShifts = 0;
-foreach ($planningUsers as $u) {
-    $sh = pl_demo_shifts((string) $u['id'], $plDays, $plShiftCodes);
-    $plUserShifts[$u['id']] = $sh;
-    $plTotalShifts += count($sh);
+if ($plPlanning) {
+    $rawAssignations = Db::fetchAll(
+        "SELECT pa.id, pa.user_id, pa.date_jour, pa.horaire_type_id, pa.module_id,
+                pa.statut, pa.notes, pa.updated_at,
+                ht.code AS horaire_code
+         FROM planning_assignations pa
+         LEFT JOIN horaires_types ht ON ht.id = pa.horaire_type_id
+         WHERE pa.planning_id = ?",
+        [$plPlanning['id']]
+    );
+    foreach ($rawAssignations as $a) {
+        $iso = $a['date_jour'];
+        $uid = $a['user_id'];
+        $plUserShifts[$uid][$iso] = [
+            'code'           => strtolower((string) ($a['horaire_code'] ?? '')),
+            'id'             => $a['id'],
+            'horaire_type_id'=> $a['horaire_type_id'],
+            'module_id'      => $a['module_id'],
+            'statut'         => $a['statut'],
+            'notes'          => $a['notes'],
+            'updated_at'     => $a['updated_at'],
+        ];
+        $plTotalShifts++;
+    }
 }
-$plMissingShifts = max(0, (int) round($plTotalShifts * 0.0085));
+
+// Compteur "Manquants" : couverture cible (à raffiner avec règles métier).
+// Pour l'instant : différence entre cible globale et total assigné.
+$plMissingShifts = 0; // TODO: calcul réel via admin_get_planning_stats si besoin
 
 $plFonctionsForFilter = array_filter(
     $planningFonctions,
@@ -445,7 +470,9 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             $cible = pl_target_hours($taux);
             $userShifts = $plUserShifts[$u['id']] ?? [];
             $heuresCourant = 0;
-            foreach ($userShifts as $code) { $heuresCourant += $plShiftHours[$code] ?? 8; }
+            foreach ($userShifts as $sh) {
+                $heuresCourant += $plShiftHoursMap[$sh['code']] ?? 0;
+            }
             $diff = round($heuresCourant - $cible, 1);
             $userModCodes = array_filter(explode(',', (string) ($u['module_codes'] ?? '')));
           ?>
@@ -467,9 +494,13 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
               <div class="pct-cell-bar"><div style="width:<?= $tauxRounded ?>%"></div></div>
             </td>
             <?php foreach ($plDays as $day):
-              $code = $userShifts[$day['iso']] ?? null;
+              $sh = $userShifts[$day['iso']] ?? null;
+              $code = $sh['code'] ?? null;
             ?>
-            <td class="<?= $day['weekend'] ? 'weekend' : '' ?> <?= $day['today'] ? 'today' : '' ?>">
+            <td class="<?= $day['weekend'] ? 'weekend' : '' ?> <?= $day['today'] ? 'today' : '' ?> day-cell"
+                data-uid="<?= h($u['id']) ?>"
+                data-date="<?= h($day['iso']) ?>"
+                <?php if ($sh): ?>data-assign-id="<?= h($sh['id']) ?>" data-updated-at="<?= h($sh['updated_at'] ?? '') ?>"<?php endif; ?>>
               <?php if ($code): ?>
               <span class="shift <?= h($code) ?>" data-shift="<?= h($code) ?>"><?= strtoupper(h($code)) ?></span>
               <?php endif; ?>
@@ -477,7 +508,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             <?php endforeach; ?>
             <td class="col-hours">
               <div class="hours-cell">
-                <div class="hours-main"><?= (int) $heuresCourant ?>h</div>
+                <div class="hours-main"><?= (int) round($heuresCourant) ?>h</div>
                 <div class="hours-target <?= $diff < 0 ? 'under' : ($diff > 0 ? 'over' : '') ?>"><?= $cible ?>h<?= $diff !== 0.0 ? ' · ' . ($diff > 0 ? '+' : '') . $diff : ' · ✓' ?></div>
               </div>
             </td>
