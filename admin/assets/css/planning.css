@@ -1,49 +1,56 @@
 /* =================================================================
  * planning.css — Spocspace Care · Module Planning
  *
- * VERSION 8.0 — STRUCTURE CORRECTE
- * - Casse les paddings du wrapper admin parent (sortie de carte)
- * - Command bar + filtres équipes : bandes plates bord-à-bord
- * - Tableau planning : card avec border-radius (séparé visuellement)
- * - Weekends colorés en doré pâle (colonnes entières)
- * - Colonnes sticky : opaques garanties
+ * VERSION 9.0 — FINALE COMPLÈTE (avril 2026)
+ * 
+ * Toutes les corrections accumulées dans un seul fichier propre :
+ * - Aliases variables (sans/avec préfixe --color-*) pour éviter les bugs
+ * - Toolbar bord-à-bord (pas de card, pas de border-radius)
+ * - Tableau planning dans card séparée avec gap visible
+ * - Header weekend doré (texte + numéro)
+ * - Hover lignes vert transparent
+ * - Colonnes sticky opaques avec z-index correct
+ * - Dropdowns au-dessus de tout (z-index 9999)
+ * - Sections (INF/ASSC) en gradient teal transparent
+ * - Bouton Générer + toggle actif en NOIR
+ * - Pill Tous active en NOIR
+ * 
+ * Variables consommées (Tailwind v4 @theme) :
+ *   --color-teal-*, --color-ink, --color-muted, --color-line,
+ *   --color-surface*, --color-warm*, --color-ok, --color-warn
+ * Polices : --font-display (Fraunces), --font-body (Outfit), --font-mono
  * ================================================================= */
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 0 · CASSER LE WRAPPER ADMIN PARENT
- * Le planning.php est inséré dans un conteneur admin (.admin-content,
- * .admin-main, ou similaire) qui a probablement padding + background blanc.
- * On le neutralise UNIQUEMENT quand .planning-page est dedans.
+ * 0 · ALIASES DE VARIABLES (compatibilité avec/sans préfixe --color-*)
  * ════════════════════════════════════════════════════════════════════════════ */
 
-/* Le parent direct de .planning-page (quel qu'il soit) doit perdre son padding */
-:has(> .planning-page) {
-  padding: 0 !important;
-  margin: 0 !important;
-  background: var(--color-bg, #f5f7f5) !important;
-}
-
-/* Selecteurs spécifiques au cas où :has() ne marche pas */
-.admin-content:has(.planning-page),
-.admin-main:has(.planning-page),
-#adminContent:has(.planning-page),
-#adminMain:has(.planning-page) {
-  padding: 0 !important;
-  margin: 0 !important;
-  max-width: none !important;
-  background: var(--color-bg, #f5f7f5) !important;
-}
-
-/* Et fallback : tous les ancêtres directs jusqu'au body */
 .planning-page {
-  /* Le wrapper de la page : étend jusqu'aux bords */
-  margin: 0 !important;
-  padding: 0 !important;
-  background: var(--color-bg, #f5f7f5);
-  width: 100%;
-  min-height: 100%;
+  /* Aliases pour que les règles avec var(--warm-bg), var(--teal-*), etc.
+     continuent à fonctionner même si elles ne sont pas définies au niveau global */
+  --warm: var(--color-warm, #c97a2a);
+  --warm-bg: var(--color-warm-bg, #fbf0e1);
+  --ink: var(--color-ink, #0d2a26);
+  --ink-2: var(--color-ink-2, #324e4a);
+  --muted: var(--color-muted, #6b8783);
+  --line: var(--color-line, #e3ebe8);
+  --line-2: var(--color-line-2, #d4ddda);
+  --surface: var(--color-surface, #ffffff);
+  --surface-2: var(--color-surface-2, #fafbfa);
+  --surface-3: var(--color-surface-3, #f3f6f5);
+  --teal-50: var(--color-teal-50, #ecf5f3);
+  --teal-100: var(--color-teal-100, #d2e7e2);
+  --teal-200: var(--color-teal-200, #a8d1c8);
+  --teal-300: var(--color-teal-300, #7ab5ab);
+  --teal-500: var(--color-teal-500, #2d8074);
+  --teal-600: var(--color-teal-600, #1f6359);
+  --teal-700: var(--color-teal-700, #164a42);
+  --teal-900: var(--color-teal-900, #0d2a26);
+  --ok: var(--color-ok, #3d8b6b);
+  --warn: var(--color-warn, #c97a2a);
 
+  /* Couleurs des shifts spécifiques au planning */
   --shift-c1: #5cad9b;
   --shift-c2: #3d8b6b;
   --shift-d1: #5a9bd8;
@@ -55,27 +62,51 @@
   --shift-a3: #7a4f9e;
   --shift-n:  #2d3e6b;
 
-  --weekend-bg: rgba(253, 245, 227, 0.55);
+  /* Background page */
+  background: var(--color-bg, #f5f7f5);
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100%;
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 1 · COMMAND BAR — bande plate bord-à-bord
+ * 1 · CASSER LE WRAPPER ADMIN PARENT
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning-page .command-bar {
-  width: 100%;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-line);
-  padding: 14px 24px;
+/* Le parent direct de .planning-page perd son padding pour aller bord-à-bord */
+:has(> .planning-page) {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: var(--color-bg, #f5f7f5) !important;
+}
 
+.admin-content:has(.planning-page),
+.admin-main:has(.planning-page),
+#adminContent:has(.planning-page),
+#adminMain:has(.planning-page) {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  background: var(--color-bg, #f5f7f5) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * 2 · COMMAND BAR — bande plate bord-à-bord
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage .command-bar {
+  width: 100%;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   row-gap: 12px;
-
-  /* PAS de margin, PAS de border-radius */
   margin: 0 !important;
   border-radius: 0 !important;
 }
@@ -104,10 +135,10 @@
   display: flex;
   align-items: stretch;
   gap: 1px;
-  background: var(--color-line);
+  background: var(--color-line, #e3ebe8);
   border-radius: 11px;
   padding: 1px;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--color-line, #e3ebe8);
   height: 42px;
   position: relative;
 }
@@ -126,16 +157,16 @@
 
 .cb-period-btn:first-child { border-radius: 10px 0 0 10px; }
 .cb-period-btn:last-child  { border-radius: 0 10px 10px 0; }
-.cb-period-btn:hover { background: var(--color-teal-50); }
+.cb-period-btn:hover { background: var(--color-teal-50, #ecf5f3); }
 
 .cb-period-icon {
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: linear-gradient(135deg, var(--color-teal-100), var(--color-teal-50));
+  background: linear-gradient(135deg, var(--color-teal-100, #d2e7e2), var(--color-teal-50, #ecf5f3));
   display: grid;
   place-items: center;
-  color: var(--color-teal-600);
+  color: var(--color-teal-600, #1f6359);
   flex-shrink: 0;
   font-size: 15px;
 }
@@ -151,21 +182,21 @@
   font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-weight: 600;
 }
 
 .cb-period-value {
   font-size: 14px;
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   font-weight: 600;
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Fraunces', serif);
   letter-spacing: -0.01em;
   margin-top: 2px;
 }
 
 .cb-period-chev {
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   transition: transform 0.2s;
 }
 
@@ -175,8 +206,8 @@
 .cb-nav {
   display: flex;
   gap: 3px;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-line);
+  background: var(--color-surface-2, #fafbfa);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 10px;
   padding: 3px;
   height: 38px;
@@ -188,7 +219,7 @@
   background: transparent;
   border: 0;
   border-radius: 7px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -197,17 +228,17 @@
 
 .cb-nav-btn:hover {
   background: #fff;
-  color: var(--color-teal-600);
+  color: var(--color-teal-600, #1f6359);
   box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
 }
 
 .cb-nav-today {
   width: auto;
   padding: 0 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;
   font-weight: 600;
-  color: var(--color-teal-600);
+  color: var(--color-teal-600, #1f6359);
 }
 
 
@@ -247,13 +278,13 @@
 
 .cb-meta {
   font-size: 12.5px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
 }
 
 .cb-meta strong {
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   font-weight: 600;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
 }
 
 
@@ -268,8 +299,8 @@
   font-size: 13.5px;
   font-weight: 500;
   background: #fff;
-  border: 1px solid var(--color-line);
-  color: var(--color-ink-2);
+  border: 1px solid var(--color-line, #e3ebe8);
+  color: var(--color-ink-2, #324e4a);
   border-radius: 10px;
   cursor: pointer;
   transition: 0.15s;
@@ -277,10 +308,11 @@
 }
 
 .cb-btn:hover {
-  border-color: var(--color-teal-300);
-  color: var(--color-teal-600);
+  border-color: var(--color-teal-300, #7ab5ab);
+  color: var(--color-teal-600, #1f6359);
 }
 
+/* Bouton Générer planning : NOIR pur */
 .cb-btn.dark {
   background: #1a1a1a;
   border-color: #1a1a1a;
@@ -302,9 +334,9 @@
   width: 38px;
   height: 38px;
   background: #fff;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 9px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -314,15 +346,15 @@
 }
 
 .cb-btn-mini:hover {
-  border-color: var(--color-teal-300);
-  color: var(--color-teal-600);
-  background: var(--color-teal-50);
+  border-color: var(--color-teal-300, #7ab5ab);
+  color: var(--color-teal-600, #1f6359);
+  background: var(--color-teal-50, #ecf5f3);
 }
 
 .cb-btn-mini.cb-fullscreen.active {
-  background: var(--color-teal-50);
-  color: var(--color-teal-700);
-  border-color: var(--color-teal-300);
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-700, #164a42);
+  border-color: var(--color-teal-300, #7ab5ab);
 }
 
 .cb-btn-mini svg {
@@ -336,8 +368,8 @@
 .cb-icon-group {
   display: inline-flex;
   align-items: stretch;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-line);
+  background: var(--color-surface-2, #fafbfa);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 10px;
   padding: 3px;
   gap: 2px;
@@ -355,13 +387,13 @@
 
 .cb-icon-group .cb-btn-mini:hover {
   background: #fff;
-  color: var(--color-teal-600);
+  color: var(--color-teal-600, #1f6359);
   box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
 }
 
 .cb-icon-group .cb-btn-mini.cb-fullscreen.active {
   background: #fff;
-  color: var(--color-teal-700);
+  color: var(--color-teal-700, #164a42);
   box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
 }
 
@@ -371,14 +403,14 @@
 }
 
 
-/* ─── Toggle Provisoire / Finaliser ───────────────────────────────────── */
+/* ─── Toggle Provisoire / Finaliser — actif noir ──────────────────────── */
 
 .cb-finalize {
   display: inline-flex;
   align-items: stretch;
   gap: 1px;
-  background: var(--color-line);
-  border: 1px solid var(--color-line);
+  background: var(--color-line, #e3ebe8);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 10px;
   padding: 1px;
   height: 38px;
@@ -392,7 +424,7 @@
   background: #fff;
   border: 0;
   cursor: pointer;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   transition: 0.15s;
   display: flex;
   align-items: center;
@@ -407,27 +439,25 @@
 }
 
 .cb-finalize button:hover:not(.on) {
-  color: var(--color-ink-2);
-  background: var(--color-surface-2);
+  color: var(--color-ink-2, #324e4a);
+  background: var(--color-surface-2, #fafbfa);
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 2 · TEAM FILTERS — bande plate bord-à-bord
+ * 3 · TEAM FILTERS — bande plate bord-à-bord
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning-page .team-filters {
+#planningPage .team-filters {
   width: 100%;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
   padding: 12px 24px;
-
   display: flex;
   align-items: center;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-
   margin: 0 !important;
   border-radius: 0 !important;
 }
@@ -436,63 +466,88 @@
   display: none;
 }
 
-.team-pill {
-  padding: 6px 13px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  background: transparent;
-  border: 0;
-  border-radius: 99px;
-  color: var(--color-muted);
-  cursor: pointer;
-  transition: 0.15s;
+/* Pill normale */
+#planningPage .team-filters button.team-pill {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--color-muted, #6b8783) !important;
+  border: 0 !important;
+  padding: 6px 13px !important;
+  border-radius: 99px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
   white-space: nowrap;
   letter-spacing: 0.02em;
+  font-family: inherit !important;
 }
 
-.team-pill:hover {
-  background: var(--color-teal-50);
-  color: var(--color-teal-700);
+/* HOVER pill — vert teal pâle */
+#planningPage .team-filters button.team-pill:hover,
+#planningPage .team-filters button.team-pill:not(.on):hover {
+  background: rgba(31, 99, 89, 0.08) !important;
+  background-color: rgba(31, 99, 89, 0.08) !important;
+  color: var(--color-teal-700, #164a42) !important;
 }
 
-.team-pill.on {
-  background: #1a1a1a;
-  color: #fff;
+/* Pill ACTIVE — NOIR */
+#planningPage .team-filters button.team-pill.on {
+  background: #1a1a1a !important;
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+#planningPage .team-filters button.team-pill.on:hover {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
 }
 
 .team-divider {
   width: 1px;
   height: 20px;
-  background: var(--color-line);
+  background: var(--color-line, #e3ebe8);
   margin: 0 6px;
   flex-shrink: 0;
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 3 · DROPDOWNS
+ * 4 · DROPDOWNS — z-index très haut pour passer DEVANT tout
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.dropdown {
-  position: absolute;
+#planningPage .cb-period-group {
+  position: relative !important;
+}
+
+#planningPage .dropdown,
+#planningPage .dropdown-period,
+#planningPage .dropdown-view {
+  position: absolute !important;
   top: calc(100% + 8px);
   background: #fff;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 14px;
   box-shadow: 0 16px 48px -12px rgba(13, 42, 38, 0.18), 0 4px 12px rgba(13, 42, 38, 0.08);
-  z-index: 30;
+  z-index: 9999 !important;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-6px);
   transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
 }
 
-.dropdown.show {
+#planningPage .dropdown.show,
+#planningPage .dropdown-period.show,
+#planningPage .dropdown-view.show {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  z-index: 10000 !important;
 }
+
+
+/* ─── Dropdown période (mois 3×4) ─────────────────────────────────────── */
 
 .dropdown-period {
   left: 0;
@@ -506,7 +561,7 @@
   justify-content: space-between;
   padding: 0 4px 12px;
   margin-bottom: 10px;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
 }
 
 .dd-year-nav {
@@ -515,7 +570,7 @@
   border-radius: 7px;
   background: transparent;
   border: 0;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -523,15 +578,15 @@
 }
 
 .dd-year-nav:hover {
-  background: var(--color-teal-50);
-  color: var(--color-teal-600);
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-600, #1f6359);
 }
 
 .dd-year {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Fraunces', serif);
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   letter-spacing: -0.01em;
 }
 
@@ -543,7 +598,7 @@
 
 .dd-month {
   position: relative;
-  background: var(--color-surface-2);
+  background: var(--color-surface-2, #fafbfa);
   border: 1.5px solid transparent;
   border-radius: 11px;
   padding: 9px 8px 8px;
@@ -557,16 +612,26 @@
 }
 
 .dd-month:hover {
-  background: var(--color-teal-50);
-  border-color: var(--color-teal-100);
+  background: var(--color-teal-50, #ecf5f3) !important;
+  border-color: var(--color-teal-200, #a8d1c8) !important;
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(31, 99, 89, 0.08);
+}
+
+.dd-month:hover .dd-month-emoji {
+  background: linear-gradient(135deg, var(--color-teal-100, #d2e7e2), #d2e7e2) !important;
 }
 
 .dd-month.active {
-  background: var(--color-surface);
-  border: 2px solid var(--color-teal-700);
+  background: var(--color-surface, #ffffff);
+  border: 2px solid var(--color-teal-700, #164a42);
   box-shadow: 0 4px 14px rgba(31, 99, 89, 0.18);
   padding: 8px 7px 7px;
+}
+
+.dd-month.active:hover {
+  transform: translateY(0);
+  border-color: var(--color-teal-700, #164a42) !important;
 }
 
 .dd-month.past::after {
@@ -578,13 +643,13 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--color-teal-500);
+  background: var(--color-teal-500, #2d8074);
 }
 
 .dd-month-emoji {
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, var(--color-teal-50), var(--color-teal-100));
+  background: linear-gradient(135deg, var(--color-teal-50, #ecf5f3), var(--color-teal-100, #d2e7e2));
   border-radius: 11px;
   display: grid;
   place-items: center;
@@ -600,33 +665,33 @@
   position: absolute;
   top: 9px;
   right: 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 10px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-weight: 600;
 }
 
 .dd-month.active .dd-month-num {
-  color: var(--color-teal-700);
+  color: var(--color-teal-700, #164a42);
   font-weight: 700;
 }
 
 .dd-month-name {
-  font-family: var(--font-body);
+  font-family: var(--font-body, 'Outfit', sans-serif);
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-ink-2);
+  color: var(--color-ink-2, #324e4a);
 }
 
 .dd-month.active .dd-month-name {
-  color: var(--color-teal-700);
+  color: var(--color-teal-700, #164a42);
   font-weight: 700;
 }
 
 .dd-period-foot {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-line, #e3ebe8);
   display: flex;
   justify-content: flex-end;
 }
@@ -639,18 +704,21 @@
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-  background: var(--color-teal-50);
-  color: var(--color-teal-700);
-  border: 1px solid var(--color-teal-100);
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-700, #164a42);
+  border: 1px solid var(--color-teal-100, #d2e7e2);
   border-radius: 7px;
   cursor: pointer;
   transition: 0.12s;
 }
 
 .dd-foot-btn:hover {
-  background: var(--color-teal-100);
-  border-color: var(--color-teal-300);
+  background: var(--color-teal-100, #d2e7e2);
+  border-color: var(--color-teal-300, #7ab5ab);
 }
+
+
+/* ─── Dropdown vue — 3 états distincts ────────────────────────────────── */
 
 .dropdown-view {
   left: auto;
@@ -659,45 +727,55 @@
   padding: 5px;
 }
 
-.dd-view-item {
+#planningPage .dropdown-view .dd-view-item {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 11px;
   padding: 10px 12px;
   border-radius: 9px;
-  background: transparent;
+  background: transparent !important;
   border: 0;
   cursor: pointer;
-  transition: 0.12s;
+  transition: all 0.15s ease;
   text-align: left;
   font-family: inherit;
 }
 
-.dd-view-item:hover {
-  background: var(--color-teal-50);
-}
-
-.dd-view-item.active {
-  background: var(--color-surface-3);
-}
-
-.dd-view-icon {
+/* État NORMAL : icône avec fond teal-50 */
+#planningPage .dropdown-view .dd-view-item .dd-view-icon {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: var(--color-teal-50);
-  color: var(--color-teal-700);
+  background: var(--color-teal-50, #ecf5f3) !important;
+  color: var(--color-teal-700, #164a42) !important;
+  border: 1px solid var(--color-teal-100, #d2e7e2) !important;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  border: 1px solid var(--color-teal-100);
+  transition: 0.15s;
 }
 
-.dd-view-item.active .dd-view-icon {
-  background: var(--color-teal-700);
-  color: #fff;
-  border-color: var(--color-teal-700);
+/* État HOVER (non-active) : fond vert transparent + icône plus marquée */
+#planningPage .dropdown-view .dd-view-item:hover:not(.active) {
+  background: rgba(31, 99, 89, 0.06) !important;
+}
+
+#planningPage .dropdown-view .dd-view-item:hover:not(.active) .dd-view-icon {
+  background: var(--color-teal-100, #d2e7e2) !important;
+  border-color: var(--color-teal-300, #7ab5ab) !important;
+  transform: scale(1.05);
+}
+
+/* État ACTIVE : fond surface-3 + icône teal-700 plein */
+#planningPage .dropdown-view .dd-view-item.active {
+  background: var(--color-surface-3, #f3f6f5) !important;
+}
+
+#planningPage .dropdown-view .dd-view-item.active .dd-view-icon {
+  background: var(--color-teal-700, #164a42) !important;
+  color: #ffffff !important;
+  border-color: var(--color-teal-700, #164a42) !important;
 }
 
 .dd-view-text {
@@ -708,19 +786,19 @@
 .dd-view-name {
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   line-height: 1.2;
 }
 
 .dd-view-desc {
   display: block;
   font-size: 11px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   margin-top: 2px;
 }
 
 .dd-view-check {
-  color: var(--color-teal-600);
+  color: var(--color-teal-600, #1f6359);
   opacity: 0;
   transition: opacity 0.12s;
   flex-shrink: 0;
@@ -732,20 +810,20 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 4 · PLANNING WRAP — CARD avec border-radius + GAP
+ * 5 · PLANNING WRAP — CARD avec border-radius + GAP visible
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning-page .planning-wrap {
+#planningPage .planning-wrap {
   margin: 16px 24px 24px 24px !important;
-
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-line, #e3ebe8);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(13, 42, 38, 0.05);
-
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;  /* Sous les dropdowns */
 }
 
 .planning-grid {
@@ -776,15 +854,15 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  background: var(--color-surface-2);
-  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface-2, #fafbfa);
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
   padding: 10px 0 8px;
   font-weight: 500;
   text-align: center;
   white-space: nowrap;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 11px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   letter-spacing: 0.04em;
   min-width: var(--cell-w);
 }
@@ -797,7 +875,7 @@
   display: block;
   font-size: 9.5px;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.2;
@@ -810,53 +888,76 @@
   width: var(--day-num-size);
   height: var(--day-num-size);
   border-radius: 7px;
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Fraunces', serif);
   font-weight: 600;
   font-size: var(--day-num-fs);
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   margin-top: 3px;
 }
 
-.planning thead th.weekend {
-  background: var(--color-warm-bg) !important;
+
+/* ─── HEADER WEEKEND : fond doré + texte/numéro doré ──────────────────── */
+
+#planningPage .planning thead th.weekend,
+#planningPage .planning thead th.day-head.weekend {
+  background: var(--color-warm-bg, #fbf0e1) !important;
+  background-color: var(--color-warm-bg, #fbf0e1) !important;
 }
 
-.planning thead th.weekend .day-name {
-  color: var(--color-warm);
+#planningPage .planning thead th.weekend .day-name,
+#planningPage .planning thead th.day-head.weekend .day-name {
+  color: var(--color-warm, #c97a2a) !important;
+  font-weight: 700 !important;
 }
 
-.planning thead th.today .day-num {
-  background: var(--color-teal-600);
-  color: #fff;
+#planningPage .planning thead th.weekend .day-num,
+#planningPage .planning thead th.day-head.weekend .day-num {
+  color: var(--color-warm, #c97a2a) !important;
+  background: transparent !important;
 }
 
-.planning thead th.today .day-name {
-  color: var(--color-teal-700);
-  font-weight: 700;
+
+/* ─── HEADER TODAY : numéro teal-600 plein + label teal-700 ───────────── */
+
+#planningPage .planning thead th.today .day-num {
+  background: var(--color-teal-600, #1f6359) !important;
+  color: #ffffff !important;
+}
+
+#planningPage .planning thead th.today .day-name {
+  color: var(--color-teal-700, #164a42) !important;
+  font-weight: 700 !important;
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 5 · COLONNES STICKY — fond opaque
+ * 6 · COLONNES STICKY — fond opaque garanti + z-index hiérarchique
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning .col-collab {
+/* Header de la colonne Collaborateur */
+#planningPage table#plTable thead tr th.col-collab {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 7 !important;
+  background: var(--color-surface-2, #fafbfa) !important;
+  background-color: var(--color-surface-2, #fafbfa) !important;
+  background-image: none !important;
+  text-align: left;
+  padding: 10px 16px 8px;
+}
+
+/* Cellules tbody col-collab */
+#planningPage table#plTable tbody tr td.col-collab {
   position: sticky !important;
   left: 0 !important;
   z-index: 6 !important;
+  background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
-  min-width: var(--collab-w);
-  width: var(--collab-w);
-  border-right: 1px solid var(--color-line);
+  min-width: var(--collab-w, 240px);
+  width: var(--collab-w, 240px);
+  border-right: 1px solid var(--color-line, #e3ebe8);
   box-shadow: 4px 0 8px -6px rgba(13, 42, 38, 0.06);
-}
-
-.planning thead .col-collab {
-  z-index: 7 !important;
-  background-color: var(--color-surface-2) !important;
-  text-align: left;
-  padding: 10px 16px 8px;
 }
 
 .col-collab-label {
@@ -866,60 +967,78 @@
   font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-weight: 700;
 }
 
-.planning .col-pct {
+/* Header col-pct */
+#planningPage table#plTable thead tr th.col-pct {
   position: sticky !important;
-  left: var(--collab-w) !important;
+  left: var(--collab-w, 240px) !important;
+  z-index: 7 !important;
+  background: var(--color-surface-2, #fafbfa) !important;
+  background-color: var(--color-surface-2, #fafbfa) !important;
+  background-image: none !important;
+}
+
+/* Cellules tbody col-pct */
+#planningPage table#plTable tbody tr td.col-pct {
+  position: sticky !important;
+  left: var(--collab-w, 240px) !important;
   z-index: 6 !important;
+  background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
   min-width: 54px;
   width: 54px;
-  border-right: 1px solid var(--color-line);
+  border-right: 1px solid var(--color-line, #e3ebe8);
   text-align: center;
 }
 
-.planning thead .col-pct {
+/* Header col-hours */
+#planningPage table#plTable thead tr th.col-hours {
+  position: sticky !important;
+  right: 0 !important;
   z-index: 7 !important;
-  background-color: var(--color-surface-2) !important;
+  background: var(--color-surface-2, #fafbfa) !important;
+  background-color: var(--color-surface-2, #fafbfa) !important;
+  background-image: none !important;
+  min-width: 90px;
+  width: 90px;
+  border-left: 1px solid var(--color-line, #e3ebe8);
+  text-align: center;
 }
 
-.planning .col-hours {
+/* Cellules tbody col-hours — TRÈS opaque */
+#planningPage table#plTable tbody tr td.col-hours {
   position: sticky !important;
   right: 0 !important;
   z-index: 6 !important;
+  background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
   min-width: 90px;
   width: 90px;
-  border-left: 1px solid var(--color-line);
-  box-shadow: -4px 0 8px -6px rgba(13, 42, 38, 0.06);
+  border-left: 1px solid var(--color-line, #e3ebe8);
   text-align: center;
-}
-
-.planning thead .col-hours {
-  z-index: 7 !important;
-  background-color: var(--color-surface-2) !important;
+  box-shadow: -8px 0 16px -4px rgba(13, 42, 38, 0.08);
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 6 · WEEKEND — colonnes entières dorées
+ * 7 · WEEKEND TBODY — colonnes entières dorées
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning tbody td.weekend {
-  background-color: var(--weekend-bg) !important;
+#planningPage .planning tbody td.weekend {
+  background-color: rgba(253, 245, 227, 0.55) !important;
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 7 · SECTIONS (INF, ASSC, AS…) — fond vert transparent
+ * 8 · SECTIONS (INF, ASSC, AS…) — fond vert transparent
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning tr.section-row td {
+#planningPage .planning tr.section-row td {
   background: linear-gradient(180deg,
     rgba(31, 99, 89, 0.08) 0%,
     rgba(31, 99, 89, 0.03) 100%
@@ -930,25 +1049,23 @@
   font-size: 10.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-teal-700);
+  color: var(--color-teal-700, #164a42);
   font-weight: 700;
 }
 
-.planning tr.section-row td.col-collab {
-  position: sticky;
-  left: 0;
-  z-index: 5;
+#planningPage .planning tr.section-row td.col-collab {
   background: linear-gradient(90deg,
     rgba(31, 99, 89, 0.10) 0%,
     rgba(31, 99, 89, 0.04) 100%
   ) !important;
 }
 
-.planning tr.section-row td.col-hours {
+#planningPage .planning tr.section-row td.col-hours {
   background: linear-gradient(180deg,
     rgba(31, 99, 89, 0.08) 0%,
     rgba(31, 99, 89, 0.03) 100%
-  ) !important;
+  ), #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 .section-cell-content {
@@ -958,10 +1075,10 @@
 }
 
 .section-count {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-weight: 600;
   background: rgba(31, 99, 89, 0.15);
-  color: var(--color-teal-700);
+  color: var(--color-teal-700, #164a42);
   padding: 1px 7px;
   border-radius: 99px;
   font-size: 10px;
@@ -970,38 +1087,45 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 8 · LIGNES + HOVER VERT TRANSPARENT
+ * 9 · LIGNES + HOVER VERT TRANSPARENT
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning tbody tr {
   transition: background-color 0.12s;
 }
 
-.planning tbody tr:hover td {
+/* Hover sur cellules normales (pas sticky, pas weekend) */
+#planningPage .planning tbody tr:hover td:not(.col-collab):not(.col-pct):not(.col-hours):not(.weekend) {
   background-color: rgba(31, 99, 89, 0.06) !important;
 }
 
-.planning tbody tr:hover td.weekend {
+/* Hover sur weekend : doré renforcé */
+#planningPage .planning tbody tr:hover td.weekend {
   background-color: rgba(212, 160, 74, 0.18) !important;
 }
 
-.planning tbody tr:hover td.col-collab,
-.planning tbody tr:hover td.col-pct,
-.planning tbody tr:hover td.col-hours {
-  background-color: rgba(31, 99, 89, 0.06) !important;
+/* Hover sur colonnes sticky : teal-50 OPAQUE (pas transparent !) */
+#planningPage .planning tbody tr:hover td.col-collab,
+#planningPage .planning tbody tr:hover td.col-pct,
+#planningPage .planning tbody tr:hover td.col-hours {
+  background: #ecf5f3 !important;
+  background-color: #ecf5f3 !important;
+  background-image: none !important;
 }
 
 .planning tbody td {
   padding: 6px 4px;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
   text-align: center;
-  height: var(--cell-h);
+  height: var(--cell-h, 46px);
   vertical-align: middle;
   position: relative;
 }
 
 
-/* ─── Cellule collab ──────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 10 · CELLULE COLLABORATEUR + ROLE TAGS
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .collab-cell {
   display: flex;
@@ -1018,21 +1142,21 @@
   min-width: 36px;
   height: 22px;
   padding: 0 7px;
-  background: var(--color-surface-3);
-  color: var(--color-ink-2);
+  background: var(--color-surface-3, #f3f6f5);
+  color: var(--color-ink-2, #324e4a);
   border-radius: 5px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   flex-shrink: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
 }
 
-.role-tag.inf  { background: var(--color-teal-100);  color: var(--color-teal-700); }
-.role-tag.assc { background: #e6eef8;                color: #2d5586; }
-.role-tag.as   { background: #fbe7ed;                color: #a04863; }
-.role-tag.anim { background: #f0e8f5;                color: #5e3a78; }
-.role-tag.ruv  { background: #d2e7e2;                color: var(--color-teal-700); }
+.role-tag.inf  { background: var(--color-teal-100, #d2e7e2); color: var(--color-teal-700, #164a42); }
+.role-tag.assc { background: #e6eef8;                       color: #2d5586; }
+.role-tag.as   { background: #fbe7ed;                       color: #a04863; }
+.role-tag.anim { background: #f0e8f5;                       color: #5e3a78; }
+.role-tag.ruv  { background: #d2e7e2;                       color: var(--color-teal-700, #164a42); }
 
 .collab-cell-info {
   min-width: 0;
@@ -1042,7 +1166,7 @@
 .collab-cell-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -1050,19 +1174,21 @@
 }
 
 
-/* ─── Cellule taux ────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 11 · CELLULE TAUX (% + barre)
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .pct-cell {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--color-ink-2);
+  color: var(--color-ink-2, #324e4a);
 }
 
 .pct-cell-bar {
   width: 38px;
   height: 3px;
-  background: var(--color-line);
+  background: var(--color-line, #e3ebe8);
   border-radius: 99px;
   overflow: hidden;
   margin: 3px auto 0;
@@ -1070,30 +1196,33 @@
 
 .pct-cell-bar > div {
   height: 100%;
-  background: var(--color-teal-500);
+  background: var(--color-teal-500, #2d8074);
   border-radius: 99px;
 }
 
 
-/* ─── Shifts colorés ──────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 12 · SHIFTS COLORÉS
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .shift {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--shift-min-w);
-  height: var(--shift-h);
+  min-width: var(--shift-min-w, 36px);
+  height: var(--shift-h, 26px);
   padding: 0 8px;
   border-radius: 7px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-weight: 700;
-  font-size: var(--shift-fs);
+  font-size: var(--shift-fs, 11px);
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: 0.12s;
   position: relative;
   border: 1px solid transparent;
   color: #fff;
+  z-index: 1;  /* Toujours sous les colonnes sticky */
 }
 
 .shift:hover {
@@ -1102,19 +1231,21 @@
   z-index: 2;
 }
 
-.shift.c1 { background: var(--shift-c1); }
-.shift.c2 { background: var(--shift-c2); }
-.shift.d1 { background: var(--shift-d1); }
-.shift.d3 { background: var(--shift-d3); }
-.shift.d4 { background: var(--shift-d4); }
-.shift.s3 { background: var(--shift-s3); }
-.shift.s4 { background: var(--shift-s4); }
-.shift.a2 { background: var(--shift-a2); }
-.shift.a3 { background: var(--shift-a3); }
-.shift.n  { background: var(--shift-n);  }
+.shift.c1 { background: var(--shift-c1, #5cad9b); }
+.shift.c2 { background: var(--shift-c2, #3d8b6b); }
+.shift.d1 { background: var(--shift-d1, #5a9bd8); }
+.shift.d3 { background: var(--shift-d3, #d96b5a); }
+.shift.d4 { background: var(--shift-d4, #e0a85a); }
+.shift.s3 { background: var(--shift-s3, #9268b3); }
+.shift.s4 { background: var(--shift-s4, #e08aa0); }
+.shift.a2 { background: var(--shift-a2, #1f6359); }
+.shift.a3 { background: var(--shift-a3, #7a4f9e); }
+.shift.n  { background: var(--shift-n,  #2d3e6b); }
 
 
-/* ─── Cellule heures totales ──────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 13 · HEURES TOTALES — Fraunces noir gras
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .hours-cell {
   display: flex;
@@ -1125,27 +1256,36 @@
   line-height: 1.2;
 }
 
-.hours-main {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--color-ink);
-  letter-spacing: -0.01em;
+#planningPage .hours-main {
+  font-family: var(--font-display, 'Fraunces', Georgia, serif) !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  color: #0d2a26 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1 !important;
 }
 
-.hours-target {
-  font-size: 10px;
-  color: var(--color-muted);
-  font-family: var(--font-mono);
-  margin-top: 1px;
+#planningPage .hours-target {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+  font-size: 10px !important;
+  color: var(--color-muted, #6b8783) !important;
+  margin-top: 3px !important;
+  letter-spacing: 0 !important;
 }
 
-.hours-target.over  { color: var(--color-ok); }
-.hours-target.under { color: var(--color-warn); }
+#planningPage .hours-target.under {
+  color: #c97a2a !important;
+  font-weight: 500 !important;
+}
+
+#planningPage .hours-target.over {
+  color: #3d8b6b !important;
+  font-weight: 500 !important;
+}
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 9 · SIZE CONTROLS
+ * 14 · SIZE CONTROLS (boutons taille xs/sm/md/lg)
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .section-size-cell {
@@ -1153,7 +1293,8 @@
   background: linear-gradient(180deg,
     rgba(31, 99, 89, 0.08) 0%,
     rgba(31, 99, 89, 0.03) 100%
-  ) !important;
+  ), #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 .size-controls {
@@ -1161,7 +1302,7 @@
   align-items: center;
   gap: 1px;
   background: #fff;
-  border: 1px solid var(--color-teal-100);
+  border: 1px solid var(--color-teal-100, #d2e7e2);
   border-radius: 8px;
   padding: 2px;
   box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
@@ -1176,30 +1317,30 @@
   display: grid;
   place-items: center;
   cursor: pointer;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   transition: 0.12s;
   font-family: inherit;
 }
 
 .size-btn:hover {
-  background: var(--color-teal-50);
-  color: var(--color-teal-600);
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-600, #1f6359);
 }
 
 .size-btn.active {
-  background: var(--color-teal-700);
+  background: var(--color-teal-700, #164a42);
   color: #fff;
   box-shadow: 0 1px 3px rgba(31, 99, 89, 0.2);
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 10 · FOOTER PLANNING
+ * 15 · FOOTER PLANNING
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning-foot {
-  background: var(--color-surface-2);
-  border-top: 1px solid var(--color-line);
+  background: var(--color-surface-2, #fafbfa);
+  border-top: 1px solid var(--color-line, #e3ebe8);
   padding: 12px 18px;
   display: flex;
   align-items: center;
@@ -1215,14 +1356,14 @@
   gap: 14px;
   flex-wrap: wrap;
   font-size: 11.5px;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
 }
 
 .legend-label {
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-weight: 600;
   margin-right: 4px;
 }
@@ -1231,7 +1372,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 10.5px;
 }
 
@@ -1255,14 +1396,14 @@
 }
 
 .foot-stat-num {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Fraunces', serif);
   font-weight: 600;
   font-size: 16px;
-  color: var(--color-ink);
+  color: var(--color-ink, #0d2a26);
 }
 
 .foot-stat-lbl {
-  color: var(--color-muted);
+  color: var(--color-muted, #6b8783);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1271,7 +1412,7 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 11 · FULLSCREEN
+ * 16 · FULLSCREEN MODE
  * ════════════════════════════════════════════════════════════════════════════ */
 
 body.pl-is-fullscreen #adminSidebar,
@@ -1291,18 +1432,18 @@ body.pl-is-fullscreen .planning-wrap {
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 12 · RESPONSIVE
+ * 17 · RESPONSIVE
  * ════════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1100px) {
-  .command-bar {
+  #planningPage .command-bar {
     padding: 12px 14px !important;
     gap: 8px;
   }
   .cb-spacer {
     display: none;
   }
-  .planning-page .planning-wrap {
+  #planningPage .planning-wrap {
     margin: 12px 14px 14px 14px !important;
   }
 }
@@ -1316,576 +1457,69 @@ body.pl-is-fullscreen .planning-wrap {
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * FIN — planning.css v8.0 (casse wrapper admin + structure correcte)
+ * FIN — planning.css v9.0 (FINAL COMPLET)
  * ════════════════════════════════════════════════════════════════════════════ */
-/* ════════════════════════════════════════════════════════════════════════════
- * PATCH CSS v8.2 — Spécificité MAXIMALE
- *
- * À AJOUTER À LA TOUTE FIN de admin/assets/css/planning.css
- *
- * Stratégie : utiliser des sélecteurs très spécifiques (id #planningPage +
- * id #plTable + classe + tag + !important) pour battre n'importe quel
- * autre CSS qui pourrait s'imposer.
- *
- * 2 corrections critiques :
- *   1. Hover team-pill : vert teal-50 (image 2)
- *   2. Colonne Heures : VRAIMENT opaque (image 1)
- * ════════════════════════════════════════════════════════════════════════════ */
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 1️⃣  HOVER team-pill : MAXIMUM SPÉCIFICITÉ
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Pill normale */
-#planningPage .team-filters button.team-pill {
-  background: transparent !important;
-  background-color: transparent !important;
-  color: var(--color-muted) !important;
-  border: 0 !important;
-  padding: 6px 13px !important;
-  border-radius: 99px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
-}
-
-/* HOVER sur pill (priorité absolue) — vert teal pâle */
-#planningPage .team-filters button.team-pill:hover,
-#planningPage .team-filters button.team-pill:not(.on):hover {
-  background: rgba(31, 99, 89, 0.08) !important;
-  background-color: rgba(31, 99, 89, 0.08) !important;
-  color: #164a42 !important;
-}
-
-/* Pill ACTIVE (Tous · 110, M2 · 21 sur image 2) — NOIR */
-#planningPage .team-filters button.team-pill.on {
-  background: #1a1a1a !important;
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
-}
-
-/* Hover sur pill active : reste noir mais légèrement plus profond */
-#planningPage .team-filters button.team-pill.on:hover {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #ffffff !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 2️⃣  COLONNE HEURES : SPÉCIFICITÉ MAX + couleur dur en hex
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Header de la colonne Heures */
-#planningPage table#plTable thead tr th.col-hours,
-#planningPage .planning-wrap table thead th.col-hours {
-  position: sticky !important;
-  right: 0 !important;
-  z-index: 100 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-  min-width: 90px !important;
-  width: 90px !important;
-  border-left: 1px solid #e3ebe8 !important;
-  text-align: center !important;
-}
-
-/* Cellules tbody de la colonne Heures — état NORMAL */
-#planningPage table#plTable tbody tr td.col-hours,
-#planningPage .planning-wrap table tbody td.col-hours {
-  position: sticky !important;
-  right: 0 !important;
-  z-index: 100 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  min-width: 90px !important;
-  width: 90px !important;
-  border-left: 1px solid #e3ebe8 !important;
-  text-align: center !important;
-  box-shadow: -8px 0 16px -4px rgba(13, 42, 38, 0.08) !important;
-}
-
-/* HOVER row : la col-hours suit avec un teal-50 OPAQUE (pas transparent) */
-#planningPage table#plTable tbody tr:hover td.col-hours,
-#planningPage .planning-wrap table tbody tr:hover td.col-hours {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-/* Section row (INF, ASSC, etc.) col-hours en gradient teal */
-#planningPage table#plTable tbody tr.section-row td.col-hours,
-#planningPage .planning-wrap table tbody tr.section-row td.col-hours {
-  background: linear-gradient(180deg, #d2e7e2 0%, #f3f6f5 100%) !important;
-  background-color: #f3f6f5 !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 3️⃣  AUSSI les colonnes col-collab et col-pct (cohérence)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Colonne Collaborateur */
-#planningPage table#plTable thead tr th.col-collab,
-#planningPage .planning-wrap table thead th.col-collab {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 99 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr td.col-collab,
-#planningPage .planning-wrap table tbody td.col-collab {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 99 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  box-shadow: 8px 0 16px -4px rgba(13, 42, 38, 0.08) !important;
-}
-
-/* HOVER row : col-collab suit avec teal-50 opaque */
-#planningPage table#plTable tbody tr:hover td.col-collab,
-#planningPage .planning-wrap table tbody tr:hover td.col-collab {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-/* Section row col-collab en gradient teal */
-#planningPage table#plTable tbody tr.section-row td.col-collab,
-#planningPage .planning-wrap table tbody tr.section-row td.col-collab {
-  background: linear-gradient(90deg, #d2e7e2 0%, #f3f6f5 100%) !important;
-  background-color: #f3f6f5 !important;
-}
-
-/* Colonne Pourcentage */
-#planningPage table#plTable thead tr th.col-pct,
-#planningPage .planning-wrap table thead th.col-pct {
-  position: sticky !important;
-  left: 240px !important;
-  z-index: 98 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr td.col-pct,
-#planningPage .planning-wrap table tbody td.col-pct {
-  position: sticky !important;
-  left: 240px !important;
-  z-index: 98 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr:hover td.col-pct,
-#planningPage .planning-wrap table tbody tr:hover td.col-pct {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 4️⃣  HOVER sur lignes (cellules normales jour) : vert transparent
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-#planningPage table#plTable tbody tr:hover td:not(.col-collab):not(.col-pct):not(.col-hours):not(.weekend) {
-  background-color: rgba(31, 99, 89, 0.06) !important;
-}
-
-#planningPage table#plTable tbody tr:hover td.weekend {
-  background-color: rgba(212, 160, 74, 0.18) !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 5️⃣  Limiter z-index des shifts pour passer SOUS col-hours (z-100)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-#planningPage .shift {
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-#planningPage .shift:hover {
-  z-index: 2 !important;
-}
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * FIN DU PATCH v8.2 — spécificité maximale
- * ════════════════════════════════════════════════════════════════════════════ */
-/* ════════════════════════════════════════════════════════════════════════════
- * PATCH CSS v8.2 — Spécificité MAXIMALE
- *
- * À AJOUTER À LA TOUTE FIN de admin/assets/css/planning.css
- *
- * Stratégie : utiliser des sélecteurs très spécifiques (id #planningPage +
- * id #plTable + classe + tag + !important) pour battre n'importe quel
- * autre CSS qui pourrait s'imposer.
- *
- * 2 corrections critiques :
- *   1. Hover team-pill : vert teal-50 (image 2)
- *   2. Colonne Heures : VRAIMENT opaque (image 1)
+ * v9.1 — SCROLL VERTICAL + LIGNES VERTICALES DISCRÈTES
  * ════════════════════════════════════════════════════════════════════════════ */
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * 1️⃣  HOVER team-pill : MAXIMUM SPÉCIFICITÉ
- * ═══════════════════════════════════════════════════════════════════════════ */
+/* ─── Scroll vertical sur la grille ──────────────────────────────────────
+ * On contraint la hauteur du conteneur scrollable au viewport (moins place
+ * pour topbar admin + command-bar + filters + marges + footer planning).
+ * Le thead du <table> est déjà sticky (top: 0) → reste visible au scroll Y.
+ * Le scroll horizontal continue de fonctionner en parallèle.
+ * ──────────────────────────────────────────────────────────────────────── */
 
-/* Pill normale */
-#planningPage .team-filters button.team-pill {
-  background: transparent !important;
-  background-color: transparent !important;
-  color: var(--color-muted) !important;
-  border: 0 !important;
-  padding: 6px 13px !important;
-  border-radius: 99px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.15s !important;
+#planningPage .planning-wrap {
+  /* La carte ne dépasse plus du viewport */
+  max-height: calc(100vh - 200px);
+  min-height: 400px;
 }
 
-/* HOVER sur pill (priorité absolue) — vert teal pâle */
-#planningPage .team-filters button.team-pill:hover,
-#planningPage .team-filters button.team-pill:not(.on):hover {
-  background: rgba(31, 99, 89, 0.08) !important;
-  background-color: rgba(31, 99, 89, 0.08) !important;
-  color: #164a42 !important;
-}
-
-/* Pill ACTIVE (Tous · 110, M2 · 21 sur image 2) — NOIR */
-#planningPage .team-filters button.team-pill.on {
-  background: #1a1a1a !important;
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
-}
-
-/* Hover sur pill active : reste noir mais légèrement plus profond */
-#planningPage .team-filters button.team-pill.on:hover {
-  background: #000000 !important;
-  background-color: #000000 !important;
-  color: #ffffff !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 2️⃣  COLONNE HEURES : SPÉCIFICITÉ MAX + couleur dur en hex
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Header de la colonne Heures */
-#planningPage table#plTable thead tr th.col-hours,
-#planningPage .planning-wrap table thead th.col-hours {
-  position: sticky !important;
-  right: 0 !important;
-  z-index: 100 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-  min-width: 90px !important;
-  width: 90px !important;
-  border-left: 1px solid #e3ebe8 !important;
-  text-align: center !important;
-}
-
-/* Cellules tbody de la colonne Heures — état NORMAL */
-#planningPage table#plTable tbody tr td.col-hours,
-#planningPage .planning-wrap table tbody td.col-hours {
-  position: sticky !important;
-  right: 0 !important;
-  z-index: 100 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  min-width: 90px !important;
-  width: 90px !important;
-  border-left: 1px solid #e3ebe8 !important;
-  text-align: center !important;
-  box-shadow: -8px 0 16px -4px rgba(13, 42, 38, 0.08) !important;
-}
-
-/* HOVER row : la col-hours suit avec un teal-50 OPAQUE (pas transparent) */
-#planningPage table#plTable tbody tr:hover td.col-hours,
-#planningPage .planning-wrap table tbody tr:hover td.col-hours {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-/* Section row (INF, ASSC, etc.) col-hours en gradient teal */
-#planningPage table#plTable tbody tr.section-row td.col-hours,
-#planningPage .planning-wrap table tbody tr.section-row td.col-hours {
-  background: linear-gradient(180deg, #d2e7e2 0%, #f3f6f5 100%) !important;
-  background-color: #f3f6f5 !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 3️⃣  AUSSI les colonnes col-collab et col-pct (cohérence)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Colonne Collaborateur */
-#planningPage table#plTable thead tr th.col-collab,
-#planningPage .planning-wrap table thead th.col-collab {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 99 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr td.col-collab,
-#planningPage .planning-wrap table tbody td.col-collab {
-  position: sticky !important;
-  left: 0 !important;
-  z-index: 99 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  box-shadow: 8px 0 16px -4px rgba(13, 42, 38, 0.08) !important;
-}
-
-/* HOVER row : col-collab suit avec teal-50 opaque */
-#planningPage table#plTable tbody tr:hover td.col-collab,
-#planningPage .planning-wrap table tbody tr:hover td.col-collab {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-/* Section row col-collab en gradient teal */
-#planningPage table#plTable tbody tr.section-row td.col-collab,
-#planningPage .planning-wrap table tbody tr.section-row td.col-collab {
-  background: linear-gradient(90deg, #d2e7e2 0%, #f3f6f5 100%) !important;
-  background-color: #f3f6f5 !important;
-}
-
-/* Colonne Pourcentage */
-#planningPage table#plTable thead tr th.col-pct,
-#planningPage .planning-wrap table thead th.col-pct {
-  position: sticky !important;
-  left: 240px !important;
-  z-index: 98 !important;
-  background: #fafbfa !important;
-  background-color: #fafbfa !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr td.col-pct,
-#planningPage .planning-wrap table tbody td.col-pct {
-  position: sticky !important;
-  left: 240px !important;
-  z-index: 98 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-}
-
-#planningPage table#plTable tbody tr:hover td.col-pct,
-#planningPage .planning-wrap table tbody tr:hover td.col-pct {
-  background: #ecf5f3 !important;
-  background-color: #ecf5f3 !important;
-  background-image: none !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 4️⃣  HOVER sur lignes (cellules normales jour) : vert transparent
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-#planningPage table#plTable tbody tr:hover td:not(.col-collab):not(.col-pct):not(.col-hours):not(.weekend) {
-  background-color: rgba(31, 99, 89, 0.06) !important;
-}
-
-#planningPage table#plTable tbody tr:hover td.weekend {
-  background-color: rgba(212, 160, 74, 0.18) !important;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 5️⃣  Limiter z-index des shifts pour passer SOUS col-hours (z-100)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-#planningPage .shift {
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-#planningPage .shift:hover {
-  z-index: 2 !important;
-}
-
-
-/* ════════════════════════════════════════════════════════════════════════════
- * FIN DU PATCH v8.2 — spécificité maximale
- * ════════════════════════════════════════════════════════════════════════════ */
-/* ════════════════════════════════════════════════════════════════════════════
- * PATCH CSS v8.3 — Dropdown z-index + dropdown vue hover
- *
- * À AJOUTER À LA TOUTE FIN de admin/assets/css/planning.css
- * (ou en remplacement du précédent patch v8.2)
- *
- * Corrections d'après screenshots :
- *   1. Dropdown période : z-index trop bas, caché derrière les sections
- *   2. Dropdown vue : hover doit être teal-50 transparent visible
- * ════════════════════════════════════════════════════════════════════════════ */
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 1️⃣  DROPDOWNS : z-index TRÈS HAUT pour passer DEVANT tout
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Le dropdown lui-même : z-index énorme pour être au-dessus de tout */
-#planningPage .dropdown,
-#planningPage .dropdown-period,
-#planningPage .dropdown-view {
-  z-index: 9999 !important;  /* Très au-dessus des sticky cols (100) et autres éléments */
-  position: absolute !important;
-}
-
-/* Quand le dropdown est OUVERT (.show), z-index encore plus haut */
-#planningPage .dropdown.show,
-#planningPage .dropdown-period.show,
-#planningPage .dropdown-view.show {
-  z-index: 10000 !important;
-}
-
-/* Le parent .cb-period-group doit avoir position:relative pour que le dropdown se positionne bien */
-#planningPage .cb-period-group {
-  position: relative !important;
-}
-
-/* IMPORTANT : la table planning et ses cellules sticky DOIVENT être sous le dropdown */
-#planningPage .planning-wrap,
 #planningPage .planning-grid {
-  position: relative;
-  z-index: 1 !important;  /* Très bas, passe sous tous les dropdowns */
+  /* Hérite de l'espace disponible via flex:1 du parent .planning-wrap (déjà
+     défini en flex column) — overflow:auto déjà présent. On force juste le
+     scroll Y au cas où. */
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
-/* Les sticky columns aussi (col-collab, col-pct, col-hours) doivent être sous les dropdowns */
-#planningPage table#plTable thead th.col-collab,
-#planningPage table#plTable thead th.col-pct,
-#planningPage table#plTable thead th.col-hours {
-  z-index: 5 !important;  /* Beaucoup plus bas que les dropdowns (9999) */
-}
-
-#planningPage table#plTable tbody td.col-collab,
-#planningPage table#plTable tbody td.col-pct,
-#planningPage table#plTable tbody td.col-hours {
-  z-index: 4 !important;
-}
-
-/* Section row (INFIRMIÈRE · INF) bien sous les dropdowns aussi */
-#planningPage table#plTable tr.section-row td {
-  z-index: 3 !important;
-}
-
-#planningPage table#plTable tr.section-row td.col-collab,
-#planningPage table#plTable tr.section-row td.col-hours {
-  z-index: 5 !important;
+/* Plein écran : le wrap occupe tout le viewport */
+body.pl-is-fullscreen #planningPage .planning-wrap {
+  max-height: 100vh;
+  height: 100vh;
 }
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * 2️⃣  DROPDOWN VUE : 3 états visuels distincts
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-/* État NORMAL (Vue semaine sans hover) : neutre */
-#planningPage .dropdown-view .dd-view-item {
-  background: transparent !important;
-  background-color: transparent !important;
-  transition: all 0.15s ease !important;
-}
-
-#planningPage .dropdown-view .dd-view-item .dd-view-icon {
-  background: var(--color-teal-50, #ecf5f3) !important;
-  background-color: var(--color-teal-50, #ecf5f3) !important;
-  color: var(--color-teal-700, #164a42) !important;
-  border: 1px solid var(--color-teal-100, #d2e7e2) !important;
-}
-
-/* État HOVER (Vue semaine quand on survole) : fond teal-50 transparent + icône plus marquée */
-#planningPage .dropdown-view .dd-view-item:hover:not(.active) {
-  background: rgba(31, 99, 89, 0.06) !important;
-  background-color: rgba(31, 99, 89, 0.06) !important;
-}
-
-#planningPage .dropdown-view .dd-view-item:hover:not(.active) .dd-view-icon {
-  background: var(--color-teal-100, #d2e7e2) !important;
-  background-color: var(--color-teal-100, #d2e7e2) !important;
-  color: var(--color-teal-700, #164a42) !important;
-  border-color: var(--color-teal-300, #7ab5ab) !important;
-  transform: scale(1.05);
-}
-
-/* État ACTIVE (Vue mois sélectionné) : fond surface-3 + icône teal-700 plein blanche */
-#planningPage .dropdown-view .dd-view-item.active {
-  background: var(--color-surface-3, #f3f6f5) !important;
-  background-color: var(--color-surface-3, #f3f6f5) !important;
-}
-
-#planningPage .dropdown-view .dd-view-item.active .dd-view-icon {
-  background: var(--color-teal-700, #164a42) !important;
-  background-color: var(--color-teal-700, #164a42) !important;
-  color: #ffffff !important;
-  border-color: var(--color-teal-700, #164a42) !important;
-}
-
-/* Hover sur item ACTIVE : reste actif mais légère teinte */
-#planningPage .dropdown-view .dd-view-item.active:hover {
-  background: var(--color-surface-3, #f3f6f5) !important;
-}
-
-/* Le check teal de l'item actif */
-#planningPage .dropdown-view .dd-view-item.active .dd-view-check {
-  opacity: 1 !important;
-  color: var(--color-teal-700, #164a42) !important;
-}
-
-#planningPage .dropdown-view .dd-view-item:not(.active) .dd-view-check {
-  opacity: 0 !important;
-}
-
-
-/* ════════════════════════════════════════════════════════════════════════════
- * FIN DU PATCH v8.3 — z-index dropdowns + état hover dropdown vue
- * ════════════════════════════════════════════════════════════════════════════ */
-
-
-/* ════════════════════════════════════════════════════════════════════════════
- * 14 · GRID LINES — séparateurs verticaux discrets entre colonnes jours
- *
- * Aide à la lecture : permet de suivre à l'œil quel shift correspond à quel
- * jour sans confusion. Volontairement très pâle (~5 % de noir teal) pour
- * rester subtil et ne pas concurrencer les borders horizontales.
- * ════════════════════════════════════════════════════════════════════════════ */
+/* ─── Lignes verticales discrètes entre colonnes jours ──────────────────
+ * Aide la lecture (suivi visuel : quel shift ↔ quel jour). Très pâle pour
+ * rester subtil. Excluant les colonnes sticky (col-collab/col-pct/col-hours)
+ * qui ont déjà leurs propres bordures plus marquées.
+ * ──────────────────────────────────────────────────────────────────────── */
 
 .planning thead th.day-head,
 .planning tbody td:not(.col-collab):not(.col-pct):not(.col-hours) {
   border-right: 1px solid rgba(13, 42, 38, 0.05);
 }
 
-/* Plus marqué pour le séparateur Dim → Lun (limite de semaine) */
+/* Légèrement plus marqué à la transition Dim → Lun (limite de semaine) */
 .planning thead th.day-head.weekend + th.day-head:not(.weekend),
 .planning tbody td.weekend + td:not(.weekend):not(.col-hours) {
   border-left: 1px solid rgba(13, 42, 38, 0.09);
 }
 
-/* Section / module / fonction rows (en colspan) : pas de séparateurs internes */
+/* Section / module / fonction rows en colspan : pas de séparateurs internes */
 .planning tr.section-row td,
 .planning tr.module-row td,
 .planning tr.fonction-row td {
   border-right: 0 !important;
   border-left: 0 !important;
 }
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.1 (scroll vertical + grid lines)
+ * ════════════════════════════════════════════════════════════════════════════ */
