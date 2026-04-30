@@ -1523,3 +1523,50 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.1 (scroll vertical + grid lines)
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.2 — SIZE CONTROLS dans team-filters + HOVER ligne complète
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ─── Size-controls poussés à droite (aligné avec le bord droit du tableau)
+ * Le team-filters a padding-right:24px ; le planning-wrap a margin-right:24px.
+ * → margin-left:auto suffit à aligner le bouton avec le bord droit de la card.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+#planningPage .team-filters .size-controls {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+
+/* ─── HOVER sur ligne entière : inclut col-collab + col-pct + col-hours ────
+ * Bug : les colonnes sticky avaient un background:#ffffff !important avec
+ * une spécificité plus haute que la règle hover existante (qui n'utilisait
+ * pas le sélecteur table#plTable). On bump la spécificité avec le même
+ * sélecteur pour que :hover gagne.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+#planningPage table#plTable tbody tr.user-row:hover td.col-collab,
+#planningPage table#plTable tbody tr.user-row:hover td.col-pct,
+#planningPage table#plTable tbody tr.user-row:hover td.col-hours {
+  background: var(--color-teal-50, #ecf5f3) !important;
+  background-color: var(--color-teal-50, #ecf5f3) !important;
+  background-image: none !important;
+}
+
+/* Hover sur cellules normales du milieu (jours, hors weekend) */
+#planningPage table#plTable tbody tr.user-row:hover td:not(.col-collab):not(.col-pct):not(.col-hours):not(.weekend) {
+  background-color: var(--color-teal-50, #ecf5f3) !important;
+}
+
+/* Hover sur weekend : doré renforcé */
+#planningPage table#plTable tbody tr.user-row:hover td.weekend {
+  background-color: rgba(212, 160, 74, 0.18) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.2
+ * ════════════════════════════════════════════════════════════════════════════ */

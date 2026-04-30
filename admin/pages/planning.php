@@ -359,6 +359,25 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     <button type="button" class="team-pill" data-team-filter="<?= h($f['code']) ?>" data-team-type="fonction" title="<?= h($f['nom']) ?>"><?= h($f['code']) ?></button>
     <?php endforeach; ?>
     <?php endif; ?>
+
+    <!-- Size controls : poussés tout à droite via margin-left:auto ─── -->
+    <div class="size-controls" role="group" aria-label="Zoom de la grille">
+      <button type="button" class="size-btn" data-size="xs" title="Très petit">
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
+      </button>
+      <button type="button" class="size-btn" data-size="sm" title="Petit">
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button type="button" class="size-btn" data-size="md" title="Moyen">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
+      </button>
+      <button type="button" class="size-btn active" data-size="std" title="Standard (défaut)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+      </button>
+      <button type="button" class="size-btn" data-size="lg" title="Grand">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- ── Planning grid ─────────────────────────────────────────────────────── -->
@@ -387,7 +406,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         </thead>
 
         <tbody>
-          <?php $isFirstModule = true; foreach ($plHierarchy as $module): ?>
+          <?php foreach ($plHierarchy as $module): ?>
 
           <!-- ░░░ MODULE ROW ░░░ collapsable, niveau 1 ░░░ -->
           <tr class="module-row" data-module-row="<?= h($module['code']) ?>" aria-expanded="true">
@@ -404,29 +423,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
               </div>
             </td>
             <td colspan="<?= $plNbDays ?>"></td>
-            <?php if ($isFirstModule): // Sélecteur de taille sur le 1er module seulement ?>
-            <td class="col-hours section-controls-cell">
-              <div class="size-controls" role="group" aria-label="Zoom de la grille">
-                <button type="button" class="size-btn" data-size="xs" title="Très petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
-                </button>
-                <button type="button" class="size-btn" data-size="sm" title="Petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>
-                </button>
-                <button type="button" class="size-btn" data-size="md" title="Moyen">
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
-                </button>
-                <button type="button" class="size-btn active" data-size="std" title="Standard (défaut)">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
-                </button>
-                <button type="button" class="size-btn" data-size="lg" title="Grand">
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
-                </button>
-              </div>
-            </td>
-            <?php else: ?>
             <td></td>
-            <?php endif; ?>
           </tr>
 
           <?php foreach ($module['fonctions'] as $fonction): ?>
@@ -488,7 +485,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
           <?php endforeach; ?>
 
           <?php endforeach; // fonctions ?>
-          <?php $isFirstModule = false; endforeach; // modules ?>
+          <?php endforeach; // modules ?>
 
           <?php if (empty($plHierarchy)): ?>
           <tr>
