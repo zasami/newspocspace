@@ -565,6 +565,35 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   </div>
 
+  <!-- ═══ Modale Statistiques ══════════════════════════════════════════════ -->
+  <div id="plStatsModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plStatsModalTitle">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <h3 id="plStatsModalTitle" class="font-display text-base font-semibold text-ink">Statistiques du planning</h3>
+        <button type="button" id="plStatsClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div id="plStatsBody" class="px-5 py-4 overflow-y-auto flex-1">
+        <!-- Contenu généré dynamiquement par JS -->
+        <div class="text-center py-8 text-muted">
+          <svg class="animate-spin mx-auto mb-2" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          Chargement des statistiques…
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end px-5 py-3 border-t border-line bg-surface-2">
+        <button type="button" id="plStatsCloseBtn" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ═══ Modale Génération IA ═════════════════════════════════════════════ -->
   <div id="plGenModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plGenModalTitle">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" id="plGenModal">
@@ -1338,29 +1367,149 @@ window.PL_DATA = {
         URL.revokeObjectURL(url);
     }
 
-    // ── Bouton Stats : modale simple avec admin_get_planning_stats ──────────
+    // ── Modale Statistiques (Tailwind) ──────────────────────────────────────
+    const plStatsBackdrop = $('plStatsModalBackdrop');
+    const plStatsBody     = $('plStatsBody');
+
+    function plStatsClose() {
+        plStatsBackdrop?.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    $('plStatsClose')?.addEventListener('click', plStatsClose);
+    $('plStatsCloseBtn')?.addEventListener('click', plStatsClose);
+    plStatsBackdrop?.addEventListener('click', (e) => {
+        if (e.target === plStatsBackdrop) plStatsClose();
+    });
+
+    function plEsc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        })[c]);
+    }
+    function plRenderStats(stats, mois) {
+        if (!stats) {
+            plStatsBody.innerHTML = '<div class="text-center py-8 text-muted">Aucune statistique disponible — créez et générez le planning d\'abord.</div>';
+            return;
+        }
+        const t = stats.totals || {};
+        const users = stats.heures_par_user || [];
+        const gaps = stats.gaps || [];
+
+        let html = '';
+        // ── 1) Stat cards ────────────────────────────────────────────────
+        html += '<div class="grid grid-cols-4 gap-3 mb-5">';
+        html += `<div class="px-3 py-3 rounded-xl border border-line bg-surface-2">
+                   <div class="text-[10px] uppercase tracking-wider text-muted font-semibold mb-1">Employés</div>
+                   <div class="font-display text-2xl font-bold text-ink leading-none">${plEsc(t.nb_employes || 0)}</div>
+                 </div>`;
+        html += `<div class="px-3 py-3 rounded-xl border border-line bg-surface-2">
+                   <div class="text-[10px] uppercase tracking-wider text-muted font-semibold mb-1">Assignations</div>
+                   <div class="font-display text-2xl font-bold text-ink leading-none">${plEsc(t.nb_assignations || 0)}</div>
+                 </div>`;
+        html += `<div class="px-3 py-3 rounded-xl border border-line bg-surface-2">
+                   <div class="text-[10px] uppercase tracking-wider text-muted font-semibold mb-1">Heures totales</div>
+                   <div class="font-display text-2xl font-bold text-ink leading-none">${plEsc(Math.round(t.total_heures || 0))}h</div>
+                 </div>`;
+        const gapColor = gaps.length > 0 ? 'text-warn' : 'text-ok';
+        html += `<div class="px-3 py-3 rounded-xl border border-line bg-surface-2">
+                   <div class="text-[10px] uppercase tracking-wider text-muted font-semibold mb-1">Manques</div>
+                   <div class="font-display text-2xl font-bold ${gapColor} leading-none">${plEsc(stats.nb_gaps || 0)}</div>
+                 </div>`;
+        html += '</div>';
+
+        // ── 2) Heures par collaborateur ───────────────────────────────────
+        html += `<div class="mb-5">
+          <h4 class="font-display text-sm font-semibold text-ink mb-2 flex items-center gap-2">
+            <span>Heures par collaborateur</span>
+            <span class="text-[11px] text-muted font-normal">${users.length} employés · ${stats.jours_ouvrables} j ouvrables sur ${stats.jours_mois}</span>
+          </h4>`;
+        if (users.length === 0) {
+            html += '<div class="text-sm text-muted italic px-3 py-4">Aucune donnée</div>';
+        } else {
+            html += `<div class="border border-line rounded-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface-2 text-[10px] uppercase tracking-wider text-muted font-semibold">
+                  <tr>
+                    <th class="text-left px-3 py-2">Collaborateur</th>
+                    <th class="text-center px-2 py-2">Fonction</th>
+                    <th class="text-right px-2 py-2">Taux</th>
+                    <th class="text-right px-2 py-2">Réelles</th>
+                    <th class="text-right px-2 py-2">Cibles</th>
+                    <th class="text-right px-3 py-2">Écart</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+            users.forEach(u => {
+                const ecart = parseFloat(u.ecart || 0);
+                const ecartClass = ecart > 1 ? 'text-ok font-semibold' : (ecart < -1 ? 'text-warn font-semibold' : 'text-muted');
+                const ecartSign = ecart > 0 ? '+' : '';
+                html += `<tr class="border-t border-line hover:bg-teal-50/50">
+                  <td class="px-3 py-2">${plEsc(u.prenom || '')} ${plEsc(u.nom || '')}</td>
+                  <td class="text-center px-2 py-2 text-[11px] text-muted">${plEsc(u.fonction_code || '—')}</td>
+                  <td class="text-right px-2 py-2 font-mono text-[12px] text-ink-2">${plEsc(Math.round(u.taux || 0))}%</td>
+                  <td class="text-right px-2 py-2 font-mono text-[12px] text-ink">${plEsc(Math.round(u.total_heures || 0))}h</td>
+                  <td class="text-right px-2 py-2 font-mono text-[12px] text-muted">${plEsc(u.heures_cibles || 0)}h</td>
+                  <td class="text-right px-3 py-2 font-mono text-[12px] ${ecartClass}">${ecartSign}${plEsc(u.ecart || 0)}h</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+        }
+        html += '</div>';
+
+        // ── 3) Manques de couverture ──────────────────────────────────────
+        if (gaps.length > 0) {
+            // Group by date
+            const byDate = {};
+            gaps.forEach(g => {
+                if (!byDate[g.date]) byDate[g.date] = [];
+                byDate[g.date].push(g);
+            });
+            html += `<div>
+              <h4 class="font-display text-sm font-semibold text-warn mb-2 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+                Manques de couverture
+                <span class="text-[11px] text-muted font-normal">${gaps.length} manque(s) sur ${Object.keys(byDate).length} jour(s)</span>
+              </h4>
+              <div class="space-y-1.5">`;
+            Object.keys(byDate).sort().forEach(date => {
+                const dayGaps = byDate[date];
+                html += `<div class="px-3 py-2 rounded-lg border border-warn-line bg-warn-bg/40 text-sm">
+                  <span class="font-semibold text-warn">${plEsc(date)}</span>
+                  <span class="text-muted ml-2">·</span>
+                  ${dayGaps.map(g => `<span class="ml-2 text-ink-2"><span class="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded">${plEsc(g.module_code)}/${plEsc(g.fonction_code)}</span> manque <strong class="text-warn">${plEsc(g.manque)}</strong> (${plEsc(g.present)}/${plEsc(g.requis)})</span>`).join(' ')}
+                </div>`;
+            });
+            html += '</div></div>';
+        } else if (stats.nb_assignations > 0) {
+            html += `<div class="px-3 py-3 rounded-lg border border-ok-line bg-ok-bg/40 text-sm text-ok flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+              Aucun manque de couverture détecté.
+            </div>`;
+        }
+
+        plStatsBody.innerHTML = html;
+        $('plStatsModalTitle').textContent = 'Statistiques · ' + (mois || window.PL_DATA?.moisAnnee || '');
+    }
+
     $('plStatsBtn')?.addEventListener('click', async () => {
         if (!window.PL_DATA?.planning) {
             plToast('Aucun planning — créez-en un d\'abord', 'info');
             return;
         }
-        const res = await plApiPost('admin_get_planning_stats', { mois: window.PL_DATA.moisAnnee });
-        if (!res?.success || !res.stats) {
-            plToast('Aucune statistique disponible', 'info');
-            return;
+        // Ouvre la modale en mode loading immédiat
+        plStatsBody.innerHTML = `<div class="text-center py-8 text-muted">
+          <svg class="animate-spin mx-auto mb-2" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          Chargement des statistiques…
+        </div>`;
+        plStatsBackdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const res = await plApiPost('admin_get_planning_stats', { mois: window.PL_DATA.moisAnnee });
+            plRenderStats(res?.stats, window.PL_DATA.moisAnnee);
+        } catch (e) {
+            plStatsBody.innerHTML = '<div class="text-center py-8 text-danger">Erreur : ' + plEsc(e.message || e) + '</div>';
         }
-        const s = res.stats;
-        // Affichage minimal en alert pour l'instant — TODO modal Tailwind dédiée
-        const lines = [];
-        lines.push('═══ Statistiques planning ' + (window.PL_DATA.moisAnnee || '') + ' ═══\n');
-        if (s.heures_par_user?.length) {
-            lines.push('Heures par collaborateur :');
-            s.heures_par_user.slice(0, 20).forEach(u => {
-                lines.push('  ' + u.prenom + ' ' + u.nom + ' : ' + (u.total_heures || 0) + 'h');
-            });
-            if (s.heures_par_user.length > 20) lines.push('  … (' + (s.heures_par_user.length - 20) + ' autres)');
-        }
-        alert(lines.join('\n'));
     });
 
     // ── Filtres avancés / Proposition : TODO ────────────────────────────────
