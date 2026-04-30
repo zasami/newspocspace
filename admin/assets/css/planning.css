@@ -1721,3 +1721,51 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.5
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.6 — Edit-mode propre : warm UNIQUEMENT sur cellule active, ligne juste
+ *                           pointillée, autres cellules inchangées
+ *
+ * Spec finale :
+ *   - Cellule survolée (jour)      → fond warm (rgba 0.22)
+ *   - Toutes les autres cellules   → fond NORMAL préservé (sticky blanc,
+ *                                    weekend doré, jours du milieu transparents)
+ *   - La ligne entière             → bordure dashed warm (top + bottom + left
+ *                                    sur col-collab pour fermer à gauche)
+ *
+ * Le piège : le v9.2 applique teal-50 sur tout `tr:hover` → quand on hover
+ * un jour, ça mettait teal-50 PARTOUT (mode lecture) en plus du warm sur la
+ * cellule. On force un reset SUR LES AUTRES cellules en mode édition.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* Toutes les cellules NON-hovered en edit-mode : reset à transparent */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td:not(:hover) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Sticky cols col-collab + col-pct restent BLANCHES (transparent ne suffit pas
+ * car elles seraient au-dessus d'autres lignes scrollées par-dessous) */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-collab:not(:hover),
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-pct:not(:hover) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* Weekend non-hovered : conserve sa teinte dorée pâle */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.weekend:not(:hover) {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+}
+
+/* La cellule survolée : warm bg marqué (max specificity grâce au :hover) */
+#planningPage table#plTable tbody tr.user-row td:not(.col-collab):not(.col-pct):not(.col-hours):hover {
+  background-color: rgba(212, 160, 74, 0.22) !important;
+  background-image: none !important;
+  cursor: pointer;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.6
+ * ════════════════════════════════════════════════════════════════════════════ */
