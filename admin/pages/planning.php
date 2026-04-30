@@ -372,22 +372,19 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             </td>
             <td colspan="<?= $plNbDays ?>"></td>
             <?php if ($isFirstSection): // Sélecteur de taille sur la 1ère section seulement ?>
-            <td class="col-hours section-controls-cell">
+            <td class="col-hours section-size-cell">
               <div class="size-controls" role="group" aria-label="Zoom de la grille">
                 <button type="button" class="size-btn" data-size="xs" title="Très petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
+                  <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
                 </button>
                 <button type="button" class="size-btn" data-size="sm" title="Petit">
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/></svg>
                 </button>
-                <button type="button" class="size-btn" data-size="md" title="Moyen">
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
-                </button>
-                <button type="button" class="size-btn active" data-size="std" title="Standard (défaut)">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+                <button type="button" class="size-btn active" data-size="md" title="Moyen (défaut)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>
                 </button>
                 <button type="button" class="size-btn" data-size="lg" title="Grand">
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
                 </button>
               </div>
             </td>
@@ -579,13 +576,12 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         });
     });
 
-    // ── 5 presets de zoom : XS / SM / MD / STD / LG (STD = défaut) ──────────
+    // ── 4 presets de zoom : XS / SM / MD / LG ───────────────────────────────
     const SIZE_PRESETS = {
-        xs:  { cellW: 36, cellH: 32, shiftMinW: 22, shiftH: 18, shiftFs: 9,    dayNumSize: 20, dayNumFs: 11 },
-        sm:  { cellW: 48, cellH: 40, shiftMinW: 28, shiftH: 22, shiftFs: 10,   dayNumSize: 24, dayNumFs: 12 },
-        md:  { cellW: 56, cellH: 44, shiftMinW: 32, shiftH: 25, shiftFs: 10.5, dayNumSize: 26, dayNumFs: 13 },
-        std: { cellW: 64, cellH: 50, shiftMinW: 36, shiftH: 28, shiftFs: 11,   dayNumSize: 28, dayNumFs: 14 },
-        lg:  { cellW: 84, cellH: 64, shiftMinW: 50, shiftH: 36, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16 },
+        xs: { cellW: 32, cellH: 30, shiftMinW: 22, shiftH: 17, shiftFs: 8.5, dayNumSize: 20, dayNumFs: 11 },
+        sm: { cellW: 44, cellH: 38, shiftMinW: 30, shiftH: 22, shiftFs: 10,  dayNumSize: 24, dayNumFs: 12 },
+        md: { cellW: 56, cellH: 46, shiftMinW: 36, shiftH: 26, shiftFs: 11,  dayNumSize: 28, dayNumFs: 13.5 },
+        lg: { cellW: 80, cellH: 60, shiftMinW: 48, shiftH: 34, shiftFs: 12.5, dayNumSize: 32, dayNumFs: 15 },
     };
     const planningTable = $('plTable');
 
@@ -609,7 +605,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         btn.addEventListener('click', () => applySize(btn.dataset.size));
     });
 
-    let initialSize = 'std';
+    let initialSize = 'md';
     try {
         const saved = localStorage.getItem('ss_planning_size');
         if (saved && SIZE_PRESETS[saved]) initialSize = saved;
