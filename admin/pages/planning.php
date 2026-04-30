@@ -73,21 +73,47 @@ for ($d = 1; $d <= $plDaysInMonth; $d++) {
 }
 $plNbDays = count($plDays);
 
-// ─── Groupement des users par fonction ─────────────────────────────────────
-$plUsersByFonction = [];
+// ─── Map module_code → infos pour lookup ───────────────────────────────────
+$plModuleMap = [];
+foreach ($planningModules as $m) {
+    $plModuleMap[$m['code']] = $m;
+}
+
+// ─── Hiérarchie : Module (principal) → Fonction → Users ────────────────────
+$plHierarchy = [];
 foreach ($planningUsers as $u) {
-    $code = $u['fonction_code'] ?? 'SANS';
-    if (!isset($plUsersByFonction[$code])) {
-        $plUsersByFonction[$code] = [
-            'code'  => $code,
+    $modCodes = array_filter(explode(',', (string) ($u['module_codes'] ?? '')));
+    $modCode  = !empty($modCodes) ? $modCodes[0] : 'SANS';   // module principal (1er)
+    $foncCode = $u['fonction_code'] ?? 'SANS';
+
+    if (!isset($plHierarchy[$modCode])) {
+        $modInfo = $plModuleMap[$modCode] ?? null;
+        $plHierarchy[$modCode] = [
+            'code'       => $modCode,
+            'nom'        => $modInfo['nom'] ?? ($modCode === 'SANS' ? 'Sans module' : $modCode),
+            'ordre'      => (int) ($modInfo['ordre'] ?? 999),
+            'fonctions'  => [],
+            'totalUsers' => 0,
+        ];
+    }
+    if (!isset($plHierarchy[$modCode]['fonctions'][$foncCode])) {
+        $plHierarchy[$modCode]['fonctions'][$foncCode] = [
+            'code'  => $foncCode,
             'nom'   => $u['fonction_nom'] ?? 'Sans fonction',
-            'ordre' => $u['fonction_ordre'] ?? 999,
+            'ordre' => (int) ($u['fonction_ordre'] ?? 999),
             'users' => [],
         ];
     }
-    $plUsersByFonction[$code]['users'][] = $u;
+    $plHierarchy[$modCode]['fonctions'][$foncCode]['users'][] = $u;
+    $plHierarchy[$modCode]['totalUsers']++;
 }
-uasort($plUsersByFonction, fn($a, $b) => ($a['ordre'] ?? 999) - ($b['ordre'] ?? 999));
+
+// Tri : modules par ordre, puis fonctions dans chaque module
+uasort($plHierarchy, fn($a, $b) => ($a['ordre'] ?? 999) - ($b['ordre'] ?? 999));
+foreach ($plHierarchy as &$_mod) {
+    uasort($_mod['fonctions'], fn($a, $b) => ($a['ordre'] ?? 999) - ($b['ordre'] ?? 999));
+}
+unset($_mod);
 
 // ─── Compteurs filtres équipes ──────────────────────────────────────────────
 $plCountTotal = count($planningUsers);
@@ -361,17 +387,24 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         </thead>
 
         <tbody>
-          <?php $isFirstSection = true; foreach ($plUsersByFonction as $section): ?>
-          <!-- Section header -->
-          <tr class="section-row" data-team-fonction="<?= h($section['code']) ?>">
+          <?php $isFirstModule = true; foreach ($plHierarchy as $module): ?>
+
+          <!-- ░░░ MODULE ROW ░░░ collapsable, niveau 1 ░░░ -->
+          <tr class="module-row" data-module-row="<?= h($module['code']) ?>" aria-expanded="true">
             <td class="col-collab" colspan="2">
-              <div class="section-cell-content">
-                <?= h($section['nom']) ?> · <?= h($section['code']) ?>
-                <span class="section-count"><?= count($section['users']) ?></span>
+              <div class="module-cell-content">
+                <button type="button" class="module-toggle" aria-label="Replier/déplier le module">
+                  <svg class="module-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+                <span class="module-code"><?= h($module['code']) ?></span>
+                <span class="module-name"><?= h($module['nom']) ?></span>
+                <span class="module-count"><?= (int) $module['totalUsers'] ?> emp</span>
               </div>
             </td>
             <td colspan="<?= $plNbDays ?>"></td>
-            <?php if ($isFirstSection): // Sélecteur de taille sur la 1ère section seulement ?>
+            <?php if ($isFirstModule): // Sélecteur de taille sur le 1er module seulement ?>
             <td class="col-hours section-controls-cell">
               <div class="size-controls" role="group" aria-label="Zoom de la grille">
                 <button type="button" class="size-btn" data-size="xs" title="Très petit">
@@ -396,7 +429,20 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             <?php endif; ?>
           </tr>
 
-          <?php foreach ($section['users'] as $u):
+          <?php foreach ($module['fonctions'] as $fonction): ?>
+
+          <!-- ─── FONCTION SUB-ROW ─── niveau 2 ─── -->
+          <tr class="section-row fonction-row" data-module="<?= h($module['code']) ?>" data-team-fonction="<?= h($fonction['code']) ?>">
+            <td class="col-collab" colspan="2">
+              <div class="section-cell-content">
+                <?= h($fonction['nom']) ?> · <?= h($fonction['code']) ?>
+                <span class="section-count"><?= count($fonction['users']) ?></span>
+              </div>
+            </td>
+            <td colspan="<?= $plNbDays + 1 ?>"></td>
+          </tr>
+
+          <?php foreach ($fonction['users'] as $u):
             $taux = (float) ($u['taux'] ?? 0);
             $tauxRounded = (int) round($taux);
             $cible = pl_target_hours($taux);
@@ -404,11 +450,13 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             $heuresCourant = 0;
             foreach ($userShifts as $code) { $heuresCourant += $plShiftHours[$code] ?? 8; }
             $diff = round($heuresCourant - $cible, 1);
-            $modCodes = explode(',', (string) ($u['module_codes'] ?? ''));
+            $userModCodes = array_filter(explode(',', (string) ($u['module_codes'] ?? '')));
           ?>
-          <tr data-user-id="<?= h($u['id']) ?>"
+          <tr class="user-row"
+              data-user-id="<?= h($u['id']) ?>"
+              data-module="<?= h($module['code']) ?>"
               data-fonction="<?= h($u['fonction_code'] ?? '') ?>"
-              data-modules="<?= h(implode(' ', array_filter($modCodes))) ?>">
+              data-modules="<?= h(implode(' ', $userModCodes)) ?>">
             <td class="col-collab">
               <div class="collab-cell">
                 <span class="role-tag <?= pl_role_class($u['fonction_code'] ?? '') ?>"><?= h($u['fonction_code'] ?? '—') ?></span>
@@ -438,9 +486,11 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             </td>
           </tr>
           <?php endforeach; ?>
-          <?php $isFirstSection = false; endforeach; ?>
 
-          <?php if (empty($plUsersByFonction)): ?>
+          <?php endforeach; // fonctions ?>
+          <?php $isFirstModule = false; endforeach; // modules ?>
+
+          <?php if (empty($plHierarchy)): ?>
           <tr>
             <td colspan="<?= $plNbDays + 3 ?>" class="text-center py-12 text-muted">
               Aucun collaborateur actif dans la base.
@@ -637,6 +687,43 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         }
     });
 
+    // ── Module collapse / expand ────────────────────────────────────────────
+    function setModuleCollapsed(moduleCode, collapsed) {
+        const moduleRow = document.querySelector(`tr.module-row[data-module-row="${CSS.escape(moduleCode)}"]`);
+        if (!moduleRow) return;
+        moduleRow.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        document.querySelectorAll(
+            `tr.fonction-row[data-module="${CSS.escape(moduleCode)}"], tr.user-row[data-module="${CSS.escape(moduleCode)}"]`
+        ).forEach(r => {
+            if (collapsed) r.setAttribute('hidden', '');
+            else r.removeAttribute('hidden');
+        });
+    }
+    function saveCollapsedState() {
+        const state = {};
+        document.querySelectorAll('tr.module-row[aria-expanded="false"]').forEach(r => {
+            state[r.dataset.moduleRow] = true;
+        });
+        try { localStorage.setItem('ss_planning_collapsed_modules', JSON.stringify(state)); } catch(e) {}
+    }
+    function loadCollapsedState() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('ss_planning_collapsed_modules') || '{}');
+            Object.keys(saved).forEach(mc => { if (saved[mc]) setModuleCollapsed(mc, true); });
+        } catch(e) {}
+    }
+    // Click sur la ligne module (mais pas sur la cellule des size-buttons)
+    document.querySelectorAll('tr.module-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.section-controls-cell, .size-controls')) return;
+            const moduleCode = row.dataset.moduleRow;
+            const isCollapsed = row.getAttribute('aria-expanded') === 'false';
+            setModuleCollapsed(moduleCode, !isCollapsed);
+            saveCollapsedState();
+        });
+    });
+    loadCollapsedState();
+
     // ── Filtre équipes (pills) ──────────────────────────────────────────────
     document.querySelectorAll('.team-pill').forEach(pill => {
         pill.addEventListener('click', () => {
@@ -644,26 +731,51 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             pill.classList.add('on');
             const filter = pill.dataset.teamFilter || '';
             const type   = pill.dataset.teamType   || 'all';
+            const allRows = document.querySelectorAll('#plTable tbody tr');
 
-            document.querySelectorAll('#plTable tbody tr').forEach(row => {
-                if (row.classList.contains('section-row')) {
-                    if (type === 'fonction') {
-                        const sectionFonc = row.dataset.teamFonction || '';
-                        row.style.display = (sectionFonc === filter) ? '' : 'none';
+            // Helper : visibilité finale = filtre passé ET (module ouvert OU c'est une module-row)
+            allRows.forEach(row => row.removeAttribute('data-filtered-out'));
+
+            if (type === 'all' || !filter) {
+                // tout visible (le collapse module reste actif via [hidden])
+                return;
+            }
+
+            if (type === 'module') {
+                // Filtre sur le code module : ne montre que la module-row correspondante + ses descendants
+                allRows.forEach(row => {
+                    if (row.classList.contains('module-row')) {
+                        if (row.dataset.moduleRow !== filter) row.setAttribute('data-filtered-out', '');
                     } else {
-                        row.style.display = '';
+                        // fonction-row & user-row : on regarde data-module (module principal)
+                        // OU pour user-row on accepte aussi un module secondaire
+                        let match = (row.dataset.module === filter);
+                        if (!match && row.classList.contains('user-row')) {
+                            const userMods = (row.dataset.modules || '').split(/\s+/);
+                            if (userMods.includes(filter)) match = true;
+                        }
+                        if (!match) row.setAttribute('data-filtered-out', '');
                     }
-                    return;
-                }
-                if (type === 'all' || !filter) {
-                    row.style.display = '';
-                } else if (type === 'fonction') {
-                    row.style.display = (row.dataset.fonction === filter) ? '' : 'none';
-                } else if (type === 'module') {
-                    const mods = (row.dataset.modules || '').split(/\s+/);
-                    row.style.display = mods.includes(filter) ? '' : 'none';
-                }
-            });
+                });
+            } else if (type === 'fonction') {
+                // Filtre sur fonction : montre toutes les module-row qui ont au moins un user matching,
+                // les fonction-row de la fonction sélectionnée, et les user-row de cette fonction
+                const modulesWithMatch = new Set();
+                allRows.forEach(row => {
+                    if (row.classList.contains('user-row') && row.dataset.fonction === filter) {
+                        modulesWithMatch.add(row.dataset.module);
+                    }
+                });
+                allRows.forEach(row => {
+                    if (row.classList.contains('module-row')) {
+                        if (!modulesWithMatch.has(row.dataset.moduleRow)) row.setAttribute('data-filtered-out', '');
+                    } else if (row.classList.contains('fonction-row')) {
+                        if (row.dataset.teamFonction !== filter) row.setAttribute('data-filtered-out', '');
+                    } else if (row.classList.contains('user-row')) {
+                        if (row.dataset.fonction !== filter) row.setAttribute('data-filtered-out', '');
+                    }
+                });
+            }
         });
     });
 

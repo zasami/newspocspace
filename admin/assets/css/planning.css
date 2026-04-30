@@ -1,64 +1,104 @@
 /* =================================================================
  * planning.css — Spocspace Care · Module Planning
  *
- * Version : 3.1 — couleurs alignées sur Tailwind v4 (--color-*)
- * Identique à la maquette de référence (Planning · Spocspace.htm)
- * Classes simplifiées : .command-bar, .cb-*, .shift, .col-*, .day-*, etc.
- *
- * Variables consommées (définies par tailwind-config.php @theme) :
- *   --color-teal-*, --color-ink, --color-ink-2, --color-muted,
- *   --color-line, --color-line-2, --color-surface, --color-surface-2,
- *   --color-surface-3, --color-warm, --color-warm-bg, --color-ok, --color-warn
- *
- * Polices : --font-display (Fraunces), --font-body (Outfit), --font-mono (JetBrains Mono)
+ * VERSION 8.0 — STRUCTURE CORRECTE
+ * - Casse les paddings du wrapper admin parent (sortie de carte)
+ * - Command bar + filtres équipes : bandes plates bord-à-bord
+ * - Tableau planning : card avec border-radius (séparé visuellement)
+ * - Weekends colorés en doré pâle (colonnes entières)
+ * - Colonnes sticky : opaques garanties
  * ================================================================= */
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 1 · VARIABLES LOCALES — couleurs des shifts (raffinées Spocspace)
+ * 0 · CASSER LE WRAPPER ADMIN PARENT
+ * Le planning.php est inséré dans un conteneur admin (.admin-content,
+ * .admin-main, ou similaire) qui a probablement padding + background blanc.
+ * On le neutralise UNIQUEMENT quand .planning-page est dedans.
  * ════════════════════════════════════════════════════════════════════════════ */
 
+/* Le parent direct de .planning-page (quel qu'il soit) doit perdre son padding */
+:has(> .planning-page) {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: var(--color-bg, #f5f7f5) !important;
+}
+
+/* Selecteurs spécifiques au cas où :has() ne marche pas */
+.admin-content:has(.planning-page),
+.admin-main:has(.planning-page),
+#adminContent:has(.planning-page),
+#adminMain:has(.planning-page) {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  background: var(--color-bg, #f5f7f5) !important;
+}
+
+/* Et fallback : tous les ancêtres directs jusqu'au body */
 .planning-page {
-  --shift-c1: #5cad9b;     --shift-c1-bg: #e0f0ec;   /* Couvre 1 - matin */
-  --shift-c2: #3d8b6b;     --shift-c2-bg: #e3f0ea;   /* Couvre 2 - après-midi */
-  --shift-d1: #5a9bd8;     --shift-d1-bg: #e6eef8;   /* Doublure 1 */
-  --shift-d3: #d96b5a;     --shift-d3-bg: #fbe4e0;   /* Doublure 3 */
-  --shift-d4: #e0a85a;     --shift-d4-bg: #fbf0e1;   /* Doublure 4 */
-  --shift-s3: #9268b3;     --shift-s3-bg: #f0e8f5;   /* Soir 3 */
-  --shift-s4: #e08aa0;     --shift-s4-bg: #fbe7ed;   /* Soir 4 */
-  --shift-a2: #1f6359;     --shift-a2-bg: #d2e7e2;   /* Aprem 2 */
-  --shift-a3: #7a4f9e;     --shift-a3-bg: #ebe0f3;   /* Aprem 3 */
-  --shift-n:  #2d3e6b;     --shift-n-bg:  #e0e4ed;   /* Nuit */
+  /* Le wrapper de la page : étend jusqu'aux bords */
+  margin: 0 !important;
+  padding: 0 !important;
+  background: var(--color-bg, #f5f7f5);
+  width: 100%;
+  min-height: 100%;
+
+  --shift-c1: #5cad9b;
+  --shift-c2: #3d8b6b;
+  --shift-d1: #5a9bd8;
+  --shift-d3: #d96b5a;
+  --shift-d4: #e0a85a;
+  --shift-s3: #9268b3;
+  --shift-s4: #e08aa0;
+  --shift-a2: #1f6359;
+  --shift-a3: #7a4f9e;
+  --shift-n:  #2d3e6b;
+
+  --weekend-bg: rgba(253, 245, 227, 0.55);
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 2 · COMMAND BAR
+ * 1 · COMMAND BAR — bande plate bord-à-bord
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.command-bar {
+.planning-page .command-bar {
+  width: 100%;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-line);
-  padding: 16px 24px;
+  padding: 14px 24px;
+
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  position: sticky;
-  top: 0;
-  z-index: 19;
-  box-shadow: 0 1px 0 rgba(13, 42, 38, 0.02);
+  row-gap: 12px;
+
+  /* PAS de margin, PAS de border-radius */
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
 .command-bar > * { flex-shrink: 0; }
 
 .cb-spacer {
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 40px;
+}
+
+/* Force le wrap : 2e groupe d'icônes (export) commence ligne 2 */
+.cb-icon-group:nth-of-type(2)::before {
+  content: "";
+  flex-basis: 100%;
+  height: 0;
+  width: 0;
+  display: block;
+  order: -1;
 }
 
 
-/* ─── Bloc Période + Vue groupés ──────────────────────────────────────── */
+/* ─── Bloc Période + Vue ──────────────────────────────────────────────── */
 
 .cb-period-group {
   display: flex;
@@ -86,7 +126,6 @@
 
 .cb-period-btn:first-child { border-radius: 10px 0 0 10px; }
 .cb-period-btn:last-child  { border-radius: 0 10px 10px 0; }
-
 .cb-period-btn:hover { background: var(--color-teal-50); }
 
 .cb-period-icon {
@@ -172,7 +211,7 @@
 }
 
 
-/* ─── Status badge (Brouillon) ────────────────────────────────────────── */
+/* ─── Status Brouillon ────────────────────────────────────────────────── */
 
 .cb-status {
   display: inline-flex;
@@ -180,31 +219,31 @@
   gap: 8px;
   padding: 0 14px;
   border-radius: 10px;
-  background: var(--color-warm-bg);
+  background: rgba(212, 160, 74, 0.12);
   border: 1px solid rgba(212, 160, 74, 0.3);
   font-size: 13px;
-  color: var(--color-warn);
+  color: #c97a2a;
   font-weight: 600;
   height: 38px;
 }
 
 .cb-status .pulse {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--color-warm);
-  box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.5);
+  background: #d4a04a;
+  box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.6);
   animation: cbPulse 2s infinite;
 }
 
 @keyframes cbPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.5); }
+  0%   { box-shadow: 0 0 0 0 rgba(212, 160, 74, 0.6); }
   70%  { box-shadow: 0 0 0 8px rgba(212, 160, 74, 0); }
   100% { box-shadow: 0 0 0 0 rgba(212, 160, 74, 0); }
 }
 
 
-/* ─── Compteur ─────────────────────────────────────────────────────────── */
+/* ─── Compteur d'assignations ─────────────────────────────────────────── */
 
 .cb-meta {
   font-size: 12.5px;
@@ -242,25 +281,12 @@
   color: var(--color-teal-600);
 }
 
-.cb-btn.primary {
-  background: var(--color-teal-600);
-  color: #fff;
-  border-color: var(--color-teal-600);
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(31, 99, 89, 0.2);
-}
-
-.cb-btn.primary:hover {
-  background: var(--color-teal-700);
-  border-color: var(--color-teal-700);
-}
-
 .cb-btn.dark {
-  background: var(--color-teal-900);
+  background: #1a1a1a;
+  border-color: #1a1a1a;
   color: #fff;
-  border-color: var(--color-teal-900);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(13, 42, 38, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .cb-btn.dark:hover {
@@ -270,7 +296,7 @@
 }
 
 
-/* ─── Boutons icône (mini) ────────────────────────────────────────────── */
+/* ─── Boutons icônes (mini) ───────────────────────────────────────────── */
 
 .cb-btn-mini {
   width: 38px;
@@ -299,10 +325,13 @@
   border-color: var(--color-teal-300);
 }
 
-.cb-btn-mini svg { width: 16px; height: 16px; }
+.cb-btn-mini svg {
+  width: 16px;
+  height: 16px;
+}
 
 
-/* ─── Groupe icônes accolées ──────────────────────────────────────────── */
+/* ─── Groupes d'icônes accolées ───────────────────────────────────────── */
 
 .cb-icon-group {
   display: inline-flex;
@@ -336,7 +365,10 @@
   box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
 }
 
-.cb-icon-group .cb-btn-mini svg { width: 15px; height: 15px; }
+.cb-icon-group .cb-btn-mini svg {
+  width: 15px;
+  height: 15px;
+}
 
 
 /* ─── Toggle Provisoire / Finaliser ───────────────────────────────────── */
@@ -370,7 +402,7 @@
 .cb-finalize button:last-child  { border-radius: 0 9px 9px 0; }
 
 .cb-finalize button.on {
-  background: var(--color-teal-900);
+  background: #1a1a1a;
   color: #fff;
 }
 
@@ -381,21 +413,28 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 3 · TEAM FILTERS
+ * 2 · TEAM FILTERS — bande plate bord-à-bord
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.team-filters {
+.planning-page .team-filters {
+  width: 100%;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-line);
-  padding: 10px 24px;
+  padding: 12px 24px;
+
   display: flex;
   align-items: center;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
+
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
-.team-filters::-webkit-scrollbar { display: none; }
+.team-filters::-webkit-scrollbar {
+  display: none;
+}
 
 .team-pill {
   padding: 6px 13px;
@@ -418,7 +457,7 @@
 }
 
 .team-pill.on {
-  background: var(--color-teal-900);
+  background: #1a1a1a;
   color: #fff;
 }
 
@@ -432,7 +471,7 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 4 · DROPDOWNS
+ * 3 · DROPDOWNS
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .dropdown {
@@ -454,9 +493,6 @@
   visibility: visible;
   transform: translateY(0);
 }
-
-
-/* ─── Dropdown période (sélecteur de mois 3×4) ────────────────────────── */
 
 .dropdown-period {
   left: 0;
@@ -527,9 +563,10 @@
 }
 
 .dd-month.active {
-  background: #fff;
-  border-color: var(--color-teal-700);
-  box-shadow: 0 4px 12px rgba(31, 99, 89, 0.15);
+  background: var(--color-surface);
+  border: 2px solid var(--color-teal-700);
+  box-shadow: 0 4px 14px rgba(31, 99, 89, 0.18);
+  padding: 8px 7px 7px;
 }
 
 .dd-month.past::after {
@@ -556,7 +593,7 @@
 }
 
 .dd-month.active .dd-month-emoji {
-  background: linear-gradient(135deg, #d2e7e2, #7ab5ab);
+  background: linear-gradient(135deg, #d2e7e2, #a8d1c8);
 }
 
 .dd-month-num {
@@ -571,6 +608,7 @@
 
 .dd-month.active .dd-month-num {
   color: var(--color-teal-700);
+  font-weight: 700;
 }
 
 .dd-month-name {
@@ -614,13 +652,10 @@
   border-color: var(--color-teal-300);
 }
 
-
-/* ─── Dropdown vue (semaine / mois) ───────────────────────────────────── */
-
 .dropdown-view {
   left: auto;
   right: 0;
-  width: 260px;
+  width: 280px;
   padding: 5px;
 }
 
@@ -639,9 +674,13 @@
   font-family: inherit;
 }
 
-.dd-view-item:hover { background: var(--color-teal-50); }
+.dd-view-item:hover {
+  background: var(--color-teal-50);
+}
 
-.dd-view-item.active { background: var(--color-surface-3); }
+.dd-view-item.active {
+  background: var(--color-surface-3);
+}
 
 .dd-view-icon {
   width: 32px;
@@ -656,9 +695,9 @@
 }
 
 .dd-view-item.active .dd-view-icon {
-  background: var(--color-teal-600);
+  background: var(--color-teal-700);
   color: #fff;
-  border-color: var(--color-teal-600);
+  border-color: var(--color-teal-700);
 }
 
 .dd-view-text {
@@ -687,21 +726,24 @@
   flex-shrink: 0;
 }
 
-.dd-view-item.active .dd-view-check { opacity: 1; }
+.dd-view-item.active .dd-view-check {
+  opacity: 1;
+}
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 5 · PLANNING GRID
+ * 4 · PLANNING WRAP — CARD avec border-radius + GAP
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.planning-wrap {
-  flex: 1;
+.planning-page .planning-wrap {
+  margin: 16px 24px 24px 24px !important;
+
   background: var(--color-surface);
-  margin: 18px 24px 24px;
   border: 1px solid var(--color-line);
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(13, 42, 38, 0.04);
+  box-shadow: 0 1px 3px rgba(13, 42, 38, 0.05);
+
   display: flex;
   flex-direction: column;
 }
@@ -712,20 +754,19 @@
   position: relative;
 }
 
-/* Variables pilotant les dimensions de la grille (preset std par défaut) */
 .planning {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
   font-size: 13px;
-  --cell-w: 64px;
-  --cell-h: 50px;
+  --cell-w: 56px;
+  --cell-h: 46px;
   --collab-w: 240px;
   --shift-min-w: 36px;
-  --shift-h: 28px;
+  --shift-h: 26px;
   --shift-fs: 11px;
   --day-num-size: 28px;
-  --day-num-fs: 14px;
+  --day-num-fs: 13.5px;
 }
 
 
@@ -752,7 +793,7 @@
   padding: 8px 4px;
 }
 
-.planning thead th .day-name {
+.day-name {
   display: block;
   font-size: 9.5px;
   text-transform: uppercase;
@@ -762,7 +803,7 @@
   line-height: 1.2;
 }
 
-.planning thead th .day-num {
+.day-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -774,11 +815,10 @@
   font-size: var(--day-num-fs);
   color: var(--color-ink);
   margin-top: 3px;
-  letter-spacing: 0;
 }
 
 .planning thead th.weekend {
-  background: var(--color-warm-bg);
+  background: var(--color-warm-bg) !important;
 }
 
 .planning thead th.weekend .day-name {
@@ -796,21 +836,25 @@
 }
 
 
-/* ─── Colonnes sticky (collab / pct / heures) ─────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 5 · COLONNES STICKY — fond opaque
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning .col-collab {
-  position: sticky;
-  left: 0;
-  z-index: 6;
-  background: var(--color-surface);
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 6 !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
   min-width: var(--collab-w);
   width: var(--collab-w);
   border-right: 1px solid var(--color-line);
+  box-shadow: 4px 0 8px -6px rgba(13, 42, 38, 0.06);
 }
 
 .planning thead .col-collab {
-  z-index: 7;
-  background: var(--color-surface-2);
+  z-index: 7 !important;
+  background-color: var(--color-surface-2) !important;
   text-align: left;
   padding: 10px 16px 8px;
 }
@@ -827,10 +871,11 @@
 }
 
 .planning .col-pct {
-  position: sticky;
-  left: var(--collab-w);
-  z-index: 6;
-  background: var(--color-surface);
+  position: sticky !important;
+  left: var(--collab-w) !important;
+  z-index: 6 !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
   min-width: 54px;
   width: 54px;
   border-right: 1px solid var(--color-line);
@@ -838,34 +883,50 @@
 }
 
 .planning thead .col-pct {
-  z-index: 7;
-  background: var(--color-surface-2);
+  z-index: 7 !important;
+  background-color: var(--color-surface-2) !important;
 }
 
 .planning .col-hours {
-  position: sticky;
-  right: 0;
-  z-index: 6;
-  background: var(--color-surface);
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 6 !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
   min-width: 90px;
   width: 90px;
   border-left: 1px solid var(--color-line);
+  box-shadow: -4px 0 8px -6px rgba(13, 42, 38, 0.06);
   text-align: center;
 }
 
 .planning thead .col-hours {
-  z-index: 7;
-  background: var(--color-surface-2);
+  z-index: 7 !important;
+  background-color: var(--color-surface-2) !important;
 }
 
 
-/* ─── Section header (sous-équipe : INF, ASSC, AS…) ───────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 6 · WEEKEND — colonnes entières dorées
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.planning tbody td.weekend {
+  background-color: var(--weekend-bg) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * 7 · SECTIONS (INF, ASSC, AS…) — fond vert transparent
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning tr.section-row td {
-  background: linear-gradient(180deg, var(--color-teal-50), var(--color-surface-3));
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.08) 0%,
+    rgba(31, 99, 89, 0.03) 100%
+  ) !important;
   padding: 6px 16px;
-  border-top: 1px solid var(--color-teal-100);
-  border-bottom: 1px solid var(--color-teal-100);
+  border-top: 1px solid rgba(31, 99, 89, 0.12);
+  border-bottom: 1px solid rgba(31, 99, 89, 0.12);
   font-size: 10.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -877,7 +938,17 @@
   position: sticky;
   left: 0;
   z-index: 5;
-  background: linear-gradient(90deg, var(--color-teal-50), var(--color-surface-3));
+  background: linear-gradient(90deg,
+    rgba(31, 99, 89, 0.10) 0%,
+    rgba(31, 99, 89, 0.04) 100%
+  ) !important;
+}
+
+.planning tr.section-row td.col-hours {
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.08) 0%,
+    rgba(31, 99, 89, 0.03) 100%
+  ) !important;
 }
 
 .section-cell-content {
@@ -889,7 +960,7 @@
 .section-count {
   font-family: var(--font-mono);
   font-weight: 600;
-  background: var(--color-teal-100);
+  background: rgba(31, 99, 89, 0.15);
   color: var(--color-teal-700);
   padding: 1px 7px;
   border-radius: 99px;
@@ -898,20 +969,26 @@
 }
 
 
-/* ─── Lignes collaborateurs + hover row uniforme ──────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════════
+ * 8 · LIGNES + HOVER VERT TRANSPARENT
+ * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning tbody tr {
-  transition: background 0.12s;
+  transition: background-color 0.12s;
 }
 
 .planning tbody tr:hover td {
-  background-color: var(--color-teal-50);
+  background-color: rgba(31, 99, 89, 0.06) !important;
 }
 
-.planning tbody tr:hover .col-collab,
-.planning tbody tr:hover .col-pct,
-.planning tbody tr:hover .col-hours {
-  background: var(--color-teal-50);
+.planning tbody tr:hover td.weekend {
+  background-color: rgba(212, 160, 74, 0.18) !important;
+}
+
+.planning tbody tr:hover td.col-collab,
+.planning tbody tr:hover td.col-pct,
+.planning tbody tr:hover td.col-hours {
+  background-color: rgba(31, 99, 89, 0.06) !important;
 }
 
 .planning tbody td {
@@ -923,16 +1000,8 @@
   position: relative;
 }
 
-.planning tbody td.weekend {
-  background: rgba(253, 245, 227, 0.4);
-}
 
-.planning tbody td.today {
-  box-shadow: inset 2px 0 0 var(--color-teal-300), inset -2px 0 0 var(--color-teal-300);
-}
-
-
-/* ─── Cellule collaborateur (nom + role-tag) ──────────────────────────── */
+/* ─── Cellule collab ──────────────────────────────────────────────────── */
 
 .collab-cell {
   display: flex;
@@ -960,10 +1029,10 @@
 }
 
 .role-tag.inf  { background: var(--color-teal-100);  color: var(--color-teal-700); }
-.role-tag.assc { background: #e6eef8;          color: #2d5586; }
-.role-tag.as   { background: #fbe7ed;          color: #a04863; }
-.role-tag.anim { background: #f0e8f5;          color: #5e3a78; }
-.role-tag.ruv  { background: #d2e7e2;          color: var(--color-teal-700); }
+.role-tag.assc { background: #e6eef8;                color: #2d5586; }
+.role-tag.as   { background: #fbe7ed;                color: #a04863; }
+.role-tag.anim { background: #f0e8f5;                color: #5e3a78; }
+.role-tag.ruv  { background: #d2e7e2;                color: var(--color-teal-700); }
 
 .collab-cell-info {
   min-width: 0;
@@ -981,7 +1050,7 @@
 }
 
 
-/* ─── Cellule taux (% + barre mini) ──────────────────────────────────── */
+/* ─── Cellule taux ────────────────────────────────────────────────────── */
 
 .pct-cell {
   font-family: var(--font-mono);
@@ -1006,7 +1075,7 @@
 }
 
 
-/* ─── Shifts (tags colorés) ───────────────────────────────────────────── */
+/* ─── Shifts colorés ──────────────────────────────────────────────────── */
 
 .shift {
   display: inline-flex;
@@ -1076,12 +1145,15 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 6 · SIZE CONTROLS — boutons taille (XS / SM / MD / STD / LG)
+ * 9 · SIZE CONTROLS
  * ════════════════════════════════════════════════════════════════════════════ */
 
-.section-controls-cell {
+.section-size-cell {
   padding: 4px 8px !important;
-  background: linear-gradient(180deg, var(--color-teal-50), var(--color-surface-3)) !important;
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.08) 0%,
+    rgba(31, 99, 89, 0.03) 100%
+  ) !important;
 }
 
 .size-controls {
@@ -1115,19 +1187,14 @@
 }
 
 .size-btn.active {
-  background: var(--color-teal-600);
+  background: var(--color-teal-700);
   color: #fff;
   box-shadow: 0 1px 3px rgba(31, 99, 89, 0.2);
 }
 
-.size-btn.active:hover {
-  background: var(--color-teal-700);
-  color: #fff;
-}
-
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 7 · FOOTER PLANNING — légende + stats
+ * 10 · FOOTER PLANNING
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .planning-foot {
@@ -1204,7 +1271,7 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 8 · FULLSCREEN MODE
+ * 11 · FULLSCREEN
  * ════════════════════════════════════════════════════════════════════════════ */
 
 body.pl-is-fullscreen #adminSidebar,
@@ -1217,29 +1284,382 @@ body.pl-is-fullscreen .admin-main {
 }
 
 body.pl-is-fullscreen .planning-wrap {
-  margin: 0;
+  margin: 0 !important;
   border-radius: 0;
   border: 0;
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * 9 · RESPONSIVE
+ * 12 · RESPONSIVE
  * ════════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1100px) {
   .command-bar {
-    padding: 12px 14px;
+    padding: 12px 14px !important;
     gap: 8px;
   }
-  .cb-period-group { order: 1; }
-  .cb-finalize { order: 2; }
-  .cb-spacer { display: none; }
-  .cb-meta { display: none; }
-  .planning-wrap { margin: 14px; }
+  .cb-spacer {
+    display: none;
+  }
+  .planning-page .planning-wrap {
+    margin: 12px 14px 14px 14px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .cb-status,
+  .cb-meta {
+    display: none;
+  }
 }
 
 
 /* ════════════════════════════════════════════════════════════════════════════
- * FIN — planning.css v3.0 (identique à la maquette de référence)
+ * FIN — planning.css v8.0 (casse wrapper admin + structure correcte)
+ * ════════════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════════
+ * PATCH CSS v8.1 — 5 corrections finales identifiées
+ *
+ * À AJOUTER À LA FIN de admin/assets/css/planning.css
+ *
+ * Corrections d'après screenshots maquette :
+ *   1. Hover sur team-pill : vert teal-50 (image 1)
+ *   2. Hover sur dd-month : fond teal-50 doux (image 2)
+ *   3. dd-view-icon : MÊME fond teal-50 pour les 2 items (image 3)
+ *   4. Colonne Heures : VRAIMENT opaque (image 5 montre le bug)
+ *   5. .hours-main : police Fraunces noire grasse (image 4)
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 1️⃣  HOVER team-pill : vert teal pâle (comme image 1)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.planning-page .team-pill:hover,
+.planning-page .team-pill:not(.on):hover {
+  background: var(--color-teal-50) !important;
+  color: var(--color-teal-700) !important;
+}
+
+/* Pill "Tous · 110" actif reste en NOIR */
+.planning-page .team-pill.on {
+  background: #1a1a1a !important;
+  color: #fff !important;
+}
+
+/* Au hover sur la pill active : reste noir mais légèrement plus profond */
+.planning-page .team-pill.on:hover {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 2️⃣  HOVER dd-month : fond teal-50 doux (comme image 2 sur Juin)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.dd-month:hover {
+  background: var(--color-teal-50) !important;
+  border-color: var(--color-teal-200) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(31, 99, 89, 0.08);
+}
+
+/* L'emoji du mois hovered devient plus saturé */
+.dd-month:hover .dd-month-emoji {
+  background: linear-gradient(135deg, var(--color-teal-100), #d2e7e2) !important;
+}
+
+/* Le mois actif garde sa bordure teal-700 même au hover */
+.dd-month.active:hover {
+  background: var(--color-surface) !important;
+  border-color: var(--color-teal-700) !important;
+  box-shadow: 0 4px 14px rgba(31, 99, 89, 0.20) !important;
+  transform: translateY(0) !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 3️⃣  DROPDOWN VUE : icônes avec MÊME fond pour les deux items
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Item NON actif (Vue semaine sur image 3) : fond teal-50 + icône teal-700 */
+.dd-view-item .dd-view-icon {
+  background: var(--color-teal-50) !important;
+  color: var(--color-teal-700) !important;
+  border: 1px solid var(--color-teal-100) !important;
+}
+
+/* Item ACTIF (Vue mois sur image 3) : fond teal-700 plein + icône blanche */
+.dd-view-item.active .dd-view-icon {
+  background: var(--color-teal-700) !important;
+  color: #fff !important;
+  border-color: var(--color-teal-700) !important;
+}
+
+/* Hover sur item non actif : reste teal-50 mais plus marqué */
+.dd-view-item:hover:not(.active) {
+  background: var(--color-teal-50) !important;
+}
+
+.dd-view-item:hover:not(.active) .dd-view-icon {
+  background: var(--color-teal-100) !important;
+  border-color: var(--color-teal-200) !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 4️⃣  COLONNE HEURES : VRAIMENT opaque (correction définitive)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Sur image 5 ligne Michel Berset, on voit que les shifts (D3, A2, D4) passent
+   par-dessus la valeur "168h" et le "182h · -14". Le bug vient du fait que :
+   - Soit le z-index n'est pas assez haut
+   - Soit le background-color est transparent
+   - Soit les shifts ont un z-index supérieur
+
+   Solution : forcer z-index ET background-color avec maximum de spécificité */
+
+.planning-page .planning .col-hours,
+.planning-page .planning tbody td.col-hours {
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 10 !important;  /* Plus élevé que les shifts (qui sont à 2) */
+  background-color: #ffffff !important;
+  background-image: none !important;
+  background: #ffffff !important;
+  min-width: 90px !important;
+  width: 90px !important;
+  border-left: 1px solid var(--color-line) !important;
+  text-align: center !important;
+  /* Ombre vers la gauche pour signifier qu'on est en colonne sticky */
+  box-shadow: -8px 0 12px -4px rgba(13, 42, 38, 0.08) !important;
+}
+
+.planning-page .planning thead th.col-hours {
+  z-index: 11 !important;
+  background-color: var(--color-surface-2) !important;
+  background: var(--color-surface-2) !important;
+}
+
+/* Hover row avec col-hours qui suit la couleur sans devenir transparent */
+.planning-page .planning tbody tr:hover td.col-hours {
+  background-color: rgba(31, 99, 89, 0.06) !important;
+  background: rgba(31, 99, 89, 0.06) !important;
+  background-image: none !important;
+}
+
+/* Section row (INF, ASSC, etc.) avec col-hours */
+.planning-page .planning tr.section-row td.col-hours {
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.08) 0%,
+    rgba(31, 99, 89, 0.03) 100%
+  ), #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* IMPORTANT : empêcher les shifts de "déborder" sur la colonne sticky */
+.planning-page .shift {
+  z-index: 1 !important;  /* En-dessous de col-hours qui est à 10 */
+  position: relative;
+}
+
+/* Le hover sur shift ne doit pas dépasser la col-hours non plus */
+.planning-page .shift:hover {
+  z-index: 5 !important;  /* Toujours en-dessous de col-hours (10) */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 5️⃣  POLICE .hours-main : Fraunces noire grasse (comme image 4)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.planning-page .hours-main {
+  font-family: var(--font-display, 'Fraunces', Georgia, serif) !important;
+  font-weight: 700 !important;          /* Plus gras (était 600) */
+  font-size: 16px !important;           /* Légèrement plus grand */
+  color: #0d2a26 !important;            /* Noir teal-900 marqué */
+  letter-spacing: -0.02em !important;   /* Resserré comme la maquette */
+  line-height: 1 !important;
+}
+
+.planning-page .hours-target {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+  font-size: 10px !important;
+  margin-top: 3px !important;
+  letter-spacing: 0 !important;
+}
+
+.planning-page .hours-target.under {
+  color: #c97a2a !important;  /* Orange warm marqué */
+  font-weight: 500 !important;
+}
+
+.planning-page .hours-target.over {
+  color: #3d8b6b !important;  /* Vert ok marqué */
+  font-weight: 500 !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN DU PATCH v8.1 — 5 corrections ciblées
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * 13 · MODULE ROWS — niveau 1 collapsable (M1, M2, POOL, NUIT…)
+ *
+ * Hiérarchie tableau :
+ *   tr.module-row (collapsable, gradient teal-100→50, chevron animé)
+ *     tr.section-row.fonction-row (sous-section INF, ASSC… indentée)
+ *       tr.user-row (collaborateur, indenté sous fonction)
+ *     tr.section-row.fonction-row
+ *       tr.user-row
+ *   tr.module-row (suivante)
+ *     …
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.planning tr.module-row td {
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.18) 0%,
+    rgba(31, 99, 89, 0.07) 100%
+  ) !important;
+  padding: 9px 16px;
+  border-top: 1px solid rgba(31, 99, 89, 0.22);
+  border-bottom: 1px solid rgba(31, 99, 89, 0.22);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+
+.planning tr.module-row:hover td {
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.26) 0%,
+    rgba(31, 99, 89, 0.12) 100%
+  ) !important;
+}
+
+.planning tr.module-row td.col-collab {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: linear-gradient(90deg,
+    rgba(31, 99, 89, 0.22) 0%,
+    rgba(31, 99, 89, 0.08) 100%
+  ), #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.planning tr.module-row td.col-hours {
+  background: linear-gradient(180deg,
+    rgba(31, 99, 89, 0.18) 0%,
+    rgba(31, 99, 89, 0.07) 100%
+  ), #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.module-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.module-toggle {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--color-teal-700);
+  transition: background 0.15s, box-shadow 0.15s;
+  padding: 0;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.module-toggle:hover {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(13, 42, 38, 0.12);
+}
+
+.module-toggle-icon {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Expanded (par défaut) : chevron pointe vers le bas */
+.planning tr.module-row[aria-expanded="true"] .module-toggle-icon {
+  transform: rotate(90deg);
+}
+
+/* Collapsed : chevron pointe vers la droite (rotation ramenée à 0) */
+.planning tr.module-row[aria-expanded="false"] .module-toggle-icon {
+  transform: rotate(0deg);
+}
+
+.module-code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  background: var(--color-teal-700);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.module-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.module-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-teal-700);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 3px 9px;
+  border-radius: 99px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+/* ─── INDENT des sous-niveaux ─────────────────────────────────────────── */
+
+/* Fonction row (INF, ASSC…) indentée sous le module */
+.planning tr.fonction-row td.col-collab .section-cell-content {
+  padding-left: 28px;
+}
+
+/* User row indenté un cran de plus que la fonction */
+.planning tr.user-row td.col-collab .collab-cell {
+  padding-left: 36px;
+}
+
+/* ─── COLLAPSE — masque les fonction-row & user-row ───────────────────── */
+
+.planning tr.fonction-row[hidden],
+.planning tr.user-row[hidden] {
+  display: none !important;
+}
+
+/* ─── Filtre team-pill : masque toute ligne avec data-filtered-out ───── */
+
+.planning tr[data-filtered-out] {
+  display: none !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — module-row + collapse v1.0
  * ════════════════════════════════════════════════════════════════════════════ */
