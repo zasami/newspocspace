@@ -1792,3 +1792,69 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.7
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.8 — col-hours TOUJOURS opaque blanche en mode édition (fix transparence)
+ *
+ * Bug constaté : en mode édition, col-hours devenait transparente → les
+ * shifts derrière (A2, D4, C2…) traversaient et masquaient "144h".
+ *
+ * Cause : le reset v9.6 (`td:not(:hover)` → transparent) avait MÊME
+ * spécificité que l'override v9.4 col-hours blanche → comme v9.6 est
+ * déclaré APRÈS, il gagnait.
+ *
+ * Fix : on bump la spécificité de l'override col-hours en ajoutant
+ * `:not(:hover)` (qui ajoute exactement 1 classe au compteur). Et on
+ * remonte le z-index à 15 pour passer au-dessus des shifts (z-index 1-5).
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.col-hours:not(:hover) {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  border-top: 1px solid var(--color-line, #e3ebe8) !important;
+  border-bottom: 1px solid var(--color-line, #e3ebe8) !important;
+  border-left: 1px solid var(--color-line, #e3ebe8) !important;
+  border-right: 0 !important;
+  z-index: 15 !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.8
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.9 — Edit-mode weekend : dorée préservée + superposition warm si hover
+ *
+ * Annule v9.7 (qui rendait le weekend transparent en edit-mode). On revient
+ * à : weekend non-survolé garde sa teinte dorée pâle.
+ *
+ * Nouveau : si on hover une cellule weekend, le warm bg s'AJOUTE par-dessus
+ * la dorée (superposition de deux couleurs au lieu de remplacement) → on
+ * lit toujours "c'est un weekend" + on voit "c'est ma cellule active".
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) Weekend non-survolé en edit-mode : restaure la teinte dorée pâle
+ *    (override de v9.7 qui le rendait transparent) */
+#planningPage table#plTable tbody tr.user-row:has(td:not(.col-collab):not(.col-pct):not(.col-hours):hover) td.weekend:not(:hover) {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+  background-image: none !important;
+}
+
+/* 2) Weekend survolé : superposition warm hover sur weekend dorée
+ *    background-image (linear-gradient du warm) PAR-DESSUS background-color
+ *    (dorée weekend). Les deux se mélangent visuellement → couleur warm
+ *    plus profonde signalant "weekend + edit". */
+#planningPage table#plTable tbody tr.user-row td.weekend:not(.col-collab):not(.col-pct):not(.col-hours):hover {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+  background-image: linear-gradient(rgba(212, 160, 74, 0.30), rgba(212, 160, 74, 0.30)) !important;
+  cursor: pointer;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.9
+ * ════════════════════════════════════════════════════════════════════════════ */
