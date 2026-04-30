@@ -565,6 +565,99 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   </div>
 
+  <!-- ═══ Modale Génération IA ═════════════════════════════════════════════ -->
+  <div id="plGenModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plGenModalTitle">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" id="plGenModal">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+        <h3 id="plGenModalTitle" class="font-display text-base font-semibold text-ink">Générer le planning</h3>
+        <button type="button" id="plGenClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-5 py-4 overflow-y-auto flex-1">
+        <p class="text-sm text-muted mb-3">Choisissez le mode de génération :</p>
+
+        <!-- 3 cartes mode -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <button type="button" class="pl-gen-mode group relative p-3.5 rounded-xl border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex flex-col items-center text-center" data-mode="local">
+            <span class="w-10 h-10 grid place-items-center rounded-lg bg-ok/10 text-ok mb-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
+            </span>
+            <span class="block font-semibold text-sm text-ink mb-1">Algorithme local</span>
+            <span class="block text-[11px] text-muted leading-snug mb-2">Rapide et gratuit.</span>
+            <span class="inline-flex items-center gap-1.5 text-[10px]">
+              <span class="px-1.5 py-0.5 rounded bg-ok/15 text-ok font-semibold">Gratuit</span>
+              <span class="px-1.5 py-0.5 rounded bg-surface-3 text-muted font-mono">~1s</span>
+            </span>
+          </button>
+          <button type="button" class="pl-gen-mode group relative p-3.5 rounded-xl border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex flex-col items-center text-center" data-mode="hybrid">
+            <span class="w-10 h-10 grid place-items-center rounded-lg bg-teal-100 text-teal-700 mb-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z"/></svg>
+            </span>
+            <span class="block font-semibold text-sm text-ink mb-1">Hybride</span>
+            <span class="block text-[11px] text-muted leading-snug mb-2">Local + IA d'optimisation.</span>
+            <span class="inline-flex items-center gap-1.5 text-[10px]">
+              <span class="px-1.5 py-0.5 rounded bg-info/15 text-info font-semibold">~$0.01</span>
+              <span class="px-1.5 py-0.5 rounded bg-surface-3 text-muted font-mono">~10s</span>
+            </span>
+          </button>
+          <button type="button" class="pl-gen-mode group relative p-3.5 rounded-xl border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex flex-col items-center text-center" data-mode="ai">
+            <span class="w-10 h-10 grid place-items-center rounded-lg bg-warm/15 text-warm mb-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M9 16c1 1 2 1.5 3 1.5s2-.5 3-1.5"/></svg>
+            </span>
+            <span class="block font-semibold text-sm text-ink mb-1">IA directe</span>
+            <span class="block text-[11px] text-muted leading-snug mb-2">L'IA génère tout.</span>
+            <span class="inline-flex items-center gap-1.5 text-[10px]">
+              <span class="px-1.5 py-0.5 rounded bg-warn/15 text-warn font-semibold">~$0.05</span>
+              <span class="px-1.5 py-0.5 rounded bg-surface-3 text-muted font-mono">~30s</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- Provider info (caché par défaut, montré pour hybrid/ai) -->
+        <div id="plGenProviderInfo" class="hidden mb-3 px-3 py-2 rounded-lg border border-line bg-surface-2 text-sm flex items-center justify-between">
+          <span>
+            <span class="text-muted">Provider :</span> <strong id="plGenProviderName" class="text-ink">—</strong>
+            <span class="text-muted ml-2">·</span>
+            <span class="text-muted ml-2">Modèle :</span> <strong id="plGenModelName" class="text-ink">—</strong>
+          </span>
+          <a href="<?= admin_url('config-ia') ?>" class="text-teal-600 hover:text-teal-700 text-xs">Config IA →</a>
+        </div>
+
+        <!-- Module filter -->
+        <div class="mb-3">
+          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Module à générer</label>
+          <select id="plGenModule" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
+            <option value="">Tous les modules</option>
+            <?php foreach ($planningModules as $m): ?>
+            <option value="<?= h($m['id']) ?>"><?= h($m['code']) ?> — <?= h($m['nom']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Avertissement -->
+        <div class="px-3 py-2 rounded-lg border border-warn-line bg-warn-bg text-warn text-xs flex items-start gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-0.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+          <span>Les assignations existantes du module sélectionné seront <strong>remplacées</strong>.</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-line bg-surface-2">
+        <button type="button" id="plGenCancel" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Annuler</button>
+        <button type="button" id="plGenConfirm" class="px-4 py-2 rounded-lg bg-teal-900 text-white text-sm font-semibold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2" disabled>
+          <svg id="plGenSpinner" class="hidden animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          <span id="plGenConfirmLabel">Sélectionnez un mode</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ═══ Modale édition cellule ═══════════════════════════════════════════ -->
   <div id="plCellModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plCellModalTitle">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" id="plCellModal">
@@ -1270,15 +1363,147 @@ window.PL_DATA = {
         alert(lines.join('\n'));
     });
 
-    // ── Filtres avancés / Génération IA / Proposition : TODO ────────────────
+    // ── Filtres avancés / Proposition : TODO ────────────────────────────────
     $('plFiltersBtn')?.addEventListener('click', () => {
         plToast('Filtres avancés — TODO', 'info');
     });
-    $('plGenerateBtn')?.addEventListener('click', () => {
-        plToast('Génération IA — TODO (gros morceau, à porter)', 'info');
-    });
     $('plPropositionBtn')?.addEventListener('click', () => {
         plToast('Propositions — TODO', 'info');
+    });
+
+    // ── Modale Génération IA (mode local / hybrid / ai) ─────────────────────
+    const plGenBackdrop  = $('plGenModalBackdrop');
+    const plGenConfirm   = $('plGenConfirm');
+    const plGenLabel     = $('plGenConfirmLabel');
+    const plGenSpinner   = $('plGenSpinner');
+    const plGenProvider  = $('plGenProviderInfo');
+    let   plGenSelectedMode = null;
+    let   plGenInProgress   = false;
+
+    const PL_GEN_MODES = {
+        local:  { label: 'Générer (algorithme local)', icon: '⚙️' },
+        hybrid: { label: 'Générer (hybride + IA)',     icon: '✨' },
+        ai:     { label: 'Générer (IA directe)',        icon: '🤖' },
+    };
+
+    function plGenOpen() {
+        if (!window.PL_DATA?.planning) {
+            plToast('Créez d\'abord le planning pour ce mois', 'info');
+            return;
+        }
+        // Reset
+        plGenSelectedMode = null;
+        plGenConfirm.disabled = true;
+        plGenLabel.textContent = 'Sélectionnez un mode';
+        plGenSpinner.classList.add('hidden');
+        plGenProvider.classList.add('hidden');
+        document.querySelectorAll('.pl-gen-mode').forEach(c => {
+            c.classList.remove('!border-teal-700', '!bg-teal-50', 'ring-2', 'ring-teal-200');
+        });
+        plGenBackdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    function plGenClose() {
+        if (plGenInProgress) return; // Ne ferme pas pendant la génération
+        plGenBackdrop?.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Sélection d'un mode
+    document.querySelectorAll('.pl-gen-mode').forEach(card => {
+        card.addEventListener('click', async () => {
+            if (plGenInProgress) return;
+            plGenSelectedMode = card.dataset.mode;
+            // Visuel
+            document.querySelectorAll('.pl-gen-mode').forEach(c => {
+                c.classList.remove('!border-teal-700', '!bg-teal-50', 'ring-2', 'ring-teal-200');
+            });
+            card.classList.add('!border-teal-700', '!bg-teal-50', 'ring-2', 'ring-teal-200');
+
+            const mc = PL_GEN_MODES[plGenSelectedMode];
+            plGenConfirm.disabled = false;
+            plGenLabel.textContent = mc.icon + ' ' + mc.label;
+
+            // Pour hybrid/ai : check API key
+            if (plGenSelectedMode === 'hybrid' || plGenSelectedMode === 'ai') {
+                plGenProvider.classList.remove('hidden');
+                $('plGenProviderName').textContent = 'Vérification…';
+                $('plGenModelName').textContent = '—';
+                try {
+                    const cfgRes = await plApiPost('admin_get_config');
+                    const cfg = cfgRes?.config || {};
+                    const prov = cfg.ai_provider || 'gemini';
+                    const provName = prov === 'gemini' ? 'Google Gemini' : 'Anthropic Claude';
+                    const model = prov === 'gemini' ? (cfg.gemini_model || 'gemini-2.5-flash') : (cfg.anthropic_model || 'claude-haiku-4-5');
+                    const hasKey = prov === 'gemini' ? !!cfg.gemini_api_key : !!cfg.anthropic_api_key;
+                    $('plGenProviderName').textContent = provName;
+                    $('plGenModelName').textContent = model;
+                    if (!hasKey) {
+                        plGenProvider.classList.add('!border-danger-line', '!bg-danger-bg', '!text-danger');
+                        $('plGenProviderName').textContent = '⚠ Aucune clé API ' + provName;
+                        plGenConfirm.disabled = true;
+                    } else {
+                        plGenProvider.classList.remove('!border-danger-line', '!bg-danger-bg', '!text-danger');
+                    }
+                } catch (e) {
+                    plGenProvider.classList.add('!border-danger-line', '!bg-danger-bg', '!text-danger');
+                    $('plGenProviderName').textContent = '⚠ Impossible de vérifier la config';
+                    plGenConfirm.disabled = true;
+                }
+            } else {
+                plGenProvider.classList.add('hidden');
+            }
+        });
+    });
+
+    // Click "Générer planning" → ouvre la modale
+    $('plGenerateBtn')?.addEventListener('click', plGenOpen);
+
+    // Fermeture
+    $('plGenClose')?.addEventListener('click', plGenClose);
+    $('plGenCancel')?.addEventListener('click', plGenClose);
+    plGenBackdrop?.addEventListener('click', (e) => {
+        if (e.target === plGenBackdrop) plGenClose();
+    });
+
+    // Confirm → lance la génération
+    plGenConfirm?.addEventListener('click', async () => {
+        if (plGenInProgress || !plGenSelectedMode || !window.PL_DATA?.planning) return;
+        plGenInProgress = true;
+        plGenConfirm.disabled = true;
+        plGenSpinner.classList.remove('hidden');
+        const mc = PL_GEN_MODES[plGenSelectedMode];
+        plGenLabel.textContent = 'Génération en cours…';
+
+        const moduleFilter = $('plGenModule')?.value || '';
+        const data = {
+            mois: window.PL_DATA.moisAnnee,
+            mode: plGenSelectedMode,
+        };
+        if (moduleFilter) data.module_id = moduleFilter;
+
+        try {
+            const res = await plApiPost('admin_generate_planning', data);
+            plGenInProgress = false;
+            if (res?.success) {
+                let msg = res.message || 'Planning généré';
+                if (res.nb_conflicts > 0) msg += ' (' + res.nb_conflicts + ' manques de couverture)';
+                plToast(msg, 'ok');
+                plGenClose();
+                setTimeout(() => location.reload(), 800);
+            } else {
+                plGenSpinner.classList.add('hidden');
+                plGenLabel.textContent = mc.icon + ' ' + mc.label;
+                plGenConfirm.disabled = false;
+                plToast(res?.message || 'Erreur génération', 'error');
+            }
+        } catch (e) {
+            plGenInProgress = false;
+            plGenSpinner.classList.add('hidden');
+            plGenLabel.textContent = mc.icon + ' ' + mc.label;
+            plGenConfirm.disabled = false;
+            plToast('Erreur réseau : ' + (e.message || e), 'error');
+        }
     });
 
     // ── Toggle Provisoire / Finaliser : branche admin_finalize_planning ────
