@@ -2051,3 +2051,27 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.12
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.13 — Cellule weekend hover (single) = même mix teal+dorée que row-hover
+ *
+ * Override de v9.9 : la cellule weekend survolée recevait warm + dorée
+ * (rgba warm 0.30 sur weekend-bg). L'utilisateur veut la MÊME couleur
+ * de mélange que le hover de ligne entière (v9.12 : teal-300 + dorée).
+ * → Cohérence visuelle entre lecture-mode et edit-mode sur les weekends.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage table#plTable tbody tr.user-row td.weekend:not(.col-collab):not(.col-pct):not(.col-hours):hover {
+  background-color: var(--weekend-bg, rgba(253, 245, 227, 0.55)) !important;
+  background-image: linear-gradient(
+    rgba(125, 211, 168, 0.32),
+    rgba(125, 211, 168, 0.32)
+  ) !important;
+  cursor: pointer;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.13
+ * ════════════════════════════════════════════════════════════════════════════ */
