@@ -480,7 +480,7 @@ $themeBodyClass = 'theme-care'; // forcé : pas de switch structurel
 <!-- SIDEBAR — admin-sidebar gardé en hook (id seul suffirait, classe gardée pour compat). .mini = mode rétracté desktop (toggle persisté en localStorage 'ss_sidebar_mini'). -->
 <aside id="adminSidebar" class="admin-sidebar
   fixed lg:sticky lg:top-0 inset-y-0 left-0 z-40
-  w-60 h-screen overflow-y-auto shrink-0
+  w-60 h-screen shrink-0
   bg-sidebar-grad text-sb-text font-body
   p-[18px] flex flex-col gap-7
   -translate-x-full lg:translate-x-0 [&.open]:translate-x-0
@@ -506,8 +506,12 @@ $themeBodyClass = 'theme-care'; // forcé : pas de switch structurel
     </button>
   </div>
 
-  <!-- ── Navigation 3 niveaux : Module → Section → Item — scrollbar custom dans le <style> du <head> ── -->
-  <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-[2px] -my-1 py-1 pr-1">
+  <!-- ── Navigation 3 niveaux : Module → Section → Item — scrollbar custom dans le <style> du <head> ──
+       -mr-[18px] + pr-[14px] : la nav s'étend jusqu'au bord droit de la sidebar
+       (annule le p-[18px] de l'aside) → la scrollbar apparaît PILE au bord droit
+       de la sidebar, pas en retrait. pr-[14px] redonne le padding visuel sur
+       les items pour qu'ils ne touchent pas le bord. -->
+  <nav class="sidebar-nav flex-1 flex flex-col gap-0.5 overflow-y-auto -ml-[2px] -mr-[18px] -my-1 py-1 pr-[14px]">
     <?php foreach ($sidebarModules as $modId => $mod):
       $modCatId  = 'mod-' . $modId;
       $isActiveModule = ($modId === $activeModule);
