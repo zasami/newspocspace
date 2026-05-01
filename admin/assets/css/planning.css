@@ -2914,6 +2914,16 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   align-self: center;
 }
 
+/* Groupe actions droite (Créer + Générer + roue dentée) — un seul flex-item
+ * pour empêcher le bouton roue dentée de wrap sur la ligne 2 quand le
+ * cb-spacer est greedy. Tout le groupe reste solidaire. */
+.cb-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 /* ── Backdrop + modal ──────────────────────────────────────────────────── */
 .pl-ia-backdrop {
   position: fixed; inset: 0;
