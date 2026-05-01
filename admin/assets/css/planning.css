@@ -2381,24 +2381,26 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   color: rgba(255, 255, 255, 0.85);
 }
 
+/* Standard projet : modal close 30x30, transparent au repos, hover bg léger,
+   transition douce (cf. memory feedback_modal_close_button.md) */
 .pl-cell-close {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
   color: #ffffff;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: 0.15s;
+  transition: background 0.2s ease;
   position: relative;
   z-index: 1;
   flex-shrink: 0;
   font-family: inherit;
   padding: 0;
 }
-.pl-cell-close:hover { background: rgba(255, 255, 255, 0.22); }
+.pl-cell-close:hover { background: rgba(255, 255, 255, 0.15); }
 
 /* ─── Body scrollable ────────────────────────────────────────────────── */
 .pl-cell-body {
@@ -2840,4 +2842,56 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v10.0 (modal édition cellule pixel-perfect)
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v10.1 — STANDARD MODAL CLOSE BUTTON (toutes modales Spocspace)
+ *
+ * Classe générique .pl-modal-close pour tous les boutons X de fermeture
+ * sur header CLAIR (modales avec bg blanc/teal-50 etc.).
+ *
+ * Pour les modales avec header SOMBRE (gradient teal foncé), la classe
+ * spécifique .pl-cell-close (déjà adaptée) gère le hover en rgba blanche.
+ *
+ * Standard (cf. memory feedback_modal_close_button.md) :
+ *  - 30x30 px
+ *  - Au repos : background transparent, pas de border
+ *  - Hover : background léger (surface-3 sur clair, rgba blanche sur foncé)
+ *  - Transition douce 0.2s ease sur background uniquement
+ *  - SVG icon stroke-width: 1
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.pl-modal-close {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--color-muted, #6b8783);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  padding: 0;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.pl-modal-close:hover {
+  background: var(--color-surface-3, #f3f6f5);
+  color: var(--color-ink, #0d2a26);
+}
+.pl-modal-close:focus-visible {
+  outline: 2px solid var(--color-teal-300, #7ab5ab);
+  outline-offset: 2px;
+}
+.pl-modal-close svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v10.1 (close button standard)
  * ════════════════════════════════════════════════════════════════════════════ */

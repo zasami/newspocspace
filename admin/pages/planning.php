@@ -601,8 +601,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
         <h3 id="plFiltersModalTitle" class="font-display text-base font-semibold text-ink">Filtres avancés</h3>
-        <button type="button" id="plFiltersClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="plFiltersClose" class="pl-modal-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -648,8 +648,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
         <h3 class="font-display text-base font-semibold text-ink">Propositions de planning</h3>
-        <button type="button" id="plPropsClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="plPropsClose" class="pl-modal-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -670,8 +670,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
         <h3 id="plStatsModalTitle" class="font-display text-base font-semibold text-ink">Statistiques du planning</h3>
-        <button type="button" id="plStatsClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="plStatsClose" class="pl-modal-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -699,8 +699,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
         <h3 id="plGenModalTitle" class="font-display text-base font-semibold text-ink">Générer le planning</h3>
-        <button type="button" id="plGenClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="plGenClose" class="pl-modal-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -808,7 +808,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
           </div>
         </div>
         <button type="button" id="plCellClose" class="pl-cell-close" aria-label="Fermer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
             <path d="M6 6l12 12M18 6L6 18"></path>
           </svg>
         </button>
