@@ -219,9 +219,10 @@ $sidebarModules = [
             'planning-pilotage' => [
                 'label' => 'Pilotage',
                 'items' => [
-                    'dashboard' => ['label' => 'Tableau de bord', 'icon' => 'house'],
-                    'planning'  => ['label' => 'Plannings',       'icon' => 'calendar3'],
-                    'users'     => ['label' => 'Collaborateurs',  'icon' => 'people'],
+                    'dashboard'   => ['label' => 'Tableau de bord', 'icon' => 'house'],
+                    'planning'    => ['label' => 'Plannings',       'icon' => 'calendar3'],
+                    'repartition' => ['label' => 'Répartition',     'icon' => 'grid-3x3-gap'],
+                    'users'       => ['label' => 'Collaborateurs',  'icon' => 'people'],
                 ],
             ],
             'planning-demandes' => [
@@ -236,9 +237,8 @@ $sidebarModules = [
             'planning-couverture' => [
                 'label' => 'Couverture',
                 'items' => [
-                    'vacances'    => ['label' => 'Vacances',    'icon' => 'sun'],
-                    'besoins'     => ['label' => 'Besoins',     'icon' => 'grid-3x3'],
-                    'repartition' => ['label' => 'Répartition', 'icon' => 'grid-3x3-gap'],
+                    'vacances' => ['label' => 'Vacances', 'icon' => 'sun'],
+                    'besoins'  => ['label' => 'Besoins',  'icon' => 'grid-3x3'],
                 ],
             ],
             'planning-config' => [
