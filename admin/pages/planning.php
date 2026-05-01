@@ -331,16 +331,24 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       Générer planning
     </button>
 
+    <!-- Séparateur vertical -->
+    <span class="cb-vsep" aria-hidden="true"></span>
+
+    <!-- Bouton Paramètres IA (icône roue dentée → ouvre modale Règles de génération) -->
+    <button type="button" class="cb-btn-mini" id="plIaRulesBtn" title="Règles de génération IA">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
     <!-- Row break : force le passage à la ligne 2 même sur écran large -->
     <div class="cb-row-break" aria-hidden="true"></div>
 
-    <!-- Groupe icônes outils (stats / filtres / supprimer / fullscreen) -->
+    <!-- Groupe icônes outils (stats / supprimer / fullscreen) -->
     <div class="cb-icon-group">
       <button type="button" class="cb-btn-mini" id="plStatsBtn" title="Statistiques du planning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
-      </button>
-      <button type="button" class="cb-btn-mini" id="plFiltersBtn" title="Filtres avancés (TODO)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="11" y2="6"/><line x1="14" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="13" y2="18"/><line x1="16" y1="18" x2="20" y2="18"/><circle cx="12.5" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="14.5" cy="18" r="2"/></svg>
       </button>
       <button type="button" class="cb-btn-mini" id="plClearBtn" title="Vider le planning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
@@ -598,50 +606,79 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   </div>
 
-  <!-- ═══ Modale Filtres avancés ═══════════════════════════════════════════ -->
-  <div id="plFiltersModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plFiltersModalTitle">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+  <!-- ═══ Modale Règles de génération IA ═══════════════════════════════════ -->
+  <div id="plIaModalBackdrop" class="pl-ia-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="plIaModalTitle">
+    <div class="pl-ia-modal" id="plIaModal">
 
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
-        <h3 id="plFiltersModalTitle" class="font-display text-base font-semibold text-ink">Filtres avancés</h3>
-        <button type="button" id="plFiltersClose" class="pl-modal-close" aria-label="Fermer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <!-- Header gradient -->
+      <div class="pl-ia-header">
+        <div class="pl-ia-title-wrap">
+          <div class="pl-ia-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              <circle cx="12" cy="12" r="4"/>
+            </svg>
+          </div>
+          <div class="pl-ia-title-text">
+            <div class="pl-ia-eyebrow">Génération automatique</div>
+            <h2 class="pl-ia-title" id="plIaModalTitle">Règles de génération IA</h2>
+          </div>
+        </div>
+        <div class="pl-ia-stats">
+          <div class="pl-ia-stat">
+            <span class="pl-ia-stat-num" id="plIaStatActive">0</span>
+            <span class="pl-ia-stat-lbl">Règles actives</span>
+          </div>
+          <div class="pl-ia-stat">
+            <span class="pl-ia-stat-num" id="plIaStatDisabled">0</span>
+            <span class="pl-ia-stat-lbl">Désactivées</span>
+          </div>
+        </div>
+        <button class="pl-ia-close" id="plIaClose" type="button" aria-label="Fermer">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
 
-      <div class="px-5 py-4 space-y-4">
-        <div>
-          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Nom du collaborateur</label>
-          <input type="text" id="plFiltersSearch" placeholder="Rechercher (Marie, Dubois...)" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" autocomplete="off">
+      <!-- Toolbar : recherche + filtres -->
+      <div class="pl-ia-toolbar" id="plIaToolbar">
+        <div class="pl-ia-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="plIaSearchInput" placeholder="Rechercher une règle…" autocomplete="off">
         </div>
-        <div>
-          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Taux minimum</label>
-          <select id="plFiltersTaux" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
-            <option value="0">Tous</option>
-            <option value="100">100% uniquement</option>
-            <option value="80">≥ 80%</option>
-            <option value="50">≥ 50%</option>
-            <option value="20">≥ 20%</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">État cellules</label>
-          <div class="flex gap-2 flex-wrap">
-            <label class="inline-flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
-              <input type="checkbox" id="plFiltersHideEmpty" class="rounded border-line text-teal-600 focus:ring-teal-100">
-              Masquer collaborateurs sans aucun shift
-            </label>
-          </div>
+        <div class="pl-ia-filters">
+          <button type="button" class="pl-ia-pill active" data-ia-filter="all">Toutes <span class="count" id="plIaCntAll">0</span></button>
+          <button type="button" class="pl-ia-pill" data-ia-filter="active">Actives <span class="count" id="plIaCntActive">0</span></button>
+          <button type="button" class="pl-ia-pill" data-ia-filter="disabled">Désactivées <span class="count" id="plIaCntDisabled">0</span></button>
+          <button type="button" class="pl-ia-pill" data-ia-filter="important">Importantes <span class="count" id="plIaCntImportant">0</span></button>
         </div>
       </div>
 
-      <div class="flex items-center justify-between px-5 py-3 border-t border-line bg-surface-2">
-        <button type="button" id="plFiltersReset" class="px-3 py-2 rounded-lg text-sm text-muted hover:text-ink-2 transition-colors">Réinitialiser</button>
-        <div class="flex items-center gap-2">
-          <button type="button" id="plFiltersCancel" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Fermer</button>
-          <button type="button" id="plFiltersApply" class="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors">Appliquer</button>
+      <!-- Body : liste OU formulaire -->
+      <div class="pl-ia-body" id="plIaBody">
+        <div class="pl-ia-loading">
+          <svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          Chargement des règles…
         </div>
       </div>
+
+      <!-- Footer -->
+      <div class="pl-ia-footer" id="plIaFooter">
+        <div class="pl-ia-footer-left">
+          <button type="button" class="pl-ia-btn-secondary" id="plIaConfigBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Config IA avancée
+          </button>
+          <span class="pl-ia-footer-help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            Les règles importantes ne peuvent pas être violées
+          </span>
+        </div>
+        <button type="button" class="pl-ia-btn-primary" id="plIaAddBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Ajouter une règle
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -952,7 +989,25 @@ window.PL_DATA = {
         'prenom'     => $u['prenom'],
         'nom'        => $u['nom'],
         'module_ids' => $u['module_ids'] ?? '',
+        'fonction_code' => $u['fonction_code'] ?? '',
+        'fonction_nom'  => $u['fonction_nom']  ?? '',
     ], $planningUsers), JSON_UNESCAPED_UNICODE) ?>,
+    horaires: <?= json_encode(array_map(fn($h) => [
+        'id'      => $h['id'],
+        'code'    => $h['code'],
+        'nom'     => $h['nom'],
+        'couleur' => $h['couleur'] ?? '#1f6359',
+    ], $planningHoraires), JSON_UNESCAPED_UNICODE) ?>,
+    modules: <?= json_encode(array_map(fn($m) => [
+        'id'   => $m['id'],
+        'code' => $m['code'],
+        'nom'  => $m['nom'],
+    ], $planningModules), JSON_UNESCAPED_UNICODE) ?>,
+    fonctions: <?= json_encode(array_map(fn($f) => [
+        'id'   => $f['id'],
+        'code' => $f['code'],
+        'nom'  => $f['nom'],
+    ], $planningFonctions), JSON_UNESCAPED_UNICODE) ?>,
 };
 </script>
 
@@ -1822,45 +1877,423 @@ window.PL_DATA = {
         }
     });
 
-    // ── Modale Filtres avancés ──────────────────────────────────────────────
-    const plFiltersBackdrop = $('plFiltersModalBackdrop');
-    function plFiltersOpen()  { plFiltersBackdrop?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-    function plFiltersClose() { plFiltersBackdrop?.classList.add('hidden');    document.body.style.overflow = ''; }
-    $('plFiltersBtn')?.addEventListener('click', plFiltersOpen);
-    $('plFiltersClose')?.addEventListener('click', plFiltersClose);
-    $('plFiltersCancel')?.addEventListener('click', plFiltersClose);
-    plFiltersBackdrop?.addEventListener('click', (e) => { if (e.target === plFiltersBackdrop) plFiltersClose(); });
+    // ── Modale Règles de génération IA ──────────────────────────────────────
+    const plIaBackdrop = $('plIaModalBackdrop');
+    const plIaBody     = $('plIaBody');
+    const plIaToolbar  = $('plIaToolbar');
+    const plIaFooter   = $('plIaFooter');
+    let   plIaRules    = [];
+    let   plIaFilter   = 'all';      // all | active | disabled | important
+    let   plIaSearchQ  = '';
+    let   plIaView     = 'list';     // list | form
+    let   plIaEditId   = null;
 
-    function plApplyFilters() {
-        const q          = ($('plFiltersSearch')?.value || '').trim().toLowerCase();
-        const tauxMin    = parseInt($('plFiltersTaux')?.value || '0', 10);
-        const hideEmpty  = !!$('plFiltersHideEmpty')?.checked;
-
-        document.querySelectorAll('#plTable tbody tr.user-row').forEach(row => {
-            row.removeAttribute('data-adv-hidden');
-            if (q) {
-                const name = (row.querySelector('.collab-cell-name')?.textContent || '').toLowerCase();
-                if (!name.includes(q)) row.setAttribute('data-adv-hidden', '');
-            }
-            if (tauxMin > 0) {
-                const tauxText = (row.querySelector('.pct-cell')?.textContent || '0').replace('%','').trim();
-                const taux = parseInt(tauxText, 10) || 0;
-                if (taux < tauxMin) row.setAttribute('data-adv-hidden', '');
-            }
-            if (hideEmpty) {
-                const hasShift = row.querySelectorAll('td.day-cell .shift').length > 0;
-                if (!hasShift) row.setAttribute('data-adv-hidden', '');
-            }
-        });
-        plFiltersClose();
+    function plIaOpen() {
+        plIaView = 'list'; plIaEditId = null;
+        plIaBackdrop?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        plIaLoadRules();
     }
-    $('plFiltersApply')?.addEventListener('click', plApplyFilters);
-    $('plFiltersReset')?.addEventListener('click', () => {
-        $('plFiltersSearch').value = '';
-        $('plFiltersTaux').value = '0';
-        $('plFiltersHideEmpty').checked = false;
-        document.querySelectorAll('#plTable tbody tr.user-row').forEach(r => r.removeAttribute('data-adv-hidden'));
-        plToast('Filtres réinitialisés', 'info');
+    function plIaClose() {
+        plIaBackdrop?.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    $('plIaRulesBtn')?.addEventListener('click', plIaOpen);
+    $('plIaClose')?.addEventListener('click', plIaClose);
+    plIaBackdrop?.addEventListener('click', (e) => { if (e.target === plIaBackdrop) plIaClose(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !plIaBackdrop?.classList.contains('hidden')) plIaClose(); });
+
+    // Mapping rule_type → label visuel + icône (Lucide-style)
+    const PL_IA_TYPE_LABELS = {
+        user_schedule:  'Collaborateur horaire unique',
+        shift_only:     'Horaires autorisés',
+        shift_exclude:  'Horaires exclus',
+        days_only:      'Jours autorisés',
+        module_only:    'Modules autorisés',
+        module_exclude: 'Modules exclus',
+        no_weekend:     'Pas de weekend',
+        max_days_week:  'Max jours/semaine',
+        '':             'Texte libre',
+    };
+    const PL_IA_TYPE_ICONS = {
+        user_schedule:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/><path d="M16 11h6M19 8v6"/></svg>',
+        shift_only:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+        shift_exclude:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>',
+        days_only:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        module_only:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>',
+        module_exclude: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m4.93 4.93 14.14 14.14"/></svg>',
+        no_weekend:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+        max_days_week:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+        '':             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+    };
+
+    async function plIaLoadRules() {
+        plIaBody.innerHTML = '<div class="pl-ia-loading"><svg class="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/><path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg> Chargement des règles…</div>';
+        const res = await plApiPost('admin_get_ia_rules');
+        plIaRules = res?.rules || [];
+        plIaRender();
+    }
+
+    function plIaRender() {
+        if (plIaView === 'form') { plIaRenderForm(); return; }
+        plIaRenderList();
+    }
+
+    function plIaRenderList() {
+        // Toolbar visible
+        if (plIaToolbar) plIaToolbar.style.display = '';
+
+        // Stats header
+        const nbActive   = plIaRules.filter(r => r.actif).length;
+        const nbDisabled = plIaRules.length - nbActive;
+        const nbImportant = plIaRules.filter(r => r.importance === 'important').length;
+        $('plIaStatActive')   && ($('plIaStatActive').textContent   = nbActive);
+        $('plIaStatDisabled') && ($('plIaStatDisabled').textContent = nbDisabled);
+        $('plIaCntAll')       && ($('plIaCntAll').textContent       = plIaRules.length);
+        $('plIaCntActive')    && ($('plIaCntActive').textContent    = nbActive);
+        $('plIaCntDisabled')  && ($('plIaCntDisabled').textContent  = nbDisabled);
+        $('plIaCntImportant') && ($('plIaCntImportant').textContent = nbImportant);
+
+        // Footer (mode liste)
+        plIaFooter.innerHTML = `
+          <div class="pl-ia-footer-left">
+            <button type="button" class="pl-ia-btn-secondary" id="plIaConfigBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Config IA avancée
+            </button>
+            <span class="pl-ia-footer-help">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+              Les règles importantes ne peuvent pas être violées
+            </span>
+          </div>
+          <button type="button" class="pl-ia-btn-primary" id="plIaAddBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Ajouter une règle
+          </button>`;
+        $('plIaAddBtn')?.addEventListener('click', () => { plIaView = 'form'; plIaEditId = null; plIaRender(); });
+
+        // Filtre + recherche
+        let visible = plIaRules.slice();
+        if (plIaFilter === 'active')    visible = visible.filter(r => r.actif);
+        if (plIaFilter === 'disabled')  visible = visible.filter(r => !r.actif);
+        if (plIaFilter === 'important') visible = visible.filter(r => r.importance === 'important');
+        if (plIaSearchQ) {
+            const q = plIaSearchQ.toLowerCase();
+            visible = visible.filter(r =>
+                (r.titre || '').toLowerCase().includes(q) ||
+                (r.description || '').toLowerCase().includes(q)
+            );
+        }
+
+        if (!visible.length) {
+            plIaBody.innerHTML = '<div class="pl-ia-empty">'
+                + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>'
+                + '<div class="pl-ia-empty-title">' + (plIaRules.length ? 'Aucune règle ne correspond' : 'Aucune règle configurée') + '</div>'
+                + '<div class="pl-ia-empty-sub">' + (plIaRules.length ? 'Essayez un autre filtre ou recherche' : 'Cliquez sur « Ajouter une règle » pour commencer') + '</div>'
+                + '</div>';
+            return;
+        }
+
+        plIaBody.innerHTML = '<div class="pl-ia-list">' + visible.map(plIaRenderCard).join('') + '</div>';
+
+        // Bind events
+        plIaBody.querySelectorAll('.pl-ia-toggle').forEach(el => el.addEventListener('click', plIaToggleRule));
+        plIaBody.querySelectorAll('[data-ia-edit]').forEach(el => el.addEventListener('click', () => { plIaEditId = el.dataset.iaEdit; plIaView = 'form'; plIaRender(); }));
+        plIaBody.querySelectorAll('[data-ia-del]').forEach(el => el.addEventListener('click', plIaDeleteRule));
+    }
+
+    function plIaRenderCard(r) {
+        const importance = r.importance || 'moyen';
+        const badgeClass = importance === 'important' ? 'pl-ia-badge--important'
+                          : importance === 'faible'   ? 'pl-ia-badge--info'
+                          : 'pl-ia-badge--priority';
+        const badgeText = importance === 'important' ? 'important'
+                         : importance === 'faible'   ? 'global'
+                         : 'priorité';
+        const typeKey   = r.rule_type || '';
+        const typeLabel = PL_IA_TYPE_LABELS[typeKey] || 'Texte libre';
+        const typeIcon  = PL_IA_TYPE_ICONS[typeKey] || PL_IA_TYPE_ICONS[''];
+
+        // Cible (ciblage human-readable)
+        let targetHtml = '<strong>Tout le monde</strong>';
+        if (r.target_mode === 'fonction')    targetHtml = 'Fonction <strong>' + plEsc(r.target_fonction_code || '?') + '</strong>';
+        else if (r.target_mode === 'module') {
+            const ids = r.rule_params?.target_module_ids || [];
+            const codes = ids.map(id => (window.PL_DATA?.modules || []).find(m => m.id === id)?.code || '?');
+            targetHtml = 'Modules <strong>' + plEsc(codes.join(', ') || '?') + '</strong>';
+        }
+        else if (r.target_mode === 'users') {
+            const names = (r.targeted_users || []).map(u => u.name || (u.prenom + ' ' + u.nom));
+            targetHtml = '<strong>' + plEsc(names.join(', ') || 'Utilisateurs ciblés') + '</strong>';
+        }
+
+        // Codes shifts colorés
+        const shiftCodes = (r.rule_params?.shift_codes || []);
+        const horaires = window.PL_DATA?.horaires || [];
+        const shiftsHtml = shiftCodes.length
+            ? '<span class="pl-ia-rule-shifts">' + shiftCodes.map(c => {
+                const h = horaires.find(x => x.code === c);
+                const bg = (h?.couleur || '#1f6359');
+                return '<span class="pl-ia-shift-code" style="background:' + plEsc(bg) + '">' + plEsc(c) + '</span>';
+            }).join('') + '</span>'
+            : '';
+
+        // Description visible (max 120 chars)
+        const desc = r.description ? plEsc(r.description.substring(0, 140)) : '';
+
+        return '<div class="pl-ia-rule-card' + (r.actif ? '' : ' disabled') + '">'
+            + '<div class="pl-ia-toggle' + (r.actif ? ' on' : '') + '" data-ia-toggle="' + plEsc(r.id) + '" role="switch" aria-checked="' + (r.actif ? 'true' : 'false') + '"></div>'
+            + '<div class="pl-ia-rule-content">'
+            + '<div class="pl-ia-rule-head">'
+            + '<span class="pl-ia-rule-title">' + plEsc(r.titre || '(Sans titre)') + '</span>'
+            + '<span class="pl-ia-badge ' + badgeClass + '">' + badgeText + '</span>'
+            + '<span class="pl-ia-rule-type">' + typeIcon + ' ' + plEsc(typeLabel) + '</span>'
+            + shiftsHtml
+            + '</div>'
+            + '<div class="pl-ia-rule-desc">' + targetHtml + (desc ? ' · ' + desc : '') + '</div>'
+            + '</div>'
+            + '<div class="pl-ia-rule-actions">'
+            + '<button type="button" class="pl-ia-rule-action-btn" data-ia-edit="' + plEsc(r.id) + '" title="Modifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+            + '<button type="button" class="pl-ia-rule-action-btn danger" data-ia-del="' + plEsc(r.id) + '" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>'
+            + '</div>'
+            + '</div>';
+    }
+
+    async function plIaToggleRule(ev) {
+        const el = ev.currentTarget;
+        const id = el.dataset.iaToggle;
+        const wasOn = el.classList.contains('on');
+        // Optimistic UI
+        el.classList.toggle('on');
+        el.closest('.pl-ia-rule-card')?.classList.toggle('disabled');
+        const res = await plApiPost('admin_toggle_ia_rule', { id });
+        if (!res?.success) {
+            // Rollback
+            el.classList.toggle('on');
+            el.closest('.pl-ia-rule-card')?.classList.toggle('disabled');
+            plToast(res?.message || 'Erreur', 'error');
+            return;
+        }
+        // Sync local state + stats
+        const r = plIaRules.find(x => x.id === id);
+        if (r) r.actif = wasOn ? 0 : 1;
+        plIaRenderList();
+    }
+
+    async function plIaDeleteRule(ev) {
+        const id = ev.currentTarget.dataset.iaDel;
+        const r  = plIaRules.find(x => x.id === id);
+        if (!confirm('Supprimer la règle « ' + (r?.titre || '') + ' » ?')) return;
+        const res = await plApiPost('admin_delete_ia_rule', { id });
+        if (res?.success) {
+            plToast('Règle supprimée', 'ok');
+            plIaRules = plIaRules.filter(x => x.id !== id);
+            plIaRenderList();
+        } else {
+            plToast(res?.message || 'Erreur', 'error');
+        }
+    }
+
+    // Filtre pills + recherche
+    plIaToolbar?.addEventListener('click', (e) => {
+        const pill = e.target.closest('[data-ia-filter]');
+        if (!pill) return;
+        plIaFilter = pill.dataset.iaFilter;
+        plIaToolbar.querySelectorAll('[data-ia-filter]').forEach(p => p.classList.toggle('active', p === pill));
+        plIaRenderList();
+    });
+    $('plIaSearchInput')?.addEventListener('input', (e) => {
+        plIaSearchQ = e.target.value || '';
+        plIaRenderList();
+    });
+
+    // ── Formulaire ajout/édition règle ──────────────────────────────────────
+    function plIaRenderForm() {
+        const r = plIaEditId ? plIaRules.find(x => x.id === plIaEditId) : null;
+        const isEdit = !!r;
+        const params = r?.rule_params || {};
+
+        // Toolbar masquée en mode form (header reste, pas de filtres)
+        if (plIaToolbar) plIaToolbar.style.display = 'none';
+
+        const horaires = window.PL_DATA?.horaires  || [];
+        const modules  = window.PL_DATA?.modules   || [];
+        const fonctions = window.PL_DATA?.fonctions || [];
+        const users     = window.PL_DATA?.users     || [];
+
+        const horaireOpts = horaires.map(h => '<option value="' + plEsc(h.code) + '">' + plEsc(h.code) + ' — ' + plEsc(h.nom || '') + '</option>').join('');
+        const moduleOpts  = modules.map(m  => '<option value="' + plEsc(m.id) + '">'   + plEsc(m.code) + ' — ' + plEsc(m.nom || '') + '</option>').join('');
+        const fonctionOpts= fonctions.map(f=> '<option value="' + plEsc(f.code) + '">' + plEsc(f.code) + ' — ' + plEsc(f.nom || '') + '</option>').join('');
+        const userOpts    = users.map(u    => '<option value="' + plEsc(u.id) + '">'   + plEsc(u.prenom) + ' ' + plEsc(u.nom) + '</option>').join('');
+
+        const ruleTypeOpts = Object.entries(PL_IA_TYPE_LABELS)
+            .map(([k, v]) => '<option value="' + plEsc(k) + '">' + plEsc(v) + (k === '' ? ' (IA)' : '') + '</option>')
+            .join('');
+
+        plIaBody.innerHTML = `
+          <div class="pl-ia-form">
+            <div class="pl-ia-form-back">
+              <button type="button" class="pl-ia-back-btn" id="plIaBackBtn" title="Retour à la liste">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                <span>${isEdit ? 'Modifier la règle' : 'Nouvelle règle'}</span>
+              </button>
+            </div>
+
+            <div class="pl-ia-field">
+              <label class="pl-ia-label">Titre <span class="pl-ia-required">*</span></label>
+              <input type="text" class="pl-ia-input" id="plIaFTitre" placeholder="Ex: Sami ne travaille pas le weekend" value="${plEsc(r?.titre || '')}">
+            </div>
+
+            <div class="pl-ia-row">
+              <div class="pl-ia-field">
+                <label class="pl-ia-label">Type de règle</label>
+                <select class="pl-ia-select" id="plIaFType">${ruleTypeOpts}</select>
+              </div>
+              <div class="pl-ia-field">
+                <label class="pl-ia-label">Importance</label>
+                <select class="pl-ia-select" id="plIaFImportance">
+                  <option value="important">Important</option>
+                  <option value="moyen" selected>Moyen</option>
+                  <option value="faible">Faible</option>
+                </select>
+              </div>
+              <div class="pl-ia-field">
+                <label class="pl-ia-label">Cible</label>
+                <select class="pl-ia-select" id="plIaFTarget">
+                  <option value="all">Tout le monde</option>
+                  <option value="module">Par module</option>
+                  <option value="fonction">Par fonction</option>
+                  <option value="users">Utilisateurs spécifiques</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="pl-ia-field" id="plIaFTargetDetail"></div>
+            <div class="pl-ia-field" id="plIaFParamsDetail"></div>
+
+            <div class="pl-ia-field">
+              <label class="pl-ia-label">Description / règle en texte libre</label>
+              <textarea class="pl-ia-textarea" id="plIaFDesc" rows="3" placeholder="Décrivez la règle en langage naturel. Ex: «Marie ne doit jamais travailler le mercredi»">${plEsc(r?.description || '')}</textarea>
+              <small class="pl-ia-help">Cette description est transmise à l'IA pour les modes hybride et IA directe</small>
+            </div>
+          </div>
+        `;
+
+        // Pré-remplissage
+        $('plIaFType').value       = r?.rule_type || '';
+        $('plIaFImportance').value = r?.importance || 'moyen';
+        $('plIaFTarget').value     = r?.target_mode || 'all';
+
+        // Footer (mode form)
+        plIaFooter.innerHTML = `
+          <button type="button" class="pl-ia-btn-secondary" id="plIaCancelBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            Annuler
+          </button>
+          <button type="button" class="pl-ia-btn-primary" id="plIaSaveBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ${isEdit ? 'Modifier' : 'Créer'}
+          </button>`;
+        $('plIaBackBtn')?.addEventListener('click', () => { plIaView = 'list'; plIaRender(); });
+        $('plIaCancelBtn')?.addEventListener('click', () => { plIaView = 'list'; plIaRender(); });
+        $('plIaSaveBtn')?.addEventListener('click', plIaSaveRule);
+
+        // Détails dynamiques (cible + params)
+        function updateTargetDetail() {
+            const target = $('plIaFTarget').value;
+            const det = $('plIaFTargetDetail');
+            det.innerHTML = '';
+            if (target === 'module') {
+                det.innerHTML = '<label class="pl-ia-label">Modules ciblés</label><select multiple class="pl-ia-multiselect" id="plIaFTargetModules">' + moduleOpts + '</select>';
+                const sel = $('plIaFTargetModules');
+                (r?.rule_params?.target_module_ids || []).forEach(id => { [...sel.options].forEach(o => { if (o.value === id) o.selected = true; }); });
+            } else if (target === 'fonction') {
+                det.innerHTML = '<label class="pl-ia-label">Fonction</label><select class="pl-ia-select" id="plIaFFonctionCode"><option value="">— Choisir —</option>' + fonctionOpts + '</select>';
+                $('plIaFFonctionCode').value = r?.target_fonction_code || '';
+            } else if (target === 'users') {
+                det.innerHTML = '<label class="pl-ia-label">Utilisateurs ciblés</label><select multiple class="pl-ia-multiselect" id="plIaFTargetUsers">' + userOpts + '</select>';
+                const sel = $('plIaFTargetUsers');
+                (r?.targeted_users || []).forEach(u => { [...sel.options].forEach(o => { if (o.value === u.id) o.selected = true; }); });
+            }
+        }
+        function updateParamsDetail() {
+            const t = $('plIaFType').value;
+            const det = $('plIaFParamsDetail');
+            det.innerHTML = '';
+            if (t === 'shift_only' || t === 'shift_exclude') {
+                det.innerHTML = '<label class="pl-ia-label">Codes horaires</label><select multiple class="pl-ia-multiselect" id="plIaFShiftCodes">' + horaireOpts + '</select>';
+                const sel = $('plIaFShiftCodes');
+                (params.shift_codes || []).forEach(c => { [...sel.options].forEach(o => { if (o.value === c) o.selected = true; }); });
+            } else if (t === 'days_only') {
+                const dn = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+                const sel = params.days || [];
+                det.innerHTML = '<label class="pl-ia-label">Jours autorisés</label><div class="pl-ia-days">'
+                    + dn.map((n, i) => {
+                        const dow = i + 1;
+                        return '<label class="pl-ia-day' + (sel.includes(dow) ? ' active' : '') + '"><input type="checkbox" class="pl-ia-day-cb" value="' + dow + '"' + (sel.includes(dow) ? ' checked' : '') + '><span>' + n + '</span></label>';
+                    }).join('') + '</div>';
+                det.querySelectorAll('.pl-ia-day-cb').forEach(cb => cb.addEventListener('change', () => cb.closest('.pl-ia-day').classList.toggle('active', cb.checked)));
+            } else if (t === 'max_days_week') {
+                det.innerHTML = '<label class="pl-ia-label">Max jours par semaine</label><input type="number" class="pl-ia-input" id="plIaFMaxDays" min="1" max="7" value="' + (params.max_days || 5) + '">';
+            } else if (t === 'module_only' || t === 'module_exclude') {
+                det.innerHTML = '<label class="pl-ia-label">Modules concernés</label><select multiple class="pl-ia-multiselect" id="plIaFModuleIds">' + moduleOpts + '</select>';
+                const sel = $('plIaFModuleIds');
+                (params.module_ids || []).forEach(id => { [...sel.options].forEach(o => { if (o.value === id) o.selected = true; }); });
+            }
+        }
+        $('plIaFTarget').addEventListener('change', updateTargetDetail);
+        $('plIaFType').addEventListener('change', updateParamsDetail);
+        updateTargetDetail();
+        updateParamsDetail();
+    }
+
+    async function plIaSaveRule() {
+        const titre = ($('plIaFTitre')?.value || '').trim();
+        if (!titre) { plToast('Titre requis', 'error'); return; }
+        const ruleType   = $('plIaFType').value || '';
+        const importance = $('plIaFImportance').value || 'moyen';
+        const targetMode = $('plIaFTarget').value || 'all';
+        const description= ($('plIaFDesc')?.value || '').trim();
+        const targetFonctionCode = $('plIaFFonctionCode')?.value || '';
+        const targetModuleIds    = [...($('plIaFTargetModules')?.selectedOptions || [])].map(o => o.value);
+        const userIds            = [...($('plIaFTargetUsers')?.selectedOptions || [])].map(o => o.value);
+
+        let ruleParams = {};
+        if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
+            ruleParams.shift_codes = [...($('plIaFShiftCodes')?.selectedOptions || [])].map(o => o.value);
+        } else if (ruleType === 'days_only') {
+            ruleParams.days = [...document.querySelectorAll('.pl-ia-day-cb:checked')].map(cb => parseInt(cb.value, 10));
+        } else if (ruleType === 'max_days_week') {
+            ruleParams.max_days = parseInt($('plIaFMaxDays')?.value || 5, 10);
+        } else if (ruleType === 'module_only' || ruleType === 'module_exclude') {
+            ruleParams.module_ids = [...($('plIaFModuleIds')?.selectedOptions || [])].map(o => o.value);
+        }
+
+        const data = {
+            titre, description, importance,
+            rule_type: ruleType,
+            rule_params: JSON.stringify(ruleParams),
+            target_mode: targetMode,
+            target_fonction_code: targetFonctionCode,
+            user_ids: userIds,
+            target_module_ids: targetModuleIds,
+        };
+        const action = plIaEditId ? 'admin_update_ia_rule' : 'admin_create_ia_rule';
+        if (plIaEditId) data.id = plIaEditId;
+
+        const res = await plApiPost(action, data);
+        if (res?.success) {
+            plToast(plIaEditId ? 'Règle modifiée' : 'Règle créée', 'ok');
+            plIaView = 'list'; plIaEditId = null;
+            await plIaLoadRules();
+        } else {
+            plToast(res?.message || 'Erreur', 'error');
+        }
+    }
+
+    // Config IA avancée → ouvre la page admin (pas implémenté → toast info)
+    plIaFooter?.addEventListener('click', (e) => {
+        if (e.target.closest('#plIaConfigBtn')) plToast('Config IA avancée — TODO', 'info');
     });
 
     // ── Modale Propositions (sauvegarde + liste) ────────────────────────────
