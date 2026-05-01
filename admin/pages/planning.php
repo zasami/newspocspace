@@ -436,25 +436,23 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     <!-- Séparateur vertical entre filtres et zoom -->
     <span class="team-filters-sep" aria-hidden="true"></span>
 
-    <!-- Size controls : sticky tout à droite, indépendant du flux des pills -->
+    <!-- Size controls : 5 boutons visuels (icônes originales xs/sm/md/std/lg)
+         mais appliquent en interne les presets compacts : xxxs/xxs/xs/sm/md -->
     <div class="size-controls" role="group" aria-label="Zoom de la grille">
-      <button type="button" class="size-btn" data-size="xxxs" title="Ultra compact">
-        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="7" y="7" width="2" height="2" rx="0.5"/></svg>
-      </button>
-      <button type="button" class="size-btn" data-size="xxs" title="Extra petit">
-        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="6.5" y="6.5" width="3" height="3" rx="1"/></svg>
-      </button>
-      <button type="button" class="size-btn active" data-size="xs" title="Très petit (défaut)">
+      <button type="button" class="size-btn active" data-size="xxxs" title="Ultra compact (défaut)">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
       </button>
-      <button type="button" class="size-btn" data-size="sm" title="Petit">
+      <button type="button" class="size-btn" data-size="xxs" title="Extra petit">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="5" y="5" width="6" height="6" rx="1"/></svg>
       </button>
-      <button type="button" class="size-btn" data-size="md" title="Moyen">
+      <button type="button" class="size-btn" data-size="xs" title="Très petit">
         <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
       </button>
-      <button type="button" class="size-btn" data-size="std" title="Standard">
+      <button type="button" class="size-btn" data-size="sm" title="Petit">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
+      </button>
+      <button type="button" class="size-btn" data-size="md" title="Moyen">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
       </button>
     </div>
   </div>
@@ -1210,8 +1208,11 @@ window.PL_DATA = {
         x.setDate(x.getDate() - dow);
         return x;
     }
-    // Choisit la semaine par défaut (celle contenant aujourd'hui si dans le mois,
-    // sinon la première semaine ayant un jour visible dans le mois)
+    // Choisit la semaine par défaut : on veut TOUJOURS afficher 7 jours.
+    // Si la semaine d'aujourd'hui est entièrement dans le mois → on l'utilise.
+    // Sinon → on prend la 1re semaine FULL Mon→Sun entièrement contenue dans le mois.
+    // (une semaine qui dépasse le mois ne montre que les jours présents en thead,
+    // d'où le bug "seulement 2-3 jours" si on tombe sur le bord du mois.)
     function plDefaultWeekStart() {
         const today = new Date();
         const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
@@ -1219,10 +1220,32 @@ window.PL_DATA = {
         const firstIso = ths[0].getAttribute('data-date');
         const lastIso  = ths[ths.length - 1].getAttribute('data-date');
         const todayIso = plIsoDate(today);
-        if (todayIso >= firstIso && todayIso <= lastIso) return plMondayOf(today);
-        // Sinon : lundi de la semaine du 1er jour visible
+
+        // 1) Si aujourd'hui est dans le mois ET sa semaine tient entièrement dans le mois
+        if (todayIso >= firstIso && todayIso <= lastIso) {
+            const monday = plMondayOf(today);
+            const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+            if (plIsoDate(monday) >= firstIso && plIsoDate(sunday) <= lastIso) return monday;
+        }
+
+        // 2) Sinon : 1re semaine FULL (Lun→Dim) entièrement dans le mois
         const [y, m, d] = firstIso.split('-').map(Number);
-        return plMondayOf(new Date(y, m - 1, d));
+        const firstDate = new Date(y, m - 1, d);
+        let candidate = plMondayOf(firstDate);
+        // Si le lundi calculé est avant le 1er du mois, avancer d'1 semaine
+        if (plIsoDate(candidate) < firstIso) {
+            candidate = new Date(candidate); candidate.setDate(candidate.getDate() + 7);
+        }
+        // Vérifier que dimanche tient encore dans le mois (sinon prendre la dernière full week)
+        const lastSunday = new Date(candidate); lastSunday.setDate(lastSunday.getDate() + 6);
+        if (plIsoDate(lastSunday) > lastIso) {
+            // Reculer jusqu'à trouver une full week qui tient
+            const [ly, lm, ld] = lastIso.split('-').map(Number);
+            const lastDate = new Date(ly, lm - 1, ld);
+            const lastMonday = plMondayOf(lastDate);
+            if (plIsoDate(lastMonday) >= firstIso) candidate = lastMonday;
+        }
+        return candidate;
     }
 
     function plApplyView() {
@@ -1464,8 +1487,8 @@ window.PL_DATA = {
         btn.addEventListener('click', () => applySize(btn.dataset.size));
     });
 
-    // Default : XS (vue compacte par défaut, très petit comme demandé)
-    let initialSize = 'xs';
+    // Default : XXXS (ultra compact = bouton le + petit qui correspond au 1er bouton actif)
+    let initialSize = 'xxxs';
     try {
         const saved = localStorage.getItem('ss_planning_size');
         if (saved && SIZE_PRESETS[saved]) initialSize = saved;
