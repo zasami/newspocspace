@@ -438,7 +438,13 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
     <!-- Size controls : sticky tout à droite, indépendant du flux des pills -->
     <div class="size-controls" role="group" aria-label="Zoom de la grille">
-      <button type="button" class="size-btn" data-size="xs" title="Très petit">
+      <button type="button" class="size-btn" data-size="xxxs" title="Ultra compact">
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="7" y="7" width="2" height="2" rx="0.5"/></svg>
+      </button>
+      <button type="button" class="size-btn" data-size="xxs" title="Extra petit">
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><rect x="6.5" y="6.5" width="3" height="3" rx="1"/></svg>
+      </button>
+      <button type="button" class="size-btn active" data-size="xs" title="Très petit (défaut)">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
       </button>
       <button type="button" class="size-btn" data-size="sm" title="Petit">
@@ -447,7 +453,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       <button type="button" class="size-btn" data-size="md" title="Moyen">
         <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
       </button>
-      <button type="button" class="size-btn active" data-size="std" title="Standard (défaut)">
+      <button type="button" class="size-btn" data-size="std" title="Standard">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
       </button>
       <button type="button" class="size-btn" data-size="lg" title="Grand">
@@ -1259,28 +1265,81 @@ window.PL_DATA = {
         });
     });
 
-    // ── 5 presets de zoom : XS / SM / MD / STD / LG (STD = défaut) ──────────
-    // XS calé exactement sur le legacy spocspace/admin/assets/css/admin.css
-    // (.tr-grid .dc { min-width:36px; height:28px }) puis progression douce.
+    // ── 7 presets de zoom : XXXS / XXS / XS / SM / MD / STD / LG ────────────
+    // Quand on descend, TOUT scale : cellule, shift, badge role-tag, nom collab,
+    // avatar, taux, heures, paddings → la grille reste lisible mais ultra-compacte.
+    // Default : XS (très compact, idéal pour vue d'ensemble du mois).
     const SIZE_PRESETS = {
-        xs:  { cellW: 36, cellH: 28, shiftMinW: 28, shiftH: 20, shiftFs: 10,   dayNumSize: 20, dayNumFs: 11 },
-        sm:  { cellW: 46, cellH: 36, shiftMinW: 32, shiftH: 24, shiftFs: 10.5, dayNumSize: 22, dayNumFs: 12 },
-        md:  { cellW: 56, cellH: 44, shiftMinW: 38, shiftH: 27, shiftFs: 11,   dayNumSize: 26, dayNumFs: 13 },
-        std: { cellW: 64, cellH: 50, shiftMinW: 42, shiftH: 30, shiftFs: 11.5, dayNumSize: 28, dayNumFs: 14 },
-        lg:  { cellW: 84, cellH: 64, shiftMinW: 56, shiftH: 38, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16 },
+        xxxs: {
+            cellW: 22, cellH: 18, shiftMinW: 18, shiftH: 14, shiftFs: 8,    dayNumSize: 14, dayNumFs: 8.5,
+            avatarSize: 16, avatarInitialsFs: 7.5, collabNameFs: 9.5, collabPadX: 6, collabPadY: 4, collabGap: 6,
+            roleTagH: 14, roleTagFs: 8,    roleTagMinW: 26,
+            collabW: 150, pctFs: 9.5,  hoursMainFs: 11, hoursTargetFs: 8,
+        },
+        xxs: {
+            cellW: 28, cellH: 22, shiftMinW: 22, shiftH: 17, shiftFs: 8.5,  dayNumSize: 17, dayNumFs: 9.5,
+            avatarSize: 20, avatarInitialsFs: 8.5, collabNameFs: 10.5, collabPadX: 8, collabPadY: 5, collabGap: 7,
+            roleTagH: 16, roleTagFs: 8.5,  roleTagMinW: 28,
+            collabW: 180, pctFs: 10.5, hoursMainFs: 12.5, hoursTargetFs: 8.5,
+        },
+        xs: {
+            cellW: 36, cellH: 28, shiftMinW: 28, shiftH: 20, shiftFs: 9.5,  dayNumSize: 20, dayNumFs: 11,
+            avatarSize: 22, avatarInitialsFs: 9.5, collabNameFs: 11.5, collabPadX: 10, collabPadY: 6, collabGap: 8,
+            roleTagH: 18, roleTagFs: 9,    roleTagMinW: 30,
+            collabW: 200, pctFs: 10.5, hoursMainFs: 13.5, hoursTargetFs: 9,
+        },
+        sm: {
+            cellW: 46, cellH: 36, shiftMinW: 32, shiftH: 24, shiftFs: 10.5, dayNumSize: 22, dayNumFs: 12,
+            avatarSize: 24, avatarInitialsFs: 10, collabNameFs: 12, collabPadX: 12, collabPadY: 7, collabGap: 9,
+            roleTagH: 20, roleTagFs: 9.5,  roleTagMinW: 32,
+            collabW: 220, pctFs: 11, hoursMainFs: 14.5, hoursTargetFs: 9.5,
+        },
+        md: {
+            cellW: 56, cellH: 44, shiftMinW: 38, shiftH: 27, shiftFs: 11,   dayNumSize: 26, dayNumFs: 13,
+            avatarSize: 26, avatarInitialsFs: 10.5, collabNameFs: 12.5, collabPadX: 13, collabPadY: 7, collabGap: 10,
+            roleTagH: 21, roleTagFs: 9.5,  roleTagMinW: 34,
+            collabW: 230, pctFs: 11.5, hoursMainFs: 15, hoursTargetFs: 10,
+        },
+        std: {
+            cellW: 64, cellH: 50, shiftMinW: 42, shiftH: 30, shiftFs: 11.5, dayNumSize: 28, dayNumFs: 14,
+            avatarSize: 28, avatarInitialsFs: 10.5, collabNameFs: 13, collabPadX: 14, collabPadY: 8, collabGap: 11,
+            roleTagH: 22, roleTagFs: 10,   roleTagMinW: 36,
+            collabW: 240, pctFs: 11.5, hoursMainFs: 16, hoursTargetFs: 10,
+        },
+        lg: {
+            cellW: 84, cellH: 64, shiftMinW: 56, shiftH: 38, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16,
+            avatarSize: 32, avatarInitialsFs: 12, collabNameFs: 14, collabPadX: 16, collabPadY: 10, collabGap: 12,
+            roleTagH: 24, roleTagFs: 10.5, roleTagMinW: 38,
+            collabW: 280, pctFs: 13, hoursMainFs: 18, hoursTargetFs: 11,
+        },
     };
     const planningTable = $('plTable');
 
     function applySize(size) {
-        const preset = SIZE_PRESETS[size];
-        if (!preset || !planningTable) return;
-        planningTable.style.setProperty('--cell-w',       preset.cellW + 'px');
-        planningTable.style.setProperty('--cell-h',       preset.cellH + 'px');
-        planningTable.style.setProperty('--shift-min-w',  preset.shiftMinW + 'px');
-        planningTable.style.setProperty('--shift-h',      preset.shiftH + 'px');
-        planningTable.style.setProperty('--shift-fs',     preset.shiftFs + 'px');
-        planningTable.style.setProperty('--day-num-size', preset.dayNumSize + 'px');
-        planningTable.style.setProperty('--day-num-fs',   preset.dayNumFs + 'px');
+        const p = SIZE_PRESETS[size];
+        if (!p || !planningTable) return;
+        const set = (k, v) => planningTable.style.setProperty(k, typeof v === 'number' ? v + 'px' : v);
+        set('--cell-w',           p.cellW);
+        set('--cell-h',           p.cellH);
+        set('--shift-min-w',      p.shiftMinW);
+        set('--shift-h',          p.shiftH);
+        set('--shift-fs',         p.shiftFs);
+        set('--day-num-size',     p.dayNumSize);
+        set('--day-num-fs',       p.dayNumFs);
+        // Vars supplémentaires pour scaling complet
+        set('--avatar-size',      p.avatarSize);
+        set('--avatar-initials-fs', p.avatarInitialsFs);
+        set('--collab-name-fs',   p.collabNameFs);
+        set('--collab-pad-x',     p.collabPadX);
+        set('--collab-pad-y',     p.collabPadY);
+        set('--collab-gap',       p.collabGap);
+        set('--collab-w',         p.collabW);
+        set('--role-tag-h',       p.roleTagH);
+        set('--role-tag-fs',      p.roleTagFs);
+        set('--role-tag-min-w',   p.roleTagMinW);
+        set('--pct-fs',           p.pctFs);
+        set('--hours-main-fs',    p.hoursMainFs);
+        set('--hours-target-fs',  p.hoursTargetFs);
         document.querySelectorAll('.size-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.size === size);
         });
@@ -1291,7 +1350,8 @@ window.PL_DATA = {
         btn.addEventListener('click', () => applySize(btn.dataset.size));
     });
 
-    let initialSize = 'std';
+    // Default : XS (vue compacte par défaut, très petit comme demandé)
+    let initialSize = 'xs';
     try {
         const saved = localStorage.getItem('ss_planning_size');
         if (saved && SIZE_PRESETS[saved]) initialSize = saved;
