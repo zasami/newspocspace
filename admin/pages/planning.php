@@ -478,7 +478,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             </th>
             <th class="col-pct">%</th>
             <?php foreach ($plDays as $day): ?>
-            <th class="day-head <?= $day['weekend'] ? 'weekend' : '' ?> <?= $day['today'] ? 'today' : '' ?>">
+            <th class="day-head <?= $day['weekend'] ? 'weekend' : '' ?> <?= $day['today'] ? 'today' : '' ?>"
+                data-date="<?= h($day['iso']) ?>">
               <span class="day-name"><?= h($day['name']) ?></span>
               <span class="day-num"><?= (int) $day['num'] ?></span>
             </th>
@@ -1196,16 +1197,105 @@ window.PL_DATA = {
         gotoMonth(now.getFullYear(), now.getMonth() + 1);
     });
 
+    // ── Bascule Vue mois ↔ Vue semaine (côté client, masque les colonnes) ───
+    let plViewMode = 'mois';      // 'mois' | 'semaine'
+    let plWeekStart = null;       // Date (lundi) de la semaine en cours en mode semaine
+
+    // Helpers : ISO date → YYYY-MM-DD
+    function plIsoDate(d) {
+        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+        return y + '-' + m + '-' + dd;
+    }
+    // Renvoie le lundi de la semaine contenant la date donnée
+    function plMondayOf(d) {
+        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const dow = (x.getDay() + 6) % 7; // 0 = lundi … 6 = dimanche
+        x.setDate(x.getDate() - dow);
+        return x;
+    }
+    // Choisit la semaine par défaut (celle contenant aujourd'hui si dans le mois,
+    // sinon la première semaine ayant un jour visible dans le mois)
+    function plDefaultWeekStart() {
+        const today = new Date();
+        const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+        if (!ths.length) return plMondayOf(today);
+        const firstIso = ths[0].getAttribute('data-date');
+        const lastIso  = ths[ths.length - 1].getAttribute('data-date');
+        const todayIso = plIsoDate(today);
+        if (todayIso >= firstIso && todayIso <= lastIso) return plMondayOf(today);
+        // Sinon : lundi de la semaine du 1er jour visible
+        const [y, m, d] = firstIso.split('-').map(Number);
+        return plMondayOf(new Date(y, m - 1, d));
+    }
+
+    function plApplyView() {
+        const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+        const tdsAll = document.querySelectorAll('#plTable tbody td.day-cell[data-date]');
+
+        if (plViewMode === 'mois') {
+            // Tout afficher
+            ths.forEach(th => { th.style.display = ''; });
+            tdsAll.forEach(td => { td.style.display = ''; });
+        } else {
+            // Mode semaine : masquer tous les jours hors [weekStart, weekStart+6]
+            if (!plWeekStart) plWeekStart = plDefaultWeekStart();
+            const startIso = plIsoDate(plWeekStart);
+            const endDate = new Date(plWeekStart); endDate.setDate(endDate.getDate() + 6);
+            const endIso = plIsoDate(endDate);
+            ths.forEach(th => {
+                const iso = th.getAttribute('data-date');
+                th.style.display = (iso >= startIso && iso <= endIso) ? '' : 'none';
+            });
+            tdsAll.forEach(td => {
+                const iso = td.getAttribute('data-date');
+                td.style.display = (iso >= startIso && iso <= endIso) ? '' : 'none';
+            });
+        }
+        // Persistance
+        try { localStorage.setItem('ss_planning_view', plViewMode); } catch(e) {}
+        try { if (plWeekStart) localStorage.setItem('ss_planning_week', plIsoDate(plWeekStart)); } catch(e) {}
+    }
+
     // Sélection vue (semaine / mois)
     document.querySelectorAll('.dd-view-item').forEach(item => {
         item.addEventListener('click', () => {
             const view = item.dataset.view;
+            plViewMode = view;
+            if (view === 'semaine' && !plWeekStart) plWeekStart = plDefaultWeekStart();
             if (viewLabel) viewLabel.textContent = view === 'semaine' ? 'Semaine' : 'Mois';
             document.querySelectorAll('.dd-view-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
+            plApplyView();
             setTimeout(closeAllDropdowns, 200);
         });
     });
+
+    // Restaure l'état au chargement (vue + semaine)
+    try {
+        const savedView = localStorage.getItem('ss_planning_view');
+        if (savedView === 'semaine' || savedView === 'mois') {
+            plViewMode = savedView;
+            if (viewLabel) viewLabel.textContent = savedView === 'semaine' ? 'Semaine' : 'Mois';
+            document.querySelectorAll('.dd-view-item').forEach(i => i.classList.toggle('active', i.dataset.view === savedView));
+            if (savedView === 'semaine') {
+                const savedWeek = localStorage.getItem('ss_planning_week');
+                if (savedWeek) {
+                    const [y, m, d] = savedWeek.split('-').map(Number);
+                    const candidate = plMondayOf(new Date(y, m - 1, d));
+                    // Si la semaine sauvegardée est dans le mois affiché, la prendre, sinon défaut
+                    const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+                    const firstIso = ths[0]?.getAttribute('data-date');
+                    const lastIso  = ths[ths.length - 1]?.getAttribute('data-date');
+                    const candidateIso = plIsoDate(candidate);
+                    plWeekStart = (firstIso && candidateIso <= lastIso && candidateIso >= firstIso.substring(0, 8) + '01')
+                        ? candidate : plDefaultWeekStart();
+                } else {
+                    plWeekStart = plDefaultWeekStart();
+                }
+            }
+            plApplyView();
+        }
+    } catch(e) {}
 
     // ── Nav arrows (← Auj. →) ──────────────────────────────────────────────
     // Sync visuel instantané AVANT le reload : MAJ label période + active mois
@@ -1238,13 +1328,40 @@ window.PL_DATA = {
         });
     }
 
+    // Nav prev/next : en mode mois → ±1 mois (reload). En mode semaine → ±7 jours
+    // (sans reload si la nouvelle semaine reste dans le mois affiché ; sinon reload
+    // sur le mois adjacent et recale la semaine).
+    function plNavWeek(dir) {
+        if (!plWeekStart) plWeekStart = plDefaultWeekStart();
+        const next = new Date(plWeekStart);
+        next.setDate(next.getDate() + (dir * 7));
+        const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+        const firstIso = ths[0]?.getAttribute('data-date');
+        const lastIso  = ths[ths.length - 1]?.getAttribute('data-date');
+        const nextEnd  = new Date(next); nextEnd.setDate(nextEnd.getDate() + 6);
+        const nextStartIso = plIsoDate(next);
+        const nextEndIso   = plIsoDate(nextEnd);
+        // Si la nouvelle semaine touche un autre mois → reload sur ce mois
+        if (firstIso && (nextEndIso < firstIso || nextStartIso > lastIso)) {
+            const y = next.getFullYear(), m = next.getMonth() + 1;
+            try { localStorage.setItem('ss_planning_week', plIsoDate(next)); } catch(e) {}
+            plSyncPeriodUI(y, m);
+            gotoMonth(y, m);
+            return;
+        }
+        plWeekStart = next;
+        plApplyView();
+    }
+
     $('plNavPrev')?.addEventListener('click', () => {
+        if (plViewMode === 'semaine') { plNavWeek(-1); return; }
         let m = currentMonth - 1, y = currentYear;
         if (m < 1) { m = 12; y--; }
         plSyncPeriodUI(y, m);
         gotoMonth(y, m);
     });
     $('plNavNext')?.addEventListener('click', () => {
+        if (plViewMode === 'semaine') { plNavWeek(+1); return; }
         let m = currentMonth + 1, y = currentYear;
         if (m > 12) { m = 1; y++; }
         plSyncPeriodUI(y, m);
@@ -1253,6 +1370,10 @@ window.PL_DATA = {
     $('plNavToday')?.addEventListener('click', () => {
         const now = new Date();
         const y = now.getFullYear(), m = now.getMonth() + 1;
+        if (plViewMode === 'semaine') {
+            // Aujourd'hui en mode semaine : recale sur la semaine du jour
+            try { localStorage.setItem('ss_planning_week', plIsoDate(plMondayOf(now))); } catch(e) {}
+        }
         plSyncPeriodUI(y, m);
         gotoMonth(y, m);
     });
