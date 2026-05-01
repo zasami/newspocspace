@@ -1290,7 +1290,31 @@ window.PL_DATA = {
         });
     });
 
-    // Restaure l'état au chargement (vue + semaine)
+    // Helper : dernière full week (Lun→Dim) entièrement contenue dans le mois affiché
+    function plLastFullWeekStart() {
+        const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+        if (!ths.length) return plMondayOf(new Date());
+        const firstIso = ths[0].getAttribute('data-date');
+        const lastIso  = ths[ths.length - 1].getAttribute('data-date');
+        const [ly, lm, ld] = lastIso.split('-').map(Number);
+        const lastDate = new Date(ly, lm - 1, ld);
+        // Recule jusqu'au dernier dimanche, puis -6 jours pour avoir le lundi
+        const dow = (lastDate.getDay() + 6) % 7; // 0 = lundi … 6 = dimanche
+        const daysToLastSunday = (6 - dow + 7) % 7;
+        const lastSunday = new Date(lastDate);
+        lastSunday.setDate(lastSunday.getDate() - (dow === 6 ? 0 : (dow + 1)));
+        // Plus simple : dernier dimanche = lastDate - jours pour atteindre dim
+        // dow lastDate (lun=0..dim=6). Pour atteindre dim : dow + 1 si dow < 6, sinon 0.
+        const offset = (dow + 1) % 7; // si dim → 0, sinon dow+1
+        lastSunday.setTime(lastDate.getTime());
+        lastSunday.setDate(lastSunday.getDate() - offset);
+        const monday = new Date(lastSunday); monday.setDate(monday.getDate() - 6);
+        // Si ce lundi est avant le 1er du mois, recule pas assez de days dans mois → fallback default
+        if (plIsoDate(monday) < firstIso) return plDefaultWeekStart();
+        return monday;
+    }
+
+    // Restaure l'état au chargement (vue + semaine + hint de navigation)
     try {
         const savedView = localStorage.getItem('ss_planning_view');
         if (savedView === 'semaine' || savedView === 'mois') {
@@ -1298,19 +1322,30 @@ window.PL_DATA = {
             if (viewLabel) viewLabel.textContent = savedView === 'semaine' ? 'Semaine' : 'Mois';
             document.querySelectorAll('.dd-view-item').forEach(i => i.classList.toggle('active', i.dataset.view === savedView));
             if (savedView === 'semaine') {
-                const savedWeek = localStorage.getItem('ss_planning_week');
-                if (savedWeek) {
-                    const [y, m, d] = savedWeek.split('-').map(Number);
-                    const candidate = plMondayOf(new Date(y, m - 1, d));
-                    // Si la semaine sauvegardée est dans le mois affiché, la prendre, sinon défaut
-                    const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
-                    const firstIso = ths[0]?.getAttribute('data-date');
-                    const lastIso  = ths[ths.length - 1]?.getAttribute('data-date');
-                    const candidateIso = plIsoDate(candidate);
-                    plWeekStart = (firstIso && candidateIso <= lastIso && candidateIso >= firstIso.substring(0, 8) + '01')
-                        ? candidate : plDefaultWeekStart();
-                } else {
+                // Hint de navigation : 'first' = 1re full week, 'last' = dernière full week
+                const hint = localStorage.getItem('ss_planning_week_hint');
+                if (hint === 'last') {
+                    plWeekStart = plLastFullWeekStart();
+                    try { localStorage.removeItem('ss_planning_week_hint'); } catch(e) {}
+                } else if (hint === 'first') {
                     plWeekStart = plDefaultWeekStart();
+                    try { localStorage.removeItem('ss_planning_week_hint'); } catch(e) {}
+                } else {
+                    const savedWeek = localStorage.getItem('ss_planning_week');
+                    if (savedWeek) {
+                        const [y, m, d] = savedWeek.split('-').map(Number);
+                        const candidate = plMondayOf(new Date(y, m - 1, d));
+                        const ths = document.querySelectorAll('#plTable thead th.day-head[data-date]');
+                        const firstIso = ths[0]?.getAttribute('data-date');
+                        const lastIso  = ths[ths.length - 1]?.getAttribute('data-date');
+                        const candidateIso = plIsoDate(candidate);
+                        const sundayIso = plIsoDate(new Date(candidate.getFullYear(), candidate.getMonth(), candidate.getDate() + 6));
+                        // La candidate doit donner une full week dans le mois (Lun ET Dim dans le mois)
+                        plWeekStart = (firstIso && candidateIso >= firstIso && sundayIso <= lastIso)
+                            ? candidate : plDefaultWeekStart();
+                    } else {
+                        plWeekStart = plDefaultWeekStart();
+                    }
                 }
             }
             plApplyView();
@@ -1348,9 +1383,9 @@ window.PL_DATA = {
         });
     }
 
-    // Nav prev/next : en mode mois → ±1 mois (reload). En mode semaine → ±7 jours
-    // (sans reload si la nouvelle semaine reste dans le mois affiché ; sinon reload
-    // sur le mois adjacent et recale la semaine).
+    // Nav prev/next en mode semaine. La nouvelle semaine doit être ENTIÈREMENT
+    // dans le mois affiché ; sinon on reload sur le mois adjacent et on saute à
+    // la 1re full week (avant) ou la dernière full week (arrière) de ce mois.
     function plNavWeek(dir) {
         if (!plWeekStart) plWeekStart = plDefaultWeekStart();
         const next = new Date(plWeekStart);
@@ -1361,16 +1396,25 @@ window.PL_DATA = {
         const nextEnd  = new Date(next); nextEnd.setDate(nextEnd.getDate() + 6);
         const nextStartIso = plIsoDate(next);
         const nextEndIso   = plIsoDate(nextEnd);
-        // Si la nouvelle semaine touche un autre mois → reload sur ce mois
-        if (firstIso && (nextEndIso < firstIso || nextStartIso > lastIso)) {
-            const y = next.getFullYear(), m = next.getMonth() + 1;
-            try { localStorage.setItem('ss_planning_week', plIsoDate(next)); } catch(e) {}
-            plSyncPeriodUI(y, m);
-            gotoMonth(y, m);
+
+        // Si la full week tient dans le mois affiché → simple update sans reload
+        if (firstIso && nextStartIso >= firstIso && nextEndIso <= lastIso) {
+            plWeekStart = next;
+            plApplyView();
             return;
         }
-        plWeekStart = next;
-        plApplyView();
+
+        // Sinon : la semaine déborde. On reload sur le mois adjacent et on
+        // saute à la 1re/dernière full week de ce mois (selon le sens).
+        const adj = new Date(plWeekStart);
+        adj.setMonth(adj.getMonth() + dir);
+        try {
+            localStorage.setItem('ss_planning_week_hint', dir < 0 ? 'last' : 'first');
+            localStorage.removeItem('ss_planning_week');
+        } catch(e) {}
+        const y = adj.getFullYear(), m = adj.getMonth() + 1;
+        plSyncPeriodUI(y, m);
+        gotoMonth(y, m);
     }
 
     $('plNavPrev')?.addEventListener('click', () => {
