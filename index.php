@@ -316,17 +316,24 @@ if ($user && !empty($deniedPerms)) {
       </span>
     </div>
 
-    <!-- Search (centre) -->
-    <div id="feTopbarSearch" class="relative flex-1 max-w-md mx-auto hidden md:block">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-2 pointer-events-none">
-        <?= ss_icon('search', 'w-4 h-4') ?>
-      </span>
-      <input type="text" id="feSearchInput" placeholder="Rechercher partout..." autocomplete="off"
-             class="w-full bg-surface-3 border border-line pl-10 pr-9 py-1.5 rounded-lg text-sm text-ink placeholder:text-muted-2 focus:outline-none focus:border-teal-300 focus:ring-2 focus:ring-teal-100 transition">
-      <button type="button" id="feSearchClear" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-2 hover:text-teal-600 hover:bg-surface-3 transition-colors" style="display:none">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-      <div id="feSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-sp-md max-h-96 overflow-y-auto z-30 hidden"></div>
+    <!-- Search (centre) — Spocspace global search -->
+    <div id="feTopbarSearch" class="relative flex-1 max-w-xl mx-auto hidden md:block">
+      <div id="feSearchBar" class="ss-gs-bar relative flex items-center gap-2.5 bg-surface-2 border border-line rounded-xl px-3.5 py-2 transition-all">
+        <svg class="w-[18px] h-[18px] text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+        <input type="text" id="feSearchInput" autocomplete="off"
+               placeholder="Rechercher partout… (collègues, wiki, documents, annuaire)"
+               class="flex-1 bg-transparent border-0 outline-none text-sm text-ink placeholder:text-muted font-body min-w-0">
+        <div class="ss-gs-kbd flex items-center gap-1 shrink-0">
+          <kbd class="font-mono text-[10.5px] font-semibold text-muted bg-surface border border-line-2 rounded px-1.5 py-px">⌘</kbd>
+          <kbd class="font-mono text-[10.5px] font-semibold text-muted bg-surface border border-line-2 rounded px-1.5 py-px">K</kbd>
+        </div>
+        <button type="button" id="feSearchClear" class="ss-gs-clear w-6 h-6 rounded-md text-muted hover:bg-surface-3 hover:text-ink-2 items-center justify-center shrink-0 transition-colors" aria-label="Effacer">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="feSearchResults" class="ss-gs-panel absolute left-0 right-0 top-full mt-2 bg-surface border border-line rounded-2xl shadow-sp-lg max-h-[480px] overflow-hidden z-30 flex flex-col"></div>
     </div>
 
     <!-- Actions droite -->

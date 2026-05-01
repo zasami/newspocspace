@@ -287,15 +287,65 @@ function setupLogout() {
     });
 }
 
-/* ── Global Search ── */
+/* ── Global Search (Spocspace) ── */
+
+const SS_GS_GROUP_LABELS_FE = {
+    collegue: 'Collègues', wiki: 'Wiki', annonce: 'Annonces',
+    document: 'Documents', contact: 'Annuaire', page: 'Pages',
+};
+const SS_GS_TYPE_ICON = {
+    wiki: 'book', document: 'file-text', annonce: 'megaphone',
+    contact: 'phone', page: 'arrow-right',
+};
 
 let searchTimer = null;
 
+function ssGsSvg(name, size) {
+    size = size || 16;
+    const a = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`;
+    switch (name) {
+        case 'search':       return `<svg ${a}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>`;
+        case 'clock':        return `<svg ${a}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+        case 'x':            return `<svg ${a}><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+        case 'calendar':     return `<svg ${a}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+        case 'users':        return `<svg ${a}><circle cx="9" cy="7" r="4"/><path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/></svg>`;
+        case 'file-text':    return `<svg ${a}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>`;
+        case 'megaphone':    return `<svg ${a}><path d="M3 11l18-5v12L3 14"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>`;
+        case 'book':         return `<svg ${a}><path d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 010-5H20"/></svg>`;
+        case 'phone':        return `<svg ${a}><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>`;
+        case 'video':        return `<svg ${a}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
+        case 'arrow-right':  return `<svg ${a}><path d="M5 12h14M13 5l7 7-7 7"/></svg>`;
+        case 'search-empty': return `<svg ${a}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M11 8v3M11 14h.01"/></svg>`;
+        default: return `<svg ${a}><circle cx="12" cy="12" r="10"/></svg>`;
+    }
+}
+
+function ssGsAvatarVar(id) {
+    const s = String(id || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return Math.abs(h) % 5 + 1;
+}
+
+function ssGsInitials(prenom, nom) {
+    const a = ((prenom || '').trim()[0] || '');
+    const b = ((nom || '').trim()[0] || '');
+    return (a + b).toUpperCase() || '?';
+}
+
+function ssGsHighlight(text, q) {
+    const safe = escapeHtml(text || '');
+    if (!q) return safe;
+    const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return safe.replace(re, '<mark>$1</mark>');
+}
+
 function setupSearch() {
+    const wrap = document.getElementById('feTopbarSearch');
+    const bar = document.getElementById('feSearchBar');
     const input = document.getElementById('feSearchInput');
     const panel = document.getElementById('feSearchResults');
     const clearBtn = document.getElementById('feSearchClear');
-    const wrap = document.getElementById('feTopbarSearch');
     if (!input || !panel) return;
 
     const HIST_KEY = 'spocspace:search-history';
@@ -308,153 +358,269 @@ function setupSearch() {
     function delHist(q) { saveHist(loadHist().filter(it=>it.q.toLowerCase()!==q.toLowerCase())); }
 
     function openPanel() { panel.classList.add('show'); }
-    function closePanel() { panel.classList.remove('show'); if (wrap) wrap.classList.remove('expanded'); }
+    function closePanel() { panel.classList.remove('show'); }
+    function updateBar() { if (input.value.length > 0) bar.classList.add('has-value'); else bar.classList.remove('has-value'); }
 
-    function updateClear() { if (clearBtn) clearBtn.style.display = input.value.length > 0 ? '' : 'none'; }
-
-    function renderHistory(filter) {
-        const hist = loadHist().sort((a,b)=>b.ts-a.ts);
-        const f = (filter||'').toLowerCase();
-        const filtered = f ? hist.filter(it=>it.q.toLowerCase().includes(f)) : hist;
-        const recent = filtered.slice(0,3);
-        const older = filtered.slice(3,7);
-        if (!recent.length && !older.length) { panel.innerHTML = '<div class="fe-search-item" style="opacity:.5;justify-content:center"><span>Tapez pour rechercher</span></div>'; return; }
-        const mkItem = (it, icon) => `<div class="fe-search-item fe-hist-item" data-q="${escapeHtml(it.q)}"><span class="fe-search-item-icon"><i class="bi bi-${icon}"></i></span><span class="fe-search-item-name">${escapeHtml(it.q)}</span><button class="fe-hist-del" data-del-q="${escapeHtml(it.q)}"><i class="bi bi-x"></i></button></div>`;
-        let html = recent.map(it=>mkItem(it,'clock')).join('');
-        if (older.length) html += '<div style="font-size:.7rem;color:#999;padding:4px 10px">Plus anciennes</div>' + older.map(it=>mkItem(it,'search')).join('');
-        panel.innerHTML = html;
+    function frame(inner) {
+        return `
+          <div class="ss-gs-scroll flex-1 overflow-y-auto py-1.5">${inner}</div>
+          <div class="border-t border-line bg-surface-2 px-4 py-2 flex items-center justify-between gap-3 shrink-0 text-[11.5px] text-muted">
+            <div class="flex items-center gap-3.5">
+              <span class="hidden sm:inline-flex items-center gap-1 font-mono text-[10.5px]">
+                <kbd class="bg-surface border border-line-2 rounded px-1.5 py-px text-[10px] font-semibold text-ink-2">↑</kbd>
+                <kbd class="bg-surface border border-line-2 rounded px-1.5 py-px text-[10px] font-semibold text-ink-2">↓</kbd>
+                naviguer
+              </span>
+              <span class="hidden sm:inline-flex items-center gap-1 font-mono text-[10.5px]">
+                <kbd class="bg-surface border border-line-2 rounded px-1.5 py-px text-[10px] font-semibold text-ink-2">↵</kbd>
+                ouvrir
+              </span>
+              <span class="inline-flex items-center gap-1 font-mono text-[10.5px]">
+                <kbd class="bg-surface border border-line-2 rounded px-1.5 py-px text-[10px] font-semibold text-ink-2">esc</kbd>
+                fermer
+              </span>
+            </div>
+            <button type="button" class="ss-gs-advanced inline-flex items-center gap-1 text-teal-700 font-semibold text-[11.5px] hover:text-teal-600 transition-colors">
+              Recherche avancée ${ssGsSvg('arrow-right', 11)}
+            </button>
+          </div>`;
     }
 
-    function renderResults(results, query) {
-        if (!results.length) { panel.innerHTML = '<div class="fe-search-item" style="opacity:.5;justify-content:center"><span>Aucun résultat</span></div>'; return; }
+    function renderInitial(filter) {
+        const hist = loadHist().sort((a,b)=>b.ts-a.ts);
+        const f = (filter||'').toLowerCase();
+        const filteredHist = f ? hist.filter(it=>it.q.toLowerCase().includes(f)) : hist;
+
+        const shortcuts = [
+            { label: 'Mon planning', page: 'planning',   icon: 'calendar' },
+            { label: 'Collègues',    page: 'collegues',  icon: 'users' },
+            { label: 'Documents',    page: 'documents',  icon: 'file-text' },
+            { label: 'Annonces',     page: 'annonces',   icon: 'megaphone' },
+        ];
+
+        let html = `
+          <div class="px-4 pt-2 pb-1.5 flex items-center justify-between">
+            <span class="font-mono text-[10px] font-semibold text-muted tracking-[0.16em] uppercase">Accès rapides</span>
+          </div>
+          <div class="px-3 pb-2 grid grid-cols-2 gap-1.5">
+            ${shortcuts.map(s => `
+              <button type="button" class="ss-gs-shortcut group/sc flex items-center gap-2.5 px-2.5 py-2 bg-surface-2 border border-line rounded-lg text-[12.5px] text-ink-2 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 transition" data-shortcut-page="${s.page}">
+                <span class="w-6 h-6 rounded-md bg-teal-50 group-hover/sc:bg-teal-100 text-teal-700 grid place-items-center shrink-0 transition-colors">${ssGsSvg(s.icon, 13)}</span>
+                <span>${s.label}</span>
+              </button>
+            `).join('')}
+          </div>`;
+
+        if (filteredHist.length) {
+            const recent = filteredHist.slice(0, 5);
+            html += `
+              <div class="border-t border-line mt-1 pt-2 px-4 pb-1.5">
+                <span class="font-mono text-[10px] font-semibold text-muted tracking-[0.16em] uppercase">Recherches récentes</span>
+              </div>
+              <div class="pb-1">
+                ${recent.map(it => `
+                  <div class="ss-gs-item ss-gs-hist flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-teal-50 transition-colors" data-hist-q="${escapeHtml(it.q)}">
+                    <span class="w-9 h-9 rounded-[10px] bg-surface-3 text-muted grid place-items-center shrink-0">${ssGsSvg('clock', 14)}</span>
+                    <span class="flex-1 text-[13.5px] text-ink-2 truncate">${escapeHtml(it.q)}</span>
+                    <button type="button" class="ss-gs-hist-del w-6 h-6 rounded-md text-muted hover:bg-surface-3 hover:text-danger grid place-items-center shrink-0 transition-colors" data-del-q="${escapeHtml(it.q)}" aria-label="Supprimer">${ssGsSvg('x', 12)}</button>
+                  </div>
+                `).join('')}
+              </div>`;
+        }
+
+        panel.innerHTML = frame(html);
+    }
+
+    function renderEmpty() {
+        panel.innerHTML = frame(`
+          <div class="py-10 px-6 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-surface-3 rounded-2xl grid place-items-center text-muted">${ssGsSvg('search-empty', 22)}</div>
+            <h3 class="font-display text-[15px] font-semibold text-ink mb-1 -tracking-[0.01em]">Aucun résultat trouvé</h3>
+            <p class="text-[12.5px] text-muted">Essayez d'autres mots-clés ou vérifiez l'orthographe.</p>
+          </div>`);
+    }
+
+    function renderItem(r, q) {
+        const type = r.type;
+        const titleHtml = ssGsHighlight(r.title, q);
+
+        let iconHtml;
+        if (type === 'collegue') {
+            const variant = ssGsAvatarVar(r.id);
+            const init = ssGsInitials(r.prenom, r.nom);
+            const status = r.is_online ? '<span class="ss-gs-status"></span>' : '';
+            if (r.photo) {
+                iconHtml = `<div class="relative w-9 h-9 rounded-[10px] overflow-hidden shrink-0 shadow-sp-sm">
+                    <img src="${escapeHtml(r.photo)}" alt="" class="w-full h-full object-cover" />${status}
+                  </div>`;
+            } else {
+                iconHtml = `<div class="relative ss-gs-av-${variant} w-9 h-9 rounded-[10px] grid place-items-center shrink-0 font-display font-semibold text-sm text-white -tracking-[0.02em] shadow-sp-sm">
+                    ${escapeHtml(init)}${status}
+                  </div>`;
+            }
+        } else {
+            const knownIcons = ['wiki','document','annonce','resident','contact','page'];
+            const iconClass = knownIcons.includes(type) ? `ss-gs-icon-${type}` : 'ss-gs-icon-default';
+            const iconName = SS_GS_TYPE_ICON[type] || 'arrow-right';
+            iconHtml = `<div class="${iconClass} w-9 h-9 rounded-[10px] grid place-items-center shrink-0 text-white shadow-sp-sm">${ssGsSvg(iconName, 16)}</div>`;
+        }
+
+        let extraRight = '';
+        if (type === 'collegue' && r.is_online) {
+            extraRight = `<div class="hidden group-hover:flex items-center gap-1 shrink-0 ml-1">
+                <button type="button" class="w-7 h-7 rounded-md bg-teal-50 text-teal-700 hover:bg-teal-100 grid place-items-center transition-colors" title="Appel audio" data-call-audio="${escapeHtml(r.id)}">${ssGsSvg('phone', 13)}</button>
+                <button type="button" class="w-7 h-7 rounded-md bg-info-bg text-info hover:opacity-80 grid place-items-center transition-colors" title="Appel vidéo" data-call-video="${escapeHtml(r.id)}">${ssGsSvg('video', 13)}</button>
+              </div>`;
+        }
+
+        const subtitle = r.subtitle ? `<div class="text-[11.5px] text-muted truncate">${escapeHtml(r.subtitle)}</div>` : '';
+
+        return `
+          <button type="button" class="ss-gs-item ss-gs-result group flex items-center gap-3 w-full text-left px-4 py-2 cursor-pointer hover:bg-teal-50 transition-colors"
+                  data-page="${escapeHtml(r.page||'')}" data-id="${escapeHtml(r.id||'')}" data-type="${escapeHtml(type)}"
+                  data-user-photo="${escapeHtml(r.photo||'')}" data-user-prenom="${escapeHtml(r.prenom||'')}" data-user-nom="${escapeHtml(r.nom||'')}">
+            ${iconHtml}
+            <div class="flex-1 min-w-0">
+              <div class="text-[13.5px] font-semibold text-ink truncate">${titleHtml}</div>
+              ${subtitle}
+            </div>
+            ${extraRight}
+          </button>`;
+    }
+
+    function renderResults(results, q) {
+        if (!results.length) { renderEmpty(); return; }
         const groups = {};
         results.forEach(r => { if (!groups[r.type]) groups[r.type]=[]; groups[r.type].push(r); });
-        const typeLabels = { collegue:'Collègues', wiki:'Wiki', annonce:'Annonces', document:'Documents', contact:'Annuaire', page:'Pages' };
-        const typeColors = { collegue:'#bcd2cb', wiki:'#B8C9D4', annonce:'#D0C4D8', document:'#D4C4A8', contact:'#E2B8AE', page:'#f0eeea' };
+
+        const order = ['collegue','wiki','annonce','document','contact','page'];
+        const sorted = Object.entries(groups).sort((a,b) => {
+            const ia = order.indexOf(a[0]); const ib = order.indexOf(b[0]);
+            return (ia<0?99:ia) - (ib<0?99:ib);
+        });
+
         let html = '';
-        for (const [type, items] of Object.entries(groups)) {
-            html += `<div style="font-size:.7rem;color:#999;padding:4px 10px;font-weight:600">${typeLabels[type]||type}</div>`;
-            items.forEach(r => {
-                if (type === 'collegue') {
-                    const online = !!r.is_online;
-                    const presenceDot = `<span class="ss-presence-dot ${online ? 'ss-presence-online' : 'ss-presence-offline'}" style="width:10px;height:10px;border-width:1.5px"></span>`;
-                    const callBtns = online
-                        ? `<button class="fe-search-call-btn fe-search-call-audio" data-call-audio="${r.id}" title="Appel audio"><i class="bi bi-telephone-fill"></i></button>
-                           <button class="fe-search-call-btn fe-search-call-video" data-call-video="${r.id}" title="Appel vidéo"><i class="bi bi-camera-video-fill"></i></button>`
-                        : `<button class="fe-search-call-btn" disabled title="Hors ligne" style="opacity:.4;cursor:not-allowed"><i class="bi bi-telephone-x"></i></button>`;
-                    html += `
-                        <div class="fe-search-item fe-search-item-collegue fe-result-item"
-                             data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"
-                             data-user-photo="${escapeHtml(r.photo||'')}"
-                             data-user-prenom="${escapeHtml(r.prenom||'')}"
-                             data-user-nom="${escapeHtml(r.nom||'')}">
-                            <span class="fe-search-item-icon" style="background:${typeColors[type]};position:relative">
-                                <i class="bi bi-${r.icon}"></i>
-                                ${presenceDot}
-                            </span>
-                            <div class="fe-search-item-body">
-                                <div class="fe-search-item-name">${escapeHtml(r.title)}</div>
-                                <div class="fe-search-item-meta">${online ? '<span style="color:#2d4a43;font-weight:600">En ligne</span>' : 'Hors ligne'}</div>
-                            </div>
-                            <div class="fe-search-call-actions">${callBtns}</div>
-                        </div>`;
-                } else {
-                    html += `<div class="fe-search-item fe-result-item" data-page="${r.page}" data-id="${r.id||''}" data-type="${type}"><span class="fe-search-item-icon" style="background:${typeColors[type]||'#f0eeea'}"><i class="bi bi-${r.icon}"></i></span><div><div class="fe-search-item-name">${escapeHtml(r.title)}</div>${r.subtitle?`<div class="fe-search-item-meta">${escapeHtml(r.subtitle)}</div>`:''}</div></div>`;
-                }
-            });
-        }
-        panel.innerHTML = html;
+        sorted.forEach(([type, items], idx) => {
+            const label = SS_GS_GROUP_LABELS_FE[type] || type;
+            html += `
+              <div class="${idx > 0 ? 'border-t border-line' : ''} py-1.5">
+                <div class="px-4 pt-2 pb-1.5 flex items-center justify-between">
+                  <span class="font-mono text-[10px] font-semibold text-muted tracking-[0.16em] uppercase">${escapeHtml(label)}</span>
+                  <span class="font-mono text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-px rounded-full">${items.length}</span>
+                </div>
+                <div>${items.map(r => renderItem(r, q)).join('')}</div>
+              </div>`;
+        });
+
+        panel.innerHTML = frame(html);
+    }
+
+    function clearActive() { panel.querySelectorAll('.ss-gs-item.bg-teal-50').forEach(el => el.classList.remove('bg-teal-50')); panel.querySelectorAll('.ss-gs-item.active').forEach(el => el.classList.remove('active')); }
+    function setActive(el) {
+        if (!el) return;
+        clearActive();
+        el.classList.add('active', 'bg-teal-50');
+        el.scrollIntoView({ block: 'nearest' });
     }
 
     async function doSearch(q) {
-        if (q.length < 2) { renderHistory(q); return; }
+        if (q.length < 2) { renderInitial(q); return; }
         try {
             const { apiPost } = await import('./helpers.js');
             const res = await apiPost('global_search', { q });
             if (res.success) renderResults(res.results, q);
-        } catch { renderHistory(q); }
+            else renderEmpty();
+        } catch { renderInitial(q); }
     }
 
     input.addEventListener('focus', () => {
-        if (wrap) wrap.classList.add('expanded');
-        if (!input.value) renderHistory('');
+        if (!input.value) renderInitial('');
         openPanel();
     });
 
     input.addEventListener('input', () => {
-        updateClear();
+        updateBar();
         clearTimeout(searchTimer);
         const v = input.value.trim();
-        if (v.length < 2) { renderHistory(v); openPanel(); return; }
+        if (v.length < 2) { renderInitial(v); openPanel(); return; }
         searchTimer = setTimeout(() => doSearch(v), 300);
     });
 
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { closePanel(); input.blur(); }
-        if (e.key === 'Enter' && input.value.trim().length >= 2) { addHist(input.value.trim()); doSearch(input.value.trim()); }
-    });
-
-    input.addEventListener('blur', () => {
-        setTimeout(() => { if (!panel.classList.contains('show')) { if (wrap) wrap.classList.remove('expanded'); } }, 200);
+        if (e.key === 'Escape') { closePanel(); input.blur(); return; }
+        if (e.key === 'Enter') {
+            const active = panel.querySelector('.ss-gs-item.active');
+            if (active) { e.preventDefault(); active.click(); return; }
+            if (input.value.trim().length >= 2) { addHist(input.value.trim()); doSearch(input.value.trim()); }
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = Array.from(panel.querySelectorAll('.ss-gs-item'));
+            if (!items.length) return;
+            const cur = items.findIndex(el => el.classList.contains('active'));
+            const next = e.key === 'ArrowDown' ? (cur + 1) % items.length : (cur <= 0 ? items.length - 1 : cur - 1);
+            setActive(items[next]);
+        }
     });
 
     if (clearBtn) {
-        clearBtn.addEventListener('click', () => { input.value = ''; updateClear(); renderHistory(''); input.focus(); });
+        clearBtn.addEventListener('click', () => { input.value = ''; updateBar(); renderInitial(''); input.focus(); });
     }
 
     panel.addEventListener('click', async (e) => {
-        // Call buttons inside collegue result
         const callAudio = e.target.closest('[data-call-audio]');
         const callVideo = e.target.closest('[data-call-video]');
         if (callAudio || callVideo) {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             const btn = callAudio || callVideo;
-            const item = btn.closest('.fe-search-item-collegue');
+            const item = btn.closest('.ss-gs-result');
             if (!item) return;
-            const user = {
-                id: item.dataset.id,
-                prenom: item.dataset.userPrenom,
-                nom: item.dataset.userNom,
-                photo: item.dataset.userPhoto,
-            };
+            const user = { id: item.dataset.id, prenom: item.dataset.userPrenom, nom: item.dataset.userNom, photo: item.dataset.userPhoto };
             closePanel();
-            try {
-                const m = await import('./call-ui.js');
-                m.startCall(user, callAudio ? 'audio' : 'video');
-            } catch (err) { console.error(err); }
+            try { const m = await import('./call-ui.js'); m.startCall(user, callAudio ? 'audio' : 'video'); } catch (err) { console.error(err); }
             return;
         }
-        const del = e.target.closest('.fe-hist-del');
-        if (del) { e.stopPropagation(); delHist(del.dataset.delQ); renderHistory(input.value); return; }
-        const hist = e.target.closest('.fe-hist-item');
-        if (hist) { input.value = hist.dataset.q; updateClear(); doSearch(hist.dataset.q); return; }
-        const result = e.target.closest('.fe-result-item');
+
+        const del = e.target.closest('.ss-gs-hist-del');
+        if (del) { e.stopPropagation(); delHist(del.dataset.delQ); renderInitial(input.value); return; }
+
+        const hist = e.target.closest('.ss-gs-hist');
+        if (hist) { input.value = hist.dataset.histQ; updateBar(); doSearch(hist.dataset.histQ); return; }
+
+        const shortcut = e.target.closest('.ss-gs-shortcut');
+        if (shortcut) { e.preventDefault(); const page = shortcut.dataset.shortcutPage; if (page) { closePanel(); navigateTo(page); } return; }
+
+        const result = e.target.closest('.ss-gs-result');
         if (result) {
             addHist(input.value.trim());
             closePanel();
             const page = result.dataset.page;
             const id = result.dataset.id;
-            const type = result.dataset.type || '';
             if (!page) return;
 
-            // Documents / Annuaire : passer l'id en highlight pour scroll + surbrillance
             if ((page === 'documents' || page === 'annuaire') && id) {
                 const url = `${BASE}/${page}?highlight=${encodeURIComponent(id)}`;
                 history.pushState({}, '', url);
                 loadPage(page, { highlight: id });
                 return;
             }
-            // Pages avec id (annonces, wiki, etc.)
-            if (id) {
-                loadPage(page, { id });
-                return;
-            }
+            if (id) { loadPage(page, { id }); return; }
             navigateTo(page);
         }
     });
 
-    document.addEventListener('click', (e) => { if (!e.target.closest('.fe-topbar-search')) closePanel(); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+            const ae = document.activeElement;
+            if (ae && ae !== input && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.readOnly) return;
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
+    });
+
+    document.addEventListener('click', (e) => { if (!e.target.closest('#feTopbarSearch')) closePanel(); });
 }
 
 // ── Annonce modal from global search ──

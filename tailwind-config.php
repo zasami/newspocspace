@@ -155,3 +155,67 @@ $_tw_nonce = $cspNonce ?? '';
     }
   }
 </style>
+
+<!-- ═══ Global Search dropdown — styles non exprimables en utilities pures ═══ -->
+<style nonce="<?= htmlspecialchars($_tw_nonce, ENT_QUOTES) ?>">
+/* Panel show/hide transition */
+.ss-gs-panel{
+  opacity:0;visibility:hidden;transform:translateY(-6px);
+  transition:opacity .18s ease,visibility .18s ease,transform .18s ease;
+  pointer-events:none;
+}
+.ss-gs-panel.show{
+  opacity:1;visibility:visible;transform:translateY(0);
+  pointer-events:auto;
+}
+
+/* Custom scrollbar (results list) */
+.ss-gs-scroll::-webkit-scrollbar{width:8px}
+.ss-gs-scroll::-webkit-scrollbar-track{background:transparent}
+.ss-gs-scroll::-webkit-scrollbar-thumb{background:#d4ddda;border-radius:99px}
+.ss-gs-scroll::-webkit-scrollbar-thumb:hover{background:#6b8783}
+.ss-gs-scroll{scrollbar-width:thin;scrollbar-color:#d4ddda transparent}
+
+/* <mark> highlight (override browser default yellow) */
+.ss-gs-panel mark{
+  background:rgba(212,160,74,.25);
+  color:#0d2a26;
+  padding:0 2px;border-radius:3px;
+  font-weight:700;
+}
+
+/* Avatar gradient variants (users) */
+.ss-gs-av-1{background:linear-gradient(135deg,#1f6359,#2d8074)}
+.ss-gs-av-2{background:linear-gradient(135deg,#5a9bd8,#3a6a8a)}
+.ss-gs-av-3{background:linear-gradient(135deg,#7a4f9e,#9268b3)}
+.ss-gs-av-4{background:linear-gradient(135deg,#d96b5a,#a04863)}
+.ss-gs-av-5{background:linear-gradient(135deg,#3d8b6b,#5cad9b)}
+
+/* Type icon gradient variants (keys match backend `type` values) */
+.ss-gs-icon-wiki    {background:linear-gradient(135deg,#5a9bd8,#3a6a8a)}
+.ss-gs-icon-document{background:linear-gradient(135deg,#7a4f9e,#5e3a78)}
+.ss-gs-icon-annonce {background:linear-gradient(135deg,#d4a04a,#c97a2a)}
+.ss-gs-icon-resident{background:linear-gradient(135deg,#5cad9b,#3d8b6b)}
+.ss-gs-icon-contact {background:linear-gradient(135deg,#5cad9b,#3d8b6b)}
+.ss-gs-icon-page    {background:linear-gradient(135deg,#324e4a,#0d2a26)}
+.ss-gs-icon-default {background:linear-gradient(135deg,#324e4a,#0d2a26)}
+
+/* Status dot (online indicator overlaid on avatar) */
+.ss-gs-status{
+  position:absolute;bottom:-2px;right:-2px;
+  width:9px;height:9px;border-radius:50%;
+  background:#3d8b6b;border:2px solid #fff;
+}
+
+/* Bar focus glow (slightly stronger than default ring) */
+.ss-gs-bar:focus-within{
+  background:#fff;
+  border-color:#7ab5ab;
+  box-shadow:0 0 0 4px rgba(45,128,116,.10),0 4px 16px -4px rgba(13,42,38,.08);
+}
+
+/* has-value: hide kbd hint, show clear */
+.ss-gs-bar .ss-gs-clear{display:none}
+.ss-gs-bar.has-value .ss-gs-kbd{display:none}
+.ss-gs-bar.has-value .ss-gs-clear{display:flex}
+</style>
