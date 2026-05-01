@@ -39,6 +39,13 @@ $planningHoraires = Db::fetchAll(
 );
 $planningModules   = Db::fetchAll("SELECT id, code, nom, ordre FROM modules ORDER BY ordre");
 $planningFonctions = Db::fetchAll("SELECT id, code, nom, ordre FROM fonctions ORDER BY ordre");
+$planningEtages    = Db::fetchAll("SELECT id, code, nom, module_id, ordre FROM etages ORDER BY ordre");
+
+// Map module_id → étages (pour calculer rapidement les étages d'un user via ses modules)
+$plEtagesByModule = [];
+foreach ($planningEtages as $e) {
+    $plEtagesByModule[$e['module_id']][] = $e['id'];
+}
 
 // ─── Calcul des jours du mois courant ───────────────────────────────────────
 $plYear  = (int) ($_GET['year']  ?? date('Y'));
@@ -691,62 +698,86 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     </div>
   </div>
 
-  <!-- ═══ Modale "Choisir des collaborateurs" (sub-modale picker) ═══════════ -->
+  <!-- ═══ Modale "Sélectionner les collaborateurs" (picker 2-panel) ════════ -->
   <div id="plIaPickerBackdrop" class="pl-ia-backdrop pl-ia-picker-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="plIaPickerTitle">
-    <div class="pl-ia-modal pl-ia-picker-modal">
+    <div class="pl-ia-picker-modal">
 
       <!-- Header gradient -->
       <div class="pl-ia-header">
         <div class="pl-ia-title-wrap">
           <div class="pl-ia-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
-              <path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/>
-              <path d="M16 11h6M19 8v6"/>
+              <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
             </svg>
           </div>
           <div class="pl-ia-title-text">
-            <div class="pl-ia-eyebrow">Sélection multiple</div>
-            <h2 class="pl-ia-title" id="plIaPickerTitle">Choisir des collaborateurs</h2>
+            <div class="pl-ia-eyebrow">Cibler la règle</div>
+            <h2 class="pl-ia-title" id="plIaPickerTitle">Sélectionner les collaborateurs</h2>
           </div>
         </div>
+        <div class="pl-ia-picker-counter-pill"><strong id="plIaPickerCountTop">0</strong> sélectionnés</div>
         <button class="pl-ia-close" id="plIaPickerClose" type="button" aria-label="Fermer">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
 
-      <!-- Toolbar : recherche live + bouton filtre + filtres collapsibles -->
-      <div class="pl-ia-picker-toolbar">
-        <div class="pl-ia-search pl-ia-search-with-filter">
+      <!-- Search bar (sous le header) -->
+      <div class="pl-ia-picker-search-bar">
+        <div class="pl-ia-picker-search" id="plIaPickerSearchBar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="text" id="plIaPickerSearch" placeholder="Rechercher un collaborateur (nom, prénom)…" autocomplete="off">
-          <button type="button" class="pl-ia-filter-toggle" id="plIaPickerFilterToggle" aria-label="Afficher/masquer les filtres" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            <span class="pl-ia-filter-badge" aria-hidden="true"></span>
+          <input type="text" id="plIaPickerSearch" placeholder="Rechercher par nom, prénom, fonction…" autocomplete="off">
+          <button type="button" class="pl-ia-picker-search-clear" id="plIaPickerSearchClear" aria-label="Effacer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
         </div>
-        <div class="pl-ia-picker-filter-groups collapsed" id="plIaPickerFilterGroups">
-          <!-- généré dynamiquement (Tous, fonctions, modules) — masqué par défaut -->
+      </div>
+
+      <!-- Body 2-panel : sidebar filtres + liste users -->
+      <div class="pl-ia-picker-body-2col">
+
+        <!-- Sidebar filtres -->
+        <aside class="pl-ia-picker-sidebar" id="plIaPickerSidebar">
+          <!-- généré dynamiquement par plIaRenderPickerSidebar() -->
+        </aside>
+
+        <!-- Panneau liste -->
+        <div class="pl-ia-picker-main">
+          <div class="pl-ia-picker-main-toolbar">
+            <div class="pl-ia-picker-main-left">
+              <strong id="plIaPickerResultCount">0</strong> résultats sur <strong id="plIaPickerTotalCount">0</strong>
+            </div>
+            <div class="pl-ia-picker-main-right">
+              <button type="button" class="pl-ia-picker-quick" id="plIaPickerSelectAll">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Tout sélectionner
+              </button>
+              <button type="button" class="pl-ia-picker-quick" id="plIaPickerClearAll">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                Tout désélectionner
+              </button>
+            </div>
+          </div>
+          <div class="pl-ia-picker-list-scroll" id="plIaPickerList">
+            <!-- généré dynamiquement -->
+          </div>
         </div>
+
       </div>
 
-      <!-- Body : liste users avec checkbox -->
-      <div class="pl-ia-body pl-ia-picker-body" id="plIaPickerBody">
-        <!-- généré dynamiquement -->
-      </div>
-
-      <!-- Footer : compteur + Annuler / Valider -->
-      <div class="pl-ia-picker-footer">
-        <div class="pl-ia-picker-footer-left">
-          <button type="button" class="pl-ia-picker-link" id="pl-ia-picker-toggle-all">Tout cocher</button>
-          <span class="pl-ia-picker-divider">·</span>
-          <span class="pl-ia-picker-count" id="plIaPickerCount">0 sélectionné</span>
+      <!-- Footer -->
+      <div class="pl-ia-picker-footer-2col">
+        <div class="pl-ia-picker-footer-info">
+          <span class="pl-ia-picker-footer-num" id="plIaPickerFooterCount">0</span>
+          <span class="pl-ia-picker-footer-label">collaborateur(s) sélectionné(s)</span>
         </div>
         <div class="pl-ia-form-footer-actions">
           <button type="button" class="pl-ia-btn-secondary" id="plIaPickerCancel">Annuler</button>
           <button type="button" class="pl-ia-btn-primary" id="plIaPickerValidate">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Valider
+            Valider la sélection
+            <span class="pl-ia-picker-confirm-badge" id="plIaPickerConfirmBadge">0</span>
           </button>
         </div>
       </div>
@@ -1056,14 +1087,22 @@ window.PL_DATA = {
     ], JSON_UNESCAPED_UNICODE) : 'null' ?>,
     moisAnnee: <?= json_encode($plMoisAnnee) ?>,
     csrfToken: <?= json_encode($_SESSION['ss_csrf_token'] ?? '') ?>,
-    users: <?= json_encode(array_map(fn($u) => [
-        'id'         => $u['id'],
-        'prenom'     => $u['prenom'],
-        'nom'        => $u['nom'],
-        'module_ids' => $u['module_ids'] ?? '',
-        'fonction_code' => $u['fonction_code'] ?? '',
-        'fonction_nom'  => $u['fonction_nom']  ?? '',
-    ], $planningUsers), JSON_UNESCAPED_UNICODE) ?>,
+    users: <?= json_encode(array_map(function($u) use ($plEtagesByModule) {
+        $modIds = array_filter(explode(',', $u['module_ids'] ?? ''));
+        $etageIds = [];
+        foreach ($modIds as $mid) {
+            foreach (($plEtagesByModule[$mid] ?? []) as $eid) $etageIds[$eid] = true;
+        }
+        return [
+            'id'         => $u['id'],
+            'prenom'     => $u['prenom'],
+            'nom'        => $u['nom'],
+            'module_ids' => $u['module_ids'] ?? '',
+            'fonction_code' => $u['fonction_code'] ?? '',
+            'fonction_nom'  => $u['fonction_nom']  ?? '',
+            'etage_ids'  => array_keys($etageIds),
+        ];
+    }, $planningUsers), JSON_UNESCAPED_UNICODE) ?>,
     horaires: <?= json_encode(array_map(fn($h) => [
         'id'      => $h['id'],
         'code'    => $h['code'],
@@ -1080,6 +1119,12 @@ window.PL_DATA = {
         'code' => $f['code'],
         'nom'  => $f['nom'],
     ], $planningFonctions), JSON_UNESCAPED_UNICODE) ?>,
+    etages: <?= json_encode(array_map(fn($e) => [
+        'id'        => $e['id'],
+        'code'      => $e['code'],
+        'nom'       => $e['nom'],
+        'module_id' => $e['module_id'],
+    ], $planningEtages), JSON_UNESCAPED_UNICODE) ?>,
 };
 </script>
 
@@ -2652,7 +2697,9 @@ window.PL_DATA = {
 
         const chipsHtml = list.map(id => {
             const u = users.find(x => x.id === id);
-            return `<span class="pl-ia-user-chip">${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+            const initials = ((u?.prenom || ' ').charAt(0) + (u?.nom || ' ').charAt(0)).toUpperCase();
+            const av = plIaPickerAvatarClass(id);
+            return `<span class="pl-ia-user-chip"><span class="pl-ia-user-chip-avatar ${av}">${plEsc(initials || '·')}</span>${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
         }).join('');
 
         const placeholder = list.length ? 'Cliquez pour modifier la sélection' : 'Choisir des collaborateurs';
@@ -2673,47 +2720,34 @@ window.PL_DATA = {
         });
     }
 
-    // ── Sub-modale "Choisir des collaborateurs" ──────────────────────────────
+    // ── Sub-modale 2-col "Sélectionner les collaborateurs" ──────────────────
     const plIaPickerBackdrop = $('plIaPickerBackdrop');
-    let plIaPickerSelected = new Set();   // ids cochés (en cours d'édition)
-    let plIaPickerActiveFilter = 'all';   // 'all' | 'fct:CODE' | 'mod:ID'
-    let plIaPickerSearchQ = '';
+    let plIaPickerSelected   = new Set();
+    let plIaPickerSearchQ    = '';
+    // Filtres persistants (3 catégories indépendantes : fonction / module / etage)
+    let plIaPickerFilters = { fonction: 'all', module: 'all', etage: 'all' };
+
+    // Couleur d'avatar gradient (av-1 à av-6) déterministe par id
+    function plIaPickerAvatarClass(userId) {
+        let h = 0;
+        for (let i = 0; i < (userId || '').length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0;
+        return 'av-' + ((h % 6) + 1);
+    }
 
     function plIaOpenUserPicker() {
         plIaPickerSelected = new Set(plIaFormState.users || []);
-        // ⚠ NE PAS réinitialiser plIaPickerActiveFilter → on persiste le filtre
-        // entre les ouvertures (l'utilisateur retrouve son filtre tel quel).
+        // ⚠ NE PAS réinitialiser plIaPickerFilters → persistance entre ouvertures
         plIaPickerSearchQ = '';
-        if ($('plIaPickerSearch')) $('plIaPickerSearch').value = '';
-        // Filtres toujours collapsés à l'ouverture (UI sobre)
-        $('plIaPickerFilterGroups')?.classList.add('collapsed');
-        $('plIaPickerFilterToggle')?.setAttribute('aria-expanded', 'false');
+        if ($('plIaPickerSearch')) {
+            $('plIaPickerSearch').value = '';
+            $('plIaPickerSearchBar')?.classList.remove('has-value');
+        }
         plIaPickerBackdrop?.classList.remove('hidden');
-        plIaRenderPickerFilters();
+        plIaRenderPickerSidebar();
         plIaRenderPickerList();
-        plIaUpdatePickerCount();
-        plIaUpdateFilterToggleBadge();
+        plIaUpdatePickerCounts();
     }
-
-    // Toggle badge sur le bouton filtre (point teal quand un filtre est actif)
-    function plIaUpdateFilterToggleBadge() {
-        const btn = $('plIaPickerFilterToggle');
-        if (!btn) return;
-        btn.classList.toggle('has-active', plIaPickerActiveFilter && plIaPickerActiveFilter !== 'all');
-    }
-
-    // Bouton filtre dans la search input → toggle l'affichage des pills
-    $('plIaPickerFilterToggle')?.addEventListener('click', () => {
-        const groups = $('plIaPickerFilterGroups');
-        const btn    = $('plIaPickerFilterToggle');
-        if (!groups || !btn) return;
-        const willExpand = groups.classList.contains('collapsed');
-        groups.classList.toggle('collapsed', !willExpand);
-        btn.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
-    });
-    function plIaClosePicker() {
-        plIaPickerBackdrop?.classList.add('hidden');
-    }
+    function plIaClosePicker() { plIaPickerBackdrop?.classList.add('hidden'); }
 
     $('plIaPickerClose')?.addEventListener('click', plIaClosePicker);
     $('plIaPickerCancel')?.addEventListener('click', plIaClosePicker);
@@ -2726,138 +2760,212 @@ window.PL_DATA = {
     });
 
     $('plIaPickerSearch')?.addEventListener('input', (e) => {
-        plIaPickerSearchQ = (e.target.value || '').toLowerCase();
+        plIaPickerSearchQ = (e.target.value || '').toLowerCase().trim();
+        $('plIaPickerSearchBar')?.classList.toggle('has-value', plIaPickerSearchQ.length > 0);
+        plIaRenderPickerList();
+    });
+    $('plIaPickerSearchClear')?.addEventListener('click', () => {
+        if ($('plIaPickerSearch')) $('plIaPickerSearch').value = '';
+        plIaPickerSearchQ = '';
+        $('plIaPickerSearchBar')?.classList.remove('has-value');
         plIaRenderPickerList();
     });
 
-    // Tout cocher / décocher (sur la liste filtrée actuellement visible)
-    $('pl-ia-picker-toggle-all')?.addEventListener('click', () => {
-        const visibleIds = plIaPickerVisibleUsers().map(u => u.id);
-        const allChecked = visibleIds.every(id => plIaPickerSelected.has(id));
-        if (allChecked) visibleIds.forEach(id => plIaPickerSelected.delete(id));
-        else            visibleIds.forEach(id => plIaPickerSelected.add(id));
+    // Tout sélectionner / désélectionner (sur la liste actuellement visible)
+    $('plIaPickerSelectAll')?.addEventListener('click', () => {
+        plIaPickerVisibleUsers().forEach(u => plIaPickerSelected.add(u.id));
         plIaRenderPickerList();
-        plIaUpdatePickerCount();
+        plIaUpdatePickerCounts();
+    });
+    $('plIaPickerClearAll')?.addEventListener('click', () => {
+        plIaPickerVisibleUsers().forEach(u => plIaPickerSelected.delete(u.id));
+        plIaRenderPickerList();
+        plIaUpdatePickerCounts();
     });
 
-    // Construit les filtres dynamiquement (Tous + fonctions + modules)
-    function plIaRenderPickerFilters() {
-        const container = $('plIaPickerFilterGroups');
-        if (!container) return;
+    // Construit la sidebar des filtres (Fonction + Module + Étage)
+    function plIaRenderPickerSidebar() {
+        const sidebar = $('plIaPickerSidebar');
+        if (!sidebar) return;
         const users    = window.PL_DATA?.users     || [];
         const modules  = window.PL_DATA?.modules   || [];
         const fonctions = window.PL_DATA?.fonctions || [];
+        const etages   = window.PL_DATA?.etages    || [];
 
-        // Compteurs par fonction
-        const cntByFct = {};
-        users.forEach(u => { if (u.fonction_code) cntByFct[u.fonction_code] = (cntByFct[u.fonction_code] || 0) + 1; });
-        // Compteurs par module
-        const cntByMod = {};
+        // Compteurs (sur l'ensemble des users — les compteurs sont indicatifs)
+        const cntByFct = {}, cntByMod = {}, cntByEtg = {};
         users.forEach(u => {
-            const ids = (u.module_ids || '').split(',').filter(Boolean);
-            ids.forEach(id => { cntByMod[id] = (cntByMod[id] || 0) + 1; });
+            if (u.fonction_code) cntByFct[u.fonction_code] = (cntByFct[u.fonction_code] || 0) + 1;
+            (u.module_ids || '').split(',').filter(Boolean).forEach(id => cntByMod[id] = (cntByMod[id] || 0) + 1);
+            (u.etage_ids || []).forEach(id => cntByEtg[id] = (cntByEtg[id] || 0) + 1);
         });
 
-        let html = '';
-        html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter==='all'?' active':''}" data-pick-filter="all">Tous <span class="count">${users.length}</span></button>`;
-        // Fonctions
-        const fctsAvec = fonctions.filter(f => cntByFct[f.code]);
-        if (fctsAvec.length) {
-            html += '<span class="pl-ia-picker-group-sep" aria-hidden="true"></span>';
-            html += '<span class="pl-ia-picker-group-label">Fonction</span>';
-            fctsAvec.forEach(f => {
-                const k = 'fct:' + f.code;
-                html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter===k?' active':''}" data-pick-filter="${plEsc(k)}" title="${plEsc(f.nom || '')}">${plEsc(f.code)} <span class="count">${cntByFct[f.code]}</span></button>`;
+        function group(key, title, items, valueGetter, labelGetter, countMap) {
+            const cur = plIaPickerFilters[key];
+            const hasActive = cur && cur !== 'all';
+            let html = '<div class="pl-ia-picker-fgroup' + (hasActive ? ' has-active' : '') + '" data-fgroup="' + key + '">';
+            html += '<div class="pl-ia-picker-fgroup-head">';
+            html += '<span class="pl-ia-picker-fgroup-title">' + plEsc(title) + '</span>';
+            html += '<button type="button" class="pl-ia-picker-fgroup-clear" data-fclear="' + key + '">Tout</button>';
+            html += '</div>';
+            html += '<div class="pl-ia-picker-foptions">';
+            html += '<button type="button" class="pl-ia-picker-foption' + (cur === 'all' ? ' active' : '') + '" data-fset="' + key + '" data-fval="all">Tous<span class="fcount">' + users.length + '</span></button>';
+            items.forEach(it => {
+                const v = valueGetter(it);
+                const lab = labelGetter(it);
+                const cnt = countMap[v] || 0;
+                if (!cnt) return; // skip groups with 0 users
+                html += '<button type="button" class="pl-ia-picker-foption' + (cur === v ? ' active' : '') + '" data-fset="' + key + '" data-fval="' + plEsc(v) + '" title="' + plEsc(lab) + '">' + plEsc(lab) + '<span class="fcount">' + cnt + '</span></button>';
             });
+            html += '</div></div>';
+            return html;
         }
-        // Modules
-        const modsAvec = modules.filter(m => cntByMod[m.id]);
-        if (modsAvec.length) {
-            html += '<span class="pl-ia-picker-group-sep" aria-hidden="true"></span>';
-            html += '<span class="pl-ia-picker-group-label">Module</span>';
-            modsAvec.forEach(m => {
-                const k = 'mod:' + m.id;
-                html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter===k?' active':''}" data-pick-filter="${plEsc(k)}" title="${plEsc(m.nom || '')}">${plEsc(m.code)} <span class="count">${cntByMod[m.id]}</span></button>`;
-            });
-        }
-        container.innerHTML = html;
 
-        container.querySelectorAll('[data-pick-filter]').forEach(b => b.addEventListener('click', () => {
-            plIaPickerActiveFilter = b.dataset.pickFilter;
-            container.querySelectorAll('[data-pick-filter]').forEach(x => x.classList.toggle('active', x === b));
+        sidebar.innerHTML =
+            group('fonction', 'Fonction', fonctions, f => f.code, f => f.code + (f.nom ? ' — ' + f.nom : ''), cntByFct) +
+            group('module',   'Module',   modules,   m => m.id,   m => m.code + (m.nom ? ' — ' + m.nom : ''), cntByMod) +
+            group('etage',    'Étage',    etages,    e => e.id,   e => e.nom || e.code, cntByEtg);
+
+        sidebar.querySelectorAll('[data-fset]').forEach(btn => btn.addEventListener('click', () => {
+            const key = btn.dataset.fset;
+            const val = btn.dataset.fval;
+            plIaPickerFilters[key] = val;
+            plIaRenderPickerSidebar();
             plIaRenderPickerList();
-            plIaUpdateFilterToggleBadge();
+        }));
+        sidebar.querySelectorAll('[data-fclear]').forEach(btn => btn.addEventListener('click', () => {
+            plIaPickerFilters[btn.dataset.fclear] = 'all';
+            plIaRenderPickerSidebar();
+            plIaRenderPickerList();
         }));
     }
 
     function plIaPickerVisibleUsers() {
         const users = window.PL_DATA?.users || [];
         let visible = users.slice();
-        // Filtre principal
-        if (plIaPickerActiveFilter && plIaPickerActiveFilter !== 'all') {
-            const [type, val] = plIaPickerActiveFilter.split(':');
-            if (type === 'fct') visible = visible.filter(u => u.fonction_code === val);
-            else if (type === 'mod') visible = visible.filter(u => (u.module_ids || '').split(',').filter(Boolean).includes(val));
+
+        if (plIaPickerFilters.fonction !== 'all') {
+            visible = visible.filter(u => u.fonction_code === plIaPickerFilters.fonction);
         }
-        // Recherche
+        if (plIaPickerFilters.module !== 'all') {
+            visible = visible.filter(u => (u.module_ids || '').split(',').filter(Boolean).includes(plIaPickerFilters.module));
+        }
+        if (plIaPickerFilters.etage !== 'all') {
+            visible = visible.filter(u => (u.etage_ids || []).includes(plIaPickerFilters.etage));
+        }
         if (plIaPickerSearchQ) {
-            visible = visible.filter(u => ((u.prenom || '') + ' ' + (u.nom || '')).toLowerCase().includes(plIaPickerSearchQ));
+            const q = plIaPickerSearchQ;
+            visible = visible.filter(u => {
+                const txt = ((u.prenom || '') + ' ' + (u.nom || '') + ' ' + (u.fonction_code || '') + ' ' + (u.fonction_nom || '')).toLowerCase();
+                return txt.includes(q);
+            });
         }
         return visible;
     }
 
     function plIaRenderPickerList() {
-        const body = $('plIaPickerBody');
-        if (!body) return;
-        const modules = window.PL_DATA?.modules || [];
+        const list = $('plIaPickerList');
+        if (!list) return;
+        const users    = window.PL_DATA?.users     || [];
+        const modules  = window.PL_DATA?.modules   || [];
+        const fonctions = window.PL_DATA?.fonctions || [];
+        const etages   = window.PL_DATA?.etages    || [];
+
         const visible = plIaPickerVisibleUsers();
 
+        // Toolbar : compteur résultats / total
+        $('plIaPickerResultCount') && ($('plIaPickerResultCount').textContent = visible.length);
+        $('plIaPickerTotalCount')  && ($('plIaPickerTotalCount').textContent  = users.length);
+
         if (!visible.length) {
-            body.innerHTML = '<div class="pl-ia-picker-empty">'
-                + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/><path d="M16 11h6M19 8v6"/></svg>'
-                + '<div class="pl-ia-picker-empty-title">Aucun collaborateur</div>'
-                + '<div class="pl-ia-picker-empty-sub">Modifie le filtre ou la recherche</div>'
-                + '</div>';
+            list.innerHTML = `
+              <div class="pl-ia-picker-empty-2col">
+                <div class="pl-ia-picker-empty-2col-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="m20 20-3.5-3.5"/>
+                    <path d="M11 8v3M11 14h.01"/>
+                  </svg>
+                </div>
+                <h3>Aucun collaborateur trouvé</h3>
+                <p>Essayez de modifier votre recherche ou vos filtres</p>
+              </div>`;
             return;
         }
 
-        body.innerHTML = '<div class="pl-ia-picker-list">' + visible.map(u => {
-            const checked  = plIaPickerSelected.has(u.id);
-            const initials = ((u.prenom || ' ').charAt(0) + (u.nom || ' ').charAt(0)).toUpperCase();
-            // Liste des codes modules affichables (max 2)
-            const modIds = (u.module_ids || '').split(',').filter(Boolean);
-            const modCodes = modIds.slice(0, 2).map(id => modules.find(m => m.id === id)?.code).filter(Boolean);
-            const modExtra = modIds.length > 2 ? ` +${modIds.length - 2}` : '';
-            return `
-              <div class="pl-ia-picker-row${checked ? ' checked' : ''}" data-pick-row="${plEsc(u.id)}">
-                <div class="pl-ia-picker-check">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div class="pl-ia-picker-avatar">${plEsc(initials || '·')}</div>
-                <div class="pl-ia-picker-info">
-                  <div class="pl-ia-picker-name">${plEsc((u.prenom || '') + ' ' + (u.nom || ''))}</div>
-                  <div class="pl-ia-picker-meta">
-                    ${u.fonction_code ? `<span class="pl-ia-picker-tag fonction">${plEsc(u.fonction_code)}</span>` : ''}
-                    ${modCodes.map(c => `<span class="pl-ia-picker-tag">${plEsc(c)}</span>`).join('')}${modExtra ? `<span class="pl-ia-picker-tag">${plEsc(modExtra)}</span>` : ''}
-                  </div>
-                </div>
-              </div>`;
-        }).join('') + '</div>';
+        // Groupement par fonction (pour les sections du mockup)
+        const byFct = {};
+        visible.forEach(u => {
+            const k = u.fonction_code || '_';
+            if (!byFct[k]) byFct[k] = [];
+            byFct[k].push(u);
+        });
 
-        body.querySelectorAll('[data-pick-row]').forEach(row => row.addEventListener('click', () => {
+        // Ordre des fonctions selon l'ordre de la table fonctions
+        const fctOrder = fonctions.map(f => f.code).filter(c => byFct[c]);
+        if (byFct['_']) fctOrder.push('_');
+
+        let html = '';
+        fctOrder.forEach(fctCode => {
+            const arr = byFct[fctCode];
+            const fct = fonctions.find(f => f.code === fctCode);
+            const sectionTitle = fct?.nom || fct?.code || 'Sans fonction';
+            html += `
+              <div class="pl-ia-picker-section">
+                <div class="pl-ia-picker-section-head">
+                  <span class="pl-ia-picker-section-title">${plEsc(sectionTitle)}</span>
+                  <span class="pl-ia-picker-section-count">${arr.length} résultat${arr.length > 1 ? 's' : ''}</span>
+                </div>
+            `;
+            arr.forEach(u => {
+                const checked  = plIaPickerSelected.has(u.id);
+                const initials = ((u.prenom || ' ').charAt(0) + (u.nom || ' ').charAt(0)).toUpperCase();
+                const av = plIaPickerAvatarClass(u.id);
+
+                // Module(s) du user (1er module pour l'affichage compact)
+                const modIds = (u.module_ids || '').split(',').filter(Boolean);
+                const firstMod = modIds[0] ? modules.find(m => m.id === modIds[0])?.code : null;
+                // Étage(s) du user (1er étage pour l'affichage compact)
+                const firstEtg = (u.etage_ids || [])[0] ? etages.find(e => e.id === u.etage_ids[0])?.nom : null;
+                const metaParts = [];
+                if (firstMod) metaParts.push(firstMod + (firstEtg ? ' · ' + firstEtg : ''));
+                else if (firstEtg) metaParts.push(firstEtg);
+
+                html += `
+                  <button type="button" class="pl-ia-picker-uitem${checked ? ' selected' : ''}" data-pick-row="${plEsc(u.id)}">
+                    <div class="pl-ia-picker-uavatar ${av}">${plEsc(initials || '·')}</div>
+                    <div class="pl-ia-picker-uinfo">
+                      <div class="pl-ia-picker-uname">${plEsc((u.prenom || '') + ' ' + (u.nom || ''))}</div>
+                      <div class="pl-ia-picker-umeta">
+                        ${u.fonction_code ? `<span class="pl-ia-picker-umeta-tag">${plEsc(u.fonction_code)}</span>` : ''}
+                        ${metaParts.length ? `<span class="pl-ia-picker-umeta-dot"></span><span>${plEsc(metaParts.join(' · '))}</span>` : ''}
+                      </div>
+                    </div>
+                    <div class="pl-ia-picker-ucheck">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                  </button>
+                `;
+            });
+            html += '</div>';
+        });
+
+        list.innerHTML = html;
+
+        list.querySelectorAll('[data-pick-row]').forEach(row => row.addEventListener('click', () => {
             const id = row.dataset.pickRow;
             if (plIaPickerSelected.has(id)) plIaPickerSelected.delete(id);
             else plIaPickerSelected.add(id);
-            row.classList.toggle('checked');
-            plIaUpdatePickerCount();
+            row.classList.toggle('selected');
+            plIaUpdatePickerCounts();
         }));
     }
 
-    function plIaUpdatePickerCount() {
-        const el = $('plIaPickerCount');
-        if (!el) return;
+    function plIaUpdatePickerCounts() {
         const n = plIaPickerSelected.size;
-        el.innerHTML = n === 0 ? 'Aucun sélectionné' : `<strong>${n}</strong> sélectionné${n > 1 ? 's' : ''}`;
+        $('plIaPickerCountTop')     && ($('plIaPickerCountTop').textContent     = n);
+        $('plIaPickerFooterCount')  && ($('plIaPickerFooterCount').textContent  = n);
+        $('plIaPickerConfirmBadge') && ($('plIaPickerConfirmBadge').textContent = n);
     }
 
     async function plIaSaveRule() {
