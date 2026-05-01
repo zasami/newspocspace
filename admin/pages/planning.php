@@ -1097,6 +1097,7 @@ window.PL_DATA = {
             'id'         => $u['id'],
             'prenom'     => $u['prenom'],
             'nom'        => $u['nom'],
+            'photo'      => $u['photo'] ?? '',
             'module_ids' => $u['module_ids'] ?? '',
             'fonction_code' => $u['fonction_code'] ?? '',
             'fonction_nom'  => $u['fonction_nom']  ?? '',
@@ -2699,7 +2700,11 @@ window.PL_DATA = {
             const u = users.find(x => x.id === id);
             const initials = ((u?.prenom || ' ').charAt(0) + (u?.nom || ' ').charAt(0)).toUpperCase();
             const av = plIaPickerAvatarClass(id);
-            return `<span class="pl-ia-user-chip"><span class="pl-ia-user-chip-avatar ${av}">${plEsc(initials || '·')}</span>${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+            const photo = (u?.photo || '').trim();
+            const avatarHtml = photo
+                ? `<img src="${plEsc(photo)}" alt="" class="pl-ia-user-chip-avatar pl-ia-user-chip-avatar-img">`
+                : `<span class="pl-ia-user-chip-avatar ${av}">${plEsc(initials || '·')}</span>`;
+            return `<span class="pl-ia-user-chip">${avatarHtml}${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
         }).join('');
 
         const placeholder = list.length ? 'Cliquez pour modifier la sélection' : 'Choisir des collaborateurs';
@@ -2921,6 +2926,11 @@ window.PL_DATA = {
                 const checked  = plIaPickerSelected.has(u.id);
                 const initials = ((u.prenom || ' ').charAt(0) + (u.nom || ' ').charAt(0)).toUpperCase();
                 const av = plIaPickerAvatarClass(u.id);
+                // Photo si dispo (sinon avatar gradient + initiales)
+                const photo = (u.photo || '').trim();
+                const avatarHtml = photo
+                    ? `<img src="${plEsc(photo)}" alt="" class="pl-ia-picker-uavatar pl-ia-picker-uavatar-img">`
+                    : `<div class="pl-ia-picker-uavatar ${av}">${plEsc(initials || '·')}</div>`;
 
                 // Module(s) du user (1er module pour l'affichage compact)
                 const modIds = (u.module_ids || '').split(',').filter(Boolean);
@@ -2933,7 +2943,7 @@ window.PL_DATA = {
 
                 html += `
                   <button type="button" class="pl-ia-picker-uitem${checked ? ' selected' : ''}" data-pick-row="${plEsc(u.id)}">
-                    <div class="pl-ia-picker-uavatar ${av}">${plEsc(initials || '·')}</div>
+                    ${avatarHtml}
                     <div class="pl-ia-picker-uinfo">
                       <div class="pl-ia-picker-uname">${plEsc((u.prenom || '') + ' ' + (u.nom || ''))}</div>
                       <div class="pl-ia-picker-umeta">

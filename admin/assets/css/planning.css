@@ -4073,6 +4073,15 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   position: relative;
   box-shadow: 0 2px 6px -2px rgba(13, 42, 38, 0.15);
 }
+/* Variante image (vraie photo de profil) — garde même taille/border-radius */
+.pl-ia-picker-uavatar-img {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px -2px rgba(13, 42, 38, 0.15);
+  display: block;
+}
 .pl-ia-picker-uavatar.av-1 { background: linear-gradient(135deg, #1f6359, #2d8074); }
 .pl-ia-picker-uavatar.av-2 { background: linear-gradient(135deg, #5a9bd8, #3a6a8a); }
 .pl-ia-picker-uavatar.av-3 { background: linear-gradient(135deg, #7a4f9e, #9268b3); }
@@ -4249,6 +4258,14 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
+}
+/* Variante image dans le chip trigger (vraie photo) */
+.pl-ia-user-chip-avatar-img {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
 }
 .pl-ia-user-chip-avatar.av-1 { background: linear-gradient(135deg, #1f6359, #2d8074); }
 .pl-ia-user-chip-avatar.av-2 { background: linear-gradient(135deg, #5a9bd8, #3a6a8a); }
