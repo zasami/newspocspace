@@ -2148,3 +2148,59 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 /* ════════════════════════════════════════════════════════════════════════════
  * FIN — planning.css v9.15
  * ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * v9.16 — TEAM FILTERS : grille 2 colonnes, list flex-wrap, zoom sticky right
+ *
+ * Avant : .team-filters était un seul flex container avec overflow-x:auto
+ * et size-controls poussé à droite via margin-left:auto. Quand on scrollait
+ * horizontalement les pills, le zoom disparaissait à droite et le layout
+ * était bloqué sur une ligne.
+ *
+ * Après :
+ *  - Wrapper grid 2 colonnes : 1fr (pills) | auto (zoom)
+ *  - .team-filters-list : flex-wrap pour multi-line, drag-to-scroll possible
+ *    si on force overflow sur une seule ligne
+ *  - .size-controls : sticky right via grid (jamais déplacé)
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+#planningPage .team-filters {
+  display: grid !important;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  overflow-x: visible !important;   /* Le scroll est sur la list, pas le wrapper */
+}
+
+#planningPage .team-filters-list {
+  display: flex;
+  flex-wrap: wrap;          /* Si plusieurs lignes nécessaires, wrap au-dessous */
+  align-items: center;
+  gap: 6px;
+  min-width: 0;             /* Évite le débordement du grid item */
+  overflow-x: auto;         /* Scroll H si on force nowrap dynamiquement */
+  scrollbar-width: none;
+  cursor: grab;
+}
+
+#planningPage .team-filters-list::-webkit-scrollbar {
+  display: none;
+}
+
+#planningPage .team-filters-list.grabbing {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+#planningPage .team-filters .size-controls {
+  flex-shrink: 0;
+  align-self: center;
+  /* Pas de margin-left:auto — le grid place déjà le zoom dans sa colonne */
+  margin-left: 0 !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * FIN — planning.css v9.16
+ * ════════════════════════════════════════════════════════════════════════════ */

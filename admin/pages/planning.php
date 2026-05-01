@@ -384,6 +384,8 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
   <!-- ── Team filters ──────────────────────────────────────────────────────── -->
   <div class="team-filters">
+    <!-- Pills : flex-wrap, drag-to-scroll si overflow ─────────── -->
+    <div class="team-filters-list" id="plFiltersList">
     <button type="button" class="team-pill on" data-team-filter="" data-team-type="all">Tous · <?= (int) $plCountTotal ?></button>
     <span class="team-divider"></span>
     <?php foreach ($planningModules as $m): if (in_array($m['code'], ['POOL','NUIT'], true)) continue; ?>
@@ -399,8 +401,9 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     <button type="button" class="team-pill" data-team-filter="<?= h($f['code']) ?>" data-team-type="fonction" title="<?= h($f['nom']) ?>"><?= h($f['code']) ?></button>
     <?php endforeach; ?>
     <?php endif; ?>
+    </div>
 
-    <!-- Size controls : poussés tout à droite via margin-left:auto ─── -->
+    <!-- Size controls : sticky tout à droite, indépendant du flux des pills -->
     <div class="size-controls" role="group" aria-label="Zoom de la grille">
       <button type="button" class="size-btn" data-size="xs" title="Très petit">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><rect x="6" y="6" width="4" height="4" rx="1"/></svg>
@@ -1121,6 +1124,52 @@ window.PL_DATA = {
         }
         plGridEl.addEventListener('mouseup', pgStop);
         plGridEl.addEventListener('mouseleave', pgStop);
+    }
+
+    // ── Drag-to-scroll : sur la liste de filtres (team-filters-list) ────────
+    const plFiltersList = $('plFiltersList');
+    if (plFiltersList) {
+        let flIsDown = false, flStartX = 0, flScrollL = 0, flDidDrag = false;
+        const FL_DRAG_THRESHOLD = 6;
+
+        plFiltersList.addEventListener('mousedown', (e) => {
+            // Ne pas démarrer le drag sur un pill (button) — laissons le click passer
+            if (e.target.closest('button, a, .size-controls')) return;
+            if (e.button !== 0) return;
+            flIsDown = true;
+            flDidDrag = false;
+            flStartX = e.pageX;
+            flScrollL = plFiltersList.scrollLeft;
+        });
+
+        plFiltersList.addEventListener('mousemove', (e) => {
+            if (!flIsDown) return;
+            const dx = e.pageX - flStartX;
+            if (!flDidDrag && Math.abs(dx) < FL_DRAG_THRESHOLD) return;
+            if (!flDidDrag) {
+                flDidDrag = true;
+                plFiltersList.classList.add('grabbing');
+            }
+            e.preventDefault();
+            plFiltersList.scrollLeft = flScrollL - dx;
+        });
+
+        function flStop() {
+            if (!flIsDown) return;
+            flIsDown = false;
+            plFiltersList.classList.remove('grabbing');
+            if (flDidDrag) {
+                // Bloque le click qui suit pour ne pas activer un pill par accident
+                const blocker = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    plFiltersList.removeEventListener('click', blocker, true);
+                };
+                plFiltersList.addEventListener('click', blocker, true);
+            }
+        }
+        plFiltersList.addEventListener('mouseup', flStop);
+        plFiltersList.addEventListener('mouseleave', flStop);
     }
 
     // ── Module collapse / expand ────────────────────────────────────────────
