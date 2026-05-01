@@ -617,6 +617,11 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       <!-- Header gradient -->
       <div class="pl-ia-header">
         <div class="pl-ia-title-wrap">
+          <!-- Back button (visible uniquement en mode formulaire) -->
+          <button type="button" class="pl-ia-back-btn" id="plIaBackBtn" aria-label="Retour à la liste">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <!-- Icon soleil (visible en mode liste) -->
           <div class="pl-ia-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
@@ -624,7 +629,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
             </svg>
           </div>
           <div class="pl-ia-title-text">
-            <div class="pl-ia-eyebrow">Génération automatique</div>
+            <div class="pl-ia-eyebrow" id="plIaEyebrow">Génération automatique</div>
             <h2 class="pl-ia-title" id="plIaModalTitle">Règles de génération IA</h2>
           </div>
         </div>
@@ -1944,6 +1949,10 @@ window.PL_DATA = {
     }
 
     function plIaRenderList() {
+        // Mode liste : retire le modifier .pl-ia-mode-form + restaure header
+        plIaBackdrop?.classList.remove('pl-ia-mode-form');
+        $('plIaModalTitle') && ($('plIaModalTitle').textContent = 'Règles de génération IA');
+        $('plIaEyebrow')    && ($('plIaEyebrow').textContent    = 'Génération automatique');
         // Toolbar visible
         if (plIaToolbar) plIaToolbar.style.display = '';
 
@@ -2111,174 +2120,552 @@ window.PL_DATA = {
         plIaRenderList();
     });
 
-    // ── Formulaire ajout/édition règle ──────────────────────────────────────
+    // ── Formulaire ajout/édition règle (mockup-perfect) ─────────────────────
+    // État local du formulaire (chips dynamiques) — réinitialisé à chaque renderForm
+    let plIaFormState = { shifts: [], shiftsExclude: [], modules: [], users: [], days: [], type: '', target: 'all', importance: 'moyen', maxDays: 5, fonctionCode: '' };
+
     function plIaRenderForm() {
         const r = plIaEditId ? plIaRules.find(x => x.id === plIaEditId) : null;
         const isEdit = !!r;
         const params = r?.rule_params || {};
 
-        // Toolbar masquée en mode form (header reste, pas de filtres)
+        // Mode formulaire : header + toolbar + footer adaptés
+        plIaBackdrop?.classList.add('pl-ia-mode-form');
+        $('plIaModalTitle') && ($('plIaModalTitle').textContent = isEdit ? 'Modifier la règle' : 'Nouvelle règle');
+        $('plIaEyebrow')    && ($('plIaEyebrow').textContent    = 'Configuration de la règle');
         if (plIaToolbar) plIaToolbar.style.display = 'none';
 
-        const horaires = window.PL_DATA?.horaires  || [];
-        const modules  = window.PL_DATA?.modules   || [];
-        const fonctions = window.PL_DATA?.fonctions || [];
-        const users     = window.PL_DATA?.users     || [];
-
-        const horaireOpts = horaires.map(h => '<option value="' + plEsc(h.code) + '">' + plEsc(h.code) + ' — ' + plEsc(h.nom || '') + '</option>').join('');
-        const moduleOpts  = modules.map(m  => '<option value="' + plEsc(m.id) + '">'   + plEsc(m.code) + ' — ' + plEsc(m.nom || '') + '</option>').join('');
-        const fonctionOpts= fonctions.map(f=> '<option value="' + plEsc(f.code) + '">' + plEsc(f.code) + ' — ' + plEsc(f.nom || '') + '</option>').join('');
-        const userOpts    = users.map(u    => '<option value="' + plEsc(u.id) + '">'   + plEsc(u.prenom) + ' ' + plEsc(u.nom) + '</option>').join('');
-
-        const ruleTypeOpts = Object.entries(PL_IA_TYPE_LABELS)
-            .map(([k, v]) => '<option value="' + plEsc(k) + '">' + plEsc(v) + (k === '' ? ' (IA)' : '') + '</option>')
-            .join('');
+        // Init state à partir de la règle existante (ou défauts)
+        plIaFormState = {
+            shifts:        (params.shift_codes || []).slice(),
+            shiftsExclude: (params.exclude_shift_codes || []).slice(),
+            modules:       (params.module_ids || params.target_module_ids || r?.rule_params?.target_module_ids || []).slice(),
+            users:         (r?.targeted_users || []).map(u => u.id),
+            days:          (params.days || []).slice(),
+            type:          r?.rule_type || '',
+            target:        r?.target_mode || 'all',
+            importance:    r?.importance || 'moyen',
+            maxDays:       params.max_days || 5,
+            fonctionCode:  r?.target_fonction_code || '',
+        };
 
         plIaBody.innerHTML = `
-          <div class="pl-ia-form">
-            <div class="pl-ia-form-back">
-              <button type="button" class="pl-ia-back-btn" id="plIaBackBtn" title="Retour à la liste">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                <span>${isEdit ? 'Modifier la règle' : 'Nouvelle règle'}</span>
-              </button>
+          <!-- Carte info "TYPE SÉLECTIONNÉ" -->
+          <div class="pl-ia-type-card">
+            <div class="pl-ia-type-card-icon" id="plIaTypeCardIcon">${PL_IA_TYPE_ICONS[plIaFormState.type] || PL_IA_TYPE_ICONS['']}</div>
+            <div class="pl-ia-type-card-text">
+              <div class="pl-ia-type-card-label">Type sélectionné</div>
+              <div class="pl-ia-type-card-name" id="plIaTypeCardName">${plEsc(PL_IA_TYPE_LABELS[plIaFormState.type] || 'Texte libre')}</div>
             </div>
+          </div>
 
-            <div class="pl-ia-field">
-              <label class="pl-ia-label">Titre <span class="pl-ia-required">*</span></label>
-              <input type="text" class="pl-ia-input" id="plIaFTitre" placeholder="Ex: Sami ne travaille pas le weekend" value="${plEsc(r?.titre || '')}">
+          <!-- Titre -->
+          <div class="pl-ia-form-group">
+            <label class="pl-ia-form-label">Titre <span class="required">*</span></label>
+            <input type="text" class="pl-ia-form-input" id="plIaFTitre" placeholder="Ex: Sandrine Lambert ne travaille pas le weekend" value="${plEsc(r?.titre || '')}">
+          </div>
+
+          <!-- Type / Importance / Cible -->
+          <div class="pl-ia-form-group">
+            <div class="pl-ia-form-row-3">
+              <div class="pl-ia-select-wrap">
+                <label class="pl-ia-form-label">Type de règle</label>
+                <button type="button" class="pl-ia-select-btn" id="plIaFTypeBtn">
+                  <span class="pl-ia-select-text" id="plIaFTypeText">${plEsc(PL_IA_TYPE_LABELS[plIaFormState.type] || 'Texte libre')}</span>
+                </button>
+                <svg class="pl-ia-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                <div class="pl-ia-select-dropdown" id="plIaFTypeDropdown">
+                  <div class="pl-ia-select-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" id="plIaFTypeSearch" placeholder="Rechercher un type…">
+                  </div>
+                  <div class="pl-ia-select-list" id="plIaFTypeList">
+                    ${Object.entries(PL_IA_TYPE_LABELS).map(([k, v]) => `
+                      <div class="pl-ia-select-option${k === plIaFormState.type ? ' active' : ''}" data-type-val="${plEsc(k)}">
+                        <span class="pl-ia-option-icon">${PL_IA_TYPE_ICONS[k] || ''}</span>
+                        <span>${plEsc(v)}${k === '' ? ' (IA)' : ''}</span>
+                      </div>`).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <div class="pl-ia-select-wrap">
+                <label class="pl-ia-form-label">Importance</label>
+                <button type="button" class="pl-ia-select-btn" id="plIaFImpBtn">
+                  <span class="pl-ia-select-text" id="plIaFImpText">${plEsc({important:'Important', moyen:'Moyen', faible:'Faible'}[plIaFormState.importance] || 'Moyen')}</span>
+                </button>
+                <svg class="pl-ia-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                <div class="pl-ia-select-dropdown" id="plIaFImpDropdown">
+                  <div class="pl-ia-select-list">
+                    <div class="pl-ia-select-option${plIaFormState.importance==='important'?' active':''}" data-imp-val="important">Important</div>
+                    <div class="pl-ia-select-option${plIaFormState.importance==='moyen'?' active':''}" data-imp-val="moyen">Moyen</div>
+                    <div class="pl-ia-select-option${plIaFormState.importance==='faible'?' active':''}" data-imp-val="faible">Faible</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pl-ia-select-wrap">
+                <label class="pl-ia-form-label">Cible</label>
+                <button type="button" class="pl-ia-select-btn" id="plIaFTargetBtn">
+                  <span class="pl-ia-select-text" id="plIaFTargetText">${plEsc({all:'Tout le monde',module:'Par module',fonction:'Par fonction',users:'Utilisateurs spécifiques'}[plIaFormState.target] || 'Tout le monde')}</span>
+                </button>
+                <svg class="pl-ia-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                <div class="pl-ia-select-dropdown" id="plIaFTargetDropdown">
+                  <div class="pl-ia-select-list">
+                    <div class="pl-ia-select-option${plIaFormState.target==='all'?' active':''}" data-tgt-val="all">Tout le monde</div>
+                    <div class="pl-ia-select-option${plIaFormState.target==='module'?' active':''}" data-tgt-val="module">Par module</div>
+                    <div class="pl-ia-select-option${plIaFormState.target==='fonction'?' active':''}" data-tgt-val="fonction">Par fonction</div>
+                    <div class="pl-ia-select-option${plIaFormState.target==='users'?' active':''}" data-tgt-val="users">Utilisateurs spécifiques</div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div class="pl-ia-row">
-              <div class="pl-ia-field">
-                <label class="pl-ia-label">Type de règle</label>
-                <select class="pl-ia-select" id="plIaFType">${ruleTypeOpts}</select>
-              </div>
-              <div class="pl-ia-field">
-                <label class="pl-ia-label">Importance</label>
-                <select class="pl-ia-select" id="plIaFImportance">
-                  <option value="important">Important</option>
-                  <option value="moyen" selected>Moyen</option>
-                  <option value="faible">Faible</option>
-                </select>
-              </div>
-              <div class="pl-ia-field">
-                <label class="pl-ia-label">Cible</label>
-                <select class="pl-ia-select" id="plIaFTarget">
-                  <option value="all">Tout le monde</option>
-                  <option value="module">Par module</option>
-                  <option value="fonction">Par fonction</option>
-                  <option value="users">Utilisateurs spécifiques</option>
-                </select>
-              </div>
-            </div>
+          <!-- Détail cible (Utilisateurs / Fonction / Modules ciblés) -->
+          <div class="pl-ia-form-group" id="plIaFTargetDetail"></div>
 
-            <div class="pl-ia-field" id="plIaFTargetDetail"></div>
-            <div class="pl-ia-field" id="plIaFParamsDetail"></div>
+          <!-- Section dynamique selon type -->
+          <div id="plIaFParamsDetail"></div>
 
-            <div class="pl-ia-field">
-              <label class="pl-ia-label">Description / règle en texte libre</label>
-              <textarea class="pl-ia-textarea" id="plIaFDesc" rows="3" placeholder="Décrivez la règle en langage naturel. Ex: «Marie ne doit jamais travailler le mercredi»">${plEsc(r?.description || '')}</textarea>
-              <small class="pl-ia-help">Cette description est transmise à l'IA pour les modes hybride et IA directe</small>
+          <!-- Description (toujours visible en bas) -->
+          <div class="pl-ia-form-group">
+            <label class="pl-ia-form-label">
+              Description / règle en texte libre
+              <span class="optional">(optionnel sauf pour Texte libre)</span>
+            </label>
+            <textarea class="pl-ia-form-textarea" id="plIaFDesc" placeholder="Décrivez la règle en langage naturel. Ex: «Marie ne doit jamais travailler le mercredi» ou «Les AS du module M1 ne font pas de D3 le weekend»">${plEsc(r?.description || '')}</textarea>
+            <div class="pl-ia-form-help">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+              Cette description est transmise à l'IA pour les modes hybride et IA directe
             </div>
           </div>
         `;
 
-        // Pré-remplissage
-        $('plIaFType').value       = r?.rule_type || '';
-        $('plIaFImportance').value = r?.importance || 'moyen';
-        $('plIaFTarget').value     = r?.target_mode || 'all';
-
-        // Footer (mode form)
+        // Footer mode formulaire
         plIaFooter.innerHTML = `
-          <button type="button" class="pl-ia-btn-secondary" id="plIaCancelBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            Annuler
-          </button>
-          <button type="button" class="pl-ia-btn-primary" id="plIaSaveBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            ${isEdit ? 'Modifier' : 'Créer'}
-          </button>`;
-        $('plIaBackBtn')?.addEventListener('click', () => { plIaView = 'list'; plIaRender(); });
+          <span class="pl-ia-form-footer-help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Les modifications s'appliquent à la prochaine génération
+          </span>
+          <div class="pl-ia-form-footer-actions">
+            <button type="button" class="pl-ia-btn-secondary" id="plIaCancelBtn">Annuler</button>
+            <button type="button" class="pl-ia-btn-primary" id="plIaSaveBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              ${isEdit ? 'Modifier' : 'Créer'}
+            </button>
+          </div>
+        `;
+
+        // ─── Bind events ───
         $('plIaCancelBtn')?.addEventListener('click', () => { plIaView = 'list'; plIaRender(); });
         $('plIaSaveBtn')?.addEventListener('click', plIaSaveRule);
 
-        // Détails dynamiques (cible + params)
-        function updateTargetDetail() {
-            const target = $('plIaFTarget').value;
-            const det = $('plIaFTargetDetail');
-            det.innerHTML = '';
-            if (target === 'module') {
-                det.innerHTML = '<label class="pl-ia-label">Modules ciblés</label><select multiple class="pl-ia-multiselect" id="plIaFTargetModules">' + moduleOpts + '</select>';
-                const sel = $('plIaFTargetModules');
-                (r?.rule_params?.target_module_ids || []).forEach(id => { [...sel.options].forEach(o => { if (o.value === id) o.selected = true; }); });
-            } else if (target === 'fonction') {
-                det.innerHTML = '<label class="pl-ia-label">Fonction</label><select class="pl-ia-select" id="plIaFFonctionCode"><option value="">— Choisir —</option>' + fonctionOpts + '</select>';
-                $('plIaFFonctionCode').value = r?.target_fonction_code || '';
-            } else if (target === 'users') {
-                det.innerHTML = '<label class="pl-ia-label">Utilisateurs ciblés</label><select multiple class="pl-ia-multiselect" id="plIaFTargetUsers">' + userOpts + '</select>';
-                const sel = $('plIaFTargetUsers');
-                (r?.targeted_users || []).forEach(u => { [...sel.options].forEach(o => { if (o.value === u.id) o.selected = true; }); });
-            }
+        // Custom selects (Type / Importance / Cible)
+        plIaInitCustomSelect('plIaFTypeBtn', 'plIaFTypeDropdown', '[data-type-val]', (val, label) => {
+            plIaFormState.type = val;
+            $('plIaFTypeText').textContent = PL_IA_TYPE_LABELS[val] || 'Texte libre';
+            $('plIaTypeCardName').textContent = PL_IA_TYPE_LABELS[val] || 'Texte libre';
+            $('plIaTypeCardIcon').innerHTML = PL_IA_TYPE_ICONS[val] || PL_IA_TYPE_ICONS[''];
+            plIaRenderParamsDetail();
+        });
+        plIaInitCustomSelect('plIaFImpBtn', 'plIaFImpDropdown', '[data-imp-val]', (val, label) => {
+            plIaFormState.importance = val;
+            $('plIaFImpText').textContent = label;
+        });
+        plIaInitCustomSelect('plIaFTargetBtn', 'plIaFTargetDropdown', '[data-tgt-val]', (val, label) => {
+            plIaFormState.target = val;
+            $('plIaFTargetText').textContent = label;
+            plIaRenderTargetDetail();
+        });
+
+        // Recherche dans le dropdown des types
+        $('plIaFTypeSearch')?.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            $('plIaFTypeList').querySelectorAll('.pl-ia-select-option').forEach(opt => {
+                const txt = (opt.textContent || '').toLowerCase();
+                opt.style.display = txt.includes(q) ? '' : 'none';
+            });
+        });
+        $('plIaFTypeSearch')?.addEventListener('click', e => e.stopPropagation());
+
+        // Render des sections dynamiques
+        plIaRenderTargetDetail();
+        plIaRenderParamsDetail();
+    }
+
+    // Init un custom select : ouverture/fermeture + sélection d'option
+    function plIaInitCustomSelect(btnId, dropId, optSelector, onPick) {
+        const btn  = $(btnId);
+        const drop = $(dropId);
+        if (!btn || !drop) return;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Ferme les autres
+            document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
+            document.querySelectorAll('.pl-ia-select-btn.open').forEach(b => { if (b !== btn) b.classList.remove('open'); });
+            drop.classList.toggle('show');
+            btn.classList.toggle('open');
+        });
+        drop.addEventListener('click', e => e.stopPropagation());
+        drop.querySelectorAll(optSelector).forEach(opt => {
+            opt.addEventListener('click', () => {
+                drop.querySelectorAll(optSelector).forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                const val = opt.getAttribute(optSelector.replace(/[\[\]]/g, ''));
+                const label = opt.textContent.trim();
+                drop.classList.remove('show');
+                btn.classList.remove('open');
+                onPick(val, label);
+            });
+        });
+    }
+
+    // Ferme tous les dropdowns au click ailleurs
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.pl-ia-select-btn.open').forEach(b => b.classList.remove('open'));
+    });
+
+    // Rendu détail de la cible (Utilisateurs / Fonction / Modules)
+    function plIaRenderTargetDetail() {
+        const det = $('plIaFTargetDetail');
+        if (!det) return;
+        const t = plIaFormState.target;
+        if (t === 'all') { det.innerHTML = ''; return; }
+
+        if (t === 'users') {
+            det.innerHTML = `
+              <label class="pl-ia-form-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/></svg>
+                Utilisateurs
+              </label>
+              <div class="pl-ia-chips-input" id="plIaFUsersInput" tabindex="0"></div>
+            `;
+            plIaRenderUsersChips();
+            return;
         }
-        function updateParamsDetail() {
-            const t = $('plIaFType').value;
-            const det = $('plIaFParamsDetail');
-            det.innerHTML = '';
-            if (t === 'shift_only' || t === 'shift_exclude') {
-                det.innerHTML = '<label class="pl-ia-label">Codes horaires</label><select multiple class="pl-ia-multiselect" id="plIaFShiftCodes">' + horaireOpts + '</select>';
-                const sel = $('plIaFShiftCodes');
-                (params.shift_codes || []).forEach(c => { [...sel.options].forEach(o => { if (o.value === c) o.selected = true; }); });
-            } else if (t === 'days_only') {
-                const dn = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-                const sel = params.days || [];
-                det.innerHTML = '<label class="pl-ia-label">Jours autorisés</label><div class="pl-ia-days">'
-                    + dn.map((n, i) => {
-                        const dow = i + 1;
-                        return '<label class="pl-ia-day' + (sel.includes(dow) ? ' active' : '') + '"><input type="checkbox" class="pl-ia-day-cb" value="' + dow + '"' + (sel.includes(dow) ? ' checked' : '') + '><span>' + n + '</span></label>';
-                    }).join('') + '</div>';
-                det.querySelectorAll('.pl-ia-day-cb').forEach(cb => cb.addEventListener('change', () => cb.closest('.pl-ia-day').classList.toggle('active', cb.checked)));
-            } else if (t === 'max_days_week') {
-                det.innerHTML = '<label class="pl-ia-label">Max jours par semaine</label><input type="number" class="pl-ia-input" id="plIaFMaxDays" min="1" max="7" value="' + (params.max_days || 5) + '">';
-            } else if (t === 'module_only' || t === 'module_exclude') {
-                det.innerHTML = '<label class="pl-ia-label">Modules concernés</label><select multiple class="pl-ia-multiselect" id="plIaFModuleIds">' + moduleOpts + '</select>';
-                const sel = $('plIaFModuleIds');
-                (params.module_ids || []).forEach(id => { [...sel.options].forEach(o => { if (o.value === id) o.selected = true; }); });
-            }
+        if (t === 'fonction') {
+            const fonctions = window.PL_DATA?.fonctions || [];
+            det.innerHTML = `
+              <label class="pl-ia-form-label">Fonction</label>
+              <div class="pl-ia-select-wrap">
+                <button type="button" class="pl-ia-select-btn" id="plIaFFonctionBtn">
+                  <span class="pl-ia-select-text${plIaFormState.fonctionCode ? '' : ' muted'}" id="plIaFFonctionText">${plEsc(plIaFormState.fonctionCode ? (fonctions.find(f => f.code === plIaFormState.fonctionCode)?.code + ' — ' + fonctions.find(f => f.code === plIaFormState.fonctionCode)?.nom) : 'Choisir une fonction')}</span>
+                </button>
+                <svg class="pl-ia-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                <div class="pl-ia-select-dropdown" id="plIaFFonctionDropdown">
+                  <div class="pl-ia-select-list">
+                    ${fonctions.map(f => `<div class="pl-ia-select-option${f.code === plIaFormState.fonctionCode ? ' active' : ''}" data-fct-val="${plEsc(f.code)}">${plEsc(f.code)} — ${plEsc(f.nom || '')}</div>`).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+            plIaInitCustomSelect('plIaFFonctionBtn', 'plIaFFonctionDropdown', '[data-fct-val]', (val) => {
+                plIaFormState.fonctionCode = val;
+                const f = fonctions.find(x => x.code === val);
+                $('plIaFFonctionText').textContent = f ? f.code + ' — ' + (f.nom || '') : 'Choisir une fonction';
+                $('plIaFFonctionText').classList.remove('muted');
+            });
+            return;
         }
-        $('plIaFTarget').addEventListener('change', updateTargetDetail);
-        $('plIaFType').addEventListener('change', updateParamsDetail);
-        updateTargetDetail();
-        updateParamsDetail();
+        if (t === 'module') {
+            det.innerHTML = `
+              <label class="pl-ia-form-label">Modules ciblés</label>
+              <div class="pl-ia-chips-input" id="plIaFTgtModulesInput" tabindex="0"></div>
+            `;
+            plIaRenderModulesChips('plIaFTgtModulesInput', 'modules');
+            return;
+        }
+    }
+
+    // Rendu détail params (Jours / Horaires / Modules) selon type
+    function plIaRenderParamsDetail() {
+        const det = $('plIaFParamsDetail');
+        if (!det) return;
+        const t = plIaFormState.type;
+        let html = '';
+
+        if (t === 'user_schedule') {
+            html += plIaSectionDays('Jours de travail', 'Laisser vide = tous');
+            html += plIaSectionShifts('Horaires autorisés', 'Laisser vide = tous', 'plIaFShiftsInput', false);
+            html += plIaSectionShifts('Horaires interdits', 'Optionnel', 'plIaFShiftsExcludeInput', true);
+        } else if (t === 'shift_only') {
+            html += plIaSectionShifts('Horaires', 'Au moins 1', 'plIaFShiftsInput', false);
+        } else if (t === 'shift_exclude') {
+            html += plIaSectionShifts('Horaires à exclure', 'Au moins 1', 'plIaFShiftsExcludeInput', true);
+        } else if (t === 'days_only') {
+            html += plIaSectionDays('Jours autorisés', 'Au moins 1');
+        } else if (t === 'module_only' || t === 'module_exclude') {
+            const title = t === 'module_only' ? 'Modules autorisés' : 'Modules exclus';
+            html += `
+              <div class="pl-ia-dynamic-section">
+                <div class="pl-ia-dynamic-section-head">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  <span class="pl-ia-dynamic-section-title">${plEsc(title)}</span>
+                  <span class="pl-ia-dynamic-section-hint">Au moins 1</span>
+                </div>
+                <div class="pl-ia-chips-input" id="plIaFParamModulesInput" tabindex="0"></div>
+              </div>`;
+        } else if (t === 'max_days_week') {
+            html += `
+              <div class="pl-ia-dynamic-section">
+                <div class="pl-ia-dynamic-section-head">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <span class="pl-ia-dynamic-section-title">Max jours par semaine</span>
+                </div>
+                <input type="number" class="pl-ia-form-input" id="plIaFMaxDays" min="1" max="7" value="${plIaFormState.maxDays}">
+              </div>`;
+        }
+        det.innerHTML = html;
+
+        // Bind days
+        det.querySelectorAll('.pl-ia-day-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dow = parseInt(btn.dataset.dow, 10);
+                if (plIaFormState.days.includes(dow)) plIaFormState.days = plIaFormState.days.filter(x => x !== dow);
+                else plIaFormState.days.push(dow);
+                btn.classList.toggle('active');
+            });
+        });
+        // Bind chips inputs
+        if ($('plIaFShiftsInput'))        plIaRenderShiftsChips('plIaFShiftsInput', false);
+        if ($('plIaFShiftsExcludeInput')) plIaRenderShiftsChips('plIaFShiftsExcludeInput', true);
+        if ($('plIaFParamModulesInput'))  plIaRenderModulesChips('plIaFParamModulesInput', 'modules');
+        if ($('plIaFMaxDays'))            $('plIaFMaxDays').addEventListener('input', e => { plIaFormState.maxDays = parseInt(e.target.value, 10) || 5; });
+    }
+
+    function plIaSectionDays(title, hint) {
+        const dn = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+        return `
+          <div class="pl-ia-dynamic-section">
+            <div class="pl-ia-dynamic-section-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span class="pl-ia-dynamic-section-title">${plEsc(title)}</span>
+              <span class="pl-ia-dynamic-section-hint">${plEsc(hint)}</span>
+            </div>
+            <div class="pl-ia-day-grid">
+              ${dn.map((n, i) => {
+                const dow = i + 1;
+                const active = plIaFormState.days.includes(dow);
+                const wknd = (dow >= 6) ? ' weekend' : '';
+                return `<button type="button" class="pl-ia-day-btn${active ? ' active' : ''}${wknd}" data-dow="${dow}">${n}<span class="day-num">${String(dow).padStart(2,'0')}</span></button>`;
+              }).join('')}
+            </div>
+          </div>`;
+    }
+
+    function plIaSectionShifts(title, hint, inputId, isExclude) {
+        const icon = isExclude
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        return `
+          <div class="pl-ia-dynamic-section">
+            <div class="pl-ia-dynamic-section-head">
+              ${icon}
+              <span class="pl-ia-dynamic-section-title">${plEsc(title)}</span>
+              <span class="pl-ia-dynamic-section-hint">${plEsc(hint)}</span>
+            </div>
+            <div class="pl-ia-chips-input" id="${inputId}" tabindex="0"></div>
+          </div>`;
+    }
+
+    // Rendu des chips horaires (avec dropdown de sélection)
+    function plIaRenderShiftsChips(inputId, isExclude) {
+        const cont = $(inputId);
+        if (!cont) return;
+        const horaires = window.PL_DATA?.horaires || [];
+        const list = isExclude ? plIaFormState.shiftsExclude : plIaFormState.shifts;
+        const placeholderText = isExclude ? 'Exclure un horaire' : 'Ajouter un horaire';
+
+        const chipsHtml = list.map(code => {
+            const h = horaires.find(x => x.code === code);
+            const bg = isExclude ? 'var(--color-danger)' : (h?.couleur || '#1f6359');
+            return `<span class="pl-ia-shift-chip${isExclude ? ' danger' : ''}" style="background:${plEsc(bg)}">${plEsc(code)}<button type="button" class="pl-ia-chip-remove" data-rm-shift="${plEsc(code)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+        }).join('');
+
+        // Options non encore sélectionnées
+        const remaining = horaires.filter(h => !list.includes(h.code));
+        const dropHtml = remaining.length ? `
+          <div class="pl-ia-select-dropdown" id="${inputId}_drop">
+            <div class="pl-ia-select-list">
+              ${remaining.map(h => `<div class="pl-ia-select-option" data-add-shift="${plEsc(h.code)}"><span class="pl-ia-shift-chip" style="background:${plEsc(h.couleur || '#1f6359')}">${plEsc(h.code)}</span><span>${plEsc(h.nom || '')}</span></div>`).join('')}
+            </div>
+          </div>` : '';
+
+        cont.innerHTML = chipsHtml + (chipsHtml && remaining.length ? '' : '') + `<span class="pl-ia-chips-placeholder">${plEsc(placeholderText)}</span>` + dropHtml;
+        cont.style.position = 'relative';
+
+        // Bind remove
+        cont.querySelectorAll('[data-rm-shift]').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const code = btn.dataset.rmShift;
+            if (isExclude) plIaFormState.shiftsExclude = plIaFormState.shiftsExclude.filter(x => x !== code);
+            else plIaFormState.shifts = plIaFormState.shifts.filter(x => x !== code);
+            plIaRenderShiftsChips(inputId, isExclude);
+        }));
+
+        // Open dropdown au click
+        const drop = $(inputId + '_drop');
+        cont.addEventListener('click', (e) => {
+            if (e.target.closest('.pl-ia-chip-remove')) return;
+            e.stopPropagation();
+            document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
+            document.querySelectorAll('.pl-ia-chips-input.open').forEach(b => { if (b !== cont) b.classList.remove('open'); });
+            if (drop) drop.classList.toggle('show');
+            cont.classList.toggle('open');
+        });
+
+        // Bind add
+        if (drop) {
+            drop.addEventListener('click', e => e.stopPropagation());
+            drop.querySelectorAll('[data-add-shift]').forEach(opt => opt.addEventListener('click', () => {
+                const code = opt.dataset.addShift;
+                if (isExclude) plIaFormState.shiftsExclude.push(code);
+                else plIaFormState.shifts.push(code);
+                plIaRenderShiftsChips(inputId, isExclude);
+            }));
+        }
+    }
+
+    // Rendu chips modules
+    function plIaRenderModulesChips(inputId, target) {
+        const cont = $(inputId);
+        if (!cont) return;
+        const modules = window.PL_DATA?.modules || [];
+        const list = plIaFormState.modules;
+
+        const chipsHtml = list.map(id => {
+            const m = modules.find(x => x.id === id);
+            return `<span class="pl-ia-module-chip">${plEsc(m?.code || '?')} — ${plEsc(m?.nom || '')}<button type="button" class="pl-ia-chip-remove" data-rm-mod="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+        }).join('');
+
+        const remaining = modules.filter(m => !list.includes(m.id));
+        const dropHtml = remaining.length ? `
+          <div class="pl-ia-select-dropdown" id="${inputId}_drop">
+            <div class="pl-ia-select-list">
+              ${remaining.map(m => `<div class="pl-ia-select-option" data-add-mod="${plEsc(m.id)}"><span>${plEsc(m.code)} — ${plEsc(m.nom || '')}</span></div>`).join('')}
+            </div>
+          </div>` : '';
+
+        cont.innerHTML = chipsHtml + `<span class="pl-ia-chips-placeholder">Ajouter un module</span>` + dropHtml;
+        cont.style.position = 'relative';
+
+        cont.querySelectorAll('[data-rm-mod]').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            plIaFormState.modules = plIaFormState.modules.filter(x => x !== btn.dataset.rmMod);
+            plIaRenderModulesChips(inputId, target);
+        }));
+
+        const drop = $(inputId + '_drop');
+        cont.addEventListener('click', (e) => {
+            if (e.target.closest('.pl-ia-chip-remove')) return;
+            e.stopPropagation();
+            document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
+            document.querySelectorAll('.pl-ia-chips-input.open').forEach(b => { if (b !== cont) b.classList.remove('open'); });
+            if (drop) drop.classList.toggle('show');
+            cont.classList.toggle('open');
+        });
+        if (drop) {
+            drop.addEventListener('click', e => e.stopPropagation());
+            drop.querySelectorAll('[data-add-mod]').forEach(opt => opt.addEventListener('click', () => {
+                plIaFormState.modules.push(opt.dataset.addMod);
+                plIaRenderModulesChips(inputId, target);
+            }));
+        }
+    }
+
+    // Rendu chips utilisateurs
+    function plIaRenderUsersChips() {
+        const cont = $('plIaFUsersInput');
+        if (!cont) return;
+        const users = window.PL_DATA?.users || [];
+        const list = plIaFormState.users;
+
+        const chipsHtml = list.map(id => {
+            const u = users.find(x => x.id === id);
+            return `<span class="pl-ia-user-chip">${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
+        }).join('');
+
+        const remaining = users.filter(u => !list.includes(u.id));
+        const dropHtml = remaining.length ? `
+          <div class="pl-ia-select-dropdown" id="plIaFUsersInput_drop">
+            <div class="pl-ia-select-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="text" id="plIaFUsersSearch" placeholder="Rechercher un utilisateur…">
+            </div>
+            <div class="pl-ia-select-list">
+              ${remaining.map(u => `<div class="pl-ia-select-option" data-add-user="${plEsc(u.id)}">${plEsc(u.prenom + ' ' + u.nom)}${u.fonction_code ? ' <span style="color:var(--color-muted);font-size:11px">(' + plEsc(u.fonction_code) + ')</span>' : ''}</div>`).join('')}
+            </div>
+          </div>` : '';
+
+        cont.innerHTML = chipsHtml + `<span class="pl-ia-chips-placeholder">Choisir un utilisateur</span>` + dropHtml;
+        cont.style.position = 'relative';
+
+        cont.querySelectorAll('[data-rm-user]').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            plIaFormState.users = plIaFormState.users.filter(x => x !== btn.dataset.rmUser);
+            plIaRenderUsersChips();
+        }));
+
+        const drop = $('plIaFUsersInput_drop');
+        cont.addEventListener('click', (e) => {
+            if (e.target.closest('.pl-ia-chip-remove')) return;
+            e.stopPropagation();
+            document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
+            document.querySelectorAll('.pl-ia-chips-input.open').forEach(b => { if (b !== cont) b.classList.remove('open'); });
+            if (drop) drop.classList.toggle('show');
+            cont.classList.toggle('open');
+        });
+        if (drop) {
+            drop.addEventListener('click', e => e.stopPropagation());
+            $('plIaFUsersSearch')?.addEventListener('input', (e) => {
+                const q = e.target.value.toLowerCase();
+                drop.querySelectorAll('[data-add-user]').forEach(opt => {
+                    opt.style.display = (opt.textContent || '').toLowerCase().includes(q) ? '' : 'none';
+                });
+            });
+            drop.querySelectorAll('[data-add-user]').forEach(opt => opt.addEventListener('click', () => {
+                plIaFormState.users.push(opt.dataset.addUser);
+                plIaRenderUsersChips();
+            }));
+        }
     }
 
     async function plIaSaveRule() {
         const titre = ($('plIaFTitre')?.value || '').trim();
         if (!titre) { plToast('Titre requis', 'error'); return; }
-        const ruleType   = $('plIaFType').value || '';
-        const importance = $('plIaFImportance').value || 'moyen';
-        const targetMode = $('plIaFTarget').value || 'all';
-        const description= ($('plIaFDesc')?.value || '').trim();
-        const targetFonctionCode = $('plIaFFonctionCode')?.value || '';
-        const targetModuleIds    = [...($('plIaFTargetModules')?.selectedOptions || [])].map(o => o.value);
-        const userIds            = [...($('plIaFTargetUsers')?.selectedOptions || [])].map(o => o.value);
+        const description = ($('plIaFDesc')?.value || '').trim();
+        const ruleType   = plIaFormState.type;
+        const importance = plIaFormState.importance;
+        const targetMode = plIaFormState.target;
 
         let ruleParams = {};
-        if (ruleType === 'shift_only' || ruleType === 'shift_exclude') {
-            ruleParams.shift_codes = [...($('plIaFShiftCodes')?.selectedOptions || [])].map(o => o.value);
+        if (ruleType === 'user_schedule') {
+            ruleParams.shift_codes = plIaFormState.shifts.slice();
+            ruleParams.exclude_shift_codes = plIaFormState.shiftsExclude.slice();
+            ruleParams.days = plIaFormState.days.slice();
+        } else if (ruleType === 'shift_only') {
+            ruleParams.shift_codes = plIaFormState.shifts.slice();
+        } else if (ruleType === 'shift_exclude') {
+            ruleParams.shift_codes = plIaFormState.shiftsExclude.slice();
         } else if (ruleType === 'days_only') {
-            ruleParams.days = [...document.querySelectorAll('.pl-ia-day-cb:checked')].map(cb => parseInt(cb.value, 10));
+            ruleParams.days = plIaFormState.days.slice();
         } else if (ruleType === 'max_days_week') {
-            ruleParams.max_days = parseInt($('plIaFMaxDays')?.value || 5, 10);
+            ruleParams.max_days = plIaFormState.maxDays;
         } else if (ruleType === 'module_only' || ruleType === 'module_exclude') {
-            ruleParams.module_ids = [...($('plIaFModuleIds')?.selectedOptions || [])].map(o => o.value);
+            ruleParams.module_ids = plIaFormState.modules.slice();
         }
+
+        const targetModuleIds = (targetMode === 'module') ? plIaFormState.modules.slice() : [];
+        const userIds         = (targetMode === 'users')  ? plIaFormState.users.slice()   : [];
 
         const data = {
             titre, description, importance,
             rule_type: ruleType,
             rule_params: JSON.stringify(ruleParams),
             target_mode: targetMode,
-            target_fonction_code: targetFonctionCode,
+            target_fonction_code: plIaFormState.fonctionCode,
             user_ids: userIds,
             target_module_ids: targetModuleIds,
         };
@@ -2294,6 +2681,9 @@ window.PL_DATA = {
             plToast(res?.message || 'Erreur', 'error');
         }
     }
+
+    // Bouton retour dans le header (mode formulaire)
+    $('plIaBackBtn')?.addEventListener('click', () => { plIaView = 'list'; plIaRender(); });
 
     // Config IA avancée → ouvre la page admin (pas implémenté → toast info)
     plIaFooter?.addEventListener('click', (e) => {

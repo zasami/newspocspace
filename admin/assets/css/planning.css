@@ -3358,82 +3358,418 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 }
 .pl-ia-btn-primary svg { width: 13px; height: 13px; }
 
-/* ── Formulaire (création / édition) ───────────────────────────────────── */
-.pl-ia-form { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px; }
-.pl-ia-form-back { margin-bottom: 4px; }
+/* ─────────────────────────────────────────────────────────────────────── */
+/* ── FORMULAIRE création/édition (mockup-perfect)                        */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/* Mode formulaire : largeur réduite + masque stats + bascule icon ↔ back-btn */
 .pl-ia-back-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent; border: 0;
-  font: inherit;
-  font-family: var(--font-display, "Fraunces", Georgia, serif);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-ink, #0d2a26);
+  display: none; /* caché par défaut */
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  align-items: center; justify-content: center;
   cursor: pointer;
-  padding: 6px 8px 6px 0;
-  border-radius: 8px;
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  padding: 0;
 }
-.pl-ia-back-btn:hover { color: var(--color-teal-700, #164a42); }
+.pl-ia-back-btn:hover { background: rgba(255, 255, 255, 0.22); transform: translateX(-2px); }
 .pl-ia-back-btn svg { width: 16px; height: 16px; }
 
-.pl-ia-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.pl-ia-field { display: flex; flex-direction: column; gap: 5px; }
-.pl-ia-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+.pl-ia-mode-form .pl-ia-modal { max-width: 780px; }
+.pl-ia-mode-form .pl-ia-icon { display: none; }
+.pl-ia-mode-form .pl-ia-stats { display: none; }
+.pl-ia-mode-form .pl-ia-back-btn { display: inline-flex; }
+/* Backdrop reçoit la classe → cible le modal qui est dans le backdrop */
+.pl-ia-backdrop.pl-ia-mode-form .pl-ia-modal { max-width: 780px; }
+
+/* Body en mode formulaire : padding plus généreux, fond blanc */
+.pl-ia-mode-form .pl-ia-body {
+  padding: 22px 24px;
+  background: var(--color-surface, #fff);
+}
+
+/* Carte info "TYPE SÉLECTIONNÉ" en haut du formulaire */
+.pl-ia-type-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, var(--color-teal-50, #ecf5f3), rgba(212, 231, 226, 0.4));
+  border: 1px solid var(--color-teal-100, #d2e7e2);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.pl-ia-type-card-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--color-teal-600, #1f6359);
+  color: #fff;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(31, 99, 89, 0.25);
+}
+.pl-ia-type-card-icon svg { width: 16px; height: 16px; }
+.pl-ia-type-card-text { flex: 1; min-width: 0; }
+.pl-ia-type-card-label {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-muted, #6b8783);
+  color: var(--color-teal-700, #164a42);
+  font-weight: 600;
 }
-.pl-ia-required { color: var(--color-danger, #b8443a); }
-.pl-ia-help {
+.pl-ia-type-card-name {
+  font-family: var(--font-display, "Fraunces", Georgia, serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink, #0d2a26);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+/* Form group / label / input */
+.pl-ia-form-group { margin-bottom: 18px; }
+.pl-ia-form-group:last-child { margin-bottom: 0; }
+.pl-ia-form-label {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-body, "Outfit", sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink, #0d2a26);
+  letter-spacing: -0.01em;
+  margin-bottom: 7px;
+}
+.pl-ia-form-label .required { color: var(--color-danger, #b8443a); font-weight: 700; }
+.pl-ia-form-label .optional {
   font-size: 11px;
   color: var(--color-muted, #6b8783);
+  font-weight: 500;
+  margin-left: 2px;
 }
-.pl-ia-input,
-.pl-ia-select,
-.pl-ia-textarea,
-.pl-ia-multiselect {
+.pl-ia-form-label svg { color: var(--color-teal-600, #1f6359); width: 13px; height: 13px; flex-shrink: 0; }
+
+.pl-ia-form-input {
   width: 100%;
-  padding: 9px 11px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-family: var(--font-body, "Outfit", sans-serif);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line-2, #d4ddda);
+  border-radius: 10px;
+  color: var(--color-ink, #0d2a26);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pl-ia-form-input:hover { border-color: var(--color-teal-300, #7ab5ab); }
+.pl-ia-form-input:focus {
+  border-color: var(--color-teal-500, #2d8074);
+  box-shadow: 0 0 0 3px rgba(45, 128, 116, 0.12);
+}
+.pl-ia-form-input::placeholder { color: var(--color-muted, #6b8783); }
+
+/* Row 3 colonnes : Type / Importance / Cible */
+.pl-ia-form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+/* Select wrappers */
+.pl-ia-select-wrap { position: relative; }
+.pl-ia-select-btn {
+  width: 100%;
+  padding: 11px 38px 11px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-family: var(--font-body, "Outfit", sans-serif);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line-2, #d4ddda);
+  border-radius: 10px;
+  color: var(--color-ink, #0d2a26);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  text-align: left;
+  display: flex; align-items: center; gap: 8px;
+}
+.pl-ia-select-btn:hover { border-color: var(--color-teal-300, #7ab5ab); }
+.pl-ia-select-btn.open {
+  border-color: var(--color-teal-500, #2d8074);
+  box-shadow: 0 0 0 3px rgba(45, 128, 116, 0.12);
+}
+.pl-ia-select-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-ia-select-text.muted { color: var(--color-muted, #6b8783); }
+.pl-ia-select-arrow {
+  position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted, #6b8783);
+  pointer-events: none;
+  transition: transform 0.2s;
+  width: 14px; height: 14px;
+}
+.pl-ia-select-btn.open ~ .pl-ia-select-arrow { transform: translateY(-50%) rotate(180deg); }
+
+.pl-ia-select-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #fff;
+  border: 1px solid var(--color-line, #e3ebe8);
+  border-radius: 11px;
+  box-shadow: 0 12px 32px -8px rgba(13, 42, 38, 0.18), 0 4px 12px rgba(13, 42, 38, 0.06);
+  z-index: 50;
+  opacity: 0; visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.18s, visibility 0.18s, transform 0.18s;
+  max-height: 300px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.pl-ia-select-dropdown.show {
+  opacity: 1; visibility: visible;
+  transform: translateY(0);
+}
+.pl-ia-select-search {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-line, #e3ebe8);
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.pl-ia-select-search svg { color: var(--color-muted, #6b8783); width: 14px; height: 14px; flex-shrink: 0; }
+.pl-ia-select-search input {
+  flex: 1;
+  border: 0; outline: none; background: transparent;
   font: inherit;
   font-size: 13px;
   color: var(--color-ink, #0d2a26);
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-line, #e3ebe8);
-  border-radius: 9px;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.pl-ia-input:focus,
-.pl-ia-select:focus,
-.pl-ia-textarea:focus,
-.pl-ia-multiselect:focus {
-  outline: none;
-  border-color: var(--color-teal-300, #7ab5ab);
-  box-shadow: 0 0 0 3px rgba(45, 128, 116, 0.10);
-}
-.pl-ia-textarea { resize: vertical; min-height: 70px; font-family: inherit; }
-.pl-ia-multiselect { min-height: 90px; }
-
-/* Cases jours */
-.pl-ia-days { display: flex; flex-wrap: wrap; gap: 6px; }
-.pl-ia-day {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: 1.5px solid var(--color-line, #e3ebe8);
+.pl-ia-select-list { flex: 1; overflow-y: auto; padding: 5px; }
+.pl-ia-select-list::-webkit-scrollbar { width: 6px; }
+.pl-ia-select-list::-webkit-scrollbar-thumb { background: var(--color-line-2, #d4ddda); border-radius: 99px; }
+.pl-ia-select-option {
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-ink, #0d2a26);
   cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 500;
-  background: var(--color-surface, #fff);
-  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  border-radius: 7px;
+  transition: background 0.12s, color 0.12s;
+  display: flex; align-items: center; gap: 10px;
 }
-.pl-ia-day input { display: none; }
-.pl-ia-day.active {
-  border-color: var(--color-teal-600, #1f6359);
+.pl-ia-select-option:hover { background: var(--color-teal-50, #ecf5f3); color: var(--color-teal-700, #164a42); }
+.pl-ia-select-option.active { background: var(--color-teal-50, #ecf5f3); color: var(--color-teal-700, #164a42); font-weight: 600; }
+.pl-ia-option-icon {
+  width: 20px; height: 20px;
+  border-radius: 6px;
   background: var(--color-teal-50, #ecf5f3);
   color: var(--color-teal-700, #164a42);
+  display: grid; place-items: center;
+  flex-shrink: 0;
 }
+.pl-ia-select-option:hover .pl-ia-option-icon,
+.pl-ia-select-option.active .pl-ia-option-icon { background: var(--color-teal-100, #d2e7e2); }
+.pl-ia-option-icon svg { width: 11px; height: 11px; }
+
+/* Textarea */
+.pl-ia-form-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-family: var(--font-body, "Outfit", sans-serif);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line-2, #d4ddda);
+  border-radius: 10px;
+  color: var(--color-ink, #0d2a26);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
+.pl-ia-form-textarea:focus {
+  border-color: var(--color-teal-500, #2d8074);
+  box-shadow: 0 0 0 3px rgba(45, 128, 116, 0.12);
+}
+.pl-ia-form-textarea::placeholder { color: var(--color-muted, #6b8783); }
+.pl-ia-form-help {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--color-muted, #6b8783);
+  display: flex; align-items: flex-start; gap: 5px;
+  line-height: 1.4;
+}
+.pl-ia-form-help svg { color: var(--color-teal-500, #2d8074); width: 12px; height: 12px; flex-shrink: 0; margin-top: 2px; }
+
+/* Section dynamique encadrée (background teal-50) */
+.pl-ia-dynamic-section {
+  background: var(--color-teal-50, #ecf5f3);
+  border: 1px solid var(--color-teal-100, #d2e7e2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  position: relative;
+}
+.pl-ia-dynamic-section-head {
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 10px;
+}
+.pl-ia-dynamic-section-head svg { color: var(--color-teal-700, #164a42); width: 14px; height: 14px; flex-shrink: 0; }
+.pl-ia-dynamic-section-title {
+  font-family: var(--font-body, "Outfit", sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-teal-700, #164a42);
+  letter-spacing: -0.01em;
+}
+.pl-ia-dynamic-section-hint {
+  font-size: 11px;
+  color: var(--color-teal-600, #1f6359);
+  font-weight: 500;
+  margin-left: auto;
+  font-family: var(--font-mono, "JetBrains Mono", Menlo, monospace);
+}
+
+/* Grille jours (7 boutons Lun → Dim) */
+.pl-ia-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.pl-ia-day-btn {
+  position: relative;
+  padding: 10px 4px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--color-surface, #fff);
+  border: 1.5px solid var(--color-line-2, #d4ddda);
+  border-radius: 9px;
+  color: var(--color-ink-2, #324e4a);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-family: var(--font-body, "Outfit", sans-serif);
+}
+.pl-ia-day-btn:hover {
+  border-color: var(--color-teal-300, #7ab5ab);
+  background: #fff;
+  transform: translateY(-1px);
+}
+.pl-ia-day-btn.active {
+  background: var(--color-teal-700, #164a42);
+  border-color: var(--color-teal-700, #164a42);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(31, 99, 89, 0.2);
+}
+.pl-ia-day-btn .day-num {
+  font-family: var(--font-mono, "JetBrains Mono", Menlo, monospace);
+  font-size: 9.5px;
+  color: var(--color-muted, #6b8783);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.pl-ia-day-btn.active .day-num { color: rgba(255, 255, 255, 0.7); }
+.pl-ia-day-btn.weekend .day-num { color: var(--color-warm, #c97a2a); }
+
+/* Pseudo-input pour chips horaires/modules */
+.pl-ia-chips-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 10px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-line-2, #d4ddda);
+  border-radius: 10px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.pl-ia-chips-input:hover { border-color: var(--color-teal-300, #7ab5ab); }
+.pl-ia-chips-input.open {
+  border-color: var(--color-teal-500, #2d8074);
+  box-shadow: 0 0 0 3px rgba(45, 128, 116, 0.12);
+}
+.pl-ia-chips-placeholder {
+  color: var(--color-muted, #6b8783);
+  font-size: 13px;
+  padding: 3px 4px;
+}
+
+/* Chip horaire (couleur selon DB ou danger pour exclude) */
+.pl-ia-shift-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 5px 3px 9px;
+  border-radius: 6px;
+  font-family: var(--font-mono, "JetBrains Mono", Menlo, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.pl-ia-shift-chip.danger { background: var(--color-danger, #b8443a) !important; }
+.pl-ia-chip-remove {
+  width: 16px; height: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+.pl-ia-chip-remove:hover { background: rgba(255, 255, 255, 0.4); }
+.pl-ia-chip-remove svg { width: 9px; height: 9px; }
+
+/* Chip module (teal soft) */
+.pl-ia-module-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 7px;
+  font-family: var(--font-mono, "JetBrains Mono", Menlo, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-700, #164a42);
+  border: 1px solid var(--color-teal-100, #d2e7e2);
+  letter-spacing: 0.04em;
+}
+.pl-ia-module-chip .pl-ia-chip-remove {
+  background: var(--color-teal-100, #d2e7e2);
+  color: var(--color-teal-700, #164a42);
+}
+.pl-ia-module-chip .pl-ia-chip-remove:hover { background: var(--color-teal-200, #a8d1c8); }
+
+/* Chip user (subtle ink) */
+.pl-ia-user-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-surface-3, #f3f6f5);
+  color: var(--color-ink-2, #324e4a);
+  border: 1px solid var(--color-line, #e3ebe8);
+}
+.pl-ia-user-chip .pl-ia-chip-remove {
+  background: var(--color-line-2, #d4ddda);
+  color: var(--color-ink-2, #324e4a);
+}
+.pl-ia-user-chip .pl-ia-chip-remove:hover { background: var(--color-line-3, #c4d0cc); }
+
+/* Footer en mode formulaire : help à gauche + boutons à droite */
+.pl-ia-mode-form .pl-ia-footer { background: var(--color-surface-2, #fafbfa); }
+.pl-ia-form-footer-help {
+  font-size: 11.5px;
+  color: var(--color-muted, #6b8783);
+  display: inline-flex; align-items: center; gap: 5px;
+  flex: 1;
+}
+.pl-ia-form-footer-help svg { color: var(--color-teal-500, #2d8074); width: 13px; height: 13px; }
+.pl-ia-form-footer-actions { display: flex; gap: 8px; }
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 780px) {
@@ -3449,8 +3785,10 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   .pl-ia-footer-help { display: none; }
   .pl-ia-btn-secondary, .pl-ia-btn-primary { flex: 1; justify-content: center; }
   .pl-ia-row { grid-template-columns: 1fr; }
+  .pl-ia-form-row-3 { grid-template-columns: 1fr; }
+  .pl-ia-day-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
- * FIN — planning.css v11.0 (Règles de génération IA)
+ * FIN — planning.css v11.1 (Règles IA + formulaire édition mockup-perfect)
  * ════════════════════════════════════════════════════════════════════════════ */
