@@ -2123,8 +2123,10 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 }
 
 .pl-avatar-img {
-  width: 100%;
-  height: 100%;
+  /* PAS de width/height ici — ces propriétés viennent de .pl-avatar (28x28).
+     L'élément <img> a les 2 classes simultanément (pl-avatar + pl-avatar-img),
+     redéfinir width:100% écrasait le 28px et étalait l'image à toute la
+     largeur du flex parent (collab-cell). Même bug que pl-avatar-initials. */
   object-fit: cover;
   display: block;
 }
