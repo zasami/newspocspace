@@ -21,7 +21,7 @@
 
 // ─── Données serveur ────────────────────────────────────────────────────────
 $planningUsers = Db::fetchAll(
-    "SELECT u.id, u.nom, u.prenom, u.taux, u.role, u.type_contrat,
+    "SELECT u.id, u.nom, u.prenom, u.photo, u.taux, u.role, u.type_contrat,
             f.code AS fonction_code, f.nom AS fonction_nom, f.ordre AS fonction_ordre,
             GROUP_CONCAT(m.id ORDER BY um.is_principal DESC) AS module_ids,
             GROUP_CONCAT(m.code ORDER BY um.is_principal DESC) AS module_codes
@@ -140,6 +140,21 @@ function pl_role_class(string $code): string {
 
 function pl_target_hours(float $taux): float {
     return round($taux * 1.82, 1);
+}
+
+/**
+ * Avatar mini (28x28) : photo si dispo, sinon initiales sur fond teal.
+ */
+function pl_avatar(array $u): string {
+    $photo = trim((string)($u['photo'] ?? ''));
+    if ($photo !== '') {
+        return '<img src="' . h($photo) . '" alt="" class="pl-avatar pl-avatar-img">';
+    }
+    $initials = strtoupper(
+        (mb_substr((string)($u['prenom'] ?? ''), 0, 1) ?: '') .
+        (mb_substr((string)($u['nom'] ?? ''), 0, 1) ?: '')
+    );
+    return '<span class="pl-avatar pl-avatar-initials">' . h($initials) . '</span>';
 }
 
 // ─── Vraies données planning depuis la DB ───────────────────────────────────
@@ -483,6 +498,7 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
               data-modules="<?= h(implode(' ', $userModCodes)) ?>">
             <td class="col-collab">
               <div class="collab-cell">
+                <?= pl_avatar($u) ?>
                 <span class="role-tag <?= pl_role_class($u['fonction_code'] ?? '') ?>"><?= h($u['fonction_code'] ?? '—') ?></span>
                 <div class="collab-cell-info">
                   <div class="collab-cell-name"><?= h(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')) ?></div>
