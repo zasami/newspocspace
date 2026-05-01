@@ -785,89 +785,145 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     </div>
   </div>
 
-  <!-- ═══ Modale édition cellule ═══════════════════════════════════════════ -->
-  <div id="plCellModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="plCellModalTitle">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col" id="plCellModal">
+  <!-- ═══ Modale édition cellule (refonte pixel-perfect maquette) ═════════ -->
+  <div id="plCellModalBackdrop" class="pl-cell-overlay" role="dialog" aria-modal="true" aria-labelledby="plCellModalTitle">
+    <div class="pl-cell-modal" id="plCellModal">
 
-      <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
-        <h3 id="plCellModalTitle" class="font-display text-base font-semibold text-ink truncate">Modifier l'assignation</h3>
-        <button type="button" id="plCellClose" class="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-surface-3 hover:text-ink transition-colors" aria-label="Fermer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <!-- HEADER : gradient teal-700 → teal-500, eyebrow + titre + close -->
+      <div class="pl-cell-header">
+        <div class="pl-cell-title-wrap">
+          <div class="pl-cell-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="pl-cell-title-text">
+            <div class="pl-cell-eyebrow">Attribuer un horaire</div>
+            <h2 class="pl-cell-title" id="plCellModalTitle">
+              <span class="pl-cell-title-name">—</span>
+              <span class="pl-cell-title-sep">—</span>
+              <span class="pl-cell-title-date">—</span>
+            </h2>
+          </div>
+        </div>
+        <button type="button" id="plCellClose" class="pl-cell-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M6 6l12 12M18 6L6 18"></path>
+          </svg>
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="px-5 py-4 overflow-y-auto flex-1">
+      <!-- BODY -->
+      <div class="pl-cell-body">
         <input type="hidden" id="plCellUserId">
         <input type="hidden" id="plCellDate">
         <input type="hidden" id="plCellAssignId">
         <input type="hidden" id="plCellUpdatedAt">
 
-        <!-- Horaires : grille de cards -->
-        <div class="mb-4">
-          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-2">Horaire</label>
-          <div id="plCellHoraireGrid" class="grid grid-cols-3 gap-2">
+        <!-- ─── Section Horaire ───────────────────────────────────── -->
+        <div class="pl-cell-section">
+          <div class="pl-cell-section-head">
+            <h3 class="pl-cell-section-title">Horaire</h3>
+            <button type="button" class="pl-cell-section-action" id="plCellManageShifts">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Gérer les horaires
+            </button>
+          </div>
+
+          <div class="pl-shifts-grid" id="plCellHoraireGrid">
             <?php foreach ($planningHoraires as $ht):
-              $color = $ht['couleur'] ?? '#6b8783';
-              $code  = strtolower($ht['code'] ?? '');
+              $color   = $ht['couleur'] ?? '#6b8783';
+              $code    = strtoupper((string)($ht['code'] ?? ''));
+              $codeRaw = strtolower((string)($ht['code'] ?? ''));
+              $debut   = substr((string)($ht['heure_debut'] ?? ''), 0, 5);
+              $fin     = substr((string)($ht['heure_fin'] ?? ''), 0, 5);
+              $duree   = number_format((float)($ht['duree_effective'] ?? 0), 2, '.', '');
             ?>
-            <button type="button" class="pl-horaire-card relative px-3 py-2.5 rounded-lg border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex items-center gap-2.5" data-horaire-id="<?= h($ht['id']) ?>" data-horaire-code="<?= h($code) ?>">
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:<?= h($color) ?>"></span>
-              <span class="flex-1 min-w-0">
-                <span class="block font-mono text-[11px] font-bold text-ink leading-tight"><?= h(strtoupper($code)) ?></span>
-                <span class="block text-[10px] text-muted truncate"><?= h(substr((string)($ht['heure_debut'] ?? ''), 0, 5)) ?>–<?= h(substr((string)($ht['heure_fin'] ?? ''), 0, 5)) ?></span>
-              </span>
+            <button type="button" class="pl-horaire-card" data-horaire-id="<?= h($ht['id']) ?>" data-horaire-code="<?= h($codeRaw) ?>">
+              <span class="pl-shift-color-dot" style="background:<?= h($color) ?>"></span>
+              <span class="pl-shift-code"><?= h($code) ?></span>
+              <span class="pl-shift-time"><?= h($debut) ?>–<?= h($fin) ?></span>
+              <span class="pl-shift-duration"><?= h($duree) ?>h</span>
             </button>
             <?php endforeach; ?>
-            <button type="button" class="pl-horaire-card pl-horaire-none relative px-3 py-2.5 rounded-lg border-2 border-line bg-surface-2 hover:border-teal-300 hover:bg-teal-50 transition-all text-left flex items-center gap-2.5" data-horaire-id="" data-horaire-code="">
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 border border-line bg-white"></span>
-              <span class="flex-1 min-w-0">
-                <span class="block font-mono text-[11px] font-bold text-ink-2 leading-tight">—</span>
-                <span class="block text-[10px] text-muted">Repos</span>
+
+            <!-- Carte "Repos" (pas d'horaire) -->
+            <button type="button" class="pl-horaire-card pl-horaire-none" data-horaire-id="" data-horaire-code="">
+              <span class="pl-shift-color-dot" style="background:#d4d4d4;border:1px solid #b0b0b0"></span>
+              <span class="pl-shift-code">—</span>
+              <span class="pl-shift-time">Repos</span>
+              <span class="pl-shift-duration">0.00h</span>
+            </button>
+
+            <!-- Carte "Nouvel horaire" (création) -->
+            <button type="button" class="pl-shift-card-add" id="plCellAddShift">
+              <span class="pl-shift-card-add-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14"></path>
+                </svg>
               </span>
+              <span class="pl-shift-card-add-label">Nouvel horaire</span>
+              <span class="pl-shift-card-add-hint">Créer un type</span>
             </button>
           </div>
         </div>
 
-        <!-- Module + Statut -->
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Module</label>
-            <select id="plCellModule" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
-              <option value="">— Aucun —</option>
-              <?php foreach ($planningModules as $m): ?>
-              <option value="<?= h($m['id']) ?>"><?= h($m['code']) ?> · <?= h($m['nom']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Statut</label>
-            <select id="plCellStatut" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">
-              <option value="present">Présent</option>
-              <option value="absent">Absent</option>
-              <option value="formation">Formation</option>
-              <option value="conge">Congé</option>
-            </select>
+        <!-- ─── Section Module + Statut ────────────────────────────── -->
+        <div class="pl-cell-section">
+          <div class="pl-cell-row-2col">
+            <div class="pl-cell-field">
+              <label class="pl-cell-field-label">Module</label>
+              <div class="pl-cell-select-wrapper">
+                <select id="plCellModule" class="pl-cell-select-input">
+                  <option value="">— Aucun —</option>
+                  <?php foreach ($planningModules as $m): ?>
+                  <option value="<?= h($m['id']) ?>"><?= h($m['code']) ?> — <?= h($m['nom']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <svg class="pl-cell-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+            </div>
+            <div class="pl-cell-field">
+              <label class="pl-cell-field-label">Statut</label>
+              <div class="pl-cell-select-wrapper">
+                <select id="plCellStatut" class="pl-cell-select-input pl-cell-select-with-dot" data-statut-color="ok">
+                  <option value="present" data-color="ok">Présent</option>
+                  <option value="absent" data-color="danger">Absent</option>
+                  <option value="formation" data-color="warn">Formation</option>
+                  <option value="conge" data-color="muted">Congé</option>
+                </select>
+                <span class="pl-cell-select-dot" aria-hidden="true"></span>
+                <svg class="pl-cell-select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Notes -->
-        <div>
-          <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">Notes</label>
-          <textarea id="plCellNotes" rows="2" maxlength="500" class="w-full text-sm px-3 py-2 rounded-lg border border-line bg-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 resize-none"></textarea>
+        <!-- ─── Section Notes ──────────────────────────────────────── -->
+        <div class="pl-cell-section">
+          <div class="pl-cell-field">
+            <label class="pl-cell-field-label">Notes</label>
+            <textarea id="plCellNotes" rows="2" maxlength="500" class="pl-cell-notes-textarea" placeholder="Note interne ou information complémentaire (optionnel)…"></textarea>
+          </div>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-between px-5 py-3 border-t border-line bg-surface-2">
-        <button type="button" id="plCellDelete" class="hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-danger text-white text-sm font-medium hover:bg-danger/90 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <!-- FOOTER -->
+      <div class="pl-cell-footer">
+        <button type="button" id="plCellDelete" class="pl-cell-btn-delete" hidden>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           Supprimer
         </button>
-        <div class="flex items-center gap-2 ml-auto">
-          <button type="button" id="plCellCancel" class="px-4 py-2 rounded-lg border border-line bg-white text-ink-2 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">Annuler</button>
-          <button type="button" id="plCellSave" class="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 transition-colors">Enregistrer</button>
+        <div class="pl-cell-footer-right">
+          <button type="button" id="plCellCancel" class="pl-cell-btn-secondary">Fermer</button>
+          <button type="button" id="plCellSave" class="pl-cell-btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            Enregistrer
+          </button>
         </div>
       </div>
 
@@ -1336,9 +1392,8 @@ window.PL_DATA = {
         else if (type === 'error') alert(msg); else console.log('[planning]', type, msg);
     }
 
-    // ── Modale d'édition cellule ────────────────────────────────────────────
+    // ── Modale d'édition cellule (refonte pixel-perfect) ────────────────────
     const plModalBackdrop = $('plCellModalBackdrop');
-    const plModalTitle    = $('plCellModalTitle');
     const plModalUserId   = $('plCellUserId');
     const plModalDate     = $('plCellDate');
     const plModalAssignId = $('plCellAssignId');
@@ -1349,6 +1404,31 @@ window.PL_DATA = {
     const plModalDelete   = $('plCellDelete');
     const plModalSave     = $('plCellSave');
 
+    // Sous-éléments du titre splitté en 3 spans (nom · sep · date)
+    const plModalTitleName = document.querySelector('.pl-cell-title-name');
+    const plModalTitleSep  = document.querySelector('.pl-cell-title-sep');
+    const plModalTitleDate = document.querySelector('.pl-cell-title-date');
+
+    // Format date FR court : "Mer. 03 juin 2026"
+    const PL_JOURS = ['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
+    const PL_MOIS  = ['janvier','février','mars','avril','mai','juin',
+                      'juillet','août','septembre','octobre','novembre','décembre'];
+    function plFormatDateFR(iso) {
+        if (!iso) return '';
+        const [y, m, d] = iso.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        return PL_JOURS[dt.getDay()] + ' ' + String(d).padStart(2,'0') + ' ' + PL_MOIS[m - 1] + ' ' + y;
+    }
+
+    // Met à jour la pastille colorée du select Statut selon la valeur sélectionnée
+    function plUpdateStatutDot() {
+        if (!plModalStatut) return;
+        const opt = plModalStatut.options[plModalStatut.selectedIndex];
+        const color = opt?.dataset?.color || 'ok';
+        plModalStatut.dataset.statutColor = color;
+    }
+    plModalStatut?.addEventListener('change', plUpdateStatutDot);
+
     function plOpenCellModal(td) {
         if (!plModalBackdrop) return;
         const userId = td.dataset.uid;
@@ -1357,7 +1437,10 @@ window.PL_DATA = {
 
         // Infos user pour le titre + module principal de fallback
         const user = (window.PL_DATA?.users || []).find(u => u.id === userId);
-        plModalTitle.textContent = (user ? `${user.prenom} ${user.nom}` : 'Collaborateur') + ' — ' + date;
+        if (plModalTitleName) plModalTitleName.textContent = user ? `${user.prenom} ${user.nom}` : 'Collaborateur';
+        if (plModalTitleSep)  plModalTitleSep.textContent  = '—';
+        if (plModalTitleDate) plModalTitleDate.textContent = plFormatDateFR(date);
+
         plModalUserId.value   = userId;
         plModalDate.value     = date;
         plModalAssignId.value = td.dataset.assignId || '';
@@ -1366,19 +1449,20 @@ window.PL_DATA = {
         // Horaire pré-sélectionné : par horaire_type_id si dispo, sinon code
         const targetHoraireId   = td.dataset.horaireTypeId || '';
         const targetHoraireCode = td.dataset.horaireCode || '';
+        let foundActive = false;
         document.querySelectorAll('.pl-horaire-card').forEach(card => {
             const isActive = targetHoraireId
                 ? (card.dataset.horaireId === targetHoraireId)
                 : (targetHoraireCode && card.dataset.horaireCode === targetHoraireCode);
-            card.classList.toggle('!border-teal-600', isActive);
-            card.classList.toggle('!bg-teal-50', isActive);
+            card.classList.toggle('active', isActive);
             card.dataset.selected = isActive ? '1' : '';
+            if (isActive) foundActive = true;
         });
         // Si aucune horaire sélectionnée, sélectionne la card "—" (repos)
-        if (!targetHoraireId && !targetHoraireCode) {
+        if (!foundActive) {
             const noneCard = document.querySelector('.pl-horaire-none');
             if (noneCard) {
-                noneCard.classList.add('!border-teal-600', '!bg-teal-50');
+                noneCard.classList.add('active');
                 noneCard.dataset.selected = '1';
             }
         }
@@ -1389,30 +1473,35 @@ window.PL_DATA = {
 
         // Statut + notes : valeurs existantes ou défaut
         plModalStatut.value = td.dataset.statut || 'present';
+        plUpdateStatutDot();
         plModalNotes.value  = td.dataset.notes || '';
 
-        plModalDelete.classList.toggle('hidden', !td.dataset.assignId);
+        if (plModalDelete) plModalDelete.hidden = !td.dataset.assignId;
 
-        plModalBackdrop.classList.remove('hidden');
+        plModalBackdrop.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
 
     function plCloseCellModal() {
-        plModalBackdrop?.classList.add('hidden');
+        plModalBackdrop?.classList.remove('show');
         document.body.style.overflow = '';
     }
 
-    // Sélection d'une carte horaire
+    // Sélection d'une carte horaire (sauf la carte "Nouvel horaire")
     document.querySelectorAll('.pl-horaire-card').forEach(card => {
         card.addEventListener('click', () => {
             document.querySelectorAll('.pl-horaire-card').forEach(c => {
-                c.classList.remove('!border-teal-600', '!bg-teal-50');
+                c.classList.remove('active');
                 c.dataset.selected = '';
             });
-            card.classList.add('!border-teal-600', '!bg-teal-50');
+            card.classList.add('active');
             card.dataset.selected = '1';
         });
     });
+
+    // Bouton "Gérer les horaires" / "Nouvel horaire" — placeholder Phase 2
+    $('plCellManageShifts')?.addEventListener('click', () => plToast('Gestion des horaires — TODO Phase 2', 'info'));
+    $('plCellAddShift')?.addEventListener('click', () => plToast('Création d\'un nouvel horaire — TODO Phase 2', 'info'));
 
     // Click sur cellule jour → ouvre la modale (uniquement si planning existe)
     document.querySelectorAll('td.day-cell').forEach(td => {
@@ -1433,7 +1522,7 @@ window.PL_DATA = {
         if (e.target === plModalBackdrop) plCloseCellModal();
     });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !plModalBackdrop.classList.contains('hidden')) plCloseCellModal();
+        if (e.key === 'Escape' && plModalBackdrop?.classList.contains('show')) plCloseCellModal();
     });
 
     // Save
