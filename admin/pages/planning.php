@@ -691,6 +691,65 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     </div>
   </div>
 
+  <!-- ═══ Modale "Choisir des collaborateurs" (sub-modale picker) ═══════════ -->
+  <div id="plIaPickerBackdrop" class="pl-ia-backdrop pl-ia-picker-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="plIaPickerTitle">
+    <div class="pl-ia-modal pl-ia-picker-modal">
+
+      <!-- Header gradient -->
+      <div class="pl-ia-header">
+        <div class="pl-ia-title-wrap">
+          <div class="pl-ia-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/>
+              <path d="M16 11h6M19 8v6"/>
+            </svg>
+          </div>
+          <div class="pl-ia-title-text">
+            <div class="pl-ia-eyebrow">Sélection multiple</div>
+            <h2 class="pl-ia-title" id="plIaPickerTitle">Choisir des collaborateurs</h2>
+          </div>
+        </div>
+        <button class="pl-ia-close" id="plIaPickerClose" type="button" aria-label="Fermer">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <!-- Toolbar : recherche live + filtres -->
+      <div class="pl-ia-picker-toolbar">
+        <div class="pl-ia-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="plIaPickerSearch" placeholder="Rechercher un collaborateur (nom, prénom)…" autocomplete="off">
+        </div>
+        <div class="pl-ia-picker-filter-groups" id="plIaPickerFilterGroups">
+          <!-- généré dynamiquement (Tous, fonctions, modules) -->
+        </div>
+      </div>
+
+      <!-- Body : liste users avec checkbox -->
+      <div class="pl-ia-body pl-ia-picker-body" id="plIaPickerBody">
+        <!-- généré dynamiquement -->
+      </div>
+
+      <!-- Footer : compteur + Annuler / Valider -->
+      <div class="pl-ia-picker-footer">
+        <div class="pl-ia-picker-footer-left">
+          <button type="button" class="pl-ia-picker-link" id="pl-ia-picker-toggle-all">Tout cocher</button>
+          <span class="pl-ia-picker-divider">·</span>
+          <span class="pl-ia-picker-count" id="plIaPickerCount">0 sélectionné</span>
+        </div>
+        <div class="pl-ia-form-footer-actions">
+          <button type="button" class="pl-ia-btn-secondary" id="plIaPickerCancel">Annuler</button>
+          <button type="button" class="pl-ia-btn-primary" id="plIaPickerValidate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Valider
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ═══ Modale Propositions ══════════════════════════════════════════════ -->
   <div id="plPropsModalBackdrop" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1910,7 +1969,12 @@ window.PL_DATA = {
     $('plIaRulesBtn')?.addEventListener('click', plIaOpen);
     $('plIaClose')?.addEventListener('click', plIaClose);
     plIaBackdrop?.addEventListener('click', (e) => { if (e.target === plIaBackdrop) plIaClose(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !plIaBackdrop?.classList.contains('hidden')) plIaClose(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const pickerOpen = !$('plIaPickerBackdrop')?.classList.contains('hidden');
+        if (pickerOpen) { plIaClosePicker(); return; }
+        if (!plIaBackdrop?.classList.contains('hidden')) plIaClose();
+    });
 
     // Mapping rule_type → label visuel + icône (Lucide-style)
     const PL_IA_TYPE_LABELS = {
@@ -2575,7 +2639,7 @@ window.PL_DATA = {
         }
     }
 
-    // Rendu chips utilisateurs
+    // Rendu chips utilisateurs (clic sur la zone → ouvre la modale picker)
     function plIaRenderUsersChips() {
         const cont = $('plIaFUsersInput');
         if (!cont) return;
@@ -2587,19 +2651,8 @@ window.PL_DATA = {
             return `<span class="pl-ia-user-chip">${plEsc((u?.prenom || '') + ' ' + (u?.nom || ''))}<button type="button" class="pl-ia-chip-remove" data-rm-user="${plEsc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>`;
         }).join('');
 
-        const remaining = users.filter(u => !list.includes(u.id));
-        const dropHtml = remaining.length ? `
-          <div class="pl-ia-select-dropdown" id="plIaFUsersInput_drop">
-            <div class="pl-ia-select-search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input type="text" id="plIaFUsersSearch" placeholder="Rechercher un utilisateur…">
-            </div>
-            <div class="pl-ia-select-list">
-              ${remaining.map(u => `<div class="pl-ia-select-option" data-add-user="${plEsc(u.id)}">${plEsc(u.prenom + ' ' + u.nom)}${u.fonction_code ? ' <span style="color:var(--color-muted);font-size:11px">(' + plEsc(u.fonction_code) + ')</span>' : ''}</div>`).join('')}
-            </div>
-          </div>` : '';
-
-        cont.innerHTML = chipsHtml + `<span class="pl-ia-chips-placeholder">Choisir un utilisateur</span>` + dropHtml;
+        const placeholder = list.length ? 'Cliquez pour modifier la sélection' : 'Choisir des collaborateurs';
+        cont.innerHTML = chipsHtml + `<span class="pl-ia-chips-placeholder">${plEsc(placeholder)}</span>`;
         cont.style.position = 'relative';
 
         cont.querySelectorAll('[data-rm-user]').forEach(btn => btn.addEventListener('click', (e) => {
@@ -2608,28 +2661,176 @@ window.PL_DATA = {
             plIaRenderUsersChips();
         }));
 
-        const drop = $('plIaFUsersInput_drop');
+        // Click n'importe où sur la zone → ouvre la modale picker
         cont.addEventListener('click', (e) => {
             if (e.target.closest('.pl-ia-chip-remove')) return;
             e.stopPropagation();
-            document.querySelectorAll('.pl-ia-select-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
-            document.querySelectorAll('.pl-ia-chips-input.open').forEach(b => { if (b !== cont) b.classList.remove('open'); });
-            if (drop) drop.classList.toggle('show');
-            cont.classList.toggle('open');
+            plIaOpenUserPicker();
         });
-        if (drop) {
-            drop.addEventListener('click', e => e.stopPropagation());
-            $('plIaFUsersSearch')?.addEventListener('input', (e) => {
-                const q = e.target.value.toLowerCase();
-                drop.querySelectorAll('[data-add-user]').forEach(opt => {
-                    opt.style.display = (opt.textContent || '').toLowerCase().includes(q) ? '' : 'none';
-                });
+    }
+
+    // ── Sub-modale "Choisir des collaborateurs" ──────────────────────────────
+    const plIaPickerBackdrop = $('plIaPickerBackdrop');
+    let plIaPickerSelected = new Set();   // ids cochés (en cours d'édition)
+    let plIaPickerActiveFilter = 'all';   // 'all' | 'fct:CODE' | 'mod:ID'
+    let plIaPickerSearchQ = '';
+
+    function plIaOpenUserPicker() {
+        plIaPickerSelected = new Set(plIaFormState.users || []);
+        plIaPickerActiveFilter = 'all';
+        plIaPickerSearchQ = '';
+        if ($('plIaPickerSearch')) $('plIaPickerSearch').value = '';
+        plIaPickerBackdrop?.classList.remove('hidden');
+        plIaRenderPickerFilters();
+        plIaRenderPickerList();
+        plIaUpdatePickerCount();
+    }
+    function plIaClosePicker() {
+        plIaPickerBackdrop?.classList.add('hidden');
+    }
+
+    $('plIaPickerClose')?.addEventListener('click', plIaClosePicker);
+    $('plIaPickerCancel')?.addEventListener('click', plIaClosePicker);
+    plIaPickerBackdrop?.addEventListener('click', (e) => { if (e.target === plIaPickerBackdrop) plIaClosePicker(); });
+
+    $('plIaPickerValidate')?.addEventListener('click', () => {
+        plIaFormState.users = [...plIaPickerSelected];
+        plIaClosePicker();
+        plIaRenderUsersChips();
+    });
+
+    $('plIaPickerSearch')?.addEventListener('input', (e) => {
+        plIaPickerSearchQ = (e.target.value || '').toLowerCase();
+        plIaRenderPickerList();
+    });
+
+    // Tout cocher / décocher (sur la liste filtrée actuellement visible)
+    $('pl-ia-picker-toggle-all')?.addEventListener('click', () => {
+        const visibleIds = plIaPickerVisibleUsers().map(u => u.id);
+        const allChecked = visibleIds.every(id => plIaPickerSelected.has(id));
+        if (allChecked) visibleIds.forEach(id => plIaPickerSelected.delete(id));
+        else            visibleIds.forEach(id => plIaPickerSelected.add(id));
+        plIaRenderPickerList();
+        plIaUpdatePickerCount();
+    });
+
+    // Construit les filtres dynamiquement (Tous + fonctions + modules)
+    function plIaRenderPickerFilters() {
+        const container = $('plIaPickerFilterGroups');
+        if (!container) return;
+        const users    = window.PL_DATA?.users     || [];
+        const modules  = window.PL_DATA?.modules   || [];
+        const fonctions = window.PL_DATA?.fonctions || [];
+
+        // Compteurs par fonction
+        const cntByFct = {};
+        users.forEach(u => { if (u.fonction_code) cntByFct[u.fonction_code] = (cntByFct[u.fonction_code] || 0) + 1; });
+        // Compteurs par module
+        const cntByMod = {};
+        users.forEach(u => {
+            const ids = (u.module_ids || '').split(',').filter(Boolean);
+            ids.forEach(id => { cntByMod[id] = (cntByMod[id] || 0) + 1; });
+        });
+
+        let html = '';
+        html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter==='all'?' active':''}" data-pick-filter="all">Tous <span class="count">${users.length}</span></button>`;
+        // Fonctions
+        const fctsAvec = fonctions.filter(f => cntByFct[f.code]);
+        if (fctsAvec.length) {
+            html += '<span class="pl-ia-picker-group-sep" aria-hidden="true"></span>';
+            html += '<span class="pl-ia-picker-group-label">Fonction</span>';
+            fctsAvec.forEach(f => {
+                const k = 'fct:' + f.code;
+                html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter===k?' active':''}" data-pick-filter="${plEsc(k)}" title="${plEsc(f.nom || '')}">${plEsc(f.code)} <span class="count">${cntByFct[f.code]}</span></button>`;
             });
-            drop.querySelectorAll('[data-add-user]').forEach(opt => opt.addEventListener('click', () => {
-                plIaFormState.users.push(opt.dataset.addUser);
-                plIaRenderUsersChips();
-            }));
         }
+        // Modules
+        const modsAvec = modules.filter(m => cntByMod[m.id]);
+        if (modsAvec.length) {
+            html += '<span class="pl-ia-picker-group-sep" aria-hidden="true"></span>';
+            html += '<span class="pl-ia-picker-group-label">Module</span>';
+            modsAvec.forEach(m => {
+                const k = 'mod:' + m.id;
+                html += `<button type="button" class="pl-ia-picker-pill${plIaPickerActiveFilter===k?' active':''}" data-pick-filter="${plEsc(k)}" title="${plEsc(m.nom || '')}">${plEsc(m.code)} <span class="count">${cntByMod[m.id]}</span></button>`;
+            });
+        }
+        container.innerHTML = html;
+
+        container.querySelectorAll('[data-pick-filter]').forEach(b => b.addEventListener('click', () => {
+            plIaPickerActiveFilter = b.dataset.pickFilter;
+            container.querySelectorAll('[data-pick-filter]').forEach(x => x.classList.toggle('active', x === b));
+            plIaRenderPickerList();
+        }));
+    }
+
+    function plIaPickerVisibleUsers() {
+        const users = window.PL_DATA?.users || [];
+        let visible = users.slice();
+        // Filtre principal
+        if (plIaPickerActiveFilter && plIaPickerActiveFilter !== 'all') {
+            const [type, val] = plIaPickerActiveFilter.split(':');
+            if (type === 'fct') visible = visible.filter(u => u.fonction_code === val);
+            else if (type === 'mod') visible = visible.filter(u => (u.module_ids || '').split(',').filter(Boolean).includes(val));
+        }
+        // Recherche
+        if (plIaPickerSearchQ) {
+            visible = visible.filter(u => ((u.prenom || '') + ' ' + (u.nom || '')).toLowerCase().includes(plIaPickerSearchQ));
+        }
+        return visible;
+    }
+
+    function plIaRenderPickerList() {
+        const body = $('plIaPickerBody');
+        if (!body) return;
+        const modules = window.PL_DATA?.modules || [];
+        const visible = plIaPickerVisibleUsers();
+
+        if (!visible.length) {
+            body.innerHTML = '<div class="pl-ia-picker-empty">'
+                + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="4"/><path d="M3 21c0-3.5 3-6 6-6s6 2.5 6 6"/><path d="M16 11h6M19 8v6"/></svg>'
+                + '<div class="pl-ia-picker-empty-title">Aucun collaborateur</div>'
+                + '<div class="pl-ia-picker-empty-sub">Modifie le filtre ou la recherche</div>'
+                + '</div>';
+            return;
+        }
+
+        body.innerHTML = '<div class="pl-ia-picker-list">' + visible.map(u => {
+            const checked  = plIaPickerSelected.has(u.id);
+            const initials = ((u.prenom || ' ').charAt(0) + (u.nom || ' ').charAt(0)).toUpperCase();
+            // Liste des codes modules affichables (max 2)
+            const modIds = (u.module_ids || '').split(',').filter(Boolean);
+            const modCodes = modIds.slice(0, 2).map(id => modules.find(m => m.id === id)?.code).filter(Boolean);
+            const modExtra = modIds.length > 2 ? ` +${modIds.length - 2}` : '';
+            return `
+              <div class="pl-ia-picker-row${checked ? ' checked' : ''}" data-pick-row="${plEsc(u.id)}">
+                <div class="pl-ia-picker-check">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="pl-ia-picker-avatar">${plEsc(initials || '·')}</div>
+                <div class="pl-ia-picker-info">
+                  <div class="pl-ia-picker-name">${plEsc((u.prenom || '') + ' ' + (u.nom || ''))}</div>
+                  <div class="pl-ia-picker-meta">
+                    ${u.fonction_code ? `<span class="pl-ia-picker-tag fonction">${plEsc(u.fonction_code)}</span>` : ''}
+                    ${modCodes.map(c => `<span class="pl-ia-picker-tag">${plEsc(c)}</span>`).join('')}${modExtra ? `<span class="pl-ia-picker-tag">${plEsc(modExtra)}</span>` : ''}
+                  </div>
+                </div>
+              </div>`;
+        }).join('') + '</div>';
+
+        body.querySelectorAll('[data-pick-row]').forEach(row => row.addEventListener('click', () => {
+            const id = row.dataset.pickRow;
+            if (plIaPickerSelected.has(id)) plIaPickerSelected.delete(id);
+            else plIaPickerSelected.add(id);
+            row.classList.toggle('checked');
+            plIaUpdatePickerCount();
+        }));
+    }
+
+    function plIaUpdatePickerCount() {
+        const el = $('plIaPickerCount');
+        if (!el) return;
+        const n = plIaPickerSelected.size;
+        el.innerHTML = n === 0 ? 'Aucun sélectionné' : `<strong>${n}</strong> sélectionné${n > 1 ? 's' : ''}`;
     }
 
     async function plIaSaveRule() {
