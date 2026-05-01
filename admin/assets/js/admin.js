@@ -233,12 +233,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const href = r.external_url ? r.external_url : AdminURL.page(r.page, r.page_id || r.id);
 
             let iconHtml;
-            if (type === 'user') {
-                const variant = ssGsAvatarVar(r.id);
-                const init = ssGsInitialsFromTitle(r.title);
-                iconHtml = `<div class="ss-gs-av-${variant} w-9 h-9 rounded-[10px] grid place-items-center shrink-0 font-display font-semibold text-sm text-white -tracking-[0.02em] shadow-sp-sm">${escapeHtml(init)}</div>`;
+            if (type === 'user' || type === 'resident') {
+                if (r.photo) {
+                    iconHtml = `<div class="w-9 h-9 rounded-[10px] overflow-hidden shrink-0 shadow-sp-sm bg-surface-3">
+                        <img src="${escapeHtml(r.photo)}" alt="" class="w-full h-full object-cover" />
+                      </div>`;
+                } else if (type === 'user') {
+                    const variant = ssGsAvatarVar(r.id);
+                    const init = ssGsInitialsFromTitle(r.title);
+                    iconHtml = `<div class="ss-gs-av-${variant} w-9 h-9 rounded-[10px] grid place-items-center shrink-0 font-display font-semibold text-sm text-white -tracking-[0.02em] shadow-sp-sm">${escapeHtml(init)}</div>`;
+                } else {
+                    iconHtml = `<div class="ss-gs-icon-resident w-9 h-9 rounded-[10px] grid place-items-center shrink-0 text-white shadow-sp-sm">${ssGsSvg('address-book', 16)}</div>`;
+                }
             } else {
-                const knownIcons = ['wiki','document','annonce','resident','contact','page'];
+                const knownIcons = ['wiki','document','annonce','contact','page'];
                 const iconClass = knownIcons.includes(type) ? `ss-gs-icon-${type}` : 'ss-gs-icon-default';
                 const iconName = SS_GS_TYPE_ICON_ADMIN[type] || 'arrow-right';
                 iconHtml = `<div class="${iconClass} w-9 h-9 rounded-[10px] grid place-items-center shrink-0 text-white shadow-sp-sm">${ssGsSvg(iconName, 16)}</div>`;

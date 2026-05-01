@@ -17,7 +17,7 @@ function admin_global_search()
 
     // ── Utilisateurs ──────────────────────────────────
     $users = Db::fetchAll(
-        "SELECT u.id, u.prenom, u.nom, u.email, f.nom AS fonction_nom FROM users u
+        "SELECT u.id, u.prenom, u.nom, u.email, u.photo, f.nom AS fonction_nom FROM users u
          LEFT JOIN fonctions f ON f.id = u.fonction_id
          WHERE u.is_active = 1 AND (CONCAT(u.prenom, ' ', u.nom) LIKE ? OR u.email LIKE ?)
          ORDER BY u.nom LIMIT 5",
@@ -28,12 +28,15 @@ function admin_global_search()
             'type' => 'user', 'icon' => 'person', 'id' => $u['id'],
             'title' => $u['prenom'] . ' ' . $u['nom'], 'subtitle' => $u['fonction_nom'] ?: $u['email'],
             'page' => 'user-detail', 'page_id' => $u['id'],
+            'photo' => $u['photo'],
+            'prenom' => $u['prenom'],
+            'nom' => $u['nom'],
         ];
     }
 
     // ── Résidents ─────────────────────────────────────
     $residents = Db::fetchAll(
-        "SELECT id, nom, prenom, chambre, etage FROM residents
+        "SELECT id, nom, prenom, chambre, etage, photo_path FROM residents
          WHERE is_active = 1 AND (nom LIKE ? OR prenom LIKE ? OR chambre LIKE ?)
          ORDER BY nom LIMIT 5",
         [$like, $like, $like]
@@ -44,6 +47,9 @@ function admin_global_search()
             'title' => $r['prenom'] . ' ' . $r['nom'],
             'subtitle' => $r['chambre'] ? 'Ch. ' . $r['chambre'] : '',
             'page' => 'famille', 'page_id' => $r['id'],
+            'photo' => $r['photo_path'],
+            'prenom' => $r['prenom'],
+            'nom' => $r['nom'],
         ];
     }
 
