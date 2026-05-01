@@ -2177,11 +2177,12 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 
 #planningPage .team-filters-list {
   display: flex;
-  flex-wrap: wrap;          /* Si plusieurs lignes nécessaires, wrap au-dessous */
+  flex-wrap: nowrap;        /* UNE seule ligne, jamais de wrap */
   align-items: center;
   gap: 6px;
   min-width: 0;             /* Évite le débordement du grid item */
-  overflow-x: auto;         /* Scroll H si on force nowrap dynamiquement */
+  overflow-x: auto;         /* Scroll H quand les pills dépassent */
+  overflow-y: hidden;
   scrollbar-width: none;
   cursor: grab;
 }
