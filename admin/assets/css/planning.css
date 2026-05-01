@@ -2168,23 +2168,65 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
  * ════════════════════════════════════════════════════════════════════════════ */
 
 #planningPage .team-filters {
-  display: grid !important;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
+  display: flex !important;
   align-items: center;
-  overflow-x: visible !important;   /* Le scroll est sur la list, pas le wrapper */
+  gap: 8px;
+  overflow-x: visible !important;
 }
 
 #planningPage .team-filters-list {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
-  flex-wrap: nowrap;        /* UNE seule ligne, jamais de wrap */
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
-  min-width: 0;             /* Évite le débordement du grid item */
-  overflow-x: auto;         /* Scroll H quand les pills dépassent */
+  overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   cursor: grab;
+}
+
+/* ─── Chevrons navigation filtres (visibles seulement si overflow) ─── */
+.team-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-line, #e3ebe8);
+  background: var(--color-surface, #ffffff);
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--color-muted, #6b8783);
+  transition: 0.12s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.team-nav-btn:hover:not(:disabled) {
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-600, #1f6359);
+  border-color: var(--color-teal-200, #a8d1c8);
+}
+.team-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.team-nav-btn[hidden] {
+  display: none !important;
+}
+
+/* ─── Séparateur vertical filtres / zoom ───────────────────────────── */
+.team-filters-sep {
+  display: inline-block;
+  width: 1px;
+  height: 22px;
+  background: var(--color-line, #e3ebe8);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+/* Caché aussi quand pas d'overflow (suit le sort des chevrons) */
+.team-filters-sep[hidden] {
+  display: none !important;
 }
 
 #planningPage .team-filters-list::-webkit-scrollbar {

@@ -403,6 +403,17 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
     <?php endif; ?>
     </div>
 
+    <!-- Boutons de navigation chevrons (visibles seulement si overflow) -->
+    <button type="button" class="team-nav-btn" id="plFiltersScrollLeft" title="Filtres précédents" hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button type="button" class="team-nav-btn" id="plFiltersScrollRight" title="Filtres suivants" hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Séparateur vertical entre filtres et zoom -->
+    <span class="team-filters-sep" aria-hidden="true"></span>
+
     <!-- Size controls : sticky tout à droite, indépendant du flux des pills -->
     <div class="size-controls" role="group" aria-label="Zoom de la grille">
       <button type="button" class="size-btn" data-size="xs" title="Très petit">
@@ -1126,8 +1137,48 @@ window.PL_DATA = {
         plGridEl.addEventListener('mouseleave', pgStop);
     }
 
+    // ── Chevrons + séparateur : visibles seulement si overflow ─────────────
+    const plFiltersList     = $('plFiltersList');
+    const plFiltersScrollL  = $('plFiltersScrollLeft');
+    const plFiltersScrollR  = $('plFiltersScrollRight');
+    const plFiltersSep      = document.querySelector('.team-filters-sep');
+
+    function plUpdateFilterChevrons() {
+        if (!plFiltersList) return;
+        const overflow = plFiltersList.scrollWidth - plFiltersList.clientWidth > 1;
+        const visible = overflow;
+        // Show/hide chevrons + sep
+        if (plFiltersScrollL) plFiltersScrollL.hidden = !visible;
+        if (plFiltersScrollR) plFiltersScrollR.hidden = !visible;
+        if (plFiltersSep)     plFiltersSep.hidden     = !visible;
+        // Disabled state des chevrons selon position du scroll
+        if (visible) {
+            const sl = plFiltersList.scrollLeft;
+            const max = plFiltersList.scrollWidth - plFiltersList.clientWidth;
+            if (plFiltersScrollL) plFiltersScrollL.disabled = sl <= 0;
+            if (plFiltersScrollR) plFiltersScrollR.disabled = sl >= max - 1;
+        }
+    }
+
+    // Click chevrons → scroll par 200px
+    plFiltersScrollL?.addEventListener('click', () => {
+        plFiltersList?.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    plFiltersScrollR?.addEventListener('click', () => {
+        plFiltersList?.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+
+    // Update on scroll (rafraîchit le disabled state des chevrons)
+    plFiltersList?.addEventListener('scroll', plUpdateFilterChevrons);
+
+    // Update on resize de la fenêtre
+    window.addEventListener('resize', plUpdateFilterChevrons);
+
+    // Update au chargement (après que le DOM soit bien dimensionné)
+    plUpdateFilterChevrons();
+    setTimeout(plUpdateFilterChevrons, 100);  // 2ème passe pour fonts chargées
+
     // ── Drag-to-scroll : sur la liste de filtres (team-filters-list) ────────
-    const plFiltersList = $('plFiltersList');
     if (plFiltersList) {
         let flIsDown = false, flStartX = 0, flScrollL = 0, flDidDrag = false;
         const FL_DRAG_THRESHOLD = 6;
