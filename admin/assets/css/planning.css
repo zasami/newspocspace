@@ -3817,10 +3817,56 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
 }
 .pl-ia-picker-toolbar .pl-ia-search { width: 100%; }
 
+/* Search input avec bouton filtre intégré à droite */
+.pl-ia-search-with-filter { padding-right: 4px; }
+
+.pl-ia-filter-toggle {
+  position: relative;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted, #6b8783);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.pl-ia-filter-toggle:hover {
+  background: var(--color-teal-50, #ecf5f3);
+  color: var(--color-teal-700, #164a42);
+}
+.pl-ia-filter-toggle[aria-expanded="true"] {
+  background: var(--color-teal-100, #d2e7e2);
+  color: var(--color-teal-700, #164a42);
+}
+.pl-ia-filter-toggle svg { width: 16px; height: 16px; }
+
+/* Badge actif (point) — visible quand un filtre est posé */
+.pl-ia-filter-badge {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-teal-600, #1f6359);
+  border: 1.5px solid var(--color-surface, #fff);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.pl-ia-filter-toggle.has-active .pl-ia-filter-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Filtres collapsibles */
 .pl-ia-picker-filter-groups {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: wrap;
 }
+.pl-ia-picker-filter-groups.collapsed { display: none; }
 .pl-ia-picker-group-label {
   font-size: 11px;
   font-weight: 700;

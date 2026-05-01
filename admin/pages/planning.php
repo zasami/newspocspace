@@ -715,14 +715,18 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
         </button>
       </div>
 
-      <!-- Toolbar : recherche live + filtres -->
+      <!-- Toolbar : recherche live + bouton filtre + filtres collapsibles -->
       <div class="pl-ia-picker-toolbar">
-        <div class="pl-ia-search">
+        <div class="pl-ia-search pl-ia-search-with-filter">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="plIaPickerSearch" placeholder="Rechercher un collaborateur (nom, prénom)…" autocomplete="off">
+          <button type="button" class="pl-ia-filter-toggle" id="plIaPickerFilterToggle" aria-label="Afficher/masquer les filtres" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span class="pl-ia-filter-badge" aria-hidden="true"></span>
+          </button>
         </div>
-        <div class="pl-ia-picker-filter-groups" id="plIaPickerFilterGroups">
-          <!-- généré dynamiquement (Tous, fonctions, modules) -->
+        <div class="pl-ia-picker-filter-groups collapsed" id="plIaPickerFilterGroups">
+          <!-- généré dynamiquement (Tous, fonctions, modules) — masqué par défaut -->
         </div>
       </div>
 
@@ -2677,14 +2681,36 @@ window.PL_DATA = {
 
     function plIaOpenUserPicker() {
         plIaPickerSelected = new Set(plIaFormState.users || []);
-        plIaPickerActiveFilter = 'all';
+        // ⚠ NE PAS réinitialiser plIaPickerActiveFilter → on persiste le filtre
+        // entre les ouvertures (l'utilisateur retrouve son filtre tel quel).
         plIaPickerSearchQ = '';
         if ($('plIaPickerSearch')) $('plIaPickerSearch').value = '';
+        // Filtres toujours collapsés à l'ouverture (UI sobre)
+        $('plIaPickerFilterGroups')?.classList.add('collapsed');
+        $('plIaPickerFilterToggle')?.setAttribute('aria-expanded', 'false');
         plIaPickerBackdrop?.classList.remove('hidden');
         plIaRenderPickerFilters();
         plIaRenderPickerList();
         plIaUpdatePickerCount();
+        plIaUpdateFilterToggleBadge();
     }
+
+    // Toggle badge sur le bouton filtre (point teal quand un filtre est actif)
+    function plIaUpdateFilterToggleBadge() {
+        const btn = $('plIaPickerFilterToggle');
+        if (!btn) return;
+        btn.classList.toggle('has-active', plIaPickerActiveFilter && plIaPickerActiveFilter !== 'all');
+    }
+
+    // Bouton filtre dans la search input → toggle l'affichage des pills
+    $('plIaPickerFilterToggle')?.addEventListener('click', () => {
+        const groups = $('plIaPickerFilterGroups');
+        const btn    = $('plIaPickerFilterToggle');
+        if (!groups || !btn) return;
+        const willExpand = groups.classList.contains('collapsed');
+        groups.classList.toggle('collapsed', !willExpand);
+        btn.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+    });
     function plIaClosePicker() {
         plIaPickerBackdrop?.classList.add('hidden');
     }
@@ -2760,6 +2786,7 @@ window.PL_DATA = {
             plIaPickerActiveFilter = b.dataset.pickFilter;
             container.querySelectorAll('[data-pick-filter]').forEach(x => x.classList.toggle('active', x === b));
             plIaRenderPickerList();
+            plIaUpdateFilterToggleBadge();
         }));
     }
 
