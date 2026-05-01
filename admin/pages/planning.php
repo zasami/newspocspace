@@ -456,9 +456,6 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
       <button type="button" class="size-btn" data-size="std" title="Standard">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>
       </button>
-      <button type="button" class="size-btn" data-size="lg" title="Grand">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="0.5" y="0.5" width="15" height="15" rx="2"/></svg>
-      </button>
     </div>
   </div>
 
@@ -1392,13 +1389,15 @@ window.PL_DATA = {
     // Default : XS (très compact, idéal pour vue d'ensemble du mois).
     const SIZE_PRESETS = {
         xxxs: {
-            cellW: 22, cellH: 18, shiftMinW: 18, shiftH: 14, shiftFs: 8,    dayNumSize: 14, dayNumFs: 8.5,
+            // Cellules CARRÉES : 22×22
+            cellW: 22, cellH: 22, shiftMinW: 18, shiftH: 14, shiftFs: 8,    dayNumSize: 14, dayNumFs: 8.5,
             avatarSize: 16, avatarInitialsFs: 7.5, collabNameFs: 9.5, collabPadX: 6, collabPadY: 4, collabGap: 6,
             roleTagH: 14, roleTagFs: 8,    roleTagMinW: 26,
             collabW: 150, pctFs: 9.5,  hoursMainFs: 11, hoursTargetFs: 8,
         },
         xxs: {
-            cellW: 28, cellH: 22, shiftMinW: 22, shiftH: 17, shiftFs: 8.5,  dayNumSize: 17, dayNumFs: 9.5,
+            // Cellules CARRÉES : 26×26
+            cellW: 26, cellH: 26, shiftMinW: 22, shiftH: 18, shiftFs: 8.5,  dayNumSize: 17, dayNumFs: 9.5,
             avatarSize: 20, avatarInitialsFs: 8.5, collabNameFs: 10.5, collabPadX: 8, collabPadY: 5, collabGap: 7,
             roleTagH: 16, roleTagFs: 8.5,  roleTagMinW: 28,
             collabW: 180, pctFs: 10.5, hoursMainFs: 12.5, hoursTargetFs: 8.5,
@@ -1426,12 +1425,6 @@ window.PL_DATA = {
             avatarSize: 28, avatarInitialsFs: 10.5, collabNameFs: 13, collabPadX: 14, collabPadY: 8, collabGap: 11,
             roleTagH: 22, roleTagFs: 10,   roleTagMinW: 36,
             collabW: 240, pctFs: 11.5, hoursMainFs: 16, hoursTargetFs: 10,
-        },
-        lg: {
-            cellW: 84, cellH: 64, shiftMinW: 56, shiftH: 38, shiftFs: 13,   dayNumSize: 34, dayNumFs: 16,
-            avatarSize: 32, avatarInitialsFs: 12, collabNameFs: 14, collabPadX: 16, collabPadY: 10, collabGap: 12,
-            roleTagH: 24, roleTagFs: 10.5, roleTagMinW: 38,
-            collabW: 280, pctFs: 13, hoursMainFs: 18, hoursTargetFs: 11,
         },
     };
     const planningTable = $('plTable');
