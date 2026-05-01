@@ -118,14 +118,17 @@
   min-width: 40px;
 }
 
-/* Force le wrap : 2e groupe d'icônes (export) commence ligne 2 */
-.cb-icon-group:nth-of-type(2)::before {
-  content: "";
-  flex-basis: 100%;
-  height: 0;
-  width: 0;
-  display: block;
-  order: -1;
+/* Force TOUJOURS la 2e ligne (même sur écran large) via row-break flex
+   Le <div class="cb-row-break"> placé après "Générer planning" en HTML
+   crée une cassure de ligne grâce à flex-basis 100% + height 0. */
+.cb-row-break {
+  flex-basis: 100% !important;
+  width: 100% !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  pointer-events: none;
 }
 
 
@@ -2885,9 +2888,10 @@ body.pl-is-fullscreen #planningPage .planning-wrap {
   outline: 2px solid var(--color-teal-300, #7ab5ab);
   outline-offset: 2px;
 }
-.pl-modal-close svg {
-  width: 14px;
-  height: 14px;
+.pl-modal-close svg,
+.pl-cell-close svg {
+  width: 30px;
+  height: 30px;
   stroke-width: 1;
 }
 

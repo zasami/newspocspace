@@ -319,17 +319,20 @@ $plFonctionsForFilter = array_slice($plFonctionsForFilter, 0, 8, true);
 
     <div class="cb-spacer"></div>
 
-    <!-- Bouton Générer planning (action primaire dark) -->
+    <!-- Bouton Créer (à gauche du groupe d'actions de droite) -->
+    <button type="button" class="cb-btn" id="plCreateBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Créer
+    </button>
+
+    <!-- Bouton Générer planning (tout à droite, action primaire dark) -->
     <button type="button" class="cb-btn dark" id="plGenerateBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg>
       Générer planning
     </button>
 
-    <!-- Bouton Créer -->
-    <button type="button" class="cb-btn" id="plCreateBtn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-      Créer
-    </button>
+    <!-- Row break : force le passage à la ligne 2 même sur écran large -->
+    <div class="cb-row-break" aria-hidden="true"></div>
 
     <!-- Groupe icônes outils (stats / filtres / supprimer / fullscreen) -->
     <div class="cb-icon-group">
