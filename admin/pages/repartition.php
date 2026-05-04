@@ -661,7 +661,7 @@ $todayIso = date('Y-m-d');
 /* ── Table répartition ────────────────────────────────────────────── */
 .ss-rep-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
-  font-size: 12.5px; table-layout: fixed; min-width: 2658px;
+  font-size: 12.5px; table-layout: fixed; min-width: 2978px;
 }
 .ss-rep-table th, .ss-rep-table td {
   border-right: 1px solid var(--color-line);
@@ -702,7 +702,7 @@ $todayIso = date('Y-m-d');
 /* Colonnes sticky : Fonction + Poste */
 .ss-rep-col-fonction {
   position: sticky; left: 0; z-index: 4; background: var(--color-surface);
-  width: 90px; min-width: 90px; max-width: 90px; text-align: center;
+  width: 110px; min-width: 110px; max-width: 110px; text-align: center;
   font-weight: 600; color: var(--color-ink); font-size: 11.5px;
   border-right: 1px solid var(--color-line-2) !important;
 }
@@ -711,14 +711,14 @@ $todayIso = date('Y-m-d');
 .ss-rep-col-fonction .label small { font-size: 9.5px; color: var(--color-muted); font-weight: 500; letter-spacing: 0.04em; }
 
 .ss-rep-col-poste {
-  position: sticky; left: 90px; z-index: 4; background: var(--color-surface);
-  width: 48px; min-width: 48px; max-width: 48px; text-align: center;
+  position: sticky; left: 110px; z-index: 4; background: var(--color-surface);
+  width: 68px; min-width: 68px; max-width: 68px; text-align: center;
   font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600;
   color: var(--color-muted); border-right: 1px solid var(--color-line-2) !important;
 }
 .ss-rep-table thead .ss-rep-col-poste { z-index: 6; background: var(--color-surface-2); }
 
-.ss-rep-col-day { width: 360px; min-width: 360px; }
+.ss-rep-col-day { width: 400px; min-width: 400px; }
 
 /* Cellules */
 .ss-rep-table tbody td { padding: 0; height: 40px; background: var(--color-surface); transition: background 0.15s ease; position: relative; }
@@ -1402,8 +1402,8 @@ select.ss-rep-input {
 
       html += '<div class="ss-rep-module-body">';
       html += '<table class="ss-rep-table">';
-      html += '<colgroup><col style="width:90px"><col style="width:48px">';
-      days.forEach(() => { html += '<col style="width:360px">'; });
+      html += '<colgroup><col style="width:110px"><col style="width:68px">';
+      days.forEach(() => { html += '<col style="width:400px">'; });
       html += '</colgroup>';
       html += '<thead><tr class="day-row">'
             +   '<th class="ss-rep-col-fonction" rowspan="2"><div style="padding:8px 4px">Fonction</div></th>'
