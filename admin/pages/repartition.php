@@ -1899,17 +1899,19 @@ select.ss-rep-input {
       openModMenu(moreBtn);
       return;
     }
-    // Cellule (vue semaine) → modal d'édition
+    // Cellule (vue semaine) → modal d'édition (uniquement en mode édition)
     const cellEl = e.target.closest('.ss-rep-cell');
     if (cellEl) {
       if (cellEl.classList.contains('empty')) return;
+      if (!editMode) return; // mode lecture : pas de modal
       openCellModal(cellEl);
       return;
     }
-    // Ligne (vue jour) → modal d'édition
+    // Ligne (vue jour) → modal d'édition (uniquement en mode édition)
     const rowEl = e.target.closest('.ss-rep-day-row');
     if (rowEl) {
       if (e.target.closest('.ss-rep-day-action-btn')) return;
+      if (!editMode) return; // mode lecture : pas de modal
       openCellModal(rowEl);
     }
   });
