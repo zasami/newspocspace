@@ -566,6 +566,42 @@ $todayIso = date('Y-m-d');
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- MENU CONTEXTUEL : "..." sur un module (export PDF/Image/Excel)        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div id="repModMenu" class="ss-rep-mod-menu fixed w-[280px] bg-surface border border-line rounded-2xl shadow-sp-lg z-[150] py-2">
+  <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">
+    Exporter <span id="repModMenuLabel">ce module</span>
+  </div>
+  <button type="button" data-mod-export="pdf" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+    </div>
+    <div class="flex flex-col min-w-0 flex-1">
+      <span class="text-[13.5px] font-semibold text-ink leading-tight">PDF</span>
+      <span class="text-[11px] text-muted mt-px">Tableau du module · prêt à imprimer</span>
+    </div>
+  </button>
+  <button type="button" data-mod-export="image" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+    </div>
+    <div class="flex flex-col min-w-0 flex-1">
+      <span class="text-[13.5px] font-semibold text-ink leading-tight">Image (PNG)</span>
+      <span class="text-[11px] text-muted mt-px">Capture haute résolution</span>
+    </div>
+  </button>
+  <button type="button" data-mod-export="excel" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    </div>
+    <div class="flex flex-col min-w-0 flex-1">
+      <span class="text-[13.5px] font-semibold text-ink leading-tight">Excel (.xlsx)</span>
+      <span class="text-[11px] text-muted mt-px">Pour reporting et analyse</span>
+    </div>
+  </button>
+</div>
+
 <!-- Zone de capture hors-écran -->
 <div id="repCaptureStage" class="fixed -left-[99999px] top-0 w-[1240px] bg-transparent pointer-events-none" aria-hidden="true"></div>
 
@@ -843,7 +879,11 @@ select.ss-rep-input {
 .ss-rep-export-dropdown { display: none; transform-origin: top right; }
 .ss-rep-export-dropdown.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
 @keyframes ssRepDropIn { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.ss-rep-export-opt { font-family: inherit; border: 0; background: transparent; cursor: pointer; }
+.ss-rep-export-opt, .ss-rep-mod-menu-opt { font-family: inherit; border: 0; background: transparent; cursor: pointer; }
+
+/* Menu contextuel module ("..." sur module-head) */
+.ss-rep-mod-menu { display: none; transform-origin: top right; }
+.ss-rep-mod-menu.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
 
 /* View toggle on */
 .ss-rep-view-btn:hover { color: var(--color-ink-2); }
@@ -1335,6 +1375,7 @@ select.ss-rep-input {
             +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + count + ' poste(s)</span>'
             +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
+            +   '<button type="button" class="ss-rep-mod-more-btn w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-mod-key="' + key + '" data-mod-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '" data-mod-name="' + escapeHtml(mod.nom || mod.code || '') + '" title="Plus d\'options"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>'
             + '</div>';
 
       html += '<div class="ss-rep-module-body">';
@@ -1449,6 +1490,7 @@ select.ss-rep-input {
             +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + ' · ' + escapeHtml(dayName + ' ' + day.day_num + ' ' + day.month_name) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + rows.length + ' personne' + (rows.length > 1 ? 's' : '') + '</span>'
             +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
+            +   '<button type="button" class="ss-rep-mod-more-btn w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-mod-key="' + key + '" data-mod-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '" data-mod-name="' + escapeHtml(mod.nom || mod.code || '') + '" title="Plus d\'options"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>'
             + '</div>';
 
       html += '<div class="ss-rep-module-body"><table class="ss-rep-table-day">';
@@ -1843,16 +1885,133 @@ select.ss-rep-input {
 
   // ── Cell click → open modal (works for week cells AND day rows) ───
   document.getElementById('repGrid').addEventListener('click', e => {
+    // Module head : bouton "+" → toast
+    const addBtn = e.target.closest('.ss-rep-mod-add-btn');
+    if (addBtn) {
+      e.stopPropagation();
+      toast('Fonction d\'ajout en cours de développement', 'info');
+      return;
+    }
+    // Module head : bouton "..." → menu contextuel
+    const moreBtn = e.target.closest('.ss-rep-mod-more-btn');
+    if (moreBtn) {
+      e.stopPropagation();
+      openModMenu(moreBtn);
+      return;
+    }
+    // Cellule (vue semaine) → modal d'édition
     const cellEl = e.target.closest('.ss-rep-cell');
     if (cellEl) {
       if (cellEl.classList.contains('empty')) return;
       openCellModal(cellEl);
       return;
     }
+    // Ligne (vue jour) → modal d'édition
     const rowEl = e.target.closest('.ss-rep-day-row');
     if (rowEl) {
-      if (e.target.closest('.ss-rep-day-action-btn')) return; // let action btn handle
+      if (e.target.closest('.ss-rep-day-action-btn')) return;
       openCellModal(rowEl);
+    }
+  });
+
+  // ── Menu contextuel "..." sur module-head ─────────────────────────
+  let modMenuTarget = null; // { key, id, code, name }
+  function openModMenu(btn) {
+    const menu = document.getElementById('repModMenu');
+    modMenuTarget = {
+      key:  btn.dataset.modKey,
+      id:   btn.dataset.modId,
+      code: btn.dataset.modCode,
+      name: btn.dataset.modName,
+    };
+    document.getElementById('repModMenuLabel').textContent = modMenuTarget.name || 'ce module';
+    // Position fixed sous le bouton, aligné à droite
+    const r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.style.left = (r.right - 280) + 'px';
+    menu.classList.add('show');
+  }
+  function closeModMenu() {
+    document.getElementById('repModMenu').classList.remove('show');
+    modMenuTarget = null;
+  }
+  document.addEventListener('click', e => {
+    if (!document.getElementById('repModMenu').classList.contains('show')) return;
+    if (e.target.closest('#repModMenu') || e.target.closest('.ss-rep-mod-more-btn')) return;
+    closeModMenu();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModMenu(); });
+
+  // Module menu : click sur option PDF / Image / Excel
+  document.getElementById('repModMenu').addEventListener('click', async e => {
+    const opt = e.target.closest('[data-mod-export]');
+    if (!opt || !modMenuTarget) return;
+    const fmt = opt.dataset.modExport;
+    const target = { ...modMenuTarget };
+    closeModMenu();
+
+    if (fmt === 'excel') {
+      toast('Export Excel : en cours de développement', 'info');
+      return;
+    }
+
+    // Détermine les jours à exporter selon la vue courante
+    const days = (viewMode === 'day')
+      ? (data.days || []).filter(d => d.date === selectedDay)
+      : (data.days || []);
+    if (!days.length) { toast('Aucun jour sélectionné', 'error'); return; }
+
+    if (fmt === 'image') {
+      // Image : utilise html2canvas pour ce module sur les jours visibles
+      // 1 jour → PNG direct ; plusieurs → ZIP
+      try {
+        if (days.length === 1) {
+          const canvas = await captureOne(target.key, days[0]);
+          const url = canvas.toDataURL('image/png');
+          downloadDataURL(url, MOD_META(target.code).label + '_' + days[0].full_name + '_' + days[0].day_num + '_' + days[0].year + '.png');
+        } else {
+          if (typeof JSZip === 'undefined') { toast('JSZip non chargé', 'error'); return; }
+          const zip = new JSZip();
+          const folder = zip.folder(MOD_META(target.code).label + '_' + currentWeekISO);
+          for (const d of days) {
+            const canvas = await captureOne(target.key, d);
+            const blob = await canvasToBlob(canvas, 'png');
+            folder.file(MOD_META(target.code).label + '_' + d.full_name + '_' + d.day_num + '_' + d.year + '.png', blob);
+          }
+          const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+          const url = URL.createObjectURL(blob);
+          downloadDataURL(url, MOD_META(target.code).label + '_' + currentWeekISO + '.zip');
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+        document.getElementById('repCaptureStage').innerHTML = '';
+        toast('Export image généré', 'success');
+      } catch (err) { console.error(err); toast('Erreur lors de la capture', 'error'); }
+      return;
+    }
+
+    if (fmt === 'pdf') {
+      // PDF : capture toutes les images, ouvre une fenêtre print-friendly
+      try {
+        const imgs = [];
+        for (const d of days) {
+          const canvas = await captureOne(target.key, d);
+          imgs.push(canvas.toDataURL('image/png'));
+        }
+        document.getElementById('repCaptureStage').innerHTML = '';
+        const w = window.open('', '_blank', 'width=1280,height=900');
+        if (!w) { toast('Bloqueur de pop-ups : autorisez le site', 'error'); return; }
+        const title = (target.name || target.code || 'Module') + ' — ' + currentWeekISO;
+        w.document.write(
+          '<!DOCTYPE html><html><head><title>' + title + '</title>' +
+          '<style>@page{margin:14mm}body{margin:0;padding:0;font-family:Outfit,sans-serif}img{display:block;width:100%;page-break-after:always;margin-bottom:12px}img:last-child{page-break-after:auto}</style>' +
+          '</head><body>' +
+          imgs.map(src => '<img src="' + src + '">').join('') +
+          '<scr' + 'ipt>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});</scr' + 'ipt>' +
+          '</body></html>'
+        );
+        w.document.close();
+        toast('PDF prêt à imprimer', 'success');
+      } catch (err) { console.error(err); toast('Erreur lors de la génération PDF', 'error'); }
     }
   });
 
