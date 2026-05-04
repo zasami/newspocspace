@@ -206,8 +206,8 @@ $todayIso = date('Y-m-d');
     </button>
     <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 py-2">
       <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Format de sortie</div>
-      <button type="button" data-export-type="image" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+      <button type="button" data-export-type="image" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -219,8 +219,8 @@ $todayIso = date('Y-m-d');
       <div class="border-t border-line my-1.5 mx-3"></div>
 
       <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Autres formats</div>
-      <button type="button" data-export-type="pdf" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+      <button type="button" data-export-type="pdf" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -228,8 +228,8 @@ $todayIso = date('Y-m-d');
           <span class="text-[11px] text-muted mt-px">Semaine complète · prêt à imprimer</span>
         </div>
       </button>
-      <button type="button" data-export-type="excel" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+      <button type="button" data-export-type="excel" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -844,7 +844,6 @@ select.ss-rep-input {
 .ss-rep-export-dropdown.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
 @keyframes ssRepDropIn { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .ss-rep-export-opt { font-family: inherit; border: 0; background: transparent; cursor: pointer; }
-.ss-rep-export-opt:hover .w-9 { background: var(--color-teal-100); color: var(--color-teal-700); }
 
 /* View toggle on */
 .ss-rep-view-btn:hover { color: var(--color-ink-2); }
