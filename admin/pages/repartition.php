@@ -588,7 +588,7 @@ $todayIso = date('Y-m-d');
 /* ── Table répartition ────────────────────────────────────────────── */
 .ss-rep-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
-  font-size: 12.5px; table-layout: fixed; min-width: 1820px;
+  font-size: 12.5px; table-layout: fixed; min-width: 2238px;
 }
 .ss-rep-table th, .ss-rep-table td {
   border-right: 1px solid var(--color-line);
@@ -645,7 +645,7 @@ $todayIso = date('Y-m-d');
 }
 .ss-rep-table thead .ss-rep-col-poste { z-index: 6; background: var(--color-surface-2); }
 
-.ss-rep-col-day { width: auto; min-width: 240px; }
+.ss-rep-col-day { width: auto; min-width: 300px; }
 
 /* Cellules */
 .ss-rep-table tbody td { padding: 0; height: 40px; background: var(--color-surface); transition: background 0.15s ease; position: relative; }
@@ -1243,7 +1243,7 @@ select.ss-rep-input {
                 else if (a.groupe_code) etageHtml = escapeHtml(a.groupe_code);
                 else if (a.etage_code) etageHtml = escapeHtml(a.etage_code.replace('E',''));
               }
-              nameHtml += '<span class="ss-rep-cell-name">' + escapeHtml(userName) + '</span>';
+              nameHtml += '<span class="ss-rep-cell-name" title="' + escapeHtml(userName) + '">' + escapeHtml(userName) + '</span>';
               if (a.notes) nameHtml += '<span class="text-muted text-[8px] -mt-2 ml-px" title="' + escapeHtml(a.notes) + '">★</span>';
               if (a.horaire_code) {
                 shiftHtml = '<span class="ss-rep-shift ' + shiftClass(a.horaire_code) + '">' + escapeHtml(a.horaire_code) + '</span>';
