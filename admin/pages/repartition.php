@@ -661,7 +661,7 @@ $todayIso = date('Y-m-d');
 /* ── Table répartition ────────────────────────────────────────────── */
 .ss-rep-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
-  font-size: 12.5px; table-layout: fixed; min-width: 2238px;
+  font-size: 12.5px; table-layout: fixed; min-width: 2658px;
 }
 .ss-rep-table th, .ss-rep-table td {
   border-right: 1px solid var(--color-line);
@@ -718,7 +718,7 @@ $todayIso = date('Y-m-d');
 }
 .ss-rep-table thead .ss-rep-col-poste { z-index: 6; background: var(--color-surface-2); }
 
-.ss-rep-col-day { width: auto; min-width: 300px; }
+.ss-rep-col-day { width: 360px; min-width: 360px; }
 
 /* Cellules */
 .ss-rep-table tbody td { padding: 0; height: 40px; background: var(--color-surface); transition: background 0.15s ease; position: relative; }
@@ -989,7 +989,7 @@ select.ss-rep-input {
 
 .ss-rep-table-day .ss-rep-day-col-fonc    { width: 130px; background: var(--color-surface); }
 .ss-rep-table-day .ss-rep-day-col-poste   { width: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-muted); font-size: 11.5px; font-weight: 600; }
-.ss-rep-table-day .ss-rep-day-col-name    { width: auto; min-width: 220px; }
+.ss-rep-table-day .ss-rep-day-col-name    { width: auto; min-width: 300px; }
 .ss-rep-table-day .ss-rep-day-col-horaire { width: 90px; text-align: center; }
 .ss-rep-table-day .ss-rep-day-col-time    { width: 140px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
 .ss-rep-table-day .ss-rep-day-col-etage   { width: 100px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
@@ -1403,7 +1403,7 @@ select.ss-rep-input {
       html += '<div class="ss-rep-module-body">';
       html += '<table class="ss-rep-table">';
       html += '<colgroup><col style="width:90px"><col style="width:48px">';
-      days.forEach(() => { html += '<col>'; });
+      days.forEach(() => { html += '<col style="width:360px">'; });
       html += '</colgroup>';
       html += '<thead><tr class="day-row">'
             +   '<th class="ss-rep-col-fonction" rowspan="2"><div style="padding:8px 4px">Fonction</div></th>'
