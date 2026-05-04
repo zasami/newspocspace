@@ -211,8 +211,8 @@ $todayIso = date('Y-m-d');
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
-          <span class="text-[13.5px] font-semibold text-ink leading-tight">Image (PNG / JPEG)</span>
-          <span class="text-[11px] text-muted mt-px">1 fichier par module/jour · ZIP si plusieurs</span>
+          <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">Image (PNG / JPEG)</span>
+          <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">1 fichier par module/jour · ZIP si plusieurs</span>
         </div>
       </button>
 
@@ -224,8 +224,8 @@ $todayIso = date('Y-m-d');
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
-          <span class="text-[13.5px] font-semibold text-ink leading-tight">PDF</span>
-          <span class="text-[11px] text-muted mt-px">Semaine complète · prêt à imprimer</span>
+          <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">PDF</span>
+          <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">Semaine complète · prêt à imprimer</span>
         </div>
       </button>
       <button type="button" data-export-type="excel" class="ss-rep-export-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
@@ -233,8 +233,8 @@ $todayIso = date('Y-m-d');
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
-          <span class="text-[13.5px] font-semibold text-ink leading-tight">Excel (.xlsx)</span>
-          <span class="text-[11px] text-muted mt-px">Pour reporting et analyse</span>
+          <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">Excel (.xlsx)</span>
+          <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">Pour reporting et analyse</span>
         </div>
       </button>
     </div>
@@ -578,8 +578,8 @@ $todayIso = date('Y-m-d');
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
-      <span class="text-[13.5px] font-semibold text-ink leading-tight">PDF</span>
-      <span class="text-[11px] text-muted mt-px">Tableau du module · prêt à imprimer</span>
+      <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">PDF</span>
+      <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">Tableau du module · prêt à imprimer</span>
     </div>
   </button>
   <button type="button" data-mod-export="image" class="ss-rep-mod-menu-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
@@ -587,8 +587,8 @@ $todayIso = date('Y-m-d');
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
-      <span class="text-[13.5px] font-semibold text-ink leading-tight">Image (PNG)</span>
-      <span class="text-[11px] text-muted mt-px">Capture haute résolution</span>
+      <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">Image (PNG)</span>
+      <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">Capture haute résolution</span>
     </div>
   </button>
   <button type="button" data-mod-export="excel" class="ss-rep-mod-menu-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
@@ -596,8 +596,8 @@ $todayIso = date('Y-m-d');
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
-      <span class="text-[13.5px] font-semibold text-ink leading-tight">Excel (.xlsx)</span>
-      <span class="text-[11px] text-muted mt-px">Pour reporting et analyse</span>
+      <span class="text-[13.5px] font-semibold text-ink group-hover:text-teal-700 leading-tight transition-colors">Excel (.xlsx)</span>
+      <span class="text-[11px] text-muted group-hover:text-teal-600 mt-px transition-colors">Pour reporting et analyse</span>
     </div>
   </button>
 </div>
