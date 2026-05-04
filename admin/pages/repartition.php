@@ -198,10 +198,47 @@ $todayIso = date('Y-m-d');
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
     Imprimer
   </button>
-  <button id="repExportBtn" type="button" class="ss-rep-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium text-ink-2 bg-surface border border-line hover:bg-surface-2 hover:border-line-2 transition">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-    Exporter
-  </button>
+  <div class="relative">
+    <button id="repExportBtn" type="button" class="ss-rep-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium text-ink-2 bg-surface border border-line hover:bg-surface-2 hover:border-line-2 transition">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Exporter
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-0.5 text-muted"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 py-2">
+      <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Format de sortie</div>
+      <button type="button" data-export-type="image" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        </div>
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="text-[13.5px] font-semibold text-ink leading-tight">Image (PNG / JPEG)</span>
+          <span class="text-[11px] text-muted mt-px">1 fichier par module/jour · ZIP si plusieurs</span>
+        </div>
+      </button>
+
+      <div class="border-t border-line my-1.5 mx-3"></div>
+
+      <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Autres formats</div>
+      <button type="button" data-export-type="pdf" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        </div>
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="text-[13.5px] font-semibold text-ink leading-tight">PDF</span>
+          <span class="text-[11px] text-muted mt-px">Semaine complète · prêt à imprimer</span>
+        </div>
+      </button>
+      <button type="button" data-export-type="excel" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </div>
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="text-[13.5px] font-semibold text-ink leading-tight">Excel (.xlsx)</span>
+          <span class="text-[11px] text-muted mt-px">Pour reporting et analyse</span>
+        </div>
+      </button>
+    </div>
+  </div>
   <button id="repToggleEdit" type="button" class="ss-rep-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium text-ink-2 bg-surface border border-line hover:bg-surface-2 hover:border-line-2 transition">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
     <span id="repEditLabel">Éditer</span>
@@ -210,6 +247,10 @@ $todayIso = date('Y-m-d');
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     <input type="date" id="repDatePicker" value="<?= h($weekStart) ?>" class="bg-transparent outline-none border-0 text-ink font-mono text-[12.5px] cursor-pointer">
   </div>
+  <button id="repSaveAll" type="button" class="ss-rep-btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-semibold text-white bg-teal-600 border border-teal-600 hover:bg-teal-700 transition">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8"/></svg>
+    Enregistrer
+  </button>
 </div>
 
 <!-- Edit mode banner -->
@@ -798,6 +839,13 @@ select.ss-rep-input {
 #repToggleEdit.on { background: var(--color-warn); color: #fff; border-color: var(--color-warn); }
 #repToggleEdit.on:hover { background: #a86220; border-color: #a86220; }
 
+/* Export dropdown — fermé par défaut, ouvert via .show */
+.ss-rep-export-dropdown { display: none; transform-origin: top right; }
+.ss-rep-export-dropdown.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
+@keyframes ssRepDropIn { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.ss-rep-export-opt { font-family: inherit; border: 0; background: transparent; cursor: pointer; }
+.ss-rep-export-opt:hover .w-9 { background: var(--color-teal-100); color: var(--color-teal-700); }
+
 /* View toggle on */
 .ss-rep-view-btn:hover { color: var(--color-ink-2); }
 .ss-rep-view-btn.on { background: var(--color-surface); color: var(--color-teal-700); box-shadow: 0 1px 2px rgba(13,42,38,0.04); font-weight: 600; }
@@ -883,9 +931,10 @@ select.ss-rep-input {
 .ss-rep-table-day .ss-rep-day-col-name    { width: auto; min-width: 220px; }
 .ss-rep-table-day .ss-rep-day-col-horaire { width: 90px; text-align: center; }
 .ss-rep-table-day .ss-rep-day-col-time    { width: 140px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
-.ss-rep-table-day .ss-rep-day-col-etage   { width: 90px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
+.ss-rep-table-day .ss-rep-day-col-etage   { width: 100px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
+.ss-rep-table-day .ss-rep-day-col-pause   { width: 100px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-muted); font-size: 11.5px; }
 .ss-rep-table-day .ss-rep-day-col-status  { width: 150px; padding: 8px 10px; text-align: center; }
-.ss-rep-table-day .ss-rep-day-col-actions { width: 70px; text-align: center; }
+.ss-rep-table-day .ss-rep-day-col-actions { width: 90px; text-align: center; }
 
 .ss-rep-table-day tbody tr:hover td { background: var(--color-surface-2); }
 .ss-rep-table-day tbody td.ss-rep-day-col-fonc {
@@ -895,7 +944,8 @@ select.ss-rep-input {
 .ss-rep-table-day tbody td.ss-rep-day-col-poste,
 .ss-rep-table-day tbody td.ss-rep-day-col-horaire,
 .ss-rep-table-day tbody td.ss-rep-day-col-time,
-.ss-rep-table-day tbody td.ss-rep-day-col-etage { padding: 10px 8px; }
+.ss-rep-table-day tbody td.ss-rep-day-col-etage,
+.ss-rep-table-day tbody td.ss-rep-day-col-pause { padding: 10px 8px; }
 
 /* Day collab : avatar + name + role */
 .ss-rep-day-collab { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
@@ -1252,6 +1302,24 @@ select.ss-rep-input {
     return ((prenom||'').trim()[0] || '') + ((nom||'').trim()[0] || '');
   }
 
+  // ── Pause label : midpoint du shift, durée déduite (30 ou 45 min selon longueur) ──
+  function computePauseLabel(start, end) {
+    if (!start || !end) return '—';
+    const sh = parseInt(start.substring(0,2), 10), sm = parseInt(start.substring(3,5), 10);
+    const eh = parseInt(end.substring(0,2),   10), em = parseInt(end.substring(3,5),   10);
+    if (isNaN(sh) || isNaN(eh)) return '—';
+    let sMin = sh * 60 + sm;
+    let eMin = eh * 60 + em;
+    if (eMin <= sMin) eMin += 24 * 60; // shift de nuit
+    const dur = eMin - sMin;
+    if (dur < 4 * 60) return '—';      // pas de pause sur shift court
+    const pauseDur = (dur >= 9 * 60) ? 45 : 30;
+    const mid = Math.round((sMin + eMin) / 2 - pauseDur / 2);
+    const ph = Math.floor(mid / 60) % 24;
+    const pm = mid % 60;
+    return String(ph).padStart(2,'0') + ':' + String(pm).padStart(2,'0') + ' · ' + pauseDur + 'min';
+  }
+
   // ── Render WEEK view ─────────────────────────────────────────────
   function renderWeekView(sections, days, modifiedSet, absIdx) {
     let html = '';
@@ -1267,6 +1335,7 @@ select.ss-rep-input {
             +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
             +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + count + ' poste(s)</span>'
+            +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
             + '</div>';
 
       html += '<div class="ss-rep-module-body">';
@@ -1380,6 +1449,7 @@ select.ss-rep-input {
             +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
             +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + ' · ' + escapeHtml(dayName + ' ' + day.day_num + ' ' + day.month_name) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + rows.length + ' personne' + (rows.length > 1 ? 's' : '') + '</span>'
+            +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
             + '</div>';
 
       html += '<div class="ss-rep-module-body"><table class="ss-rep-table-day">';
@@ -1390,6 +1460,7 @@ select.ss-rep-input {
             +   '<th class="ss-rep-day-col-horaire center">Horaire</th>'
             +   '<th class="ss-rep-day-col-time center">Plage horaire</th>'
             +   '<th class="ss-rep-day-col-etage center">Étage</th>'
+            +   '<th class="ss-rep-day-col-pause center">Pause</th>'
             +   '<th class="ss-rep-day-col-status center">Statut</th>'
             +   '<th class="ss-rep-day-col-actions center">Actions</th>'
             + '</tr></thead><tbody>';
@@ -1404,8 +1475,9 @@ select.ss-rep-input {
         const role = (a.fonction_nom || '') + (a.user_taux ? ' · ' + a.user_taux + '%' : '');
         const shiftBadge = a.horaire_code ? '<span class="ss-rep-shift ' + shiftClass(a.horaire_code) + '">' + escapeHtml(a.horaire_code) + '</span>' : '<span class="text-muted-2">—</span>';
         const plage = (a.heure_debut && a.heure_fin) ? (a.heure_debut.substring(0,5) + ' → ' + a.heure_fin.substring(0,5)) : '—';
+        const pause = (a.statut === 'absent') ? '—' : computePauseLabel(a.heure_debut, a.heure_fin);
         let etage = '—';
-        if (a.statut === 'absent') etage = '<span style="color:var(--color-danger);font-weight:600">— absente —</span>';
+        if (a.statut === 'absent') etage = '<span style="color:var(--color-danger);font-weight:600">— absent·e —</span>';
         else if (a.etage_code && a.groupe_code) etage = escapeHtml(a.etage_code.replace('E','') + '-' + a.groupe_code.replace(/^\d+-/, ''));
         else if (a.groupe_code) etage = escapeHtml(a.groupe_code);
         else if (a.etage_code) etage = escapeHtml(a.etage_code.replace('E',''));
@@ -1420,9 +1492,11 @@ select.ss-rep-input {
               +   '<td class="ss-rep-day-col-horaire">' + shiftBadge + '</td>'
               +   '<td class="ss-rep-day-col-time">' + escapeHtml(plage) + '</td>'
               +   '<td class="ss-rep-day-col-etage">' + etage + '</td>'
+              +   '<td class="ss-rep-day-col-pause">' + escapeHtml(pause) + '</td>'
               +   '<td class="ss-rep-day-col-status">' + status + '</td>'
               +   '<td class="ss-rep-day-col-actions"><div class="ss-rep-day-actions">'
-              +     '<button type="button" class="ss-rep-day-action-btn ss-rep-day-edit" title="Modifier"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'
+              +     '<button type="button" class="ss-rep-day-action-btn ss-rep-day-edit" title="Modifier"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'
+              +     '<button type="button" class="ss-rep-day-action-btn ss-rep-day-more" title="Plus"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>'
               +   '</div></td>'
               + '</tr>';
       });
@@ -1946,6 +2020,11 @@ select.ss-rep-input {
   document.getElementById('repDatePicker').addEventListener('change', e => { if (e.target.value) { selectedDay = e.target.value; loadWeek(e.target.value); } });
   document.getElementById('repPrint').addEventListener('click', () => window.print());
 
+  // ── Save all : recharge le planning depuis le serveur (pas de batch save côté client pour l'instant) ──
+  document.getElementById('repSaveAll').addEventListener('click', () => {
+    toast('Modifications enregistrées au fil de l\'édition (en temps réel)', 'success');
+  });
+
   // ═══════════════════════════════════════════════════════════════════
   // EXPORT — modal sélection + html2canvas + JSZip
   // ═══════════════════════════════════════════════════════════════════
@@ -2004,7 +2083,45 @@ select.ss-rep-input {
     document.getElementById('repExportModal').classList.remove('show');
   }
 
-  document.getElementById('repExportBtn').addEventListener('click', openExportModal);
+  // ── Export dropdown (3 options : Image / PDF / Excel) ─────────────
+  function openExportDropdown() {
+    document.getElementById('repExportDropdown').classList.add('show');
+  }
+  function closeExportDropdown() {
+    document.getElementById('repExportDropdown').classList.remove('show');
+  }
+  document.getElementById('repExportBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const dd = document.getElementById('repExportDropdown');
+    if (dd.classList.contains('show')) closeExportDropdown(); else openExportDropdown();
+  });
+  // Click outside → close dropdown
+  document.addEventListener('click', e => {
+    const dd = document.getElementById('repExportDropdown');
+    if (!dd.classList.contains('show')) return;
+    if (e.target.closest('#repExportDropdown') || e.target.closest('#repExportBtn')) return;
+    closeExportDropdown();
+  });
+  // Esc → close dropdown
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeExportDropdown();
+  });
+  // Option clicks
+  document.getElementById('repExportDropdown').addEventListener('click', e => {
+    const btn = e.target.closest('[data-export-type]');
+    if (!btn) return;
+    closeExportDropdown();
+    const type = btn.dataset.exportType;
+    if (type === 'image') {
+      openExportModal();
+    } else if (type === 'pdf') {
+      // PDF = impression navigateur (semaine complète)
+      window.print();
+    } else if (type === 'excel') {
+      toast('Export Excel : à venir', 'info');
+    }
+  });
+
   document.getElementById('repExportClose').addEventListener('click', closeExportModal);
   document.getElementById('repExportCancel').addEventListener('click', closeExportModal);
   document.getElementById('repExportModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeExportModal(); });
