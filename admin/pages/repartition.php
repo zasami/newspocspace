@@ -204,7 +204,7 @@ $todayIso = date('Y-m-d');
       Exporter
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-0.5 text-muted"><path d="m6 9 6 6 6-6"/></svg>
     </button>
-    <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 py-2">
+    <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 p-2">
       <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Format de sortie</div>
       <button type="button" data-export-type="image" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left">
         <div class="ss-rep-opt-ic w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
@@ -569,7 +569,7 @@ $todayIso = date('Y-m-d');
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- MENU CONTEXTUEL : "..." sur un module (export PDF/Image/Excel)        -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<div id="repModMenu" class="ss-rep-mod-menu fixed w-[280px] bg-surface border border-line rounded-2xl shadow-sp-lg z-[150] py-2">
+<div id="repModMenu" class="ss-rep-mod-menu fixed w-[280px] bg-surface border border-line rounded-2xl shadow-sp-lg z-[150] p-2">
   <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">
     Exporter <span id="repModMenuLabel">ce module</span>
   </div>
@@ -882,6 +882,7 @@ select.ss-rep-input {
 .ss-rep-export-opt, .ss-rep-mod-menu-opt {
   font-family: inherit; border: 0; cursor: pointer;
   background: transparent; color: var(--color-ink);
+  border-radius: 10px;
   transition: background 0.15s ease, color 0.15s ease;
 }
 /* Hover : fond + texte teal — règle native (le shorthand `background`
