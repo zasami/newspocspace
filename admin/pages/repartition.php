@@ -271,8 +271,8 @@ $todayIso = date('Y-m-d');
             <div id="repModalRole" class="text-[11.5px] text-[#cfe0db] mt-px truncate">—</div>
           </div>
         </div>
-        <button type="button" id="repModalClose" class="w-7 h-7 rounded-md border border-white/20 bg-white/10 text-white grid place-items-center hover:bg-white/20 transition shrink-0" title="Fermer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="repModalClose" class="pl-cell-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
@@ -429,8 +429,8 @@ $todayIso = date('Y-m-d');
             <div class="text-[12px] text-[#cfe0db] mt-px">Une image sera générée pour chaque module × chaque jour sélectionné</div>
           </div>
         </div>
-        <button type="button" id="repExportClose" class="w-7 h-7 rounded-md border border-white/20 bg-white/10 text-white grid place-items-center hover:bg-white/20 transition shrink-0" title="Fermer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <button type="button" id="repExportClose" class="pl-cell-close" aria-label="Fermer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
