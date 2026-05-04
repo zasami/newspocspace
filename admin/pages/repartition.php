@@ -257,13 +257,11 @@ $todayIso = date('Y-m-d');
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- MODAL : édition d'une cellule (hero unifié)                            -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<div id="repCellModal" class="ss-rep-modal-overlay fixed inset-0 z-[100] hidden items-center justify-center p-5 bg-[rgba(13,42,38,0.55)] backdrop-blur-[4px]">
+<div id="repCellModal" class="ss-rep-modal-overlay fixed inset-0 z-[100] items-center justify-center p-5 bg-[rgba(13,42,38,0.55)] backdrop-blur-[4px]">
   <div id="repCellModalCard" class="ss-rep-modal-card bg-surface rounded-2xl shadow-sp-lg w-[520px] max-w-full max-h-[calc(100vh-40px)] overflow-hidden flex flex-col">
 
     <!-- Hero -->
     <div class="ss-rep-modal-hero relative overflow-hidden text-white px-5 py-4 shrink-0">
-      <div class="ss-rep-modal-hero-bg-1"></div>
-      <div class="ss-rep-modal-hero-bg-2"></div>
       <div class="relative z-[1] flex items-start justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <div id="repModalAvatar" class="w-[46px] h-[46px] rounded-xl grid place-items-center font-display font-semibold text-[#0d2a26] text-[17px] shadow-[0_6px_18px_rgba(0,0,0,0.2)] shrink-0 bg-[linear-gradient(135deg,#3da896,#7dd3a8)]">CB</div>
@@ -415,13 +413,11 @@ $todayIso = date('Y-m-d');
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- MODAL : Export PNG/JPEG/ZIP                                            -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<div id="repExportModal" class="ss-rep-modal-overlay fixed inset-0 z-[100] hidden items-center justify-center p-5 bg-[rgba(13,42,38,0.55)] backdrop-blur-[4px]">
+<div id="repExportModal" class="ss-rep-modal-overlay fixed inset-0 z-[100] items-center justify-center p-5 bg-[rgba(13,42,38,0.55)] backdrop-blur-[4px]">
   <div class="bg-surface rounded-2xl shadow-sp-lg w-[680px] max-w-full max-h-[calc(100vh-40px)] overflow-hidden flex flex-col">
 
     <!-- Hero -->
     <div class="ss-rep-modal-hero relative overflow-hidden text-white px-6 py-5 shrink-0">
-      <div class="ss-rep-modal-hero-bg-1"></div>
-      <div class="ss-rep-modal-hero-bg-2"></div>
       <div class="relative z-[1] flex items-center justify-between gap-3.5">
         <div class="flex items-center gap-3.5">
           <div class="w-12 h-12 rounded-xl bg-white/15 border border-white/20 grid place-items-center shrink-0">
@@ -507,7 +503,7 @@ $todayIso = date('Y-m-d');
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <!-- OVERLAY : progression de l'export                                      -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<div id="repExportProgress" class="fixed inset-0 z-[200] hidden items-center justify-center bg-[rgba(13,42,38,0.65)] backdrop-blur-[4px]">
+<div id="repExportProgress" class="ss-rep-progress-overlay fixed inset-0 z-[200] items-center justify-center bg-[rgba(13,42,38,0.65)] backdrop-blur-[4px]">
   <div id="repExportProgressCard" class="bg-surface rounded-2xl shadow-sp-lg p-7 w-[440px] max-w-[calc(100vw-32px)] flex flex-col gap-4">
     <h3 class="font-display font-semibold text-[18px] text-teal-900 -tracking-[0.01em] flex items-center gap-2.5">
       <span class="ss-rep-spin shrink-0"></span>
@@ -716,14 +712,28 @@ $todayIso = date('Y-m-d');
 .ss-rep-stat-card.info .v   { color: var(--color-info); }
 
 /* ── Modal — overlay show + transitions ────────────────────────────── */
-.ss-rep-modal-overlay.show { display: flex; }
-.ss-rep-modal-overlay.show .ss-rep-modal-card { animation: ssRepSlideUp 0.25s ease; }
+.ss-rep-modal-overlay { display: none; }
+.ss-rep-modal-overlay.show { display: flex; animation: ssRepFadeIn 0.18s ease; }
+.ss-rep-modal-overlay.show > * { animation: ssRepSlideUp 0.25s ease; }
+.ss-rep-progress-overlay { display: none; }
+.ss-rep-progress-overlay.show { display: flex; animation: ssRepFadeIn 0.18s ease; }
+@keyframes ssRepFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ssRepSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Modal hero — gradient teal + pseudo-elements pour fonds décoratifs */
 .ss-rep-modal-hero {
-  background: linear-gradient(135deg, var(--color-teal-700) 0%, var(--color-teal-600) 50%, var(--color-teal-500) 100%);
+  background: linear-gradient(135deg, #164a42 0%, #1f6359 50%, #2d8074 100%);
 }
-.ss-rep-modal-hero-bg-1 { content:""; position:absolute; inset:0; background: radial-gradient(circle at 100% 0%, rgba(125,211,168,0.18) 0%, transparent 55%); pointer-events: none; }
-.ss-rep-modal-hero-bg-2 { content:""; position:absolute; right:-60px; top:-60px; width:200px; height:200px; background: repeating-radial-gradient(circle at center, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 12px); pointer-events: none; }
+.ss-rep-modal-hero::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(125,211,168,0.18) 0%, transparent 55%);
+  pointer-events: none; z-index: 0;
+}
+.ss-rep-modal-hero::after {
+  content: ""; position: absolute; right: -60px; top: -60px; width: 200px; height: 200px;
+  background: repeating-radial-gradient(circle at center, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 12px);
+  pointer-events: none; z-index: 0;
+}
 
 /* Status btn */
 .ss-rep-status-btn:hover { background: var(--color-surface-2); }
@@ -850,6 +860,82 @@ select.ss-rep-input {
   position: relative; overflow: hidden;
 }
 .ss-rep-day-header::after { content:""; position:absolute; right:-80px; top:-80px; width:280px; height:280px; background: repeating-radial-gradient(circle at center, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 14px); pointer-events: none; }
+
+/* ── Day view table (8 colonnes) ──────────────────────────────────── */
+.ss-rep-table-day {
+  width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px;
+}
+.ss-rep-table-day th, .ss-rep-table-day td {
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: middle; padding: 0;
+}
+.ss-rep-table-day tbody tr:last-child td { border-bottom: 0; }
+.ss-rep-table-day thead th {
+  background: var(--color-surface-2); font-weight: 600;
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-muted); text-align: left; padding: 10px 12px;
+}
+.ss-rep-table-day thead th.center { text-align: center; }
+
+.ss-rep-table-day .ss-rep-day-col-fonc    { width: 130px; background: var(--color-surface); }
+.ss-rep-table-day .ss-rep-day-col-poste   { width: 60px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-muted); font-size: 11.5px; font-weight: 600; }
+.ss-rep-table-day .ss-rep-day-col-name    { width: auto; min-width: 220px; }
+.ss-rep-table-day .ss-rep-day-col-horaire { width: 90px; text-align: center; }
+.ss-rep-table-day .ss-rep-day-col-time    { width: 140px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
+.ss-rep-table-day .ss-rep-day-col-etage   { width: 90px; text-align: center; font-family: 'JetBrains Mono', monospace; color: var(--color-ink-2); font-size: 11.5px; }
+.ss-rep-table-day .ss-rep-day-col-status  { width: 150px; padding: 8px 10px; text-align: center; }
+.ss-rep-table-day .ss-rep-day-col-actions { width: 70px; text-align: center; }
+
+.ss-rep-table-day tbody tr:hover td { background: var(--color-surface-2); }
+.ss-rep-table-day tbody td.ss-rep-day-col-fonc {
+  font-weight: 600; color: var(--color-ink); font-size: 11.5px; padding: 10px 12px;
+  border-right: 1px solid var(--color-line-2) !important;
+}
+.ss-rep-table-day tbody td.ss-rep-day-col-poste,
+.ss-rep-table-day tbody td.ss-rep-day-col-horaire,
+.ss-rep-table-day tbody td.ss-rep-day-col-time,
+.ss-rep-table-day tbody td.ss-rep-day-col-etage { padding: 10px 8px; }
+
+/* Day collab : avatar + name + role */
+.ss-rep-day-collab { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+.ss-rep-day-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  color: #fff; font-weight: 600; font-size: 11px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--color-teal-600);
+  font-family: 'Outfit', sans-serif; letter-spacing: 0.02em;
+  overflow: hidden;
+}
+.ss-rep-day-av-1 { background: linear-gradient(135deg,#1f6359,#2d8074); }
+.ss-rep-day-av-2 { background: linear-gradient(135deg,#5a9bd8,#3a6a8a); }
+.ss-rep-day-av-3 { background: linear-gradient(135deg,#7a4f9e,#9268b3); }
+.ss-rep-day-av-4 { background: linear-gradient(135deg,#d96b5a,#a04863); }
+.ss-rep-day-av-5 { background: linear-gradient(135deg,#3d8b6b,#5cad9b); }
+.ss-rep-day-collab .info { display: flex; flex-direction: column; min-width: 0; }
+.ss-rep-day-collab .info .name { font-size: 13px; font-weight: 500; color: var(--color-ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ss-rep-day-collab .info .role { font-size: 11px; color: var(--color-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Day status pills */
+.ss-rep-day-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 9999px;
+  font-size: 11px; font-weight: 600; border: 1px solid;
+  white-space: nowrap;
+}
+.ss-rep-day-status .b { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.ss-rep-day-status-ok     { background: var(--color-ok-bg);     color: var(--color-ok);     border-color: var(--color-ok-line); }
+.ss-rep-day-status-warn   { background: var(--color-warn-bg);   color: var(--color-warn);   border-color: var(--color-warn-line); }
+.ss-rep-day-status-absent { background: var(--color-danger-bg); color: var(--color-danger); border-color: var(--color-danger-line); }
+
+/* Day row actions */
+.ss-rep-day-actions { display: flex; justify-content: center; gap: 4px; padding: 4px 0; }
+.ss-rep-day-action-btn {
+  width: 26px; height: 26px; border-radius: 4px;
+  border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-muted);
+  display: grid; place-items: center; cursor: pointer; transition: all 0.15s ease;
+}
+.ss-rep-day-action-btn:hover { background: var(--color-teal-50); border-color: var(--color-teal-200); color: var(--color-teal-700); }
 
 /* Print */
 @media print {
@@ -1139,44 +1225,36 @@ select.ss-rep-input {
     return '<th class="' + cls + '"><div class="ss-rep-sub-double"><span>Nom · Horaire</span><span>Étage</span></div></th>';
   }
 
-  function renderGrid() {
-    const { sections, modifiedSet, absIdx } = buildSections();
-    const grid = document.getElementById('repGrid');
-    let days = data.days || [];
-    const isDayView = viewMode === 'day';
+  // ── Status pill helper for day view ──
+  function dayStatusPill(statut, absType) {
+    const map = {
+      present:  { cls: 'ok',     label: 'Présent·e' },
+      absent:   { cls: 'absent', label: 'Absent·e' + (absType ? ' · ' + absType.replace(/_/g,' ') : '') },
+      remplace: { cls: 'warn',   label: 'Remplacé·e' },
+      interim:  { cls: 'warn',   label: 'Intérim' },
+      entraide: { cls: 'ok',     label: 'Entraide' },
+      repos:    { cls: 'absent', label: 'Repos' },
+      vacant:   { cls: 'warn',   label: 'Vacant' },
+    };
+    const m = map[statut] || map.present;
+    return '<span class="ss-rep-day-status ss-rep-day-status-' + m.cls + '"><span class="b"></span>' + escapeHtml(m.label) + '</span>';
+  }
 
-    if (isDayView) {
-      days = days.filter(d => d.date === selectedDay);
-      if (!days.length && (data.days || []).length) days = [data.days[0]];
-    }
+  // ── Avatar gradient hash (5 variantes) ──
+  function avatarVariant(id) {
+    const s = String(id || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return Math.abs(h) % 5 + 1;
+  }
 
-    if (sections.length === 0) {
-      grid.innerHTML = '<div class="bg-surface border border-line rounded-xl px-6 py-12 text-center text-muted shadow-sp-sm">'
-        + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-2 opacity-40"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
-        + 'Aucune affectation pour cette ' + (isDayView ? 'journée' : 'semaine') + '.</div>';
-      return;
-    }
+  function userInitials(prenom, nom) {
+    return ((prenom||'').trim()[0] || '') + ((nom||'').trim()[0] || '');
+  }
 
+  // ── Render WEEK view ─────────────────────────────────────────────
+  function renderWeekView(sections, days, modifiedSet, absIdx) {
     let html = '';
-
-    if (isDayView) {
-      const day = days[0];
-      const dayName = day.full_name.charAt(0).toUpperCase() + day.full_name.slice(1);
-      const presentDay = (data.assignments || []).filter(a => a.date_jour === day.date && a.statut !== 'absent').length;
-      const absentDay  = (data.assignments || []).filter(a => a.date_jour === day.date && a.statut === 'absent').length;
-      const totalDay   = (data.assignments || []).filter(a => a.date_jour === day.date).length;
-      const heuresDay  = (data.assignments || []).filter(a => a.date_jour === day.date).reduce((acc, a) => acc + (parseFloat(a.duree_effective)||0), 0);
-      html += '<div class="ss-rep-day-header relative">'
-            + '<div class="font-display font-semibold text-[34px] leading-none -tracking-[0.02em] relative z-[1]">' + day.day_num + '</div>'
-            + '<div class="flex flex-col gap-1 relative z-[1]"><div class="text-[11px] tracking-[0.14em] uppercase text-[#a8e6c9] font-semibold">' + dayName + '</div><div class="text-[18px] font-medium">' + escapeHtml(day.month_name) + ' ' + day.year + '</div></div>'
-            + '<div class="flex gap-6 ml-auto relative z-[1]">'
-            +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Postes</span><span class="font-display font-semibold text-[20px]">' + totalDay + '</span></div>'
-            +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Présents</span><span class="font-display font-semibold text-[20px]">' + presentDay + '</span></div>'
-            +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Absents</span><span class="font-display font-semibold text-[20px]"' + (absentDay>0?' style="color:#fbb6ad"':'') + '>' + absentDay + '</span></div>'
-            +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Heures</span><span class="font-display font-semibold text-[20px]">' + Math.round(heuresDay) + '<span class="text-[13px] font-normal">h</span></span></div>'
-            + '</div></div>';
-    }
-
     sections.forEach(sec => {
       const mod = sec.module;
       const key = modKey(mod.code);
@@ -1185,21 +1263,17 @@ select.ss-rep-input {
       const hidden = (activeFilter !== 'all' && activeFilter !== key) ? ' hidden' : '';
 
       html += '<div class="ss-rep-module ss-rep-mod-' + key + hidden + ' bg-surface border border-line rounded-xl overflow-hidden shadow-sp-sm" data-mod="' + key + '" data-section-module-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '">';
-
-      // Module head
       html += '<div class="ss-rep-module-head flex items-center gap-3 px-4 py-2.5 text-white" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">'
             +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
             +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + count + ' poste(s)</span>'
             + '</div>';
 
-      // Body : table
       html += '<div class="ss-rep-module-body">';
       html += '<table class="ss-rep-table">';
       html += '<colgroup><col style="width:90px"><col style="width:48px">';
       days.forEach(() => { html += '<col>'; });
       html += '</colgroup>';
-
       html += '<thead><tr class="day-row">'
             +   '<th class="ss-rep-col-fonction" rowspan="2"><div style="padding:8px 4px">Fonction</div></th>'
             +   '<th class="ss-rep-col-poste" rowspan="2">Poste</th>';
@@ -1234,7 +1308,6 @@ select.ss-rep-input {
             let shiftHtml = '';
             if (a) {
               const userName = (a.user_prenom || '') + ' ' + (a.user_nom || '');
-              const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
               if (a.statut === 'absent') {
                 nameHtml += '<span class="absent-ico">!</span>';
                 etageHtml = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93 19.07 19.07"/></svg> Abs.';
@@ -1264,8 +1337,122 @@ select.ss-rep-input {
 
       html += '</tbody></table></div></div>';
     });
+    return html;
+  }
 
-    grid.innerHTML = html;
+  // ── Render DAY view (table dédiée 8 colonnes) ─────────────────────
+  function renderDayView(sections, day, modifiedSet, absIdx) {
+    const dayName = day.full_name.charAt(0).toUpperCase() + day.full_name.slice(1);
+    const presentDay = (data.assignments || []).filter(a => a.date_jour === day.date && a.statut !== 'absent').length;
+    const absentDay  = (data.assignments || []).filter(a => a.date_jour === day.date && a.statut === 'absent').length;
+    const totalDay   = (data.assignments || []).filter(a => a.date_jour === day.date).length;
+    const heuresDay  = (data.assignments || []).filter(a => a.date_jour === day.date).reduce((acc, a) => acc + (parseFloat(a.duree_effective)||0), 0);
+
+    let html = '<div class="ss-rep-day-header relative">'
+      + '<div class="font-display font-semibold text-[34px] leading-none -tracking-[0.02em] relative z-[1]">' + day.day_num + '</div>'
+      + '<div class="flex flex-col gap-1 relative z-[1]"><div class="text-[11px] tracking-[0.14em] uppercase text-[#a8e6c9] font-semibold">' + dayName + '</div><div class="text-[18px] font-medium">' + escapeHtml(day.month_name) + ' ' + day.year + '</div></div>'
+      + '<div class="flex gap-6 ml-auto relative z-[1]">'
+      +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Postes</span><span class="font-display font-semibold text-[20px]">' + totalDay + '</span></div>'
+      +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Présents</span><span class="font-display font-semibold text-[20px]">' + presentDay + '</span></div>'
+      +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Absents</span><span class="font-display font-semibold text-[20px]"' + (absentDay>0?' style="color:#fbb6ad"':'') + '>' + absentDay + '</span></div>'
+      +   '<div class="flex flex-col gap-px"><span class="text-[10px] tracking-[0.1em] uppercase text-[#a8c4be] font-semibold">Heures</span><span class="font-display font-semibold text-[20px]">' + Math.round(heuresDay) + '<span class="text-[13px] font-normal">h</span></span></div>'
+      + '</div></div>';
+
+    sections.forEach(sec => {
+      const mod = sec.module;
+      const key = modKey(mod.code);
+      const ico = (key === 'rj') ? MOD_ICON_HTML_RJ : MOD_ICON_HTML;
+      const hidden = (activeFilter !== 'all' && activeFilter !== key) ? ' hidden' : '';
+
+      // Collect assignments for this module on this day, preserving fonction order
+      const rows = [];
+      sec.functions.forEach(fn => {
+        fn.slots.forEach(slot => {
+          const a = slot.days[day.date];
+          if (a) rows.push({ fonction: fn.nom, fnCode: fn.code, poste: slot.label, a: a });
+        });
+      });
+
+      if (rows.length === 0) return; // skip empty modules in day view
+
+      html += '<div class="ss-rep-module ss-rep-mod-' + key + hidden + ' bg-surface border border-line rounded-xl overflow-hidden shadow-sp-sm" data-mod="' + key + '" data-section-module-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '">';
+      html += '<div class="ss-rep-module-head flex items-center gap-3 px-4 py-2.5 text-white" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">'
+            +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
+            +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + ' · ' + escapeHtml(dayName + ' ' + day.day_num + ' ' + day.month_name) + '</h2>'
+            +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + rows.length + ' personne' + (rows.length > 1 ? 's' : '') + '</span>'
+            + '</div>';
+
+      html += '<div class="ss-rep-module-body"><table class="ss-rep-table-day">';
+      html += '<thead><tr>'
+            +   '<th class="ss-rep-day-col-fonc">Fonction</th>'
+            +   '<th class="ss-rep-day-col-poste center">Poste</th>'
+            +   '<th class="ss-rep-day-col-name">Collaborateur</th>'
+            +   '<th class="ss-rep-day-col-horaire center">Horaire</th>'
+            +   '<th class="ss-rep-day-col-time center">Plage horaire</th>'
+            +   '<th class="ss-rep-day-col-etage center">Étage</th>'
+            +   '<th class="ss-rep-day-col-status center">Statut</th>'
+            +   '<th class="ss-rep-day-col-actions center">Actions</th>'
+            + '</tr></thead><tbody>';
+
+      rows.forEach(r => {
+        const a = r.a;
+        const userName = (a.user_prenom || '') + ' ' + (a.user_nom || '');
+        const init = userInitials(a.user_prenom, a.user_nom).toUpperCase() || '?';
+        const av = a.user_photo
+          ? '<div class="ss-rep-day-av"><img src="' + escapeHtml(a.user_photo) + '" alt="" class="w-full h-full object-cover rounded-full"></div>'
+          : '<div class="ss-rep-day-av ss-rep-day-av-' + avatarVariant(a.user_id) + '">' + escapeHtml(init) + '</div>';
+        const role = (a.fonction_nom || '') + (a.user_taux ? ' · ' + a.user_taux + '%' : '');
+        const shiftBadge = a.horaire_code ? '<span class="ss-rep-shift ' + shiftClass(a.horaire_code) + '">' + escapeHtml(a.horaire_code) + '</span>' : '<span class="text-muted-2">—</span>';
+        const plage = (a.heure_debut && a.heure_fin) ? (a.heure_debut.substring(0,5) + ' → ' + a.heure_fin.substring(0,5)) : '—';
+        let etage = '—';
+        if (a.statut === 'absent') etage = '<span style="color:var(--color-danger);font-weight:600">— absente —</span>';
+        else if (a.etage_code && a.groupe_code) etage = escapeHtml(a.etage_code.replace('E','') + '-' + a.groupe_code.replace(/^\d+-/, ''));
+        else if (a.groupe_code) etage = escapeHtml(a.groupe_code);
+        else if (a.etage_code) etage = escapeHtml(a.etage_code.replace('E',''));
+        const absType = absIdx[a.user_id + '|' + a.date_jour] || null;
+        const status = dayStatusPill(a.statut, absType);
+        const attrs = cellDataAttrs(a, day.date);
+
+        html += '<tr class="ss-rep-day-row" ' + attrs + '>'
+              +   '<td class="ss-rep-day-col-fonc">' + escapeHtml(r.fonction) + '</td>'
+              +   '<td class="ss-rep-day-col-poste">' + escapeHtml(r.poste) + '</td>'
+              +   '<td><div class="ss-rep-day-collab">' + av + '<div class="info"><div class="name">' + escapeHtml(userName) + '</div><div class="role">' + escapeHtml(role || '—') + '</div></div></div></td>'
+              +   '<td class="ss-rep-day-col-horaire">' + shiftBadge + '</td>'
+              +   '<td class="ss-rep-day-col-time">' + escapeHtml(plage) + '</td>'
+              +   '<td class="ss-rep-day-col-etage">' + etage + '</td>'
+              +   '<td class="ss-rep-day-col-status">' + status + '</td>'
+              +   '<td class="ss-rep-day-col-actions"><div class="ss-rep-day-actions">'
+              +     '<button type="button" class="ss-rep-day-action-btn ss-rep-day-edit" title="Modifier"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'
+              +   '</div></td>'
+              + '</tr>';
+      });
+
+      html += '</tbody></table></div></div>';
+    });
+
+    return html;
+  }
+
+  function renderGrid() {
+    const { sections, modifiedSet, absIdx } = buildSections();
+    const grid = document.getElementById('repGrid');
+    const isDayView = viewMode === 'day';
+
+    if (sections.length === 0) {
+      grid.innerHTML = '<div class="bg-surface border border-line rounded-xl px-6 py-12 text-center text-muted shadow-sp-sm">'
+        + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-2 opacity-40"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+        + 'Aucune affectation pour cette ' + (isDayView ? 'journée' : 'semaine') + '.</div>';
+      return;
+    }
+
+    if (isDayView) {
+      let day = (data.days || []).find(d => d.date === selectedDay);
+      if (!day && (data.days || []).length) day = data.days[0];
+      if (!day) { grid.innerHTML = ''; return; }
+      grid.innerHTML = renderDayView(sections, day, modifiedSet, absIdx);
+    } else {
+      grid.innerHTML = renderWeekView(sections, data.days || [], modifiedSet, absIdx);
+    }
   }
 
   // ── Cell data attributes ──────────────────────────────────────────
@@ -1581,12 +1768,19 @@ select.ss-rep-input {
   // Duplicate (placeholder)
   document.getElementById('repModalDuplicate').addEventListener('click', () => toast('Duplication multi-jours : à venir', 'info'));
 
-  // ── Cell click → open modal ───────────────────────────────────────
+  // ── Cell click → open modal (works for week cells AND day rows) ───
   document.getElementById('repGrid').addEventListener('click', e => {
     const cellEl = e.target.closest('.ss-rep-cell');
-    if (!cellEl) return;
-    if (cellEl.classList.contains('empty')) return;
-    openCellModal(cellEl);
+    if (cellEl) {
+      if (cellEl.classList.contains('empty')) return;
+      openCellModal(cellEl);
+      return;
+    }
+    const rowEl = e.target.closest('.ss-rep-day-row');
+    if (rowEl) {
+      if (e.target.closest('.ss-rep-day-action-btn')) return; // let action btn handle
+      openCellModal(rowEl);
+    }
   });
 
   // ── Drag & Drop entre modules ─────────────────────────────────────
@@ -2049,7 +2243,7 @@ select.ss-rep-input {
 
     doneMsg.classList.add('hidden'); closeBtn.classList.add('hidden');
     document.querySelector('#repExportProgressCard .ss-rep-spin').classList.remove('hidden');
-    overlay.classList.remove('hidden'); overlay.classList.add('flex');
+    overlay.classList.add('show');
     totalEl.textContent = tasks.length; doneEl.textContent = '0';
     bar.style.width = '0%'; pctEl.textContent = '0%';
     titleEl.textContent = tasks.length === 1 ? 'Génération de l\'image…' : 'Génération de ' + tasks.length + ' images…';
@@ -2110,8 +2304,7 @@ select.ss-rep-input {
   });
 
   document.getElementById('repExportProgressClose').addEventListener('click', () => {
-    document.getElementById('repExportProgress').classList.remove('flex');
-    document.getElementById('repExportProgress').classList.add('hidden');
+    document.getElementById('repExportProgress').classList.remove('show');
   });
 
   // ── Init ──────────────────────────────────────────────────────────
