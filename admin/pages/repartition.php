@@ -206,8 +206,8 @@ $todayIso = date('Y-m-d');
     </button>
     <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 py-2">
       <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Format de sortie</div>
-      <button type="button" data-export-type="image" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <button type="button" data-export-type="image" class="ss-rep-export-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -219,8 +219,8 @@ $todayIso = date('Y-m-d');
       <div class="border-t border-line my-1.5 mx-3"></div>
 
       <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Autres formats</div>
-      <button type="button" data-export-type="pdf" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <button type="button" data-export-type="pdf" class="ss-rep-export-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -228,8 +228,8 @@ $todayIso = date('Y-m-d');
           <span class="text-[11px] text-muted mt-px">Semaine complète · prêt à imprimer</span>
         </div>
       </button>
-      <button type="button" data-export-type="excel" class="ss-rep-export-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+      <button type="button" data-export-type="excel" class="ss-rep-export-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+        <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
         </div>
         <div class="flex flex-col min-w-0 flex-1">
@@ -573,8 +573,8 @@ $todayIso = date('Y-m-d');
   <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">
     Exporter <span id="repModMenuLabel">ce module</span>
   </div>
-  <button type="button" data-mod-export="pdf" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+  <button type="button" data-mod-export="pdf" class="ss-rep-mod-menu-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
@@ -582,8 +582,8 @@ $todayIso = date('Y-m-d');
       <span class="text-[11px] text-muted mt-px">Tableau du module · prêt à imprimer</span>
     </div>
   </button>
-  <button type="button" data-mod-export="image" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+  <button type="button" data-mod-export="image" class="ss-rep-mod-menu-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
@@ -591,8 +591,8 @@ $todayIso = date('Y-m-d');
       <span class="text-[11px] text-muted mt-px">Capture haute résolution</span>
     </div>
   </button>
-  <button type="button" data-mod-export="excel" class="ss-rep-mod-menu-opt group/opt w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
-    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover/opt:bg-teal-100 grid place-items-center text-ink-2 group-hover/opt:text-teal-700 shrink-0 transition-colors">
+  <button type="button" data-mod-export="excel" class="ss-rep-mod-menu-opt group w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-teal-50 transition-colors">
+    <div class="w-9 h-9 rounded-lg bg-surface-3 group-hover:bg-teal-100 grid place-items-center text-ink-2 group-hover:text-teal-700 shrink-0 transition-colors">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
     </div>
     <div class="flex flex-col min-w-0 flex-1">
@@ -1372,7 +1372,7 @@ select.ss-rep-input {
       html += '<div class="ss-rep-module ss-rep-mod-' + key + hidden + ' bg-surface border border-line rounded-xl overflow-hidden shadow-sp-sm" data-mod="' + key + '" data-section-module-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '">';
       html += '<div class="ss-rep-module-head flex items-center gap-3 px-4 py-2.5 text-white" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">'
             +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
-            +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + '</h2>'
+            +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate text-white">' + escapeHtml(mod.nom || mod.code) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + count + ' poste(s)</span>'
             +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
             +   '<button type="button" class="ss-rep-mod-more-btn w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-mod-key="' + key + '" data-mod-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '" data-mod-name="' + escapeHtml(mod.nom || mod.code || '') + '" title="Plus d\'options"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>'
@@ -1487,7 +1487,7 @@ select.ss-rep-input {
       html += '<div class="ss-rep-module ss-rep-mod-' + key + hidden + ' bg-surface border border-line rounded-xl overflow-hidden shadow-sp-sm" data-mod="' + key + '" data-section-module-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '">';
       html += '<div class="ss-rep-module-head flex items-center gap-3 px-4 py-2.5 text-white" data-drop-module-id="' + (mod.id || '') + '" data-drop-module-code="' + escapeHtml(mod.code || '') + '">'
             +   '<div class="w-[22px] h-[22px] rounded bg-white/20 grid place-items-center shrink-0 relative z-[1]">' + ico + '</div>'
-            +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate">' + escapeHtml(mod.nom || mod.code) + ' · ' + escapeHtml(dayName + ' ' + day.day_num + ' ' + day.month_name) + '</h2>'
+            +   '<h2 class="font-display font-semibold text-[15px] -tracking-[0.01em] flex-1 relative z-[1] truncate text-white">' + escapeHtml(mod.nom || mod.code) + ' · ' + escapeHtml(dayName + ' ' + day.day_num + ' ' + day.month_name) + '</h2>'
             +   '<span class="font-mono text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full tracking-[0.02em] relative z-[1]">' + rows.length + ' personne' + (rows.length > 1 ? 's' : '') + '</span>'
             +   '<button type="button" class="ss-rep-mod-add-btn ml-1 w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-add-module-id="' + (mod.id || '') + '" title="Ajouter un poste"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
             +   '<button type="button" class="ss-rep-mod-more-btn w-[26px] h-[26px] rounded grid place-items-center bg-white/15 hover:bg-white/25 transition relative z-[1]" data-mod-key="' + key + '" data-mod-id="' + (mod.id || '') + '" data-mod-code="' + escapeHtml(mod.code || '') + '" data-mod-name="' + escapeHtml(mod.nom || mod.code || '') + '" title="Plus d\'options"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>'
