@@ -90,13 +90,22 @@
         "order": 10
     },
     {
+        "id": "jour-ferier-planning",
+        "title": "Jour ferier planning",
+        "desc": "Dans la page admin plannign ajouter les jours ferrier",
+        "difficulty": "facile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 11
+    },
+    {
         "id": "stats-interim",
         "title": "Statistiques interim, absences, grossesses",
         "desc": "Tableaux + graphiques comparatifs sur plusieurs annees, par periode. Export PDF\/Word\/Excel.",
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 11
+        "order": 12
     },
     {
         "id": "import-contacts",
@@ -105,7 +114,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 12
+        "order": 13
     },
     {
         "id": "agenda-rdv",
@@ -114,7 +123,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 13
+        "order": 14
     },
     {
         "id": "backup-restore",
@@ -123,7 +132,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 14
+        "order": 15
     },
     {
         "id": "mise-a-jour",
@@ -132,7 +141,7 @@
         "difficulty": "moyen",
         "category": "Admin",
         "done": false,
-        "order": 15
+        "order": 16
     },
     {
         "id": "mur-actu",
@@ -141,7 +150,7 @@
         "difficulty": "moyen",
         "category": "Communication",
         "done": false,
-        "order": 16
+        "order": 17
     },
     {
         "id": "module-cuisine",
@@ -150,7 +159,7 @@
         "difficulty": "moyen",
         "category": "Restauration",
         "done": false,
-        "order": 17
+        "order": 18
     },
     {
         "id": "table-vip",
@@ -159,7 +168,7 @@
         "difficulty": "moyen",
         "category": "Restauration",
         "done": false,
-        "order": 18
+        "order": 19
     },
     {
         "id": "ajouter-mot-de-passe-oublier",
@@ -168,7 +177,7 @@
         "difficulty": "moyen",
         "category": "Securite",
         "done": false,
-        "order": 19
+        "order": 20
     },
     {
         "id": "garder-le-spech-original-de-pv",
@@ -177,7 +186,7 @@
         "difficulty": "moyen",
         "category": "Securite",
         "done": false,
-        "order": 20
+        "order": 21
     },
     {
         "id": "pour-le-changement-param-tre-admin",
@@ -186,7 +195,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 21
+        "order": 22
     },
     {
         "id": "pour-les-r-sidents",
@@ -195,7 +204,7 @@
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 22
+        "order": 23
     },
     {
         "id": "configuration-module",
@@ -204,7 +213,7 @@
         "difficulty": "moyen",
         "category": "General",
         "done": false,
-        "order": 23
+        "order": 24
     },
     {
         "id": "justificatif-pour-une-absance",
@@ -213,7 +222,7 @@
         "difficulty": "moyen",
         "category": "Planning",
         "done": false,
-        "order": 24
+        "order": 25
     },
     {
         "id": "pour-les-contactes-ajouter-le-groupe",
@@ -222,7 +231,7 @@
         "difficulty": "moyen",
         "category": "General",
         "done": false,
-        "order": 25
+        "order": 26
     },
     {
         "id": "ajouter-liste-user-dans-login",
@@ -231,7 +240,7 @@
         "difficulty": "moyen",
         "category": "Statistiques",
         "done": false,
-        "order": 26
+        "order": 27
     },
     {
         "id": "commande-produit-hygi-ne",
@@ -240,7 +249,7 @@
         "difficulty": "moyen",
         "category": "Communication",
         "done": false,
-        "order": 27
+        "order": 28
     },
     {
         "id": "annuaire-de-telephone",
@@ -249,7 +258,7 @@
         "difficulty": "moyen",
         "category": "General",
         "done": false,
-        "order": 28
+        "order": 29
     },
     {
         "id": "anne-ga-lle-demande-d-information",
@@ -258,7 +267,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 29
+        "order": 30
     },
     {
         "id": "module-animation",
@@ -267,7 +276,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 30
+        "order": 31
     },
     {
         "id": "ia-animations",
@@ -276,7 +285,7 @@
         "difficulty": "difficile",
         "category": "Animation",
         "done": false,
-        "order": 31
+        "order": 32
     },
     {
         "id": "formation",
@@ -285,7 +294,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 32
+        "order": 33
     },
     {
         "id": "postulation",
@@ -294,7 +303,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 33
+        "order": 34
     },
     {
         "id": "suivi-dossier",
@@ -303,7 +312,7 @@
         "difficulty": "difficile",
         "category": "Recrutement",
         "done": false,
-        "order": 34
+        "order": 35
     },
     {
         "id": "transcription-pv",
@@ -312,7 +321,7 @@
         "difficulty": "difficile",
         "category": "PV \/ IA",
         "done": false,
-        "order": 35
+        "order": 36
     },
     {
         "id": "chiffrement",
@@ -321,7 +330,7 @@
         "difficulty": "difficile",
         "category": "Securite",
         "done": false,
-        "order": 36
+        "order": 37
     },
     {
         "id": "ajoute-sur-le-site-une-page-envoy-ma-condidature",
@@ -330,7 +339,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 37
+        "order": 38
     },
     {
         "id": "ajoute-page-gal-rie-pour-la-famille",
@@ -339,7 +348,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 38
+        "order": 39
     },
     {
         "id": "module-pour-les-interims",
@@ -348,7 +357,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 39
+        "order": 40
     },
     {
         "id": "espace-famille-r-sident",
@@ -357,7 +366,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 40
+        "order": 41
     },
     {
         "id": "organigrame-de-l-ems",
@@ -366,7 +375,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": false,
-        "order": 41
+        "order": 42
     },
     {
         "id": "popup-email",
@@ -375,7 +384,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 42
+        "order": 43
     },
     {
         "id": "param-tres-fonctions-et-horraires",
@@ -384,7 +393,7 @@
         "difficulty": "difficile",
         "category": "Planning",
         "done": false,
-        "order": 43
+        "order": 44
     },
     {
         "id": "espace-famille",
@@ -393,7 +402,7 @@
         "difficulty": "difficile",
         "category": "Site web",
         "done": true,
-        "order": 44
+        "order": 45
     },
     {
         "id": "r-diger-le-help",
@@ -402,7 +411,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 45
+        "order": 46
     },
     {
         "id": "ajouter-rubrique-am-lioration",
@@ -411,7 +420,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 46
+        "order": 47
     },
     {
         "id": "mur-social",
@@ -420,7 +429,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 47
+        "order": 48
     },
     {
         "id": "r-ponse-aux-candidatures",
@@ -429,7 +438,7 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 48
+        "order": 49
     },
     {
         "id": "base-de-connaissances",
@@ -438,7 +447,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 49
+        "order": 50
     },
     {
         "id": "rh-abscences",
@@ -447,7 +456,7 @@
         "difficulty": "difficile",
         "category": "Admin",
         "done": false,
-        "order": 50
+        "order": 51
     },
     {
         "id": "personnalisation-du-tableau-du-board",
@@ -456,7 +465,7 @@
         "difficulty": "difficile",
         "category": "General",
         "done": false,
-        "order": 51
+        "order": 52
     },
     {
         "id": "formations-et-candidatures",
@@ -465,7 +474,7 @@
         "difficulty": "difficile",
         "category": "Formation",
         "done": false,
-        "order": 52
+        "order": 53
     },
     {
         "id": "afficher-changement",
@@ -474,6 +483,15 @@
         "difficulty": "difficile",
         "category": "Statistiques",
         "done": false,
-        "order": 53
+        "order": 54
+    },
+    {
+        "id": "r-partition",
+        "title": "Répartition",
+        "desc": "Pour la page répartition ajouter une card en bas de chaque module les consigne des jours, le responsable peut les saisir à l'avance, certaines données seront  afficher automatiquement.  pour l'indicateur si par exemple le responsbale choisie que Sami fait le nettoyage de la salle la couleur change automatiuement sur la repart, avec effet hover",
+        "difficulty": "difficile",
+        "category": "Statistiques",
+        "done": false,
+        "order": 55
     }
 ]
