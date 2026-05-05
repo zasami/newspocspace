@@ -198,43 +198,41 @@ $todayIso = date('Y-m-d');
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
     Imprimer
   </button>
-  <div class="relative">
+  <div class="ss-rep-export-wrap">
     <button id="repExportBtn" type="button" class="ss-rep-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium text-ink-2 bg-surface border border-line hover:bg-surface-2 hover:border-line-2 transition">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       Exporter
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-0.5 text-muted"><path d="m6 9 6 6 6-6"/></svg>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px"><path d="m6 9 6 6 6-6"/></svg>
     </button>
-    <div id="repExportDropdown" class="ss-rep-export-dropdown absolute right-0 top-full mt-1.5 w-[340px] bg-surface border border-line rounded-2xl shadow-sp-lg z-50 p-2">
-      <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Format de sortie</div>
-      <button type="button" data-export-type="image" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left">
-        <div class="ss-rep-opt-ic w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+    <div id="repExportDropdown" class="ss-rep-export-menu">
+      <div class="ss-rep-export-grouptitle">Format de sortie</div>
+      <button type="button" data-export-type="image">
+        <div class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
-        <div class="flex flex-col min-w-0 flex-1">
-          <span class="ss-rep-opt-title text-[13.5px] font-semibold text-ink leading-tight">Image (PNG / JPEG)</span>
-          <span class="ss-rep-opt-desc text-[11px] text-muted mt-px">1 fichier par module/jour · ZIP si plusieurs</span>
-        </div>
-      </button>
-
-      <div class="border-t border-line my-1.5 mx-3"></div>
-
-      <div class="px-4 py-1.5 text-[10px] tracking-[0.14em] uppercase text-muted font-bold">Autres formats</div>
-      <button type="button" data-export-type="pdf" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left">
-        <div class="ss-rep-opt-ic w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-        </div>
-        <div class="flex flex-col min-w-0 flex-1">
-          <span class="ss-rep-opt-title text-[13.5px] font-semibold text-ink leading-tight">PDF</span>
-          <span class="ss-rep-opt-desc text-[11px] text-muted mt-px">Semaine complète · prêt à imprimer</span>
+        <div class="info">
+          <span class="t">Image (PNG / JPEG)</span>
+          <span class="d">1 fichier par module/jour · ZIP si plusieurs</span>
         </div>
       </button>
-      <button type="button" data-export-type="excel" class="ss-rep-export-opt w-full flex items-center gap-3 px-4 py-2.5 text-left">
-        <div class="ss-rep-opt-ic w-9 h-9 rounded-lg bg-surface-3 grid place-items-center text-ink-2 shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      <div class="ss-rep-export-sep"></div>
+      <div class="ss-rep-export-grouptitle">Autres formats</div>
+      <button type="button" data-export-type="pdf">
+        <div class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
         </div>
-        <div class="flex flex-col min-w-0 flex-1">
-          <span class="ss-rep-opt-title text-[13.5px] font-semibold text-ink leading-tight">Excel (.xlsx)</span>
-          <span class="ss-rep-opt-desc text-[11px] text-muted mt-px">Pour reporting et analyse</span>
+        <div class="info">
+          <span class="t">PDF</span>
+          <span class="d">Semaine complète · prêt à imprimer</span>
+        </div>
+      </button>
+      <button type="button" data-export-type="excel">
+        <div class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+        </div>
+        <div class="info">
+          <span class="t">Excel (.xlsx)</span>
+          <span class="d">Pour reporting et analyse</span>
         </div>
       </button>
     </div>
@@ -661,7 +659,7 @@ $todayIso = date('Y-m-d');
 /* ── Table répartition ────────────────────────────────────────────── */
 .ss-rep-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
-  font-size: 12.5px; table-layout: fixed; min-width: 2978px;
+  font-size: 12.5px; table-layout: fixed; min-width: 1820px;
 }
 .ss-rep-table th, .ss-rep-table td {
   border-right: 1px solid var(--color-line);
@@ -701,24 +699,32 @@ $todayIso = date('Y-m-d');
 
 /* Colonnes sticky : Fonction + Poste */
 .ss-rep-col-fonction {
-  position: sticky; left: 0; z-index: 4; background: var(--color-surface);
-  width: 110px; min-width: 110px; max-width: 110px; text-align: center;
+  position: sticky; left: 0; z-index: 5;
+  background: var(--color-surface); background-clip: padding-box;
+  width: 90px; min-width: 90px; max-width: 90px; text-align: center;
   font-weight: 600; color: var(--color-ink); font-size: 11.5px;
   border-right: 1px solid var(--color-line-2) !important;
+  box-shadow: inset -1px 0 0 var(--color-line-2);
 }
-.ss-rep-table thead .ss-rep-col-fonction { z-index: 6; background: var(--color-surface-2); }
+.ss-rep-table thead .ss-rep-col-fonction { z-index: 7; background: var(--color-surface-2); }
 .ss-rep-col-fonction .label { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; }
 .ss-rep-col-fonction .label small { font-size: 9.5px; color: var(--color-muted); font-weight: 500; letter-spacing: 0.04em; }
 
 .ss-rep-col-poste {
-  position: sticky; left: 110px; z-index: 4; background: var(--color-surface);
-  width: 68px; min-width: 68px; max-width: 68px; text-align: center;
+  position: sticky; left: 90px; z-index: 5;
+  background: var(--color-surface); background-clip: padding-box;
+  width: 48px; min-width: 48px; max-width: 48px; text-align: center;
   font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600;
   color: var(--color-muted); border-right: 1px solid var(--color-line-2) !important;
+  box-shadow: 2px 0 4px -2px rgba(13,42,38,.08);
 }
-.ss-rep-table thead .ss-rep-col-poste { z-index: 6; background: var(--color-surface-2); }
+.ss-rep-table thead .ss-rep-col-poste { z-index: 7; background: var(--color-surface-2); }
 
-.ss-rep-col-day { width: 400px; min-width: 400px; }
+.ss-rep-col-day { width: auto; min-width: 240px; }
+
+/* Hover row : maintient le fond surface des sticky cols (évite le shift) */
+.ss-rep-table tbody tr:hover .ss-rep-col-fonction,
+.ss-rep-table tbody tr:hover .ss-rep-col-poste { background: var(--color-surface); }
 
 /* Cellules */
 .ss-rep-table tbody td { padding: 0; height: 40px; background: var(--color-surface); transition: background 0.15s ease; position: relative; }
@@ -875,37 +881,54 @@ select.ss-rep-input {
 #repToggleEdit.on { background: var(--color-warn); color: #fff; border-color: var(--color-warn); }
 #repToggleEdit.on:hover { background: #a86220; border-color: #a86220; }
 
-/* Export dropdown — fermé par défaut, ouvert via .show */
-.ss-rep-export-dropdown { display: none; transform-origin: top right; }
-.ss-rep-export-dropdown.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
-@keyframes ssRepDropIn { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.ss-rep-export-opt, .ss-rep-mod-menu-opt {
-  font-family: inherit; border: 0; cursor: pointer;
-  background: transparent; color: var(--color-ink);
-  border-radius: 10px;
-  transition: background 0.15s ease, color 0.15s ease;
+/* ─── Export dropdown : fidèle à la maquette `.export-menu` ───────── */
+.ss-rep-export-wrap { position: relative; }
+.ss-rep-export-menu {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--color-surface); border: 1px solid var(--color-line);
+  border-radius: 10px; box-shadow: 0 16px 48px -12px rgba(13,42,38,.18), 0 4px 12px rgba(13,42,38,.06);
+  min-width: 300px; padding: 6px; z-index: 50;
+  animation: ssRepDropIn 0.15s ease;
 }
-/* Hover : fond + texte teal — règle native (le shorthand `background`
-   Tailwind ne s'applique pas à cause de `background: transparent` au repos) */
-.ss-rep-export-opt:hover,
-.ss-rep-mod-menu-opt:hover {
-  background: var(--color-teal-50);
-  color: var(--color-teal-700);
+.ss-rep-export-menu.show { display: block; }
+@keyframes ssRepDropIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.ss-rep-export-grouptitle {
+  font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--color-muted); font-weight: 700; padding: 8px 12px 4px;
 }
-/* Hover des sous-éléments (icône, titre, description) */
-.ss-rep-export-opt:hover .ss-rep-opt-ic,
-.ss-rep-mod-menu-opt:hover .ss-rep-opt-ic {
-  background: var(--color-teal-100);
-  color: var(--color-teal-700);
+.ss-rep-export-menu button {
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  padding: 9px 12px; border: 0; background: transparent;
+  font: inherit; font-size: 13px; color: var(--color-ink-2); text-align: left;
+  cursor: pointer; border-radius: 6px; transition: all 0.15s ease;
 }
-.ss-rep-export-opt:hover .ss-rep-opt-title,
-.ss-rep-mod-menu-opt:hover .ss-rep-opt-title { color: var(--color-teal-700); }
-.ss-rep-export-opt:hover .ss-rep-opt-desc,
-.ss-rep-mod-menu-opt:hover .ss-rep-opt-desc  { color: var(--color-teal-600); }
+.ss-rep-export-menu button:hover { background: var(--color-teal-50); color: var(--color-teal-700); }
+.ss-rep-export-menu button .ic {
+  width: 30px; height: 30px; border-radius: 6px;
+  background: var(--color-teal-50); color: var(--color-teal-700);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.ss-rep-export-menu button:hover .ic { background: var(--color-teal-100); }
+.ss-rep-export-menu button .info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.ss-rep-export-menu button .t { font-weight: 500; }
+.ss-rep-export-menu button .d { font-size: 11px; color: var(--color-muted); margin-top: 1px; }
+.ss-rep-export-menu button:hover .d { color: var(--color-teal-600); }
+.ss-rep-export-sep { height: 1px; background: var(--color-line); margin: 4px 8px; }
 
-/* Menu contextuel module ("..." sur module-head) */
+/* Menu contextuel module ("..." sur module-head) — même style que export */
 .ss-rep-mod-menu { display: none; transform-origin: top right; }
-.ss-rep-mod-menu.show { display: block; animation: ssRepDropIn 0.15s ease-out; }
+.ss-rep-mod-menu.show { display: block; animation: ssRepDropIn 0.15s ease; }
+.ss-rep-mod-menu-opt {
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  padding: 9px 12px; border: 0; background: transparent;
+  font: inherit; font-size: 13px; color: var(--color-ink-2); text-align: left;
+  cursor: pointer; border-radius: 6px; transition: all 0.15s ease;
+  font-family: inherit;
+}
+.ss-rep-mod-menu-opt:hover { background: var(--color-teal-50); color: var(--color-teal-700); }
+.ss-rep-mod-menu-opt:hover .ss-rep-opt-ic { background: var(--color-teal-100); color: var(--color-teal-700); }
+.ss-rep-mod-menu-opt:hover .ss-rep-opt-title { color: var(--color-teal-700); }
+.ss-rep-mod-menu-opt:hover .ss-rep-opt-desc { color: var(--color-teal-600); }
 
 /* View toggle on */
 .ss-rep-view-btn:hover { color: var(--color-ink-2); }
@@ -1402,8 +1425,8 @@ select.ss-rep-input {
 
       html += '<div class="ss-rep-module-body">';
       html += '<table class="ss-rep-table">';
-      html += '<colgroup><col style="width:110px"><col style="width:68px">';
-      days.forEach(() => { html += '<col style="width:400px">'; });
+      html += '<colgroup><col style="width:90px"><col style="width:48px">';
+      days.forEach(() => { html += '<col>'; });
       html += '</colgroup>';
       html += '<thead><tr class="day-row">'
             +   '<th class="ss-rep-col-fonction" rowspan="2"><div style="padding:8px 4px">Fonction</div></th>'
