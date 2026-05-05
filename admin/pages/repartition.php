@@ -235,7 +235,17 @@
   display:flex;align-items:center;gap:12px;
   padding:12px 22px;background:var(--surface);
   border-bottom:1px solid var(--line);flex-wrap:wrap;
-  position:sticky;top:55px;z-index:25;
+  position:sticky;top:64px;z-index:19;
+  /* annule le padding horizontal de #adminContent (p-4 / lg:p-6) pour aller bord-à-bord */
+  margin:-16px -16px 0;
+}
+@media (min-width:1024px){
+  .subheader{margin:-24px -24px 0}
+}
+/* la bannière édition se colle juste sous le subheader */
+.edit-banner{position:sticky;top:114px;z-index:18;margin:0 -16px}
+@media (min-width:1024px){
+  .edit-banner{margin:0 -24px}
 }
 .crumbs-l{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
 .crumbs-l strong{color:var(--ink);font-weight:500}
@@ -1089,7 +1099,7 @@ table.repart-day td.col-day-pause{padding:10px 8px}
 }
 </style>
 
-<div class="ss-rep-page">
+<div class="ss-rep-page app" id="app">
     <div class="subheader">
       <div class="crumbs-l">
         <span>Planning(s)</span><span class="sep">›</span>
